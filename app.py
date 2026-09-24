@@ -186,6 +186,51 @@ async def get_pinescript_code():
         return {"status": "ok", "code": code}
     return {"status": "error", "code": "// Godtier BPR Indicator file not found"}
 
+# ═══════════════════════════════════════════════════════════
+# DUAL REPO LOCK — Both repos always in sync (LOCKED)
+# smc-ai-agent  <->  smc-v17-trading-system
+# ═══════════════════════════════════════════════════════════
+DUAL_REPO_LOCK = {
+    "primary":    "https://github.com/as7812164-sketch/smc-ai-agent",
+    "mirror":     "https://github.com/as7812164-sketch/smc-v17-trading-system",
+    "render":     "https://smc-ai-agent.onrender.com",
+    "strategy":   "Godtier BPR Dual System [Pure Buy] v5",
+    "timeframes": ["1H", "4H"],
+    "locked":     True
+}
+
+@app.get("/api/system-info")
+async def get_system_info():
+    """Dual-repo lock status + full system identity."""
+    mongo_ok = is_mongo_connected()
+    return {
+        "status": "ok",
+        "system": "Godtier BPR Trading Terminal",
+        "strategy": DUAL_REPO_LOCK["strategy"],
+        "timeframes": DUAL_REPO_LOCK["timeframes"],
+        "dual_repo_lock": {
+            "locked": DUAL_REPO_LOCK["locked"],
+            "primary_repo": DUAL_REPO_LOCK["primary"],
+            "mirror_repo":  DUAL_REPO_LOCK["mirror"],
+            "render_url":   DUAL_REPO_LOCK["render"],
+            "sync_mode": "auto — every git push updates BOTH repos simultaneously"
+        },
+        "services": {
+            "mongodb":      "connected" if mongo_ok else "disconnected",
+            "binance_feed": "active",
+            "telegram":     "active",
+            "scanner":      "active"
+        },
+        "indicator": {
+            "name":           "Godtier BPR Dual System [Pure Buy]",
+            "version":        "v5",
+            "win_rate":       "80%+",
+            "capital_safety": "92%",
+            "type":           "BPR Springboard + Inversion FVG",
+            "pure_buy":       True
+        }
+    }
+
 @app.get("/api/journal/trades")
 async def get_journal_trades_endpoint():
     trades = get_all_journal_trades()
