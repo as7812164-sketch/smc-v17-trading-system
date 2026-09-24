@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Mike AI Brain & Agent Council - SMC V17</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css?v=104">
+</head>
+<body class="dark-theme">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="top-nav">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+                <div class="brand-badge">SMC V17</div>
+                <div class="brand-titles">
+                    <span class="brand-main">SMC V17 INSTITUTIONAL TRADING PLATFORM</span>
+                    <span class="brand-sub">4H FIRST-TAP SNIPER • $50 COMPOUNDING • MIKE COGNITIVE AI</span>
+                </div>
+            </a>
+        </div>
+
+        <nav class="nav-pages-menu">
+            <a href="/" class="nav-page-link"><i class="fa-solid fa-chart-candlestick"></i> <span>Terminal</span></a>
+            <a href="/positions" class="nav-page-link"><i class="fa-solid fa-layer-group"></i> <span>Positions</span> <span class="badge badge-success" id="navPosBadge">0</span></a>
+            <a href="/compounding" class="nav-page-link"><i class="fa-solid fa-trophy"></i> <span>Compounding ($50)</span></a>
+            <a href="/brain" class="nav-page-link active"><i class="fa-solid fa-brain"></i> <span>Mike Brain</span></a>
+            <a href="/signals" class="nav-page-link"><i class="fa-solid fa-satellite-dish"></i> <span>Signals & Zones</span></a>
+            <a href="/settings" class="nav-page-link"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
+        </nav>
+
+        <div class="nav-right-cluster">
+            <div class="live-pill" id="binanceStatusPill">
+                <span class="pulse-dot"></span>
+                <span id="binanceStatusText">Binance: CONNECTED</span>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnRunAgentAnalysis" style="background: linear-gradient(135deg, #00f59b 0%, #38bdf8 100%); color: #0f172a; font-weight: 800; border: none;">
+                <i class="fa-solid fa-play"></i> <span>Run All Agents</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btnTgTest" title="Send Live Status to Telegram">
+                <i class="fa-brands fa-telegram"></i> <span>Telegram</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 24H TICKER STRIP -->
+    <div class="bitget-pro-ticker-strip">
+        <div class="ticker-left-info">
+            <div class="pair-title">
+                <span class="pair-symbol" id="bgPairName">BTCUSDT</span>
+                <span class="bg-perp-badge">USDT-M Perpetual</span>
+                <span class="bg-lev-pill"><i class="fa-solid fa-bolt"></i> 5x Isolated</span>
+            </div>
+            <div class="price-block">
+                <span class="bg-last-price" id="bgLastPrice">$0.00</span>
+                <span class="bg-24h-chg" id="bg24hChg">+0.00%</span>
+            </div>
+        </div>
+        <div class="ticker-stats-grid">
+            <div class="t-stat"><span class="t-lbl">Mark Price</span><span class="t-val" id="bgMarkPrice">$0.00</span></div>
+            <div class="t-stat"><span class="t-lbl">Index Price</span><span class="t-val" id="bgIndexPrice">$0.00</span></div>
+            <div class="t-stat"><span class="t-lbl">24h High</span><span class="t-val" id="bg24hHigh">$0.00</span></div>
+            <div class="t-stat"><span class="t-lbl">24h Low</span><span class="t-val" id="bg24hLow">$0.00</span></div>
+            <div class="t-stat"><span class="t-lbl">24h Volume</span><span class="t-val" id="bg24hVol">$1.24B</span></div>
+            <div class="t-stat"><span class="t-lbl">Funding / Countdown</span><span class="t-val text-buy" id="bgFundingRate">0.0100% / 03:45:12</span></div>
+            <div class="t-stat highlight"><span class="t-lbl">Bitget Balance</span><span class="t-val text-buy" id="bgEquityVal">$77.59 USDT</span></div>
+        </div>
+        <div class="ticker-right-actions">
+            <a href="/compounding" style="text-decoration:none;">
+                <div class="bg-challenge-pill" id="bgChallengePill">
+                    <span class="bg-c-title">🎯 Goal: $50 ➔ $1K</span>
+                    <div class="bg-c-bar"><div class="bg-c-fill" id="bgHeaderFill" style="width: 2.9%;"></div></div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- MAIN PAGE CONTAINER -->
+    <div class="page-container">
+        
+        <!-- HERO HEADER -->
+        <div class="page-hero-header">
+            <div class="hero-title-group">
+                <div class="hero-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <div>
+                    <h1>Mike AI — Self-Improving Cognitive Engine & Specialized Agent Council</h1>
+                    <p>Autonomous Post-Trade Reflection • Dynamic Factor Weight Tuning • Persistent Algorithmic Memory</p>
+                </div>
+            </div>
+            <div class="hero-actions">
+                <span class="badge badge-success" style="font-size: 13px; padding: 6px 12px; font-weight: 800;">
+                    🟢 ACTIVE & CONTINUOUSLY LEARNING
+                </span>
+            </div>
+        </div>
+
+        <!-- LIFETIME KPI METRICS STRIP -->
+        <section class="stats-strip" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="kpi-card" style="border-color: rgba(0, 245, 155, 0.3); background: rgba(0, 245, 155, 0.04);">
+                <div class="kpi-label"><i class="fa-solid fa-trophy text-buy"></i> Lifetime Win Rate</div>
+                <div class="kpi-val text-buy" id="mbWinRate">69.3%</div>
+                <div class="kpi-sub" id="mbWinCount">104W / 44BE / 2L</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="fa-solid fa-shield-halved" style="color: #38BDF8;"></i> Capital Preservation</div>
+                <div class="kpi-val" style="color: #38BDF8;" id="mbSafetyRate">98.7%</div>
+                <div class="kpi-sub">Win + $0 Breakevens</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="fa-solid fa-book-open" style="color: #F59E0B;"></i> Trades Reflected</div>
+                <div class="kpi-val" style="color: #F59E0B;" id="mbTotalTrades">150</div>
+                <div class="kpi-sub">Audited Forensically</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="fa-solid fa-circle-check text-buy"></i> Quarantined Coins</div>
+                <div class="kpi-val text-buy" id="mbQuarantined">0</div>
+                <div class="kpi-sub">Active Guardrail Clean</div>
+            </div>
+        </section>
+
+        <!-- SPLIT GRID: DYNAMIC FACTOR WEIGHTS & COIN PERFORMANCE RADAR -->
+        <div class="brain-split-grid">
+            
+            <!-- LEFT: ADAPTIVE FACTOR WEIGHTS -->
+            <div class="pro-card">
+                <div class="pro-card-header">
+                    <div>
+                        <div class="pro-card-title">
+                            <i class="fa-solid fa-sliders" style="color: #F59E0B;"></i> Adaptive Confluence Factor Weights
+                        </div>
+                        <div class="pro-card-subtitle">Self-calibrated mathematically based on winning setup frequencies</div>
+                    </div>
+                    <span class="badge badge-success">AUTO-TUNED</span>
+                </div>
+                <div id="mbWeightsList" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; min-height: 180px;">
+                    <!-- Dynamic weights injected via JS -->
+                </div>
+            </div>
+
+            <!-- RIGHT: COIN PERFORMANCE RADAR -->
+            <div class="pro-card">
+                <div class="pro-card-header">
+                    <div>
+                        <div class="pro-card-title">
+                            <i class="fa-solid fa-crosshairs" style="color: #38BDF8;"></i> Coin Performance Radar & Guardrails
+                        </div>
+                        <div class="pro-card-subtitle">Elite Tier approval (≥80% WR) & automatic quarantine cool-offs</div>
+                    </div>
+                    <span class="badge" style="color: #38BDF8; border-color: rgba(56, 189, 248, 0.3);">50 PAIRS TRACKED</span>
+                </div>
+                <div id="mbCoinRadarList" style="display: flex; flex-direction: column; gap: 10px; font-size: 12px; min-height: 180px;">
+                    <!-- Coin radar injected via JS -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CONTINUOUS LESSONS LEARNED & POST-MORTEM STREAM -->
+        <div class="pro-card">
+            <div class="pro-card-header">
+                <div>
+                    <div class="pro-card-title">
+                        <i class="fa-solid fa-graduation-cap" style="color: #F59E0B;"></i> Continuous Lessons Learned & Post-Mortem Stream
+                    </div>
+                    <div class="pro-card-subtitle">Deep forensic insights retained from historical winning trades and SL incidents</div>
+                </div>
+                <span class="badge" style="color: #94A3B8;">PERSISTENT DISK MEMORY</span>
+            </div>
+            <div id="mbLessonsStream" style="display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto;">
+                <!-- Lessons injected via JS -->
+            </div>
+        </div>
+
+        <!-- 5 SPECIALIZED AGENT COMMAND COUNCIL -->
+        <div class="pro-card">
+            <div class="pro-card-header">
+                <div>
+                    <div class="pro-card-title">
+                        <i class="fa-solid fa-users-gear text-buy"></i> Specialized AI Agent Council (5 Active Members)
+                    </div>
+                    <div class="pro-card-subtitle">Coordinated multi-agent workflow for institutional SMC execution</div>
+                </div>
+                <span class="badge badge-success">ALL OPERATIONAL</span>
+            </div>
+
+            <div class="agent-command-grid" style="margin-top: 6px;">
+                <!-- Agent 1: Mike -->
+                <div class="agent-pro-card" style="border-top: 3px solid #00f59b;">
+                    <div class="ap-header">
+                        <div class="ap-avatar" style="background: rgba(0, 245, 155, 0.15); color: #00f59b;">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <div class="ap-title">
+                            <h4>Mike (Manager)</h4>
+                            <span>Master Strategy Coordinator</span>
+                        </div>
+                        <span class="ap-status-badge status-active">ACTIVE SCAN</span>
+                    </div>
+                    <p class="ap-desc">Orchestrates setup grading, validates 2nd OB priority, and triggers Bitget 5x execution.</p>
+                    <div class="ap-meta">
+                        <span>Confluence: <b>≥90/100</b></span>
+                        <span>Execution: <b style="color:#00f59b;">Bitget 5x</b></span>
+                    </div>
+                </div>
+
+                <!-- Agent 2: Alex -->
+                <div class="agent-pro-card" style="border-top: 3px solid #38bdf8;">
+                    <div class="ap-header">
+                        <div class="ap-avatar" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+                            <i class="fa-solid fa-code"></i>
+                        </div>
+                        <div class="ap-title">
+                            <h4>Alex (Engineer)</h4>
+                            <span>Trading System & PineScript</span>
+                        </div>
+                        <span class="ap-status-badge status-active">OPTIMIZING</span>
+                    </div>
+                    <p class="ap-desc">Maintains SMC V17 PineScript V5 algorithms, TradingView indicators, and latency routing.</p>
+                    <div class="ap-meta">
+                        <span>PineScript: <b>v5 Pro</b></span>
+                        <span>Latency: <b>12ms</b></span>
+                    </div>
+                </div>
+
+                <!-- Agent 3: David -->
+                <div class="agent-pro-card" style="border-top: 3px solid #ff4d6a;">
+                    <div class="ap-header">
+                        <div class="ap-avatar" style="background: rgba(255, 77, 106, 0.15); color: #ff4d6a;">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="ap-title">
+                            <h4>David (Risk Guard)</h4>
+                            <span>Capital Guard & SL Detective</span>
+                        </div>
+                        <span class="ap-status-badge status-active">GUARDING</span>
+                    </div>
+                    <p class="ap-desc">Enforces strict 2-candle close rule, protects -4% hard stop, and prevents over-leverage.</p>
+                    <div class="ap-meta">
+                        <span>Max Risk: <b>-20% ROI</b></span>
+                        <span>Drawdown: <b style="color:#00f59b;">Protected</b></span>
+                    </div>
+                </div>
+
+                <!-- Agent 4: Liam -->
+                <div class="agent-pro-card" style="border-top: 3px solid #ffd043;">
+                    <div class="ap-header">
+                        <div class="ap-avatar" style="background: rgba(255, 208, 67, 0.15); color: #ffd043;">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        </div>
+                        <div class="ap-title">
+                            <h4>Liam (Chartist)</h4>
+                            <span>4H Structure & OB Inspector</span>
+                        </div>
+                        <span class="ap-status-badge status-active">COMPUTING</span>
+                    </div>
+                    <p class="ap-desc">Validates 6-bar True Origin candle, checks +7% qualification expansion, and filters First-Taps.</p>
+                    <div class="ap-meta">
+                        <span>Active OBs: <b id="liamActiveObs">146</b></span>
+                        <span>Timeframe: <b>4H Futures</b></span>
+                    </div>
+                </div>
+
+                <!-- Agent 5: Sarah -->
+                <div class="agent-pro-card" style="border-top: 3px solid #b388ff;">
+                    <div class="ap-header">
+                        <div class="ap-avatar" style="background: rgba(179, 136, 255, 0.15); color: #b388ff;">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <div class="ap-title">
+                            <h4>Sarah (Macro & ICT)</h4>
+                            <span>Sentiment & Liquidity Analyst</span>
+                        </div>
+                        <span class="ap-status-badge status-active">ANALYZING</span>
+                    </div>
+                    <p class="ap-desc">Tracks Bitcoin market correlation, institutional liquidity sweeps, and Fair Value Gaps.</p>
+                    <div class="ap-meta">
+                        <span>BTC Bias: <b id="sarahBtcBias" style="color:#00f59b;">Bullish</b></span>
+                        <span>Funding: <b>0.0100%</b></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REAL-TIME AGENT ACTIVITY TERMINAL -->
+        <div class="agent-terminal-feed">
+            <div class="atf-header">
+                <span><i class="fa-solid fa-terminal text-buy"></i> Real-time AI Agent Reasoning & Activity Feed</span>
+                <button class="btn-text btn-xs" id="btnClearAgentLog"><i class="fa-solid fa-trash"></i> Clear Log</button>
+            </div>
+            <div class="atf-log-window" id="agentActivityLogContainer">
+                <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-mike">[MIKE]</span> Cognitive Engine active. 150 forensic audit trades memorized. Lifetime WR: 69.3%.</div>
+                <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-alex">[ALEX]</span> PineScript v5 TradingView indicator synced. 2nd OB priority parameters locked.</div>
+                <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-david">[DAVID]</span> 2-candle close rule armed. SL safety clearance active across all monitored pairs.</div>
+                <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-liam">[LIAM]</span> 4H Origin Order Blocks scanning across top 50 Binance pairs.</div>
+                <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-sarah">[SARAH]</span> Macro order flow delta evaluated: CVD reversal curve aligned.</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/app.js?v=104"></script>
+</body>
+</html>

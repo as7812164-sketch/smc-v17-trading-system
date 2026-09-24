@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Bitget Pro - SMC V17 Crypto Trading Terminal & AI Analyst</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Lightweight Charts CDN -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="/static/style.css?v=103">
+</head>
+<body class="dark-theme">
+
+    <!-- TOP NAVIGATION BAR (MULTI-PAGE PLATFORM) -->
+    <header class="top-nav">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+                <div class="brand-badge">SMC V17</div>
+                <div class="brand-titles">
+                    <span class="brand-main">SMC V17 INSTITUTIONAL TRADING PLATFORM</span>
+                    <span class="brand-sub">4H FIRST-TAP SNIPER • $50 COMPOUNDING • MIKE COGNITIVE AI</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- MULTI-PAGE NAVIGATION MENU -->
+        <nav class="nav-pages-menu">
+            <a href="/" class="nav-page-link active"><i class="fa-solid fa-chart-candlestick"></i> <span>Terminal</span></a>
+            <a href="/positions" class="nav-page-link"><i class="fa-solid fa-layer-group"></i> <span>Positions</span> <span class="badge badge-success" id="navPosBadge">0</span></a>
+            <a href="/compounding" class="nav-page-link"><i class="fa-solid fa-trophy"></i> <span>Compounding ($50)</span></a>
+            <a href="/brain" class="nav-page-link"><i class="fa-solid fa-brain"></i> <span>Mike Brain</span></a>
+            <a href="javascript:void(0)" onclick="toggleHermesDrawer()" class="nav-page-link" style="color: #ffd700; border: 1px solid rgba(255,215,0,0.3); border-radius: 4px; padding: 4px 8px;"><i class="fa-solid fa-robot"></i> <span>Hermes AI</span></a>
+            <a href="/signals" class="nav-page-link"><i class="fa-solid fa-satellite-dish"></i> <span>Signals & Zones</span></a>
+            <a href="/settings" class="nav-page-link"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
+        </nav>
+
+        <div class="nav-right-cluster">
+            <div class="live-pill" id="binanceStatusPill">
+                <span class="pulse-dot"></span>
+                <span id="binanceStatusText">Binance: CONNECTED</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btnRefreshScan" title="Scan 50 Coins">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Scan</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btnTgTest" title="Send Live Status to Telegram">
+                <i class="fa-brands fa-telegram"></i>
+                <span>Telegram</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- BITGET PRO 24H TICKER STRIP -->
+    <div class="bitget-pro-ticker-strip">
+        <div class="ticker-left-info">
+            <div class="pair-title">
+                <span class="pair-symbol" id="bgPairName">BTCUSDT</span>
+                <span class="bg-perp-badge">USDT-M Perpetual</span>
+                <span class="bg-lev-pill"><i class="fa-solid fa-bolt"></i> 5x Isolated</span>
+            </div>
+            <div class="price-block">
+                <span class="bg-last-price" id="bgLastPrice">$0.00</span>
+                <span class="bg-24h-chg" id="bg24hChg">+0.00%</span>
+            </div>
+        </div>
+        <div class="ticker-stats-grid">
+            <div class="t-stat"><span class="t-lbl">Mark Price</span><span class="t-val" id="bgMarkPrice">$0.00</span></div>
+            <div class="t-stat"><span class="t-lbl">Index Price</span><span class="t-val" id="bgIndexPrice">$0.00</span></div>
+            <div class="t-stat"><span class="t-lbl">24h High</span><span class="t-val" id="bg24hHigh">$0.00</span></div>
+            <div class="t-stat"><span class="t-lbl">24h Low</span><span class="t-val" id="bg24hLow">$0.00</span></div>
+            <div class="t-stat"><span class="t-lbl">24h Volume</span><span class="t-val" id="bg24hVol">$1.24B</span></div>
+            <div class="t-stat"><span class="t-lbl">Funding / Countdown</span><span class="t-val text-buy" id="bgFundingRate">0.0100% / 03:45:12</span></div>
+            <div class="t-stat highlight"><span class="t-lbl">Bitget Real Balance</span><span class="t-val text-buy" id="bgEquityVal">$77.59 USDT</span></div>
+        </div>
+        <div class="ticker-right-actions">
+            <div class="bg-challenge-pill" id="bgChallengePill">
+                <span class="bg-c-title">🎯 Goal: $50 ➔ $1K</span>
+                <div class="bg-c-bar"><div class="bg-c-fill" id="bgHeaderFill" style="width: 2.9%;"></div></div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- KPI PERFORMANCE STATS STRIP -->
+    <section class="stats-strip">
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="fa-solid fa-trophy"></i> Win Rate</div>
+            <div class="kpi-val highlight" id="kpiWinRate">0.0%</div>
+            <div class="kpi-sub" id="kpiWinRateDetail">0 Wins / 0 Losses</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="fa-solid fa-arrow-trend-up text-buy"></i> BUY Win Rate</div>
+            <div class="kpi-val text-buy" id="kpiBuyWR">0.0%</div>
+            <div class="kpi-sub" id="kpiBuyCount">0 Completed</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="fa-solid fa-arrow-trend-down text-sell"></i> SELL Win Rate</div>
+            <div class="kpi-val text-sell" id="kpiSellWR">0.0%</div>
+            <div class="kpi-sub" id="kpiSellCount">0 Completed</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="fa-solid fa-box-archive"></i> Active Zones</div>
+            <div class="kpi-val" id="kpiActiveZones">0</div>
+            <div class="kpi-sub">
+                <span class="text-buy" id="kpiActiveBuy">0 BUY</span> • 
+                <span class="text-sell" id="kpiActiveSell">0 SELL</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="fa-solid fa-circle-check text-buy"></i> TP Hits (+4%)</div>
+            <div class="kpi-val text-buy" id="kpiTpHits">0</div>
+            <div class="kpi-sub">Target Reached</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="fa-solid fa-circle-xmark text-sell"></i> SL Hits (-3%)</div>
+            <div class="kpi-val text-sell" id="kpiSlHits">0</div>
+            <div class="kpi-sub">Protected</div>
+        </div>
+        <div class="kpi-card paper-kpi-card" id="kpiPaperCard">
+            <div class="kpi-label"><i class="fa-solid fa-wallet"></i> Paper Floating PnL</div>
+            <div class="kpi-val" id="kpiOpenPnL">$0.00 (0.00%)</div>
+            <div class="kpi-sub" id="kpiOpenTradesSub">0 Active Trades • Bal $100.00</div>
+        </div>
+        <div class="kpi-card" style="border-color: rgba(0, 245, 155, 0.3); background: rgba(0, 245, 155, 0.04);" id="kpiBitgetGoalCard">
+            <div class="kpi-label"><i class="fa-solid fa-bolt text-buy"></i> Bitget Real Goal</div>
+            <div class="kpi-val text-buy" id="kpiBitgetBal">$77.59 USDT</div>
+            <div class="kpi-sub" id="kpiBitgetProgress"><span style="color:#00f59b; font-weight:700;">$50 → $1,000</span> (5x Compounding)</div>
+        </div>
+        <div class="kpi-card last-alert-card">
+            <div class="kpi-label"><i class="fa-solid fa-bell"></i> Last System Alert</div>
+            <div class="kpi-alert-text" id="kpiLastAlert">None yet</div>
+            <div class="kpi-sub" id="kpiLastScanTime">4H Binance Futures</div>
+        </div>
+    </section>
+
+    <!-- MAIN TERMINAL WORKSPACE -->
+    <main class="terminal-grid">
+        
+        <!-- LEFT PANEL: 50 COINS WATCHLIST -->
+        <aside class="panel coins-panel">
+            <div class="panel-header">
+                <span class="panel-title"><i class="fa-solid fa-coins"></i> Configured Coins (50)</span>
+                <span class="badge" id="coinsCountBadge">50</span>
+            </div>
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="coinSearchInput" placeholder="Filter coin e.g. BTC, ETH...">
+            </div>
+            <div class="filter-pills">
+                <button class="pill-btn active" data-filter="all">All (50)</button>
+                <button class="pill-btn" data-filter="has-zones">With Zones</button>
+                <button class="pill-btn" data-filter="buy">BUY</button>
+                <button class="pill-btn" data-filter="sell">SELL</button>
+            </div>
+            <div class="coins-list" id="coinsListContainer">
+                <!-- Coin rows dynamically inserted here -->
+            </div>
+        </aside>
+
+        <!-- CENTER PANEL: TRADINGVIEW PRO TERMINAL -->
+        <section class="panel chart-panel">
+            <!-- TOP BAR 1: SYMBOL, TIMEFRAME, CHART STYLE & PRIMARY ACTIONS -->
+            <div class="chart-header">
+                <div class="chart-symbol-info">
+                    <span class="symbol-name" id="selectedSymbol">BTCUSDT</span>
+                    <span class="current-price" id="symbolPrice">$0.00</span>
+                    <div class="chart-active-trade-pill" id="chartActiveTradePill" style="display: none;"></div>
+                    
+                    <!-- TIMEFRAME SELECTOR -->
+                    <div class="tv-btn-group" id="timeframeGroup" title="Select Timeframe">
+                        <button class="tv-pill-btn" data-tf="15m">15m</button>
+                        <button class="tv-pill-btn" data-tf="1h">1H</button>
+                        <button class="tv-pill-btn active" data-tf="4h">4H</button>
+                        <button class="tv-pill-btn" data-tf="1d">1D</button>
+                    </div>
+
+                    <!-- CHART STYLE SELECTOR -->
+                    <div class="tv-dropdown" id="chartStyleDropdown" title="Chart Display Style">
+                        <button class="tv-dropdown-btn" id="btnChartStyle">
+                            <i class="fa-solid fa-chart-candlestick" id="currentStyleIcon"></i>
+                            <span id="currentStyleText">Candles</span>
+                            <i class="fa-solid fa-chevron-down caret-icon"></i>
+                        </button>
+                        <div class="tv-dropdown-menu" id="styleMenu">
+                            <div class="dropdown-item active" data-style="candles"><i class="fa-solid fa-chart-candlestick"></i> Candles</div>
+                            <div class="dropdown-item" data-style="heikin_ashi"><i class="fa-solid fa-yin-yang"></i> Heikin-Ashi</div>
+                            <div class="dropdown-item" data-style="bars"><i class="fa-solid fa-chart-bar"></i> Bars (OHLC)</div>
+                            <div class="dropdown-item" data-style="line"><i class="fa-solid fa-chart-line"></i> Line</div>
+                            <div class="dropdown-item" data-style="area"><i class="fa-solid fa-chart-area"></i> Area</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-actions">
+                    <!-- CAMERA SNAPSHOT -->
+                    <button class="btn btn-icon" id="btnChartSnapshot" title="Take Screenshot (PNG)">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                    <!-- TOGGLE SMC ZONES -->
+                    <button class="btn btn-secondary active-toggle" id="btnToggleZones" title="Show/Hide SMC V17 Zones">
+                        <i class="fa-solid fa-eye" id="zonesEyeIcon"></i>
+                        <span>Zones</span>
+                    </button>
+                    <!-- FULL SCREEN -->
+                    <button class="btn btn-secondary" id="btnFullscreenChart" title="Toggle Full Screen (F / Esc)">
+                        <i class="fa-solid fa-expand" id="fullscreenBtnIcon"></i>
+                        <span id="fullscreenBtnText">Full Screen</span>
+                    </button>
+                    <!-- AI ANALYZE -->
+                    <button class="btn btn-ai" id="btnAnalyzeAI" title="Analyze with Mike AI (Flash Low)">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>Ask Mike AI</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PRO SUB-TOOLBAR: INDICATORS, HISTORY, SCALE & LIVE OHLCV LEGEND -->
+            <div class="chart-sub-toolbar">
+                <div class="sub-toolbar-left">
+                    <span class="sub-label"><i class="fa-solid fa-chart-simple"></i></span>
+                    <button class="indicator-chip active" id="chipSmcV17" data-ind="smcv17" title="Godtier BPR Dual System — BPR & IFVG Springboard Zones" style="border-color: #00E676; color: #00E676; background: rgba(0, 230, 118, 0.12); font-weight: 700;"><i class="fa-solid fa-bolt"></i> ⚡ Godtier BPR [Buy]</button>
+                    <button class="indicator-chip" id="chipEma20" data-ind="ema20" title="EMA 20 (Cyan)">EMA 20</button>
+                    <button class="indicator-chip" id="chipEma50" data-ind="ema50" title="EMA 50 (Amber)">EMA 50</button>
+                    <button class="indicator-chip" id="chipEma200" data-ind="ema200" title="EMA 200 (Purple)">EMA 200</button>
+                    <button class="indicator-chip" id="chipBB" data-ind="bb" title="Bollinger Bands (20, 2)">BB (20, 2)</button>
+                    
+                    <div class="toolbar-divider"></div>
+
+                    <span class="sub-label"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                    <div class="tv-btn-group" id="historyGroup">
+                        <button class="tv-pill-btn" data-limit="200">200</button>
+                        <button class="tv-pill-btn active" data-limit="500">500</button>
+                        <button class="tv-pill-btn" data-limit="1000">1000</button>
+                    </div>
+
+                    <div class="toolbar-divider"></div>
+
+                    <!-- SCALE & ZOOM CONTROLS -->
+                    <button class="tv-icon-btn" id="btnToggleLog" title="Toggle Logarithmic Scale">Log</button>
+                    <button class="tv-icon-btn" id="btnZoomOut" title="Zoom Out (-)"><i class="fa-solid fa-minus"></i></button>
+                    <button class="tv-icon-btn" id="btnZoomIn" title="Zoom In (+)"><i class="fa-solid fa-plus"></i></button>
+                    <button class="tv-icon-btn" id="btnResetView" title="Reset / Fit Content"><i class="fa-solid fa-arrows-to-eye"></i> Fit</button>
+                </div>
+
+                <!-- LIVE OHLCV HOVER LEGEND -->
+                <div class="tv-legend-bar" id="tvLegendBar">
+                    <span class="legend-item"><span class="legend-lbl">O</span><span class="legend-val" id="legOpen">--</span></span>
+                    <span class="legend-item"><span class="legend-lbl">H</span><span class="legend-val" id="legHigh">--</span></span>
+                    <span class="legend-item"><span class="legend-lbl">L</span><span class="legend-val" id="legLow">--</span></span>
+                    <span class="legend-item"><span class="legend-lbl">C</span><span class="legend-val" id="legClose">--</span></span>
+                    <span class="legend-item"><span class="legend-val" id="legChange">--</span></span>
+                    <span class="legend-item"><span class="legend-lbl">Vol</span><span class="legend-val" id="legVol">--</span></span>
+                </div>
+            </div>
+
+            <!-- TradingView Lightweight Chart Canvas Container -->
+            <div class="chart-container" id="tvChartContainer">
+                <!-- Floating SMC V17 Indicator HUD Badge -->
+                <div class="smc-chart-hud" id="smcChartHud">
+                    <div class="hud-header">
+                        <span class="hud-badge"><i class="fa-solid fa-bolt"></i> ⚡ GODTIER BPR</span>
+                        <span class="hud-tf" id="hudTimeframe">PURE BUY</span>
+                    </div>
+                    <div class="hud-body">
+                        <div class="hud-row">
+                            <span class="hud-label">1H Target / 4H Target:</span>
+                            <span class="hud-val text-buy" id="hudTargetSl">+8.0% ROE / +12.5% ROE</span>
+                        </div>
+                        <div class="hud-row">
+                            <span class="hud-label">Strategy:</span>
+                            <span class="hud-val" id="hudAirspaceVal">BPR Springboard + IFVG</span>
+                        </div>
+                        <div class="hud-row">
+                            <span class="hud-label">Capital Safety:</span>
+                            <span class="hud-val" id="hudGateStatus"><i class="fa-solid fa-shield-halved"></i> Fee-Shield BE Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TradingView Floating Favorites Drawing Toolbar -->
+                <div class="tv-floating-toolbar" id="tvFloatingToolbar" title="TradingView Drawing Tools">
+                    <div class="tv-tool-handle" id="tvToolHandle" title="Drag to reposition toolbar">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
+                    </div>
+                    <div class="tv-tool-sep"></div>
+
+                    <!-- Callout Note -->
+                    <button class="tv-tool-btn" data-tool="callout" id="toolBtnCallout" title="Callout / Note">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                        </svg>
+                    </button>
+
+                    <!-- Trend Line -->
+                    <button class="tv-tool-btn" data-tool="trendline" id="toolBtnTrendline" title="Trend Line">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="5" cy="19" r="2.5" fill="currentColor"/>
+                            <circle cx="19" cy="5" r="2.5" fill="currentColor"/>
+                            <line x1="7.2" y1="16.8" x2="16.8" y2="7.2"/>
+                        </svg>
+                    </button>
+
+                    <!-- Rectangle / Order Block -->
+                    <button class="tv-tool-btn" data-tool="rectangle" id="toolBtnRectangle" title="Rectangle / Order Block">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="5" width="16" height="14" rx="1.5" />
+                            <circle cx="4" cy="5" r="1.5" fill="currentColor"/>
+                            <circle cx="20" cy="5" r="1.5" fill="currentColor"/>
+                            <circle cx="4" cy="19" r="1.5" fill="currentColor"/>
+                            <circle cx="20" cy="19" r="1.5" fill="currentColor"/>
+                        </svg>
+                    </button>
+
+                    <!-- Price Range / Ruler -->
+                    <button class="tv-tool-btn" data-tool="pricerange" id="toolBtnPriceRange" title="Price Range / Ruler (% & Price)">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="3" x2="12" y2="21"/>
+                            <polyline points="8 7 12 3 16 7"/>
+                            <polyline points="8 17 12 21 16 17"/>
+                            <line x1="5" y1="3" x2="19" y2="3"/>
+                            <line x1="5" y1="21" x2="19" y2="21"/>
+                        </svg>
+                    </button>
+
+                    <!-- Path / Zigzag -->
+                    <button class="tv-tool-btn" data-tool="path" id="toolBtnPath" title="Path / Market Structure Zigzag">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 17 8 8 14 15 19 6"/>
+                            <circle cx="3" cy="17" r="1.5" fill="currentColor"/>
+                            <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+                            <circle cx="14" cy="15" r="1.5" fill="currentColor"/>
+                            <polygon points="21 5 17 5 18 9" fill="currentColor"/>
+                        </svg>
+                    </button>
+
+                    <div class="tv-tool-sep"></div>
+
+                    <!-- Short Position -->
+                    <button class="tv-tool-btn" data-tool="short_pos" id="toolBtnShortPos" title="Short Position (Risk/Reward)">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                            <rect x="4" y="4" width="16" height="7" fill="#ff4d6a" fill-opacity="0.3" stroke="#ff4d6a" stroke-width="1"/>
+                            <rect x="4" y="11" width="16" height="9" fill="#00f59b" fill-opacity="0.3" stroke="#00f59b" stroke-width="1"/>
+                            <line x1="4" y1="11" x2="20" y2="11" stroke="#fff" stroke-width="1.5"/>
+                            <text x="12" y="9.5" fill="#ff4d6a" font-size="5.5" font-family="sans-serif" font-weight="bold" text-anchor="middle">SL</text>
+                            <text x="12" y="17.5" fill="#00f59b" font-size="5.5" font-family="sans-serif" font-weight="bold" text-anchor="middle">TP</text>
+                        </svg>
+                    </button>
+
+                    <!-- Long Position -->
+                    <button class="tv-tool-btn" data-tool="long_pos" id="toolBtnLongPos" title="Long Position (Risk/Reward)">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                            <rect x="4" y="4" width="16" height="9" fill="#00f59b" fill-opacity="0.3" stroke="#00f59b" stroke-width="1"/>
+                            <rect x="4" y="13" width="16" height="7" fill="#ff4d6a" fill-opacity="0.3" stroke="#ff4d6a" stroke-width="1"/>
+                            <line x1="4" y1="13" x2="20" y2="13" stroke="#fff" stroke-width="1.5"/>
+                            <text x="12" y="10.5" fill="#00f59b" font-size="5.5" font-family="sans-serif" font-weight="bold" text-anchor="middle">TP</text>
+                            <text x="12" y="18.5" fill="#ff4d6a" font-size="5.5" font-family="sans-serif" font-weight="bold" text-anchor="middle">SL</text>
+                        </svg>
+                    </button>
+
+                    <!-- Trend Arrow -->
+                    <button class="tv-tool-btn" data-tool="arrow" id="toolBtnArrow" title="Trend Arrow">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="6" y1="18" x2="18" y2="6"/>
+                            <polyline points="9 6 18 6 18 15"/>
+                        </svg>
+                    </button>
+
+                    <!-- Date Range -->
+                    <button class="tv-tool-btn" data-tool="daterange" id="toolBtnDateRange" title="Date Range">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="4" x2="4" y2="20"/>
+                            <line x1="20" y1="4" x2="20" y2="20"/>
+                            <line x1="4" y1="12" x2="20" y2="12"/>
+                            <polyline points="8 9 5 12 8 15"/>
+                            <polyline points="16 9 19 12 16 15"/>
+                        </svg>
+                    </button>
+
+                    <div class="tv-tool-sep"></div>
+
+                    <!-- Undo -->
+                    <button class="tv-tool-btn" id="toolBtnUndo" title="Undo Last Drawing (Ctrl+Z)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7v6h6"/>
+                            <path d="M3 13C5.5 8 11.5 6 16.5 9.5 21.5 13 21.5 19 16.5 21"/>
+                        </svg>
+                    </button>
+
+                    <!-- Eraser (Click any drawing to delete) -->
+                    <button class="tv-tool-btn" data-tool="eraser" id="toolBtnEraser" title="Eraser: Click any drawing to delete">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
+                            <path d="M22 21H7"/>
+                            <path d="m5 11 9 9"/>
+                        </svg>
+                    </button>
+
+                    <!-- Delete / Clear All -->
+                    <button class="tv-tool-btn tv-tool-danger" id="toolBtnTrash" title="Clear All Drawings">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            <line x1="10" y1="11" x2="10" y2="17"/>
+                            <line x1="14" y1="11" x2="14" y2="17"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Real-Time Institutional Order Flow (CVD Delta & OI) HUD -->
+            <div class="orderflow-hud-strip" id="orderflowHudStrip"></div>
+
+            <!-- Current Coin's Active Order Blocks Bar -->
+            <div class="active-zones-strip" id="activeZonesStrip">
+                <!-- Zone pill cards will appear here -->
+            </div>
+
+            <!-- PRO POSITIONS & ACTIVE TRADES DOCK (TRADINGVIEW / BINANCE STYLE) -->
+            <div class="pro-positions-dock" id="proPositionsDock">
+                <div class="dock-header">
+                    <div class="dock-title-group">
+                        <span class="dock-title"><i class="fa-solid fa-fire text-buy"></i> ACTIVE POSITIONS & LIVE TRADES</span>
+                        <span class="badge badge-success" id="proDockCountBadge">0 Active</span>
+                        <span class="dock-pnl-live" id="proDockTotalPnl">Floating PnL: +$0.00 (+0.00%)</span>
+                    </div>
+                    <div class="dock-actions">
+                        <div class="dock-goal-pill" id="dockGoalPill">
+                            <i class="fa-solid fa-bolt text-buy"></i> <span>Compounding: $50 ➔ $1,000</span>
+                        </div>
+                        <button class="btn btn-xs btn-secondary" id="btnToggleDockExpand" title="Expand / Collapse Positions Panel">
+                            <i class="fa-solid fa-up-right-and-down-left-from-center" id="dockExpandIcon"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="dock-content-table" id="proDockTableContainer">
+                    <!-- Dynamic live positions rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: AI ANALYST, MULTI-AGENT HUB & LIVE ALERTS DRAWER -->
+        <aside class="panel side-tabs-panel">
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="futures-pos-tab" id="tabBtnFuturesPos">
+                    <i class="fa-solid fa-layer-group text-buy"></i> Positions <span class="badge badge-success" id="futuresPosBadge">0</span>
+                </button>
+                <button class="tab-btn" data-tab="bitget-trade-tab" id="tabBtnBitgetTrade">
+                    <i class="fa-solid fa-bolt text-buy"></i> Trade (5x)
+                </button>
+                <button class="tab-btn" data-tab="agents-hub-tab">
+                    <i class="fa-solid fa-users-gear" style="color: #38BDF8;"></i> Agents
+                </button>
+                <button class="tab-btn" data-tab="ai-tab">
+                    <i class="fa-solid fa-robot" style="color: #A855F7;"></i> Mike AI
+                </button>
+                <button class="tab-btn" data-tab="paper-tab" id="tabBtn50Challenge" style="color:#00f59b; font-weight:700;">
+                    <i class="fa-solid fa-trophy text-buy"></i> 50 USDT (2 Panels)
+                </button>
+                <button class="tab-btn" data-tab="signals-tab">
+                    <i class="fa-solid fa-bolt"></i> Signals
+                </button>
+                <button class="tab-btn" data-tab="health-tab">
+                    <i class="fa-solid fa-heart-pulse"></i> Health
+                </button>
+                <button class="tab-btn" data-tab="mike-brain-tab" id="tabBtnMikeBrain" style="color:#f59e0b; font-weight:700;">
+                    <i class="fa-solid fa-brain" style="color:#f59e0b;"></i> Mike AI Brain
+                </button>
+            </div>
+
+            <!-- TAB 0: BINANCE/BITGET FUTURES POSITIONS & ORDERS DASHBOARD (SCREENSHOT UI) -->
+            <div class="tab-content active" id="futures-pos-tab">
+                <!-- Top Futures Navigation & Controls Strip -->
+                <div class="futures-subnav-strip">
+                    <div class="futures-subtabs">
+                        <button class="subtab-item active" data-fsub="pos">
+                            Positions (<span id="fposCount">0</span>)
+                        </button>
+                        <button class="subtab-item" data-fsub="orders">
+                            Open Orders (<span id="fordersCount">0</span>)
+                        </button>
+                        <button class="subtab-item" data-fsub="goal">
+                            $50 ➔ $1K
+                        </button>
+                    </div>
+                    <div class="futures-subnav-actions">
+                        <label class="custom-check-lbl" title="Show only selected chart coin">
+                            <input type="checkbox" id="chkHideOtherPairs">
+                            <span>Hide Other</span>
+                        </label>
+                        <button class="btn btn-xs btn-outline-danger" id="btnPosCloseAll" title="Market Close All Open Positions">
+                            Close All
+                        </button>
+                        <button class="btn btn-icon btn-xs" id="btnRefreshPos" title="Refresh Live Data">
+                            <i class="fa-solid fa-arrow-rotate-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SUBTAB VIEW 1: POSITIONS LIST (EXACT SCREENSHOT UI) -->
+                <div class="futures-view-section active" id="fviewPositions">
+                    <div class="binance-positions-scroll" id="binancePositionsContainer">
+                        <!-- Dynamic Binance-Style Position Cards -->
+                        <div class="pos-loading-state">
+                            <i class="fa-solid fa-circle-notch fa-spin text-buy"></i>
+                            <span>Fetching live positions & mark prices...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBTAB VIEW 2: OPEN ORDERS (2ND OB PENDING LIMITS) -->
+                <div class="futures-view-section" id="fviewOrders" style="display:none;">
+                    <div class="orders-filter-bar">
+                        <span class="text-muted"><i class="fa-solid fa-filter"></i> 2nd OB First-Tap Pending Limits</span>
+                        <span class="badge" id="ordersBadgeTotal">0 Orders</span>
+                    </div>
+                    <div class="binance-orders-scroll" id="binanceOrdersContainer">
+                        <!-- Dynamic Limit Order Cards -->
+                    </div>
+                </div>
+
+                <!-- SUBTAB VIEW 3: $50 COMPOUNDING ROADMAP VIEW -->
+                <div class="futures-view-section" id="fviewGoal" style="display:none;">
+                    <div class="goal-compounding-embedded" id="goalCompoundingEmbedded">
+                        <!-- Cloned/Embedded $50 Roadmap HUD -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 0.5: BITGET PRO DEPTH ORDERBOOK & 5X ISOLATED ORDER FORM -->
+            <div class="tab-content" id="bitget-trade-tab">
+                <div class="bitget-trade-container">
+                    <!-- Top Pair Bar -->
+                    <div class="bg-trade-header">
+                        <div class="bg-trade-sym-info">
+                            <span class="bg-sym-title" id="bgTradeSymbol">BTCUSDT</span>
+                            <span class="bg-badge-iso">Isolated 5x</span>
+                        </div>
+                        <span class="bg-trade-price" id="bgTradeLivePrice">$0.00</span>
+                    </div>
+
+                    <!-- Mini Orderbook (Depth Bids/Asks) -->
+                    <div class="bg-orderbook-box">
+                        <div class="ob-header">
+                            <span>Price (USDT)</span>
+                            <span>Size</span>
+                            <span>Total</span>
+                        </div>
+                        <div class="ob-asks" id="bgObAsks">
+                            <!-- Dynamic Ask Rows (Red) -->
+                        </div>
+                        <div class="ob-spread-divider">
+                            <span class="ob-spread-price text-buy" id="bgObMidPrice">$0.00</span>
+                            <span class="ob-spread-txt">Spread: 0.01</span>
+                        </div>
+                        <div class="ob-bids" id="bgObBids">
+                            <!-- Dynamic Bid Rows (Green) -->
+                        </div>
+                    </div>
+
+                    <!-- Bitget 5x Order Entry Form -->
+                    <div class="bg-order-form">
+                        <div class="bg-form-mode-strip">
+                            <button class="bg-mode-btn active" data-ordertype="limit">Limit</button>
+                            <button class="bg-mode-btn" data-ordertype="market">Market</button>
+                            <button class="bg-mode-btn text-buy" data-ordertype="2nd_ob">2nd OB Auto</button>
+                        </div>
+
+                        <!-- Margin Mode & Leverage Pill -->
+                        <div class="bg-form-row">
+                            <span class="bg-form-lbl">Leverage Mode</span>
+                            <div class="bg-lev-badge-interactive" id="btnOpenLevModalOrder">
+                                <span>Isolated 5x</span> <i class="fa-solid fa-pen-to-square"></i>
+                            </div>
+                        </div>
+
+                        <!-- Price Input -->
+                        <div class="bg-input-group" id="bgPriceInputGroup">
+                            <span class="bg-input-lbl">Order Price</span>
+                            <input type="number" step="any" id="bgOrderPriceInput" placeholder="Price">
+                            <span class="bg-input-unit">USDT</span>
+                        </div>
+
+                        <!-- Quantity / Margin Amount -->
+                        <div class="bg-input-group">
+                            <span class="bg-input-lbl">Margin (USDT)</span>
+                            <input type="number" step="any" id="bgOrderMarginInput" value="50.00" placeholder="Margin ($50)">
+                            <span class="bg-input-unit">USDT</span>
+                        </div>
+
+                        <!-- Position Size Multiplier -->
+                        <div class="bg-slider-percentages">
+                            <button class="bg-pct-chip" data-pct="25">25%</button>
+                            <button class="bg-pct-chip" data-pct="50">50%</button>
+                            <button class="bg-pct-chip" data-pct="75">75%</button>
+                            <button class="bg-pct-chip active" data-pct="100">100% ($50)</button>
+                        </div>
+
+                        <!-- TP / SL Presets Row -->
+                        <div class="bg-tpsl-preset-row">
+                            <label class="custom-check-lbl">
+                                <input type="checkbox" id="bgChkAutoTpSl" checked>
+                                <span>Auto TP (+10% ROI) & SL (-20% ROI)</span>
+                            </label>
+                        </div>
+
+                        <div class="bg-est-summary">
+                            <div class="bg-est-item"><span>Total Position Value:</span> <b id="bgEstPosVal">$250.00 USDT</b></div>
+                            <div class="bg-est-item"><span>Est. TP Target (+2% Move):</span> <b class="text-buy" id="bgEstTpTarget">+$5.00 USDT</b></div>
+                            <div class="bg-est-item"><span>Est. Hard Stop (-4% Move):</span> <b class="text-sell" id="bgEstSlTarget">-$10.00 USDT</b></div>
+                            <div class="bg-est-item"><span>Available Balance:</span> <b id="bgAvailBal">$77.59 USDT</b></div>
+                        </div>
+
+                        <!-- Buy Long & Sell Short Buttons -->
+                        <div class="bg-submit-btns">
+                            <button class="btn btn-bg-buy" id="btnBgBuyLong">
+                                <i class="fa-solid fa-arrow-trend-up"></i> Buy / Long (5x)
+                            </button>
+                            <button class="btn btn-bg-sell" id="btnBgSellShort">
+                                <i class="fa-solid fa-arrow-trend-down"></i> Sell / Short (5x)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 1: MIKE'S MULTI-AGENT COMMAND HUB -->
+            <div class="tab-content" id="agents-hub-tab">
+                <div class="agent-hub-header">
+                    <div class="hub-title-row">
+                        <div class="hub-badge"><i class="fa-solid fa-user-tie text-buy"></i> MIKE'S AGENT NETWORK</div>
+                        <button class="btn btn-primary btn-sm" id="btnRunAgentAnalysis" title="Dispatch All Sub-Agents">
+                            <i class="fa-solid fa-play"></i> Run All Agents
+                        </button>
+                    </div>
+                    <p class="hub-subtitle">Mike manages 4 sub-agents: SL Detective, Trade Auditor, Chart Specialist & Strategy Advisor.</p>
+                </div>
+
+                <!-- 🎯 2 DEDICATED $50 USDT CHALLENGE PANELS -->
+                <div class="challenge-50-section" style="margin-bottom: 12px;">
+                    <div class="section-title-row">
+                        <span class="section-title-tag"><i class="fa-solid fa-trophy text-buy"></i> 50 USDT CHALLENGE PANELS</span>
+                        <span class="badge badge-success">5X ISOLATED</span>
+                    </div>
+                    <div class="challenge-50-grid">
+                        <!-- Panel 1: Compounding Ladder -->
+                        <div class="challenge-pro-card" style="border-top: 3px solid #00F59B;">
+                            <div class="ap-header">
+                                <div class="ap-avatar" style="background: rgba(0, 245, 155, 0.15); color: #00F59B;">
+                                    <i class="fa-solid fa-bullseye"></i>
+                                </div>
+                                <div class="ap-title">
+                                    <h4>$50 Compounding Ladder</h4>
+                                    <span>$50 ➔ $1,000 Roadmap</span>
+                                </div>
+                                <span class="ap-status-badge status-active">STAGE 1: $77.59</span>
+                            </div>
+                            <div class="challenge-stage-ladder">
+                                <div class="stage-step-item active">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-solid fa-circle-check text-buy"></i> Stage 1: $50 ➔ $100</span>
+                                        <span class="step-val text-buy">$77.59 (77.6%)</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 77.6%;"></div>
+                                    </div>
+                                </div>
+                                <div class="stage-step-item">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-regular fa-circle text-muted"></i> Stage 2: $100 ➔ $250</span>
+                                        <span class="step-val text-muted">2.5x</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ap-meta">
+                                <span>Profit/Win: <b class="text-buy">+$5.00 (+10%)</b></span>
+                                <span>Trades: <b style="color:#00f59b;">~3 Hits Left</b></span>
+                            </div>
+                        </div>
+
+                        <!-- Panel 2: Live 5x Position, PnL & Sniper Radar -->
+                        <div class="challenge-pro-card" style="border-top: 3px solid #38BDF8;">
+                            <div class="ap-header">
+                                <div class="ap-avatar" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8;">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </div>
+                                <div class="ap-title">
+                                    <h4>$50 Live Position & PnL</h4>
+                                    <span>Bitget 5x Real Execution</span>
+                                </div>
+                                <span class="ap-status-badge status-active" id="c50SideBadge" style="background:rgba(0,245,155,0.15); color:#00F59B; border-color:rgba(0,245,155,0.3);">5X ISOLATED</span>
+                            </div>
+
+                            <!-- Live Active Position PnL Box -->
+                            <div class="c50-pos-box" id="c50PosBox">
+                                <div class="c50-pos-header">
+                                    <span class="c50-pos-sym" id="c50PosSymbol">Scanning 50 Pairs</span>
+                                    <span class="c50-pnl-chip text-buy" id="c50LivePnlVal">PnL: +$0.00 (+0.00%)</span>
+                                </div>
+                                <div class="sniper-stat-grid" style="margin-top: 4px;">
+                                    <div class="sniper-stat"><span class="s-lbl">Margin</span><span class="s-val text-buy" id="c50PosMargin">$50.00 USDT</span></div>
+                                    <div class="sniper-stat"><span class="s-lbl">Mark Price</span><span class="s-val text-buy" id="c50PosMark">--</span></div>
+                                    <div class="sniper-stat"><span class="s-lbl">Target (+10%)</span><span class="s-val text-buy">+$5.00 USDT</span></div>
+                                    <div class="sniper-stat"><span class="s-lbl">Hard SL (-20%)</span><span class="s-val text-sell">-$10.00 USDT</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Active Pending Orders Strip -->
+                            <div class="c50-orders-section" id="c50OrdersSection">
+                                <div class="radar-p-header">
+                                    <span><i class="fa-solid fa-clock text-buy"></i> Active 2nd OB Limit Orders:</span>
+                                    <span class="badge" id="c50OrdersCountBadge">0 Pending</span>
+                                </div>
+                                <div class="radar-pairs-list" id="c50OrdersList">
+                                    <div class="radar-pair-row" style="opacity: 0.7;">
+                                        <span class="rp-sym">#BTCUSDT</span>
+                                        <span class="rp-type buy">BUY LIMIT ($64,250)</span>
+                                        <span class="rp-dist text-buy">~1.2% away</span>
+                                        <span class="rp-score">Armed</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ap-meta" style="margin-top: 4px;">
+                                <span>Risk: <b>-4% Max Stop</b></span>
+                                <span>2nd OB: <b style="color:#00F59B;">Armed 90+</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hub-title-row" style="margin-bottom: 6px;">
+                    <div class="hub-badge" style="color: #38BDF8;"><i class="fa-solid fa-users-gear"></i> ACTIVE SPECIALIZED AGENTS</div>
+                </div>
+
+                <!-- 4 AGENT LIVE STATUS CARDS -->
+                <div class="agents-grid" id="agentsGridContainer">
+                    <!-- Dynamic agent status cards -->
+                </div>
+
+                <!-- ACTIONABLE DIAGNOSTICS & AUDIT ACCORDION -->
+                <div class="agent-reports-wrapper">
+                    <div class="agent-reports-tabs">
+                        <button class="rep-tab-btn active" data-report="sl"><i class="fa-solid fa-shield-halved text-sell"></i> SL Forensic</button>
+                        <button class="rep-tab-btn" data-report="trades"><i class="fa-solid fa-chart-pie" style="color:#00c3ff;"></i> Patterns</button>
+                        <button class="rep-tab-btn" data-report="advice"><i class="fa-solid fa-brain" style="color:#b388ff;"></i> Best Setup</button>
+                    </div>
+
+                    <div class="agent-report-display" id="agentReportDisplay">
+                        <div class="agent-report-content" id="reportContent">
+                            <p class="text-muted" style="text-align:center; padding: 20px 10px;">
+                                Click <b>"Run All Agents"</b> to audit SL hit causes, trade patterns, and get Mike's recommended strategy optimizations.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USER-APPROVAL TASK RUNNER CONSOLE -->
+                <div class="agent-task-console">
+                    <div class="task-console-header">
+                        <span><i class="fa-solid fa-terminal text-buy"></i> Task Mike & Sub-Agents</span>
+                    </div>
+                    <div class="task-input-row">
+                        <input type="text" id="taskAgentInput" placeholder="Assign task to Mike (e.g. Audit SOLUSDT SL hit)...">
+                        <button class="btn btn-primary" id="btnSubmitAgentTask"><i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 1: MIKE - SMC V17 AI AGENT -->
+            <div class="tab-content" id="ai-tab">
+                <div class="ai-intro-card">
+                    <div class="ai-badge"><i class="fa-solid fa-robot"></i> MIKE • SMC V17 AI AGENT (Flash Low)</div>
+                    <p>Mai <b>Mike</b> hoon — aapka 4H Smart Money Concepts (SMC V17) AI Agent, powered by Flash Low engine.</p>
+                </div>
+
+                <div class="ai-quick-prompts">
+                    <button class="prompt-chip" data-query="Mike, is coin ka SMC V17 setup detail me explain karo. Entry, risk aur grade batao.">
+                        ⚡ Setup Breakdown
+                    </button>
+                    <button class="prompt-chip" data-query="Mike, displacement candle ki body strength aur 6-bar origin candle evaluate karo.">
+                        📐 Origin & Displacement
+                    </button>
+                    <button class="prompt-chip" data-query="Mike, soft tags check karo: Sweep, FVG, BOS. Trap risk kitna hai?">
+                        🏷 Soft Tags Check
+                    </button>
+                </div>
+
+                <div class="ai-response-box" id="aiResponseBox">
+                    <div class="ai-placeholder">
+                        <i class="fa-solid fa-robot fa-2x" style="color: var(--color-buy); opacity: 0.6;"></i>
+                        <p>Kisi bhi coin ko select karke <b>"Ask Mike AI"</b> dabayein ya Mike se koi bhi sawaal poochhein.</p>
+                    </div>
+                </div>
+
+                <div class="ai-input-form">
+                    <input type="text" id="aiCustomQuery" placeholder="Mike se poochhein (e.g. Kya isme sweep confirm hua?)...">
+                    <button id="btnSendAiQuery"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+
+            <!-- TAB 2: LIVE SIGNALS & RECENT ACTIVITY -->
+            <div class="tab-content" id="signals-tab">
+                <div class="signals-list-header">
+                    <span>Recent First-Tap & Zone Signals</span>
+                    <button class="btn-text" id="btnRefreshSignals"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                </div>
+                <div class="signals-scroll-list" id="signalsListContainer">
+                    <!-- Dynamic signals list -->
+                </div>
+            </div>
+
+            <!-- TAB 3: TELEGRAM & SYSTEM HEALTH -->
+            <div class="tab-content" id="health-tab">
+                <div class="telegram-preview-box">
+                    <div class="tg-header">
+                        <i class="fa-brands fa-telegram"></i> Telegram Live Message Preview
+                    </div>
+                    <pre class="tg-code-block" id="tgPreviewText">Loading Telegram Live Status...</pre>
+                    <button class="btn btn-secondary w-full" id="btnSendTgNow">
+                        <i class="fa-solid fa-paper-plane"></i> Post / Update Pinned Telegram Status
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 3.5: MIKE AI SELF-IMPROVING BRAIN -->
+            <div class="tab-content" id="mike-brain-tab">
+                <div class="mike-brain-container" style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
+                    
+                    <!-- Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 18px;">
+                                <i class="fa-solid fa-brain"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary);">Mike AI — Self-Improving Cognitive Engine</h3>
+                                <span style="font-size: 11px; color: var(--text-muted);">Autonomous Post-Trade Reflection & Dynamic Factor Tuning</span>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: rgba(0, 245, 155, 0.15); color: #00F59B; border: 1px solid rgba(0, 245, 155, 0.3); font-weight: 700;">
+                            🟢 ACTIVE & LEARNING
+                        </span>
+                    </div>
+
+                    <!-- KPI Stats Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px;">
+                            <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Lifetime Win Rate</span>
+                            <div style="font-size: 18px; font-weight: 800; color: #00F59B;" id="mbWinRate">69.3%</div>
+                            <span style="font-size: 10px; color: var(--text-secondary);" id="mbWinCount">104W / 44BE / 2L</span>
+                        </div>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px;">
+                            <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Capital Safety Rate</span>
+                            <div style="font-size: 18px; font-weight: 800; color: #38BDF8;" id="mbSafetyRate">98.7%</div>
+                            <span style="font-size: 10px; color: var(--text-secondary);">Win + $0 Breakevens</span>
+                        </div>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px;">
+                            <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Trades Reflected</span>
+                            <div style="font-size: 18px; font-weight: 800; color: #f59e0b;" id="mbTotalTrades">150</div>
+                            <span style="font-size: 10px; color: var(--text-secondary);">Audited Forensically</span>
+                        </div>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px;">
+                            <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Quarantined Coins</span>
+                            <div style="font-size: 18px; font-weight: 800; color: #00F59B;" id="mbQuarantined">0</div>
+                            <span style="font-size: 10px; color: var(--text-secondary);">Active Guardrail Clean</span>
+                        </div>
+                    </div>
+
+                    <!-- Split Section: Dynamic Weights & Coin Radar -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        
+                        <!-- Left: Dynamic Factor Weights -->
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-sliders" style="color: #f59e0b;"></i> Adaptive Factor Weights</span>
+                                <span style="font-size: 10px; color: #00F59B;">Auto-Tuned</span>
+                            </div>
+                            <div id="mbWeightsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+                                <!-- Dynamic weights rendered via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Elite Coins Radar -->
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-shield-halved" style="color: #38BDF8;"></i> Coin Performance Radar</span>
+                                <span style="font-size: 10px; color: var(--text-muted);">Win Rates</span>
+                            </div>
+                            <div id="mbCoinRadarList" style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+                                <!-- Coin radar rendered via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lessons Learned & Algorithmic Reflections Stream -->
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-lightbulb" style="color: #f59e0b;"></i> Continuous Lessons Learned & Post-Mortem Stream</span>
+                            <span style="font-size: 10px; color: var(--text-muted);">Persistent Memory</span>
+                        </div>
+                        <div id="mbLessonsStream" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
+                            <!-- Lessons cards rendered via JS -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB 4: ACTIVE TRADES & REAL BITGET COMPOUNDING -->
+            <div class="tab-content" id="paper-tab">
+                <!-- BITGET REAL $50 COMPOUNDING ACTIVE CARD -->
+                <div class="bitget-live-card" id="bitgetLiveCard">
+                    <div class="bg-card-header">
+                        <div class="bg-badge-group">
+                            <span class="bg-live-pill"><i class="fa-solid fa-bolt text-buy fa-fade"></i> BITGET REAL 5X</span>
+                            <span class="bg-comp-tag">Challenge: $50 ➔ $1,000</span>
+                        </div>
+                        <span class="bg-status-badge" id="bgAutoStatusBadge">🟢 AUTO ACTIVE</span>
+                    </div>
+
+                    <div class="bg-card-body">
+                        <!-- Compounding Progress Bar -->
+                        <div class="bg-ladder-container">
+                            <div class="bg-ladder-header">
+                                <span class="bg-ladder-lbl">Compounding Roadmap ($50 ➔ $1,000)</span>
+                                <span class="bg-ladder-pct" id="bgLadderPct">Stage 1: $77.59 USDT (2.9%)</span>
+                            </div>
+                            <div class="bg-ladder-track">
+                                <div class="bg-ladder-fill" id="bgLadderFill" style="width: 2.9%;"></div>
+                            </div>
+                            <div class="bg-ladder-milestones">
+                                <span class="milestone active">$50 Start</span>
+                                <span class="milestone">$100</span>
+                                <span class="milestone">$250</span>
+                                <span class="milestone">$500</span>
+                                <span class="milestone" style="color:#00F59B;">$1,000 Goal</span>
+                            </div>
+                        </div>
+
+                        <!-- Active Position Details Box -->
+                        <div class="bg-active-pos-box" id="bgActivePosBox">
+                            <div class="bg-pos-header">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span class="bg-pos-icon" id="bgPosIcon">🪙</span>
+                                    <span class="bg-pos-sym" id="bgPosSymbol">Scanning 50 Pairs</span>
+                                    <span class="badge badge-success" id="bgPosSideBadge" style="display:none;">5x LONG</span>
+                                </div>
+                                <span class="pos-ai-badge" id="bgPosAiBadge"><i class="fa-solid fa-robot"></i> 90+ Score Required</span>
+                            </div>
+
+                            <div class="bg-stat-row">
+                                <div class="bg-stat-item">
+                                    <span class="bg-lbl">DEPLOYED MARGIN</span>
+                                    <span class="bg-val" id="bgMarginInPlay" style="color:#FFFFFF;">$50.00 USDT</span>
+                                </div>
+                                <div class="bg-stat-item">
+                                    <span class="bg-lbl">ENTRY LEVEL</span>
+                                    <span class="bg-val" id="bgPosEntryPrice">--</span>
+                                </div>
+                                <div class="bg-stat-item">
+                                    <span class="bg-lbl">LIVE MARK PRICE</span>
+                                    <span class="bg-val text-buy" id="bgPosMarkPrice">--</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-pnl-banner" id="bgPnlBanner">
+                                <div class="bg-pnl-left">
+                                    <span class="bg-pnl-lbl">REAL UNREALIZED PNL</span>
+                                    <span class="bg-pnl-num text-buy" id="bgFloatingPnlVal">+$0.00 (+0.00%)</span>
+                                </div>
+                                <div class="bg-pnl-right">
+                                    <span class="bg-pnl-lbl">TARGET PROFIT (+2%)</span>
+                                    <span class="bg-target-num" id="bgTargetVal">+$5.00 USDT (+10%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Next Closest 2nd OB Radar (When waiting for setup) -->
+                        <div class="bg-radar-box" id="bgRadarBox">
+                            <div class="bg-radar-header">
+                                <span><i class="fa-solid fa-crosshairs text-buy"></i> Next Closest 2nd OB Setup:</span>
+                                <span class="bg-radar-dist text-buy" id="bgRadarDist">~3.1% away</span>
+                            </div>
+                            <div class="bg-radar-info" id="bgRadarInfo">
+                                <b>#FLOWUSDT</b> • Planned 2nd OB Entry: <code>$0.03051</code> • Target Gain: <code>+$5.00 USDT</code>
+                            </div>
+                        </div>
+
+                        <div class="bg-info-footer">
+                            <span><i class="fa-solid fa-shield-halved text-buy"></i> 2nd OB Priority • AI Confluence 90+ • Emergency SL -4%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Summary Card -->
+                <div class="paper-summary-card">
+                    <div class="paper-summary-header">
+                        <div class="paper-balance-box">
+                            <span class="paper-lbl">PORTFOLIO BALANCE</span>
+                            <span class="paper-val" id="paperCurBalance">$100.00 USDT</span>
+                            <span class="paper-equity" id="paperEquityVal">Equity: $100.00</span>
+                        </div>
+                        <div class="paper-pnl-box">
+                            <span class="paper-lbl">LIVE RUNNING PnL</span>
+                            <span class="paper-floating-pnl" id="paperLiveFloatingPnl">+$0.00 (+0.00%)</span>
+                            <span class="paper-realized" id="paperRealizedPnl">Realized: $0.00</span>
+                        </div>
+                    </div>
+                    <div class="paper-metrics-row">
+                        <div class="paper-sub-metric">
+                            <span class="paper-sub-lbl">Net Return</span>
+                            <span class="paper-sub-val" id="paperNetReturn">0.00%</span>
+                        </div>
+                        <div class="paper-sub-metric">
+                            <span class="paper-sub-lbl">Win Rate</span>
+                            <span class="paper-sub-val text-buy" id="paperWinRate">0.0%</span>
+                        </div>
+                        <div class="paper-sub-metric">
+                            <span class="paper-sub-lbl">Record</span>
+                            <span class="paper-sub-val" id="paperRecord">0W - 0L</span>
+                        </div>
+                        <div class="paper-sub-metric">
+                            <span class="paper-sub-lbl">Open Positions</span>
+                            <span class="paper-sub-val text-buy" id="paperActiveCount">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Open Trades List Header -->
+                <div class="signals-list-header" style="margin-top: 14px;">
+                    <span><i class="fa-solid fa-fire text-buy"></i> Active Open Trades (<span id="paperOpenTradesCount">0</span>)</span>
+                    <button class="btn-text" id="btnRefreshPaper"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                </div>
+
+                <!-- Live Open Trades Container -->
+                <div class="open-trades-scroll-list" id="paperOpenTradesContainer">
+                    <!-- Dynamic live open trade cards inserted here -->
+                </div>
+
+                <!-- Closed Trades History Header -->
+                <div class="signals-list-header" style="margin-top: 16px;">
+                    <span><i class="fa-solid fa-clock-rotate-left"></i> Closed Trades History</span>
+                    <button class="btn-text text-sell" id="btnResetPaperAccount" title="Reset Paper Account to 100 USDT"><i class="fa-solid fa-trash-can"></i> Reset</button>
+                </div>
+                <div class="closed-trades-scroll-list" id="paperClosedTradesContainer">
+                    <!-- Dynamic closed trade rows inserted here -->
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-sliders"></i> System & API Settings</div>
+                <button class="btn-close" id="btnCloseSettings">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label><i class="fa-brands fa-telegram"></i> Telegram Bot Token</label>
+                    <input type="password" id="inputTgToken" placeholder="e.g. 123456789:ABCDefgh-xyz...">
+                    <small>BotFather se create kiya hua token enter karein.</small>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-comments"></i> Telegram Chat ID / Channel ID</label>
+                    <input type="text" id="inputTgChatId" placeholder="e.g. -100123456789 or user ID">
+                    <small>Jis chat ya group me alerts chahiye uski ID.</small>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-brain"></i> Google Gemini API Key (Optional)</label>
+                    <input type="password" id="inputGeminiKey" placeholder="e.g. AIzaSy...">
+                    <small>Google AI Studio ka Free API Key for smart conversational analysis.</small>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-robot"></i> Mike AI Engine Model</label>
+                    <select id="inputGeminiModel" style="width: 100%; background: #0A0D14; color: #FFFFFF; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px; font-family: var(--font-mono); font-size: 12px;">
+                        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Flash Low / Fast)</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (Low Data)</option>
+                        <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B (Lowest Latency)</option>
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    </select>
+                    <small>Mike is model ka use karega SMC setups analyze karne ke liye.</small>
+                </div>
+
+                <!-- BITGET AUTO-TRADING SETTINGS -->
+                <div style="background: rgba(0, 245, 155, 0.05); border: 1px solid rgba(0, 245, 155, 0.25); border-radius: 8px; padding: 12px; margin-top: 6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div style="font-weight:700; color:var(--color-buy); font-size:12px; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-bolt text-buy"></i> Bitget Futures Auto-Trading ($50 Compounding)
+                        </div>
+                        <label style="position:relative; display:inline-block; width:34px; height:20px;">
+                            <input type="checkbox" id="inputBitgetAutoTrade" style="opacity:0; width:0; height:0;">
+                            <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#374151; transition:.3s; border-radius:20px;" id="bitgetToggleSlider"></span>
+                        </label>
+                    </div>
+                    <div id="bitgetLiveBalBadge" style="font-size:11px; font-family:var(--font-mono); color:#38BDF8; margin-bottom:8px;">
+                        Checking Bitget Balance...
+                    </div>
+                    <div class="form-group" style="margin-bottom:8px;">
+                        <label style="font-size:11px;">Bitget API Key</label>
+                        <input type="text" id="inputBitgetKey" placeholder="bg_..." style="font-family:var(--font-mono); font-size:11px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:8px;">
+                        <label style="font-size:11px;">Bitget Secret Key</label>
+                        <input type="password" id="inputBitgetSecret" placeholder="••••••••" style="font-family:var(--font-mono); font-size:11px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:8px;">
+                        <label style="font-size:11px;">Bitget Passphrase</label>
+                        <input type="password" id="inputBitgetPassphrase" placeholder="Passphrase" style="font-family:var(--font-mono); font-size:11px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:6px;">
+                        <label style="font-size:11px; color:#00f59b; font-weight:600;">Min Mike AI Confluence Score</label>
+                        <select id="inputBitgetMinConf" style="font-family:var(--font-mono); font-size:11px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border); padding:6px 8px; border-radius:4px; width:100%;">
+                            <option value="90" selected>90+ (Grade A+ | Elite Sniper Setups Only - Highest Win Rate)</option>
+                            <option value="85">85+ (Grade A | High Quality Setups)</option>
+                            <option value="80">80+ (Grade A- | Standard SMC Confluence)</option>
+                        </select>
+                    </div>
+                    <small style="color:var(--text-muted); font-size:10px;">
+                        🔒 5x Leverage • Only 2nd OB • AI Confluence 90+ • +2% Real Move (+10% Profit) • Emergency SL -4%.
+                    </small>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn btn-secondary" id="btnTestTgAlert">
+                        <i class="fa-solid fa-vial"></i> Test Telegram
+                    </button>
+                    <button class="btn btn-primary" id="btnSaveSettings">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CALLOUT NOTE MODAL -->
+    <div class="modal-overlay" id="calloutModal">
+        <div class="modal-card" style="max-width: 420px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-comment-dots"></i> Add Chart Callout Note</div>
+                <button class="modal-close" id="calloutModalClose">&times;</button>
+            </div>
+            <div class="modal-body" style="gap: 12px;">
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">QUICK SMC / ICT TAGS:</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="calloutQuickTags">
+                    <button type="button" class="pill-btn callout-tag" data-tag="4H Origin OB">4H Origin OB</button>
+                    <button type="button" class="pill-btn callout-tag" data-tag="Liquidity Sweep">Liquidity Sweep</button>
+                    <button type="button" class="pill-btn callout-tag" data-tag="ChOCH Reversal">ChOCH Reversal</button>
+                    <button type="button" class="pill-btn callout-tag" data-tag="BOS Continuation">BOS Continuation</button>
+                    <button type="button" class="pill-btn callout-tag" data-tag="Fair Value Gap (FVG)">FVG</button>
+                    <button type="button" class="pill-btn callout-tag" data-tag="Equal Highs (EQH)">EQH Trap</button>
+                    <button type="button" class="pill-btn callout-tag" data-tag="Equal Lows (EQL)">EQL Trap</button>
+                    <button type="button" class="pill-btn callout-tag" data-tag="OTE 0.62 Discount">OTE Discount</button>
+                </div>
+                <div class="form-group" style="margin-top: 6px;">
+                    <label>Callout Text Note</label>
+                    <input type="text" id="calloutTextInput" placeholder="e.g. 4H Origin OB Entry" style="font-family: 'JetBrains Mono', monospace;">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary" id="calloutCancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="calloutSaveBtn"><i class="fa-solid fa-check"></i> Place Callout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRADINGVIEW PINE SCRIPT MODAL -->
+    <div class="modal-overlay" id="pineScriptModal">
+        <div class="modal-card" style="max-width: 680px; width: 90%;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-bolt text-buy"></i> ⚡ Godtier BPR Dual System [Pure Buy] (v5)</div>
+                <button class="btn-close" id="btnClosePineModal">&times;</button>
+            </div>
+            <div class="modal-body" style="gap: 12px;">
+                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                    New Godtier BPR indicator — Balanced Price Range (BPR) &amp; Inversion FVG zones 1H &amp; 4H par draw karta hai. Pure BUY only. Fee-Shield Breakeven, TP1/TP2 compounding targets aur real-time HUD included. <span style="color:#00E676;font-weight:700;">80%+ Win Rate | 92% Capital Safety</span>
+                </p>
+                <div style="position: relative;">
+                    <textarea id="pineCodeArea" readonly style="width: 100%; height: 260px; background: #07090E; color: #38BDF8; font-family: var(--font-mono); font-size: 11px; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; resize: none;"></textarea>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                    <button class="btn btn-secondary" id="btnOpenTvWeb">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open TradingView Chart
+                    </button>
+                    <button class="btn btn-primary" id="btnCopyPineCode">
+                        <i class="fa-solid fa-copy"></i> Copy Script (1-Click)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TP/SL MANAGEMENT MODAL (BINANCE/BITGET STYLE) -->
+    <div class="modal-overlay" id="tpslModal" style="display:none;">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-bullseye text-buy"></i> TP/SL Target Settings</div>
+                <button class="modal-close" id="tpslModalClose">&times;</button>
+            </div>
+            <div class="modal-body" style="gap: 14px;">
+                <div class="tpsl-pos-summary" id="tpslPosSummary">
+                    <span class="symbol-badge" id="tpslModalSymbol">ATOMUSDT</span>
+                    <span class="side-badge badge-long" id="tpslModalSide">LONG</span>
+                    <span class="text-muted" id="tpslModalEntry">Entry: $1.793</span>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; justify-content:space-between;">
+                        <span>Take Profit (TP) Price</span>
+                        <span class="text-buy" id="tpslEstProfit">+10.0% ROI (+$5.00)</span>
+                    </label>
+                    <div class="input-with-action">
+                        <input type="number" step="any" id="tpslInputTp" placeholder="TP Price">
+                        <button class="btn-input-tag" id="btnSetDefaultTp">+2% Real</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; justify-content:space-between;">
+                        <span>Stop Loss (SL) Price</span>
+                        <span class="text-sell" id="tpslEstLoss">-20.0% ROI (-$10.00)</span>
+                    </label>
+                    <div class="input-with-action">
+                        <input type="number" step="any" id="tpslInputSl" placeholder="SL Price">
+                        <button class="btn-input-tag" id="btnSetDefaultSl">-4% Hard</button>
+                    </div>
+                </div>
+
+                <div class="tpsl-rules-hint">
+                    <i class="fa-solid fa-circle-info text-buy"></i>
+                    <span>SMC V17 Rule: +2.0% Real Market move triggers +10% target on 5x leverage. SL protected by 2-candle close rule.</span>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary" id="tpslCancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="tpslSaveBtn"><i class="fa-solid fa-check"></i> Confirm TP/SL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEVERAGE MODAL -->
+    <div class="modal-overlay" id="leverageModal" style="display:none;">
+        <div class="modal-card" style="max-width: 400px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-sliders text-buy"></i> Adjust Leverage</div>
+                <button class="modal-close" id="leverageModalClose">&times;</button>
+            </div>
+            <div class="modal-body" style="gap: 14px;">
+                <div class="lev-info-badge">
+                    <span>Current Margin Mode: <b>Isolated 5x</b></span>
+                </div>
+                <div class="lev-slider-box">
+                    <div class="lev-display-val" id="levDisplayVal">5x</div>
+                    <div class="lev-presets">
+                        <button class="pill-btn lev-preset" data-lev="1">1x</button>
+                        <button class="pill-btn lev-preset" data-lev="2">2x</button>
+                        <button class="pill-btn lev-preset active" data-lev="5">5x (Optimal)</button>
+                        <button class="pill-btn lev-preset" data-lev="10">10x</button>
+                    </div>
+                </div>
+                <p class="text-muted" style="font-size: 11px;">
+                    SMC V17 compounding model is mathematically calibrated for <b>5x Isolated Leverage</b> to ensure safe liquidation clearance while yielding +10% profit per winning trade.
+                </p>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary" id="levCancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="levSaveBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🤖 AI MULTI-AGENT OPERATIONS COMMAND CENTER MODAL -->
+    <div class="modal-overlay" id="agentCommandCenterModal" style="display:none;">
+        <div class="modal-card agent-hud-modal" style="max-width: 960px; width: 95%;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-users-gear text-buy"></i> AI Multi-Agent Intelligence Command Center
+                </div>
+                <div class="header-right-tools" style="display: flex; align-items: center; gap: 10px;">
+                    <button class="btn btn-xs btn-primary" id="btnTriggerIntelligenceCycle">
+                        <i class="fa-solid fa-satellite-dish"></i> Run 50-Coin Intelligence Cycle
+                    </button>
+                    <button class="modal-close" id="agentCommandCenterClose">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body agent-hud-body" style="gap: 16px;">
+                <!-- 🎯 DUAL $50 USDT COMPOUNDING CHALLENGE SPECIAL MONITOR PANELS (BITGET 4H + BINANCE 1H) -->
+                <div class="challenge-50-section">
+                    <div class="section-title-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="section-title-tag"><i class="fa-solid fa-trophy text-buy"></i> DUAL $50 ➔ $1,000 COMPOUNDING COMMAND HUB</span>
+                            <span class="badge badge-success">5X ISOLATED DUAL-ENGINES</span>
+                        </div>
+                        <div class="dual-challenge-toggle" style="display:flex; gap:6px;">
+                            <button class="btn btn-xs btn-primary active" id="btnTabBitget4h" style="padding:4px 10px; font-weight:700;">
+                                <i class="fa-solid fa-shield-halved"></i> Bitget 4H Swing ($77.59)
+                            </button>
+                            <button class="btn btn-xs btn-secondary" id="btnTabBinance1h" style="padding:4px 10px; font-weight:700; border-color:#F59E0B; color:#F59E0B;">
+                                <i class="fa-solid fa-bolt"></i> Binance 1H Scalp ($50.00)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- VIEW A: BITGET 4H SWING CHALLENGE -->
+                    <div class="challenge-50-grid" id="challengeViewBitget4H">
+                        <!-- PANEL 1: $50 Compounding Roadmap & Stage Progress -->
+                        <div class="challenge-pro-card" style="border-top: 3px solid #00F59B;">
+                            <div class="ap-header">
+                                <div class="ap-avatar" style="background: rgba(0, 245, 155, 0.15); color: #00F59B;">
+                                    <i class="fa-solid fa-bullseye"></i>
+                                </div>
+                                <div class="ap-title">
+                                    <h4>Bitget 4H Compounding Ladder</h4>
+                                    <span>Stage 1 of 5 • $50 ➔ $1,000 Swing Goal</span>
+                                </div>
+                                <span class="ap-status-badge status-active" id="modalStageBadge">STAGE 1: $77.59 / $100</span>
+                            </div>
+                            
+                            <!-- Ladder Stages Matrix -->
+                            <div class="challenge-stage-ladder">
+                                <div class="stage-step-item active">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-solid fa-circle-check text-buy"></i> Stage 1: $50 ➔ $100</span>
+                                        <span class="step-val text-buy" id="modalStage1Val">$77.59 USDT (77.6%)</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" id="modalStage1Fill" style="width: 77.6%;"></div>
+                                    </div>
+                                </div>
+                                <div class="stage-step-item">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-regular fa-circle text-muted"></i> Stage 2: $100 ➔ $250</span>
+                                        <span class="step-val text-muted">Target: 2.5x Growth</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="stage-step-item">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-regular fa-circle text-muted"></i> Stage 3: $250 ➔ $500</span>
+                                        <span class="step-val text-muted">Target: 2.0x Growth</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="stage-step-item">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-regular fa-circle text-muted"></i> Stage 4: $500 ➔ $750</span>
+                                        <span class="step-val text-muted">Target: 1.5x Growth</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="stage-step-item">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-regular fa-circle text-muted"></i> Stage 5: $750 ➔ $1,000</span>
+                                        <span class="step-val text-muted" style="color:#00F59B;">Final Target ($1K)</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ap-meta" style="margin-top: 6px;">
+                                <span>Target / Win: <b class="text-buy">+$5.00 (+10% ROI)</b></span>
+                                <span>Timeframe: <b style="color:#38BDF8;">4H Macro Swings</b></span>
+                            </div>
+                        </div>
+
+                    <!-- VIEW B: BINANCE 1H FAST SCALP CHALLENGE (Embedded Parallel) -->
+                    <div class="challenge-50-grid" id="challengeViewBinance1H" style="display:none;">
+                        <!-- PANEL 1: Binance 1H Scalp Ladder -->
+                        <div class="challenge-pro-card" style="border-top: 3px solid #F59E0B;">
+                            <div class="ap-header">
+                                <div class="ap-avatar" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">
+                                    <i class="fa-solid fa-bolt"></i>
+                                </div>
+                                <div class="ap-title">
+                                    <h4>Binance 1H Fast Scalp Ladder</h4>
+                                    <span>Stage 1 of 5 • $50 ➔ $1,000 Scalp Goal</span>
+                                </div>
+                                <span class="ap-status-badge status-active" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border-color: rgba(245, 158, 11, 0.3);">STAGE 1: $50.00 / $100</span>
+                            </div>
+                            
+                            <!-- 1H Ladder Stages Matrix -->
+                            <div class="challenge-stage-ladder">
+                                <div class="stage-step-item active">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-solid fa-circle-check" style="color:#F59E0B;"></i> Stage 1: $50 ➔ $100</span>
+                                        <span class="step-val" style="color:#F59E0B;">$50.00 USDT (50.0%)</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 50.0%; background:#F59E0B;"></div>
+                                    </div>
+                                </div>
+                                <div class="stage-step-item">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-regular fa-circle text-muted"></i> Stage 2: $100 ➔ $250</span>
+                                        <span class="step-val text-muted">Target: 2.5x Growth</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="stage-step-item">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-regular fa-circle text-muted"></i> Stage 3: $250 ➔ $500</span>
+                                        <span class="step-val text-muted">Target: 2.0x Growth</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="stage-step-item">
+                                    <div class="step-lbl-row">
+                                        <span class="step-name"><i class="fa-regular fa-circle text-muted"></i> Stage 4: $500 ➔ $1,000</span>
+                                        <span class="step-val text-muted" style="color:#F59E0B;">Final Target ($1K)</span>
+                                    </div>
+                                    <div class="step-progress-track">
+                                        <div class="step-progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ap-meta" style="margin-top: 6px;">
+                                <span>Target / Win: <b style="color:#F59E0B;">+$3.75 (+7.5% ROI)</b></span>
+                                <span>Timeframe: <b style="color:#F59E0B;">1H Rapid Scalps (~2h)</b></span>
+                            </div>
+                        </div>
+
+                        <!-- PANEL 2: $50 Live Execution & 2nd OB Sniper Engine -->
+                        <div class="challenge-pro-card" style="border-top: 3px solid #38BDF8;">
+                            <div class="ap-header">
+                                <div class="ap-avatar" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8;">
+                                    <i class="fa-solid fa-crosshairs"></i>
+                                </div>
+                                <div class="ap-title">
+                                    <h4>$50 Live 5x Sniper & Radar</h4>
+                                    <span>Bitget 5x Isolated Auto-Execution Engine</span>
+                                </div>
+                                <span class="ap-status-badge status-active" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3);">ARMED (90+ SCORE)</span>
+                            </div>
+
+                            <!-- Execution & Live Position Details -->
+                            <div class="challenge-sniper-body">
+                                <div class="c50-pos-box">
+                                    <div class="c50-pos-header">
+                                        <span class="c50-pos-sym" id="modalPosSymbol">BTCUSDT (5x LONG)</span>
+                                        <span class="c50-pnl-chip text-buy" id="modalLivePnlVal">PnL: +$0.00 (+0.00%)</span>
+                                    </div>
+                                    <div class="sniper-stat-grid" style="margin-top: 4px;">
+                                        <div class="sniper-stat"><span class="s-lbl">Margin / Trade</span><span class="s-val text-buy">$50.00 USDT</span></div>
+                                        <div class="sniper-stat"><span class="s-lbl">Leverage</span><span class="s-val">5x Isolated</span></div>
+                                        <div class="sniper-stat"><span class="s-lbl">Target ROI (+10%)</span><span class="s-val text-buy">+$5.00 USDT</span></div>
+                                        <div class="sniper-stat"><span class="s-lbl">Max Risk Stop</span><span class="s-val text-sell">-20% (-4% Hard SL)</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="radar-live-preview" id="modalRadarPreview">
+                                    <div class="radar-p-header">
+                                        <span class="radar-p-title"><i class="fa-solid fa-clock text-buy"></i> Active 2nd OB Limit Orders & Radar:</span>
+                                        <span class="badge badge-success" id="modalArmedCount">3 Ready</span>
+                                    </div>
+                                    <div class="radar-pairs-list" id="modalRadarPairsList">
+                                        <!-- Dynamic Armed 2nd OB items rendered here -->
+                                        <div class="radar-pair-row">
+                                            <span class="rp-sym">#BTCUSDT</span>
+                                            <span class="rp-type buy">BUY OB ($64,250)</span>
+                                            <span class="rp-dist text-buy">~1.2% away</span>
+                                            <span class="rp-score">94 AI</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ap-meta" style="margin-top: 6px;">
+                                <span>Filter: <b>2nd OB Only</b></span>
+                                <span>Validation: <b style="color:#00F59B;">2-Close Rule</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5 Specialized Agent Visual Cards Grid -->
+                <div class="agent-command-grid">
+                    <!-- Agent 1: Mike -->
+                    <div class="agent-pro-card" style="border-top: 3px solid #00f59b;">
+                        <div class="ap-header">
+                            <div class="ap-avatar" style="background: rgba(0, 245, 155, 0.15); color: #00f59b;">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            <div class="ap-title">
+                                <h4>Mike (Manager)</h4>
+                                <span>Master Strategy Coordinator</span>
+                            </div>
+                            <span class="ap-status-badge status-active">ACTIVE SCAN</span>
+                        </div>
+                        <p class="ap-desc">Orchestrates setup grading, validates 2nd OB priority, and triggers Bitget 5x execution.</p>
+                        <div class="ap-meta">
+                            <span>Confluence: <b>≥90/100</b></span>
+                            <span>Execution: <b style="color:#00f59b;">Bitget 5x</b></span>
+                        </div>
+                    </div>
+
+                    <!-- Agent 2: Alex -->
+                    <div class="agent-pro-card" style="border-top: 3px solid #38bdf8;">
+                        <div class="ap-header">
+                            <div class="ap-avatar" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+                                <i class="fa-solid fa-code"></i>
+                            </div>
+                            <div class="ap-title">
+                                <h4>Alex (Engineer)</h4>
+                                <span>Trading System & PineScript</span>
+                            </div>
+                            <span class="ap-status-badge status-active">OPTIMIZING</span>
+                        </div>
+                        <p class="ap-desc">Maintains SMC V17 PineScript V5 algorithms, TradingView indicators, and latency routing.</p>
+                        <div class="ap-meta">
+                            <span>PineScript: <b>v5 Pro</b></span>
+                            <span>Latency: <b>12ms</b></span>
+                        </div>
+                    </div>
+
+                    <!-- Agent 3: David -->
+                    <div class="agent-pro-card" style="border-top: 3px solid #ff4d6a;">
+                        <div class="ap-header">
+                            <div class="ap-avatar" style="background: rgba(255, 77, 106, 0.15); color: #ff4d6a;">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div class="ap-title">
+                                <h4>David (Risk Guard)</h4>
+                                <span>Capital Guard & SL Detective</span>
+                            </div>
+                            <span class="ap-status-badge status-active">GUARDING</span>
+                        </div>
+                        <p class="ap-desc">Enforces strict 2-candle close rule, protects -4% hard stop, and prevents over-leverage.</p>
+                        <div class="ap-meta">
+                            <span>Max Risk: <b>-20% ROI</b></span>
+                            <span>Drawdown: <b style="color:#00f59b;">Protected</b></span>
+                        </div>
+                    </div>
+
+                    <!-- Agent 4: Liam -->
+                    <div class="agent-pro-card" style="border-top: 3px solid #ffd043;">
+                        <div class="ap-header">
+                            <div class="ap-avatar" style="background: rgba(255, 208, 67, 0.15); color: #ffd043;">
+                                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                            </div>
+                            <div class="ap-title">
+                                <h4>Liam (Chartist)</h4>
+                                <span>4H Structure & OB Inspector</span>
+                            </div>
+                            <span class="ap-status-badge status-active">COMPUTING</span>
+                        </div>
+                        <p class="ap-desc">Validates 6-bar True Origin candle, checks +7% qualification expansion, and filters First-Taps.</p>
+                        <div class="ap-meta">
+                            <span>Active OBs: <b id="liamActiveObs">146</b></span>
+                            <span>Timeframe: <b>4H Futures</b></span>
+                        </div>
+                    </div>
+
+                    <!-- Agent 5: Sarah -->
+                    <div class="agent-pro-card" style="border-top: 3px solid #b388ff;">
+                        <div class="ap-header">
+                            <div class="ap-avatar" style="background: rgba(179, 136, 255, 0.15); color: #b388ff;">
+                                <i class="fa-solid fa-brain"></i>
+                            </div>
+                            <div class="ap-title">
+                                <h4>Sarah (Macro & ICT)</h4>
+                                <span>Sentiment & Liquidity Analyst</span>
+                            </div>
+                            <span class="ap-status-badge status-active">ANALYZING</span>
+                        </div>
+                        <p class="ap-desc">Tracks Bitcoin market correlation, institutional liquidity sweeps, and Fair Value Gaps.</p>
+                        <div class="ap-meta">
+                            <span>BTC Bias: <b id="sarahBtcBias" style="color:#00f59b;">Bullish</b></span>
+                            <span>Funding: <b>0.0100%</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Agent Activity Stream Terminal -->
+                <div class="agent-terminal-feed">
+                    <div class="atf-header">
+                        <span><i class="fa-solid fa-terminal text-buy"></i> Real-time AI Agent Reasoning & Activity Feed</span>
+                        <button class="btn-text btn-xs" id="btnClearAgentLog"><i class="fa-solid fa-trash"></i> Clear Log</button>
+                    </div>
+                    <div class="atf-log-window" id="agentActivityLogContainer">
+                        <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-mike">[MIKE]</span> Multi-Agent Network initialized. 5 specialized agents monitoring 50 cryptocurrency pairs on 4H timeframe.</div>
+                        <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-alex">[ALEX]</span> PineScript V5 indicator synchronized with TradingView PC app. Latency nominal (12ms).</div>
+                        <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-david">[DAVID]</span> Capital risk safeguard active. 5x Isolated margin verified with emergency -4% hard stop.</div>
+                        <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-liam">[LIAM]</span> 146 active qualified Order Blocks tracked across top 50 Binance USDT-M futures pairs.</div>
+                        <div class="atf-log-entry"><span class="atf-time">LIVE</span> <span class="atf-tag tag-sarah">[SARAH]</span> Market sentiment evaluation: BTC liquidity holding 4H support. 2nd OB priority armed.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MASTER TRADE JOURNAL SPREADSHEET MODAL -->
+    <div class="modal-overlay" id="journalModal" style="display: none; z-index: 12000;">
+        <div class="modal-container" style="max-width: 1200px; width: 96vw; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 8px 12px; border-radius: 8px; font-size: 18px;">
+                        <i class="fa-solid fa-file-excel"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #f8fafc;">📊 Master Trade Journal & Excel Sheet Ledger</h3>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #94a3b8;">Real-time automated execution records across Binance (1H) & Bitget (4H)</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <a href="/api/journal/export-csv" class="btn btn-primary" download style="background: #10b981; color: #0f172a; font-weight: 800; border: none; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-download"></i> Download CSV / Excel
+                    </a>
+                    <button class="btn btn-icon" id="btnCloseJournalModal" style="color: #94a3b8; font-size: 16px;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUMMARY STATS STRIP -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 14px 0;">
+                <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Total Recorded</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #38bdf8;" id="journalTotalTrades">0 Trades</div>
+                </div>
+                <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: #10b981; text-transform: uppercase; font-weight: 700;">Take Profit Hits</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #10b981;" id="journalWinCount">0</div>
+                </div>
+                <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(56,189,248,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: #38bdf8; text-transform: uppercase; font-weight: 700;">Breakeven ($0 Loss)</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #38bdf8;" id="journalBeCount">0</div>
+                </div>
+                <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: #ef4444; text-transform: uppercase; font-weight: 700;">Stop Loss Exits</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #ef4444;" id="journalLossCount">0</div>
+                </div>
+                <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 11px; color: #f59e0b; text-transform: uppercase; font-weight: 700;">Win Rate (Safe)</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #f59e0b;" id="journalWinRate">97.8%</div>
+                </div>
+            </div>
+
+            <!-- TABLE CONTAINER -->
+            <div style="flex: 1; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(10,14,26,0.6);">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                    <thead>
+                        <tr style="background: rgba(30,41,59,0.8); color: #94a3b8; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0;">
+                            <th style="padding: 8px 10px;">#</th>
+                            <th style="padding: 8px 10px;">Time (IST)</th>
+                            <th style="padding: 8px 10px;">Exchange</th>
+                            <th style="padding: 8px 10px;">TF</th>
+                            <th style="padding: 8px 10px;">Symbol</th>
+                            <th style="padding: 8px 10px;">Side</th>
+                            <th style="padding: 8px 10px;">Entry</th>
+                            <th style="padding: 8px 10px;">Exit</th>
+                            <th style="padding: 8px 10px;">TP Target</th>
+                            <th style="padding: 8px 10px;">Status</th>
+                            <th style="padding: 8px 10px;">Margin</th>
+                            <th style="padding: 8px 10px;">PnL</th>
+                            <th style="padding: 8px 10px;">ROE</th>
+                            <th style="padding: 8px 10px;">Balance</th>
+                            <th style="padding: 8px 10px;">AI Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="journalTableBody">
+                        <!-- Dynamic trade rows rendered here -->
+                        <tr>
+                            <td colspan="15" style="text-align: center; padding: 24px; color: #64748b;">
+                                <i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i> Loading Trade Journal Sheet...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 11px; color: #64748b;">
+                <span>💡 Every live trade is permanently recorded into <code style="color: #38bdf8;">trade_journal_ledger.csv</code> on disk.</span>
+                <span id="journalLastSync">Auto-synced with Cloud DB</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR (TELEGRAM WEBAPP & MOBILE) -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <button class="mob-nav-btn active" data-mob-panel="trades">
+            <i class="fa-solid fa-fire text-buy"></i>
+            <span>Live Trade</span>
+            <span class="badge" id="mobOpenBadge" style="display:none; font-size:9px; padding:1px 4px;">0</span>
+        </button>
+        <button class="mob-nav-btn" data-mob-panel="chart">
+            <i class="fa-solid fa-chart-candlestick"></i>
+            <span>Chart</span>
+        </button>
+        <button class="mob-nav-btn" data-mob-panel="coins">
+            <i class="fa-solid fa-coins"></i>
+            <span>50 Coins</span>
+        </button>
+        <button class="mob-nav-btn" data-mob-panel="agents">
+            <i class="fa-solid fa-users-gear" style="color: #00f59b;"></i>
+            <span>Agents</span>
+        </button>
+        <button class="mob-nav-btn" data-mob-panel="ai">
+            <i class="fa-solid fa-robot" style="color: #A855F7;"></i>
+            <span>Mike AI</span>
+        </button>
+    </nav>
+
+    <!-- HERMES AI MODAL -->
+    <div id="hermesModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.82); z-index:99999; justify-content:center; align-items:center; backdrop-filter:blur(6px);">
+        <div style="background:#0D111C; border:1px solid rgba(255,215,0,0.4); border-radius:12px; width:92%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 0 35px rgba(255,215,0,0.18);">
+            <div style="padding:14px 18px; border-bottom:1px solid #1F293D; display:flex; justify-content:space-between; align-items:center; background:#111622;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:28px; height:28px; border-radius:6px; background:rgba(255,215,0,0.15); border:1px solid #FFD700; display:flex; align-items:center; justify-content:center; color:#FFD700; font-size:13px;"><i class="fa-solid fa-robot"></i></div>
+                    <span style="font-weight:800; color:#fff; font-size:14px; letter-spacing:0.5px;">HERMES AI QUANT AGENT</span>
+                    <span style="font-size:10px; background:rgba(0,245,155,0.15); color:#00f59b; padding:2px 6px; border-radius:4px; font-weight:700;">ONLINE</span>
+                </div>
+                <button onclick="closeHermesModal()" style="background:transparent; border:none; color:#888; font-size:18px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <!-- Tabs -->
+            <div style="display:flex; gap:6px; padding:10px 18px; background:#0B0E17; border-bottom:1px solid #1F293D; overflow-x:auto;">
+                <button id="hermesTab_status" class="hermes-tab-btn" onclick="loadHermesData('status')" style="background:rgba(255,215,0,0.15); color:#ffd700; border:1px solid rgba(255,215,0,0.3); border-radius:6px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;"><i class="fa-solid fa-chart-pie"></i> Status</button>
+                <button id="hermesTab_audit" class="hermes-tab-btn" onclick="loadHermesData('audit')" style="background:transparent; color:#888; border:1px solid #1F293D; border-radius:6px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;"><i class="fa-solid fa-microscope"></i> Loopholes Audit</button>
+                <button id="hermesTab_patterns" class="hermes-tab-btn" onclick="loadHermesData('patterns')" style="background:transparent; color:#888; border:1px solid #1F293D; border-radius:6px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;"><i class="fa-solid fa-crown"></i> Zero-Loss Patterns</button>
+            </div>
+            <!-- Dynamic Content -->
+            <div id="hermesModalContent" style="padding:18px; overflow-y:auto; flex:1;">
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=104"></script>
+    <script>
+        if (window.Telegram && window.Telegram.WebApp) {
+            try {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            } catch (e) {
+                console.log("Telegram WebApp init error:", e);
+            }
+        }
+    </script>
+</body>
+</html>

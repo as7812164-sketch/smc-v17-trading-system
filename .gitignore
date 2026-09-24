@@ -1,0 +1,56 @@
+# Large data caches - not needed for web server
+market_data_cache/
+market_data_cache_15m/
+
+# Large zip/backup files
+*.zip
+*.bak
+
+# Database (will be recreated)
+*.db
+
+# Test files
+test_*.py
+scratch/
+backtest_*.py
+run_*.py
+scan_*.py
+sim_*.py
+check_*.py
+verify_*.py
+analyze_*.py
+audit_*.py
+deep_*.py
+debug_*.py
+fine_tune_*.py
+detect_*.py
+export_*.py
+extract_*.py
+forensic_*.py
+generate_*.py
+hunt_*.py
+inspect_*.py
+show_*.py
+simulate_*.py
+live_*.py
+find_*.py
+create_*.py
+compare_*.py
+calculate_*.py
+deploy_to_cloud.py
+
+# Result JSONs
+*_result.json
+*_ledger.json
+*_ledger.csv
+*.json
+
+# Image files
+*.png
+*.jpg
+
+# Venv
+venv/
+__pycache__/
+*.pyc
+.env
