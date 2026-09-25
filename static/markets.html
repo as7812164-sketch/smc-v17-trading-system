@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Crypto Markets Overview • HERMES 2.0 APEX</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-base: #0b0e14;
+            --bg-card: #121824;
+            --bg-panel: #0d121c;
+            --bg-input: #080b10;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-gold: rgba(255, 215, 0, 0.35);
+            --gold-primary: #ffd700;
+            --gold-gradient: linear-gradient(135deg, #ffd700 0%, #ff9900 100%);
+            --accent-cyan: #38bdf8;
+            --accent-green: #00f59b;
+            --accent-purple: #a855f7;
+            --accent-red: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            line-height: 1.5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-card {
+            background: rgba(18, 24, 36, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            transition: var(--transition);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 215, 0, 0.22);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        /* TOP NAVIGATION BAR */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(11, 14, 20, 0.88);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .nav-brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            background: var(--gold-gradient);
+            color: #000;
+            font-weight: 800;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            letter-spacing: 0.8px;
+        }
+
+        .brand-titles {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-main {
+            font-weight: 800;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .brand-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .nav-pages-menu {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-page-link {
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .nav-page-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-page-link.active {
+            color: var(--gold-primary);
+            background: rgba(255, 215, 0, 0.12);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .nav-right-cluster {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        .hamburger-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .hamburger-btn:hover {
+            border-color: var(--gold-primary);
+            color: var(--gold-primary);
+        }
+
+        /* GLOBAL INDEX STRIP (SCREENSHOT 3 & 4 MATCH) */
+        .global-index-strip {
+            background: rgba(14, 18, 27, 0.95);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 8px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            overflow-x: auto;
+            white-space: nowrap;
+            font-size: 11px;
+            font-family: var(--font-mono);
+        }
+
+        .index-title {
+            color: var(--text-dim);
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .index-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .index-name {
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .index-val {
+            color: #fff;
+            font-weight: 800;
+        }
+
+        .index-chg.pos { color: var(--accent-green); }
+        .index-chg.neg { color: var(--accent-red); }
+
+        /* MAIN PAGE WRAPPER */
+        .page-container {
+            max-width: 1480px;
+            margin: 0 auto;
+            padding: 24px 20px 80px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HOT MOVERS CARDS GRID (SCREENSHOT 3 MATCH) */
+        .hot-movers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .mover-card {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mover-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .mover-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 12px;
+        }
+
+        .mover-row:last-child {
+            border-bottom: none;
+        }
+
+        .mover-sym {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .mover-price {
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .mover-chg {
+            font-family: var(--font-mono);
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .mover-chg.pos {
+            background: rgba(0, 245, 155, 0.12);
+            color: var(--accent-green);
+        }
+
+        .mover-chg.neg {
+            background: rgba(244, 63, 94, 0.12);
+            color: var(--accent-red);
+        }
+
+        /* TABLE TABS & CONTROLS */
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tabs-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            padding: 7px 14px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: rgba(255, 215, 0, 0.4);
+            color: var(--gold-primary);
+        }
+
+        .search-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 7px 14px;
+        }
+
+        .search-bar-wrap input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 12px;
+            width: 180px;
+        }
+
+        /* MARKETS TABLE */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            background: rgba(18, 24, 36, 0.65);
+        }
+
+        table.markets-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            text-align: left;
+        }
+
+        table.markets-table th {
+            padding: 12px 16px;
+            background: rgba(11, 14, 20, 0.9);
+            color: var(--text-muted);
+            font-weight: 700;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            white-space: nowrap;
+        }
+
+        table.markets-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        table.markets-table tr:hover {
+            background: rgba(255, 215, 0, 0.03);
+        }
+
+        .pair-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .coin-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--gold-primary);
+        }
+
+        .coin-name {
+            font-weight: 800;
+            font-size: 13px;
+            color: #fff;
+        }
+
+        .coin-sub {
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+        }
+
+        .price-col {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .chg-col.pos { color: var(--accent-green); font-family: var(--font-mono); font-weight: 800; }
+        .chg-col.neg { color: var(--accent-red); font-family: var(--font-mono); font-weight: 800; }
+
+        .btn-action-sm {
+            padding: 5px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid transparent;
+        }
+
+        .btn-gold-sm {
+            background: var(--gold-gradient);
+            color: #000;
+        }
+
+        .btn-gold-sm:hover {
+            transform: scale(1.04);
+        }
+
+        .btn-outline-sm {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border-subtle);
+            color: var(--text-muted);
+        }
+
+        .btn-outline-sm:hover {
+            border-color: var(--gold-primary);
+            color: #fff;
+        }
+
+        /* SLIDE-OUT MOBILE DRAWER (SCREENSHOT 5 EXACT DESIGN) */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .drawer-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .slide-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 82%;
+            max-width: 320px;
+            height: 100%;
+            background: #0f141f;
+            border-left: 1px solid var(--border-subtle);
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .drawer-overlay.open .slide-drawer {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            background: #121826;
+        }
+
+        .drawer-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            font-size: 15px;
+            color: #fff;
+        }
+
+        .drawer-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .drawer-nav-list {
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .drawer-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .drawer-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .drawer-item.active {
+            background: rgba(255, 215, 0, 0.12);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: var(--gold-primary);
+        }
+
+        .drawer-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .drawer-section-title {
+            padding: 16px 20px 6px 20px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-dim);
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+        }
+
+        .drawer-footer {
+            margin-top: auto;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            background: #0a0d14;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-pages-menu { display: none; }
+            .global-index-strip { padding: 6px 14px; }
+            .page-container { padding: 14px 12px 60px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP NAVIGATION -->
+    <header class="top-nav">
+        <div class="nav-brand-wrap">
+            <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+                <div class="brand-badge">HERMES 2.0</div>
+                <div class="brand-titles">
+                    <span class="brand-main">CRYPTO MARKETS OVERVIEW</span>
+                    <span class="brand-sub">USDT-M PERPETUALS • TOP-22 CHAMPIONS • 4-SENTRIES</span>
+                </div>
+            </a>
+        </div>
+
+        <nav class="nav-pages-menu">
+            <a href="/" class="nav-page-link"><i class="fa-solid fa-chart-candlestick"></i> <span>Terminal</span></a>
+            <a href="/markets" class="nav-page-link active"><i class="fa-solid fa-globe"></i> <span>Markets</span></a>
+            <a href="/hermes-ai" class="nav-page-link"><i class="fa-solid fa-robot"></i> <span>Hermes AI</span></a>
+            <a href="/positions" class="nav-page-link"><i class="fa-solid fa-layer-group"></i> <span>Positions</span></a>
+            <a href="/compounding" class="nav-page-link"><i class="fa-solid fa-trophy"></i> <span>Compounding ($50)</span></a>
+            <a href="/brain" class="nav-page-link"><i class="fa-solid fa-microchip"></i> <span>Mike Brain</span></a>
+            <a href="/signals" class="nav-page-link"><i class="fa-solid fa-satellite-dish"></i> <span>Signals</span></a>
+            <a href="/settings" class="nav-page-link"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
+        </nav>
+
+        <div class="nav-right-cluster">
+            <div class="status-pill">
+                <span class="pulse-dot"></span>
+                <span>Binance Feed Live</span>
+            </div>
+            <button class="hamburger-btn" onclick="toggleDrawer()" title="Open Navigation Menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- GLOBAL INDEX STRIP (SCREENSHOT 3 MATCH) -->
+    <div class="global-index-strip">
+        <span class="index-title">Global index:</span>
+        <div class="index-item">
+            <span class="index-name">BTC</span>
+            <span class="index-val" id="idxBtcPrice">$84,046.10</span>
+            <span class="index-chg neg" id="idxBtcChg">-0.19%</span>
+        </div>
+        <div class="index-item">
+            <span class="index-name">ETH</span>
+            <span class="index-val" id="idxEthPrice">$2,693.30</span>
+            <span class="index-chg pos" id="idxEthChg">+0.31%</span>
+        </div>
+        <div class="index-item">
+            <span class="index-name">SOL</span>
+            <span class="index-val" id="idxSolPrice">$122.25</span>
+            <span class="index-chg pos" id="idxSolChg">+4.73%</span>
+        </div>
+        <div class="index-item">
+            <span class="index-name">BGB</span>
+            <span class="index-val">$1.9968</span>
+            <span class="index-chg pos">+0.81%</span>
+        </div>
+        <div class="index-item">
+            <span class="index-name">Gold</span>
+            <span class="index-val">$4,287.76</span>
+            <span class="index-chg pos">+0.53%</span>
+        </div>
+    </div>
+
+    <!-- MAIN PAGE CONTAINER -->
+    <div class="page-container">
+
+        <!-- HOT MOVERS MINI CARDS (SCREENSHOT 3 & 4 MATCH) -->
+        <section class="hot-movers-grid">
+            <div class="glass-card mover-card">
+                <div class="mover-header">
+                    <span><i class="fa-solid fa-fire text-buy" style="color: var(--accent-green); margin-right: 6px;"></i> Top Gainers (24h)</span>
+                    <span style="font-size: 11px; color: var(--text-dim);">Live</span>
+                </div>
+                <div id="topGainersBox">
+                    <div class="mover-row"><span class="mover-sym">SUIUSDT</span><span class="mover-price">$1.166</span><span class="mover-chg pos">+14.47%</span></div>
+                    <div class="mover-row"><span class="mover-sym">NEARUSDT</span><span class="mover-price">$5.120</span><span class="mover-chg pos">+9.96%</span></div>
+                    <div class="mover-row"><span class="mover-sym">SOLUSDT</span><span class="mover-price">$122.25</span><span class="mover-chg pos">+4.73%</span></div>
+                </div>
+            </div>
+
+            <div class="glass-card mover-card">
+                <div class="mover-header">
+                    <span><i class="fa-solid fa-crown" style="color: var(--gold-primary); margin-right: 6px;"></i> Top Champions by Volume</span>
+                    <span style="font-size: 11px; color: var(--text-dim);">Turnover</span>
+                </div>
+                <div id="topVolumeBox">
+                    <div class="mover-row"><span class="mover-sym">BTCUSDT</span><span class="mover-price">$84,046</span><span class="mover-chg neg">-0.19%</span></div>
+                    <div class="mover-row"><span class="mover-sym">ETHUSDT</span><span class="mover-price">$2,693</span><span class="mover-chg pos">+0.31%</span></div>
+                    <div class="mover-row"><span class="mover-sym">SOLUSDT</span><span class="mover-price">$122.25</span><span class="mover-chg pos">+4.73%</span></div>
+                </div>
+            </div>
+
+            <div class="glass-card mover-card">
+                <div class="mover-header">
+                    <span><i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan); margin-right: 6px;"></i> 4-Sentries Diagnostic</span>
+                    <span style="font-size: 11px; color: var(--accent-green);">ARMED</span>
+                </div>
+                <div class="mover-row"><span class="mover-sym">Sentry 1: BTC Brake</span><span style="color: var(--accent-green); font-weight:700;">NORMAL (No Veto)</span></div>
+                <div class="mover-row"><span class="mover-sym">Sentry 2: Institutional Floor</span><span style="color: var(--accent-cyan); font-weight:700;">>= 5.0% Displacement</span></div>
+                <div class="mover-row"><span class="mover-sym">Sentry 3: IDM Sweep</span><span style="color: var(--accent-green); font-weight:700;">>= 18% Wick Confirmed</span></div>
+            </div>
+        </section>
+
+        <!-- TOOLBAR & TABS -->
+        <div class="table-toolbar">
+            <div class="nav-tabs-wrap">
+                <button class="tab-btn active" onclick="filterMarketTable('all', this)">All Pairs</button>
+                <button class="tab-btn" onclick="filterMarketTable('champions', this)">Top-22 Champions</button>
+                <button class="tab-btn" onclick="filterMarketTable('gainers', this)">Top Gainers</button>
+                <button class="tab-btn" onclick="filterMarketTable('armed', this)">Armed Setups</button>
+            </div>
+            <div class="search-bar-wrap">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim); font-size: 11px;"></i>
+                <input type="text" id="marketSearchInput" placeholder="Search coin (e.g. BTC, SOL)..." onkeyup="searchMarkets()">
+            </div>
+        </div>
+
+        <!-- MARKETS TABLE -->
+        <div class="table-container">
+            <table class="markets-table" id="marketsTable">
+                <thead>
+                    <tr>
+                        <th>Pair</th>
+                        <th>Last Price</th>
+                        <th>24h Change</th>
+                        <th>24h High</th>
+                        <th>24h Low</th>
+                        <th>24h Amount / Volume</th>
+                        <th>Hermes 4-Sentries Status</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="marketsTableBody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 24px; color: var(--text-dim);">
+                            <i class="fa-solid fa-circle-notch fa-spin text-buy"></i> Fetching live crypto markets ticker stream...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- SLIDE-OUT MOBILE DRAWER (SCREENSHOT 5 EXACT DESIGN) -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()">
+        <div class="slide-drawer" id="slideDrawer" onclick="event.stopPropagation()">
+            <div class="drawer-header">
+                <div class="drawer-brand">
+                    <div style="background: var(--gold-gradient); color: #000; width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">H</div>
+                    <span>HERMES 2.0 APEX</span>
+                </div>
+                <button class="drawer-close-btn" onclick="closeDrawer()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="drawer-nav-list">
+                <a href="/" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-chart-candlestick" style="color: var(--accent-cyan); width: 20px;"></i><span>Terminal</span></div><i class="fa-solid fa-chevron-right" style="font-size: 11px; color: var(--text-dim);"></i></a>
+                <a href="/markets" class="drawer-item active"><div class="drawer-item-left"><i class="fa-solid fa-globe" style="color: var(--accent-green); width: 20px;"></i><span>Markets Overview</span></div><span style="background: var(--gold-gradient); color: #000; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">LIVE</span></a>
+                <a href="/hermes-ai" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-robot" style="color: var(--gold-primary); width: 20px;"></i><span>AI & More / Hermes AI</span></div><i class="fa-solid fa-chevron-right" style="font-size: 11px; color: var(--text-dim);"></i></a>
+                <a href="/positions" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-layer-group" style="color: #60a5fa; width: 20px;"></i><span>Positions</span></div><i class="fa-solid fa-chevron-right" style="font-size: 11px; color: var(--text-dim);"></i></a>
+                <a href="/compounding" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-trophy" style="color: var(--gold-primary); width: 20px;"></i><span>Compounding ($50 ➔ $2K)</span></div><i class="fa-solid fa-chevron-right" style="font-size: 11px; color: var(--text-dim);"></i></a>
+                <a href="/brain" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-brain" style="color: var(--accent-purple); width: 20px;"></i><span>Mike Brain</span></div><i class="fa-solid fa-chevron-right" style="font-size: 11px; color: var(--text-dim);"></i></a>
+                <a href="/signals" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-satellite-dish" style="color: #f59e0b; width: 20px;"></i><span>Signals & Zones</span></div><i class="fa-solid fa-chevron-right" style="font-size: 11px; color: var(--text-dim);"></i></a>
+                <a href="/settings" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-gear" style="color: var(--text-muted); width: 20px;"></i><span>Settings</span></div><i class="fa-solid fa-chevron-right" style="font-size: 11px; color: var(--text-dim);"></i></a>
+            </div>
+
+            <div class="drawer-section-title">GetAgent & AI Tools</div>
+            <div class="drawer-nav-list">
+                <a href="/hermes-ai" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-sparkles" style="color: var(--gold-primary); width: 20px;"></i><span>(·) GetAgent / AI Consult</span></div></a>
+                <a href="/api/journal/export-csv" class="drawer-item"><div class="drawer-item-left"><i class="fa-solid fa-file-csv" style="color: var(--accent-green); width: 20px;"></i><span>Export Journal CSV</span></div></a>
+            </div>
+
+            <div class="drawer-footer">
+                <div style="font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);"><span class="pulse-dot" style="display:inline-block; margin-right:4px;"></span> Hermes 2.0 APEX • 24/7 Engine</div>
+                <div style="font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);"><i class="fa-solid fa-dollar-sign" style="color: var(--gold-primary);"></i> Currency: USD ($)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT CONTROLLER -->
+    <script>
+        let allCoinsData = [];
+        let currentFilter = 'all';
+
+        function toggleDrawer() {
+            document.getElementById('drawerOverlay').classList.toggle('open');
+        }
+
+        function closeDrawer() {
+            document.getElementById('drawerOverlay').classList.remove('open');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeDrawer();
+        });
+
+        async function loadMarketOverview() {
+            try {
+                const resp = await fetch('/api/markets/overview');
+                if (!resp.ok) throw new Error('Network error');
+                const data = await resp.json();
+                allCoinsData = data.coins || [];
+
+                // Global indices
+                const btc = allCoinsData.find(c => c.symbol === 'BTCUSDT');
+                if (btc) {
+                    document.getElementById('idxBtcPrice').textContent = '$' + btc.price.toLocaleString(undefined, {minimumFractionDigits: 2});
+                    const elChg = document.getElementById('idxBtcChg');
+                    elChg.textContent = (btc.change_24h >= 0 ? '+' : '') + btc.change_24h.toFixed(2) + '%';
+                    elChg.className = 'index-chg ' + (btc.change_24h >= 0 ? 'pos' : 'neg');
+                }
+
+                const eth = allCoinsData.find(c => c.symbol === 'ETHUSDT');
+                if (eth) {
+                    document.getElementById('idxEthPrice').textContent = '$' + eth.price.toLocaleString(undefined, {minimumFractionDigits: 2});
+                    const elChg = document.getElementById('idxEthChg');
+                    elChg.textContent = (eth.change_24h >= 0 ? '+' : '') + eth.change_24h.toFixed(2) + '%';
+                    elChg.className = 'index-chg ' + (eth.change_24h >= 0 ? 'pos' : 'neg');
+                }
+
+                const sol = allCoinsData.find(c => c.symbol === 'SOLUSDT');
+                if (sol) {
+                    document.getElementById('idxSolPrice').textContent = '$' + sol.price.toFixed(2);
+                    const elChg = document.getElementById('idxSolChg');
+                    elChg.textContent = (sol.change_24h >= 0 ? '+' : '') + sol.change_24h.toFixed(2) + '%';
+                    elChg.className = 'index-chg ' + (sol.change_24h >= 0 ? 'pos' : 'neg');
+                }
+
+                // Render table
+                renderTable();
+            } catch (err) {
+                console.error("loadMarketOverview error:", err);
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('marketsTableBody');
+            if (!tbody) return;
+
+            let filtered = [...allCoinsData];
+            if (currentFilter === 'champions') {
+                filtered = filtered.filter(c => c.is_champion);
+            } else if (currentFilter === 'gainers') {
+                filtered = filtered.sort((a, b) => b.change_24h - a.change_24h);
+            } else if (currentFilter === 'armed') {
+                filtered = filtered.filter(c => c.sentry_status === 'ARMED' || c.sentry_status === 'ACTIVE_POSITION');
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-dim);">No market records found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((c, idx) => {
+                const isPos = c.change_24h >= 0;
+                const chgClass = isPos ? 'pos' : 'neg';
+                const chgSign = isPos ? '+' : '';
+
+                let pStr = c.price > 10 ? c.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : c.price.toFixed(4);
+                let hStr = c.high_24h > 10 ? c.high_24h.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : c.high_24h.toFixed(4);
+                let lStr = c.low_24h > 10 ? c.low_24h.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : c.low_24h.toFixed(4);
+                let volStr = '$' + (c.volume_24h >= 1e9 ? (c.volume_24h / 1e9).toFixed(2) + 'B' : (c.volume_24h / 1e6).toFixed(1) + 'M');
+
+                let statusBadge = '<span class="status-pill" style="font-size: 10px; color: var(--accent-green);"><i class="fa-solid fa-shield"></i> 4/4 Cleared</span>';
+                if (c.sentry_status === 'ARMED') {
+                    statusBadge = '<span class="status-pill" style="font-size: 10px; color: var(--gold-primary); border-color: rgba(255,215,0,0.4);"><i class="fa-solid fa-bolt"></i> ARMED</span>';
+                } else if (c.sentry_status === 'ACTIVE_POSITION') {
+                    statusBadge = '<span class="status-pill" style="font-size: 10px; color: var(--accent-cyan);"><i class="fa-solid fa-fire"></i> ACTIVE 5X</span>';
+                }
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="pair-meta">
+                                <div class="coin-icon">${c.base_asset ? c.base_asset.substring(0, 3) : 'CRY'}</div>
+                                <div>
+                                    <div class="coin-name">${c.symbol}</div>
+                                    <div class="coin-sub">USDT-M Perpetual ${c.is_champion ? '• 👑 Champion' : ''}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="price-col">$${pStr}</span></td>
+                        <td><span class="chg-col ${chgClass}">${chgSign}${c.change_24h.toFixed(2)}%</span></td>
+                        <td style="font-family: var(--font-mono); color: var(--text-dim);">$${hStr}</td>
+                        <td style="font-family: var(--font-mono); color: var(--text-dim);">$${lStr}</td>
+                        <td style="font-family: var(--font-mono); font-weight:700; color: var(--text-muted);">${volStr}</td>
+                        <td>${statusBadge}</td>
+                        <td style="text-align: right;">
+                            <a href="/hermes-ai" class="btn-action-sm btn-gold-sm" style="margin-right: 6px;">
+                                <i class="fa-solid fa-robot"></i> <span>Ask AI</span>
+                            </a>
+                            <a href="/" class="btn-action-sm btn-outline-sm">
+                                <span>Trade</span>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterMarketTable(type, btn) {
+            currentFilter = type;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderTable();
+        }
+
+        function searchMarkets() {
+            const query = document.getElementById('marketSearchInput').value.toUpperCase();
+            const rows = document.querySelectorAll('#marketsTableBody tr');
+            rows.forEach(r => {
+                const text = r.textContent.toUpperCase();
+                r.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        loadMarketOverview();
+        setInterval(loadMarketOverview, 15000);
+    </script>
+</body>
+</html>

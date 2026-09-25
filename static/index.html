@@ -24,6 +24,11 @@
     <!-- TOP NAVIGATION BAR (MULTI-PAGE PLATFORM) -->
     <header class="top-nav">
         <div class="nav-brand">
+            <!-- Reusable Hamburger Button -->
+            <button class="hamburger-btn" id="btnOpenDrawer" title="Open Navigation Menu" aria-label="Open Navigation Drawer">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+
             <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
                 <div class="brand-badge" style="background: linear-gradient(135deg, #ffd700, #ff8800); color: #000; font-weight: 800;">HERMES 2.0</div>
                 <div class="brand-titles">
@@ -36,10 +41,11 @@
         <!-- MULTI-PAGE NAVIGATION MENU -->
         <nav class="nav-pages-menu">
             <a href="/" class="nav-page-link active"><i class="fa-solid fa-chart-candlestick"></i> <span>Terminal</span></a>
+            <a href="/markets" class="nav-page-link"><i class="fa-solid fa-chart-line"></i> <span>Markets</span></a>
             <a href="/positions" class="nav-page-link"><i class="fa-solid fa-layer-group"></i> <span>Positions</span> <span class="badge badge-success" id="navPosBadge">0</span></a>
             <a href="/compounding" class="nav-page-link"><i class="fa-solid fa-trophy"></i> <span>Compounding ($50 ➔ $2K)</span></a>
             <a href="/brain" class="nav-page-link"><i class="fa-solid fa-brain"></i> <span>Mike Brain</span></a>
-            <a href="javascript:void(0)" onclick="toggleHermesDrawer()" class="nav-page-link" style="color: #ffd700; border: 1px solid rgba(255,215,0,0.3); border-radius: 4px; padding: 4px 8px;"><i class="fa-solid fa-robot"></i> <span>Hermes AI</span></a>
+            <a href="/hermes-ai" class="nav-page-link" style="color: #ffd700; border: 1px solid rgba(255,215,0,0.3); border-radius: 4px; padding: 4px 8px;"><i class="fa-solid fa-robot"></i> <span>Hermes AI</span></a>
             <a href="/signals" class="nav-page-link"><i class="fa-solid fa-satellite-dish"></i> <span>Signals & Zones</span></a>
             <a href="/settings" class="nav-page-link"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
         </nav>
@@ -1752,6 +1758,168 @@
             </div>
         </div>
     </div>
+
+    <!-- SLIDE-OUT MOBILE NAVIGATION DRAWER OVERLAY -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+
+    <!-- SLIDE-OUT MOBILE NAVIGATION DRAWER (MATCHING BITGET PRO) -->
+    <aside class="nav-drawer" id="slideDrawer" aria-label="Navigation Drawer">
+        <!-- Drawer Header -->
+        <div class="drawer-header">
+            <div class="drawer-header-top">
+                <div class="drawer-user-info">
+                    <div class="drawer-avatar">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div class="drawer-user-meta">
+                        <div class="drawer-username">
+                            <span>HERMES APEX</span>
+                            <span class="drawer-vip-pill">VIP 1 PRO</span>
+                        </div>
+                        <span class="drawer-user-sub">UID: 9283-APEX-V17</span>
+                    </div>
+                </div>
+                <button class="drawer-close-btn" id="btnCloseDrawer" title="Close Menu" aria-label="Close Drawer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Compounding Goal Progress Snapshot -->
+            <div class="drawer-compounding-card">
+                <div class="drawer-comp-title-row">
+                    <span class="drawer-comp-title">
+                        <i class="fa-solid fa-trophy"></i> Compounding Goal
+                    </span>
+                    <span class="drawer-comp-val" id="drawerCompProgressVal">$50 ➔ $2,000</span>
+                </div>
+                <div class="drawer-comp-bar">
+                    <div class="drawer-comp-fill" id="drawerCompBar" style="width: 2.5%;"></div>
+                </div>
+                <div class="drawer-comp-meta">
+                    <span>5x Isolated Perpetual</span>
+                    <span id="drawerCompPercent">2.5% Target</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drawer Navigation Menu Links -->
+        <div class="drawer-nav-content">
+            <!-- GROUP 1: CORE TRADING -->
+            <div class="drawer-section-label">Core Terminal & Markets</div>
+            <div class="drawer-links-group">
+                <a href="/" class="drawer-nav-item active">
+                    <div class="left-group">
+                        <i class="fa-solid fa-chart-candlestick"></i>
+                        <span>Terminal (Trade / Chart)</span>
+                    </div>
+                    <span class="drawer-badge badge-cyan">5X PRO</span>
+                </a>
+                <a href="/markets" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Markets Overview</span>
+                    </div>
+                    <span class="drawer-badge badge-gold">22 CHAMPIONS</span>
+                </a>
+            </div>
+
+            <!-- GROUP 2: STRATEGY & WEALTH ENGINE -->
+            <div class="drawer-section-label">Apex Wealth Engine</div>
+            <div class="drawer-links-group">
+                <a href="/compounding" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>Compounding Goal ($50 ➔ $2,000)</span>
+                    </div>
+                    <span class="drawer-badge badge-hot">HOT</span>
+                </a>
+                <a href="javascript:void(0)" onclick="closeDrawer(); toggleHermesDrawer();" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>Hermes AI & Sentries</span>
+                    </div>
+                    <span class="drawer-badge badge-cyan">LIVE</span>
+                </a>
+                <a href="/positions" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Positions & History</span>
+                    </div>
+                    <span class="drawer-badge" id="drawerPosBadge">0</span>
+                </a>
+                <a href="/brain" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>Mike Cognitive Brain</span>
+                    </div>
+                    <span class="drawer-badge">AI AGENT</span>
+                </a>
+            </div>
+
+            <!-- GROUP 3: SYSTEM & CONFIG -->
+            <div class="drawer-section-label">Platform & Setup</div>
+            <div class="drawer-links-group">
+                <a href="/signals" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>Signals & Zones</span>
+                    </div>
+                </a>
+                <a href="/settings" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-gear"></i>
+                        <span>Settings</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Drawer Footer -->
+        <div class="drawer-footer">
+            <div class="drawer-footer-status">
+                <span class="drawer-status-pill">
+                    <span class="drawer-live-dot"></span> Binance Feed: CONNECTED
+                </span>
+                <span style="font-family: var(--font-mono); font-size: 10px;" id="drawerClock">00:00:00 IST</span>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        // Navigation Drawer Controller
+        const btnOpenDrawer = document.getElementById("btnOpenDrawer");
+        const btnCloseDrawer = document.getElementById("btnCloseDrawer");
+        const drawerOverlay = document.getElementById("drawerOverlay");
+        const slideDrawer = document.getElementById("slideDrawer");
+
+        function openDrawer() {
+            if (slideDrawer && drawerOverlay) {
+                slideDrawer.classList.add("active");
+                drawerOverlay.classList.add("active");
+            }
+        }
+        function closeDrawer() {
+            if (slideDrawer && drawerOverlay) {
+                slideDrawer.classList.remove("active");
+                drawerOverlay.classList.remove("active");
+            }
+        }
+        if (btnOpenDrawer) btnOpenDrawer.addEventListener("click", openDrawer);
+        if (btnCloseDrawer) btnCloseDrawer.addEventListener("click", closeDrawer);
+        if (drawerOverlay) drawerOverlay.addEventListener("click", closeDrawer);
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && slideDrawer && slideDrawer.classList.contains("active")) closeDrawer();
+        });
+
+        // URL check for ?open=hermes or /hermes-ai
+        if (window.location.search.includes("open=hermes") || window.location.pathname === "/hermes-ai") {
+            window.addEventListener("DOMContentLoaded", () => {
+                setTimeout(() => {
+                    if (typeof toggleHermesDrawer === "function") toggleHermesDrawer();
+                }, 400);
+            });
+        }
+    </script>
 
     <script src="/static/app.js?v=104"></script>
     <script>

@@ -1,20 +1,27 @@
-# Large data caches
-market_data_cache/
-market_data_cache_15m/
-
-# Backup/zip files
-*.zip
-
-# Image test files
-test_alert_chart.png
-test_chart.png
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
+# Environment variables & secrets
 .env
 
-# Test scripts
-test_*.py
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Database ephemeral files
+database/*.db-shm
+database/*.db-wal
+
+# Logs & temp
+*.log
+.DS_Store
+*.zip
+*.png
+database/*.backup_*
+smc_v17.db
 scratch/
+test_*.png
+*.csv
+*ledger*.json
+*backtest*.json
+*compounding*.json
+*scan*.json
