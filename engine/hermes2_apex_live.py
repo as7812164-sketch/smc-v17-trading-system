@@ -367,10 +367,11 @@ class Hermes2ApexLiveEngine:
         # If no active position, check if any fresh setup should be entered
         open_trades = get_open_paper_trades()
         if not open_trades and found_setups:
-            # Sort by freshness (age == 0 or 1 first) and displacement strength
+            # Strictly enter ONLY fresh setups (tapped within latest candle, age <= 1)
             fresh = [s for s in found_setups if s.get("is_fresh_trigger")]
-            target_setup = fresh[0] if fresh else found_setups[-1]
-            await self.execute_apex_entry(target_setup)
+            if fresh:
+                target_setup = fresh[0]
+                await self.execute_apex_entry(target_setup)
 
         await self.broadcast("HERMES_SCAN_COMPLETE", {
             "timestamp": now_str,
@@ -393,6 +394,22 @@ class Hermes2ApexLiveEngine:
         open_trades = get_open_paper_trades()
         if open_trades:
             return
+
+        sym = setup["symbol"]
+        entry_price = float(setup["entry_price"])
+
+        # Live Proximity Check: Price must be within 0.50% of the Order Block boundary
+        try:
+            tickers = await binance_feed.fetch_all_tickers()
+            cur_price = tickers.get(sym)
+            if not cur_price or cur_price <= 0:
+                return
+            diff_pct = abs(cur_price - entry_price) / entry_price * 100.0
+            if diff_pct > 0.50:
+                logger.info(f"Skipping entry on {sym}: live price {cur_price} is {diff_pct:.2f}% away from entry limit {entry_price}")
+                return
+        except Exception:
+            pass
 
         acc = self.get_hermes_account()
         current_balance = float(acc.get("current_balance", 50.0) or 50.0)
