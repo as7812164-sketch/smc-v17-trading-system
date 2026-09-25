@@ -116,8 +116,39 @@ def init_db():
 
         conn.execute("""
         INSERT OR IGNORE INTO paper_account (id, initial_balance, current_balance, total_pnl, win_count, loss_count)
-        VALUES (1, 100.0, 100.0, 0.0, 0, 0);
+        VALUES (1, 50.0, 50.0, 0.0, 0, 0);
         """)
+
+        # Ensure Hermes 2.0 Apex columns exist
+        for col_def in [
+            ("paper_account", "vault_balance", "REAL DEFAULT 0.0"),
+            ("paper_account", "milestone_target", "REAL DEFAULT 2000.0"),
+            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_2.0_APEX'"),
+            ("paper_trades", "timeframe", "TEXT DEFAULT '1h'"),
+            ("paper_trades", "hard_sl_price", "REAL DEFAULT 0.0"),
+            ("paper_trades", "vault_stashed_usdt", "REAL DEFAULT 0.0"),
+            ("paper_trades", "sentry_reasons", "TEXT DEFAULT ''"),
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE {col_def[0]} ADD COLUMN {col_def[1]} {col_def[2]}")
+            except Exception:
+                pass
+
+        # If clean account, set starting capital to $50.00
+        acc = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
+        if acc and (acc["current_balance"] == 0.0 or acc["current_balance"] == 100.0) and acc["win_count"] == 0 and acc["loss_count"] == 0:
+            conn.execute("""
+            UPDATE paper_account SET
+                initial_balance = 50.0,
+                current_balance = 50.0,
+                vault_balance = 0.0,
+                total_pnl = 0.0,
+                win_count = 0,
+                loss_count = 0,
+                milestone_target = 2000.0,
+                mode = 'HERMES_2.0_APEX'
+            WHERE id = 1
+            """)
 
         # Initialize default metrics if not present
         default_metrics = {
@@ -131,7 +162,9 @@ def init_db():
             "last_alert": "None yet",
             "binance_status": "DISCONNECTED",
             "network_status": "STABLE",
-            "coins_active_count": "50"
+            "coins_active_count": "50",
+            "hermes_status": "ACTIVE_24_7",
+            "hermes_mode": "HERMES_2.0_APEX"
         }
         for k, v in default_metrics.items():
             conn.execute("INSERT OR IGNORE INTO system_metrics (key, value) VALUES (?, ?)", (k, v))
@@ -333,22 +366,39 @@ def get_setting(key: str, default: str = "") -> str:
         row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
         return row[0] if row else default
 
-# --- Paper Trading Simulator (100 USDT) ---
+# --- Paper Trading & Hermes 2.0 Apex Compounding Simulator ($50 -> $2,000) ---
 def get_paper_account() -> Dict[str, Any]:
     with get_connection() as conn:
         row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
         if not row:
-            conn.execute("INSERT OR IGNORE INTO paper_account (id, initial_balance, current_balance, total_pnl, win_count, loss_count) VALUES (1, 100.0, 100.0, 0.0, 0, 0)")
+            conn.execute("""
+            INSERT OR IGNORE INTO paper_account 
+            (id, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
+            VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.0_APEX')
+            """)
             conn.commit()
             row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
 
         acc = dict(row)
         open_trades = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN'").fetchone()[0]
         acc["open_trades_count"] = open_trades
-        completed = acc["win_count"] + acc["loss_count"]
-        acc["win_rate"] = round((acc["win_count"] / completed * 100), 1) if completed > 0 else 0.0
-        acc["return_pct"] = round(((acc["current_balance"] - acc["initial_balance"]) / acc["initial_balance"] * 100), 2)
+        completed = (acc.get("win_count", 0) or 0) + (acc.get("loss_count", 0) or 0)
+        acc["win_rate"] = round((acc.get("win_count", 0) / completed * 100), 1) if completed > 0 else 0.0
+        init_b = float(acc.get("initial_balance", 50.0) or 50.0)
+        curr_b = float(acc.get("current_balance", 50.0) or 50.0)
+        vault_b = float(acc.get("vault_balance", 0.0) or 0.0)
+        target = float(acc.get("milestone_target", 2000.0) or 2000.0)
+        total_equity = curr_b + vault_b
+        acc["equity"] = round(total_equity, 2)
+        acc["vault_balance"] = round(vault_b, 2)
+        acc["milestone_target"] = target
+        acc["milestone_progress_pct"] = round(min(100.0, (total_equity / target) * 100.0), 2)
+        acc["return_pct"] = round(((total_equity - init_b) / init_b * 100), 2)
+        acc["mode"] = acc.get("mode", "HERMES_2.0_APEX")
         return acc
+
+def get_hermes_account() -> Dict[str, Any]:
+    return get_paper_account()
 
 def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -528,21 +578,27 @@ def reset_paper_account() -> Dict[str, Any]:
         conn.execute("DELETE FROM paper_trades")
         conn.execute("""
         UPDATE paper_account SET
-            initial_balance = 100.0,
-            current_balance = 100.0,
+            initial_balance = 50.0,
+            current_balance = 50.0,
+            vault_balance = 0.0,
             total_pnl = 0.0,
             win_count = 0,
-            loss_count = 0
+            loss_count = 0,
+            milestone_target = 2000.0,
+            mode = 'HERMES_2.0_APEX'
         WHERE id = 1
         """)
         conn.commit()
     return {
-        "initial_balance": 100.0,
-        "current_balance": 100.0,
+        "initial_balance": 50.0,
+        "current_balance": 50.0,
+        "vault_balance": 0.0,
         "total_pnl": 0.0,
         "win_count": 0,
         "loss_count": 0,
-        "win_rate": 0.0
+        "win_rate": 0.0,
+        "milestone_target": 2000.0,
+        "mode": "HERMES_2.0_APEX"
     }
 
 def get_daily_trades_summary(since_timestamp_ms: int) -> Dict[str, Any]:

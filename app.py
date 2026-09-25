@@ -51,6 +51,7 @@ from engine.binance_trader import binance_trader
 from engine.order_flow import analyze_order_flow
 from engine.trade_journal import get_all_journal_trades, JOURNAL_CSV_PATH
 from engine.dual_timeframe_sniper import dual_sniper
+from engine.hermes2_apex_live import hermes2_apex_engine
 from database.mongo_client import is_mongo_connected
 
 STATIC_DIR = BASE_DIR / "static"
@@ -70,6 +71,7 @@ async def ws_broadcast(message: Dict[str, Any]):
             connected_clients.remove(dc)
 
 scanner.set_broadcast_callback(ws_broadcast)
+hermes2_apex_engine.set_broadcast_callback(ws_broadcast)
 
 async def keepalive_loop():
     """Pings the public Render URL every 10 minutes to prevent Render free-tier sleep."""
@@ -87,14 +89,17 @@ async def keepalive_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: launch scanner, keepalive, and telegram command polling in background
+    # Startup: launch scanner, Hermes 2.0 Apex robot, keepalive, and telegram polling in background
     scanner_task = asyncio.create_task(scanner.start())
+    hermes2_task = asyncio.create_task(hermes2_apex_engine.start())
     tg_polling_task = asyncio.create_task(telegram_service.start_polling())
     keepalive_task = asyncio.create_task(keepalive_loop())
     yield
     # Shutdown
     scanner.stop()
+    hermes2_apex_engine.stop()
     scanner_task.cancel()
+    hermes2_task.cancel()
     tg_polling_task.cancel()
     keepalive_task.cancel()
     await binance_feed.close()
@@ -176,60 +181,12 @@ async def serve_settings():
 
 @app.get("/api/pinescript")
 async def get_pinescript_code():
-    # Try Godtier BPR Dual System first (new indicator)
-    pine_file = BASE_DIR / "GODTIER_BPR_DUAL_INDICATOR.pine"
-    if not pine_file.exists():
-        pine_file = BASE_DIR / "SMC_V17_TradingView_Indicator.pine"
+    pine_file = BASE_DIR / "SMC_V17_TradingView_Indicator.pine"
     if pine_file.exists():
         with open(pine_file, "r", encoding="utf-8") as f:
             code = f.read()
         return {"status": "ok", "code": code}
-    return {"status": "error", "code": "// Godtier BPR Indicator file not found"}
-
-# ═══════════════════════════════════════════════════════════
-# DUAL REPO LOCK — Both repos always in sync (LOCKED)
-# smc-ai-agent  <->  smc-v17-trading-system
-# ═══════════════════════════════════════════════════════════
-DUAL_REPO_LOCK = {
-    "primary":    "https://github.com/as7812164-sketch/smc-ai-agent",
-    "mirror":     "https://github.com/as7812164-sketch/smc-v17-trading-system",
-    "render":     "https://smc-ai-agent.onrender.com",
-    "strategy":   "Godtier BPR Dual System [Pure Buy] v5",
-    "timeframes": ["1H", "4H"],
-    "locked":     True
-}
-
-@app.get("/api/system-info")
-async def get_system_info():
-    """Dual-repo lock status + full system identity."""
-    mongo_ok = is_mongo_connected()
-    return {
-        "status": "ok",
-        "system": "Godtier BPR Trading Terminal",
-        "strategy": DUAL_REPO_LOCK["strategy"],
-        "timeframes": DUAL_REPO_LOCK["timeframes"],
-        "dual_repo_lock": {
-            "locked": DUAL_REPO_LOCK["locked"],
-            "primary_repo": DUAL_REPO_LOCK["primary"],
-            "mirror_repo":  DUAL_REPO_LOCK["mirror"],
-            "render_url":   DUAL_REPO_LOCK["render"],
-            "sync_mode": "auto — every git push updates BOTH repos simultaneously"
-        },
-        "services": {
-            "mongodb":      "connected" if mongo_ok else "disconnected",
-            "binance_feed": "active",
-            "telegram":     "active",
-            "scanner":      "active"
-        },
-        "indicator": {
-            "name":           "Godtier BPR Dual System [Pure Buy]",
-            "version":        "v5",
-            "win_rate":       "80%+",
-            "capital_safety": "92%",
-            "type":           "BPR Springboard + Inversion FVG",
-            "pure_buy":       True
-        }
-    }
+    return {"status": "error", "code": "// SMC V17 Indicator file not found"}
 
 @app.get("/api/journal/trades")
 async def get_journal_trades_endpoint():
@@ -315,18 +272,6 @@ async def get_system_status():
 async def get_paper_trading_summary():
     account = get_paper_account()
     trades = get_paper_trades_history(limit=30)
-    open_trades_raw = get_open_paper_trades()
-
-    # Self-heal check: ensure any ACTIVE zone has an open paper trade
-    active_zones = get_active_zones()
-    existing_zone_ids = {ot.get("zone_id") for ot in open_trades_raw if ot.get("zone_id")}
-    for az in active_zones:
-        if az.get("status") == "ACTIVE" and az.get("id") not in existing_zone_ids:
-            try:
-                open_paper_trade(az)
-            except Exception:
-                pass
-    # Re-fetch if any was added
     open_trades_raw = get_open_paper_trades()
 
     tickers = scanner.last_tickers
@@ -1176,6 +1121,38 @@ async def get_hermes_audit():
 async def get_hermes_patterns():
     from ai.hermes_agent import hermes
     return {"patterns": hermes.discover_institutional_patterns()}
+
+@app.get("/api/hermes/apex/status")
+async def get_hermes_apex_status():
+    acc = hermes2_apex_engine.get_hermes_account()
+    return {
+        "status": "ONLINE_24_7",
+        "engine": "HERMES 2.0 APEX Master Unified",
+        "account": acc,
+        "active_position": hermes2_apex_engine.active_position,
+        "btc_macro_sentry": hermes2_apex_engine.last_btc_bias,
+        "last_scan_time": hermes2_apex_engine.last_scan_time,
+        "detected_setups_count": len(hermes2_apex_engine.detected_setups)
+    }
+
+@app.get("/api/hermes/apex/setups")
+async def get_hermes_apex_setups():
+    return {
+        "setups": hermes2_apex_engine.detected_setups,
+        "btc_macro_sentry": hermes2_apex_engine.last_btc_bias,
+        "count": len(hermes2_apex_engine.detected_setups)
+    }
+
+@app.post("/api/hermes/apex/scan")
+async def trigger_hermes_apex_scan():
+    res = await hermes2_apex_engine.run_full_champion_scan()
+    return res
+
+@app.post("/api/hermes/apex/reset")
+async def reset_hermes_apex_run():
+    res = reset_paper_account()
+    hermes2_apex_engine.active_position = None
+    return {"status": "ok", "message": "Hermes 2.0 Apex compounding run reset to $50.00", "account": res}
 
 @app.get("/api/pinescript")
 async def get_pinescript_endpoint():
