@@ -2831,46 +2831,46 @@ async function updateBitgetGoalHeader() {
             }
         }
 
-        if (d.balance && d.balance.connected) {
-            const total = d.balance.total_usdt || 77.59;
-            if (balCard) balCard.innerText = `$${formatPrice(total)} USDT`;
-            if (bgWallet) bgWallet.innerText = `$${formatPrice(total)} USDT`;
-            if (subCard) {
-                const autoStatus = d.enabled ? '🟢 AUTO ACTIVE' : '⏸️ PAUSED';
-                subCard.innerHTML = `<span style="color:#00f59b; font-weight:700;">$50 → $1,000</span> • ${autoStatus}`;
-            }
-            if (bgStatus) {
-                bgStatus.innerText = d.enabled ? '🟢 AUTO ACTIVE' : '⏸️ PAUSED';
-                bgStatus.style.color = d.enabled ? '#00f59b' : '#f59e0b';
-            }
+        const acc = paperTradingState.account || {};
+        const activeCap = Number(acc.current_balance) || 50.0;
+        const vaultCap = Number(acc.vault_balance) || 0.0;
+        
+        if (balCard) balCard.innerText = `$${vaultCap.toFixed(2)} USDT`;
+        if (bgWallet) bgWallet.innerText = `$${activeCap.toFixed(2)} USDT`;
+        if (subCard) {
+            subCard.innerHTML = `<span style="color:#00f59b; font-weight:700;">$50 → $2,000</span> • 🟢 HERMES 2.0 APEX`;
+        }
+        if (bgStatus) {
+            bgStatus.innerText = '🟢 HERMES 2.0 LIVE';
+            bgStatus.style.color = '#00f59b';
+        }
 
-            if (openTrades.length > 0) {
-                const firstTr = openTrades[0];
-                const isBuy = firstTr.side === "BUY";
-                const pnlUsdt = Number(firstTr.floating_pnl_usdt) || 0;
-                const pnlPct = Number(firstTr.floating_pnl_pct) || 0;
-                const pnlSign = pnlUsdt >= 0 ? "+" : "";
+        if (openTrades.length > 0) {
+            const firstTr = openTrades[0];
+            const isBuy = firstTr.side === "BUY" || firstTr.side === "LONG";
+            const pnlUsdt = Number(firstTr.floating_pnl_usdt) || 0;
+            const pnlPct = Number(firstTr.floating_pnl_pct) || 0;
+            const pnlSign = pnlUsdt >= 0 ? "+" : "";
 
-                if (bgActivePair) {
-                    bgActivePair.innerHTML = `<span style="color:${isBuy ? '#00f59b' : '#ff3b69'}; font-weight:800;">5x ${isBuy ? 'LONG' : 'SHORT'}</span> #${firstTr.symbol}`;
-                }
-                if (bgPnlVal) {
-                    bgPnlVal.innerText = `${pnlSign}$${pnlUsdt.toFixed(2)} (${pnlSign}${pnlPct.toFixed(2)}%)`;
-                    bgPnlVal.className = `bg-pnl-num ${pnlUsdt >= 0 ? 'text-buy' : 'text-sell'}`;
-                }
-                if (bgTarget) {
-                    const margin = Number(firstTr.position_size_usdt) || 50.0;
-                    const expGain = margin * 0.10;
-                    bgTarget.innerText = `+$${expGain.toFixed(2)} USDT (+10.0%)`;
-                }
-            } else {
-                if (bgActivePair) bgActivePair.innerText = "Scanning 50 Pairs (90+ A+)";
-                if (bgPnlVal) {
-                    bgPnlVal.innerText = "No Open Position ($50 Safe)";
-                    bgPnlVal.className = "bg-pnl-num text-muted";
-                }
-                if (bgTarget) bgTarget.innerText = "+$5.00 USDT (+10.0%)";
+            if (bgActivePair) {
+                bgActivePair.innerHTML = `<span style="color:${isBuy ? '#00f59b' : '#ff3b69'}; font-weight:800;">5x ${isBuy ? 'LONG' : 'SHORT'}</span> #${firstTr.symbol}`;
             }
+            if (bgPnlVal) {
+                bgPnlVal.innerText = `${pnlSign}$${pnlUsdt.toFixed(2)} (${pnlSign}${pnlPct.toFixed(2)}%)`;
+                bgPnlVal.className = `bg-pnl-num ${pnlUsdt >= 0 ? 'text-buy' : 'text-sell'}`;
+            }
+            if (bgTarget) {
+                const margin = Number(firstTr.position_size_usdt) || 50.0;
+                const expGain = margin * 0.14; // +14% ROE at 5x
+                bgTarget.innerText = `+$${expGain.toFixed(2)} USDT (+14.0% ROE)`;
+            }
+        } else {
+            if (bgActivePair) bgActivePair.innerText = "Hermes Top-22 Champions (4 Sentries)";
+            if (bgPnlVal) {
+                bgPnlVal.innerText = "No Open Position ($50 Safe)";
+                bgPnlVal.className = "bg-pnl-num text-muted";
+            }
+            if (bgTarget) bgTarget.innerText = "+$7.00 USDT (+14.0% ROE)";
         }
     } catch (e) {}
 }
@@ -3180,7 +3180,7 @@ function setupEventListeners() {
                 const hud = document.getElementById("smcChartHud");
                 if (hud) hud.style.display = showSmcZones ? "block" : "none";
                 drawSmcZoneBoxes();
-                showToast(`⚡ Godtier BPR [Buy] ${showSmcZones ? 'ON ✅' : 'OFF'}`);
+                showToast(`SMC V17 (3% Airspace) ${showSmcZones ? 'ON' : 'OFF'}`);
                 return;
             }
             activeIndicators[ind] = !activeIndicators[ind];

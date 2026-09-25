@@ -134,21 +134,27 @@ def init_db():
             except Exception:
                 pass
 
-        # If clean account, set starting capital to $50.00
-        acc = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
-        if acc and (acc["current_balance"] == 0.0 or acc["current_balance"] == 100.0) and acc["win_count"] == 0 and acc["loss_count"] == 0:
-            conn.execute("""
-            UPDATE paper_account SET
-                initial_balance = 50.0,
-                current_balance = 50.0,
-                vault_balance = 0.0,
-                total_pnl = 0.0,
-                win_count = 0,
-                loss_count = 0,
-                milestone_target = 2000.0,
-                mode = 'HERMES_2.0_APEX'
-            WHERE id = 1
-            """)
+        # Purge legacy SMC V17 historical zones & alerts if present
+        legacy_zones = conn.execute("SELECT count(*) FROM zones WHERE status IN ('TP_HIT', 'SL_HIT')").fetchone()[0]
+        if legacy_zones > 0:
+            conn.execute("DELETE FROM zones")
+            conn.execute("DELETE FROM signals")
+            conn.execute("DELETE FROM sent_alerts")
+            conn.execute("DELETE FROM paper_trades")
+
+        # Ensure starting capital is strictly $50.00 for Hermes 2.0 Apex
+        conn.execute("""
+        UPDATE paper_account SET
+            initial_balance = 50.0,
+            current_balance = 50.0,
+            vault_balance = 0.0,
+            total_pnl = 0.0,
+            win_count = 0,
+            loss_count = 0,
+            milestone_target = 2000.0,
+            mode = 'HERMES_2.0_APEX'
+        WHERE id = 1
+        """)
 
         # Initialize default metrics if not present
         default_metrics = {
@@ -281,26 +287,27 @@ def get_recent_signals(limit: int = 50) -> List[Dict[str, Any]]:
 # --- Metrics & Performance Tracking ---
 def get_performance_stats() -> Dict[str, Any]:
     with get_connection() as conn:
-        total_signals = conn.execute("SELECT COUNT(*) FROM signals WHERE signal_type = 'FIRST_TAP_ENTRY'").fetchone()[0]
-        buy_signals = conn.execute("SELECT COUNT(*) FROM signals WHERE signal_type = 'FIRST_TAP_ENTRY' AND side = 'BUY'").fetchone()[0]
-        sell_signals = conn.execute("SELECT COUNT(*) FROM signals WHERE signal_type = 'FIRST_TAP_ENTRY' AND side = 'SELL'").fetchone()[0]
+        acc = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
+        win_count = int(acc["win_count"]) if acc else 0
+        loss_count = int(acc["loss_count"]) if acc else 0
+        completed = win_count + loss_count
+        win_rate = (win_count / completed * 100) if completed > 0 else 0.0
 
-        open_pending = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'ACTIVE'").fetchone()[0]
+        # Realized paper trading trades breakdown
+        buy_tp = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'TP_HIT' AND side = 'BUY'").fetchone()[0]
+        buy_sl = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'SL_HIT' AND side = 'BUY'").fetchone()[0]
+        sell_tp = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'TP_HIT' AND side = 'SELL'").fetchone()[0]
+        sell_sl = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'SL_HIT' AND side = 'SELL'").fetchone()[0]
+
+        buy_signals = conn.execute("SELECT COUNT(*) FROM signals WHERE side = 'BUY'").fetchone()[0]
+        sell_signals = conn.execute("SELECT COUNT(*) FROM signals WHERE side = 'SELL'").fetchone()[0]
+        total_signals = buy_signals + sell_signals
+
+        open_pending = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN'").fetchone()[0]
         qualified_untriggered = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'QUALIFIED'").fetchone()[0]
-
-        tp_hits = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'TP_HIT'").fetchone()[0]
-        sl_hits = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'SL_HIT'").fetchone()[0]
-
-        buy_tp = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'TP_HIT' AND side = 'BUY'").fetchone()[0]
-        buy_sl = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'SL_HIT' AND side = 'BUY'").fetchone()[0]
-        sell_tp = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'TP_HIT' AND side = 'SELL'").fetchone()[0]
-        sell_sl = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'SL_HIT' AND side = 'SELL'").fetchone()[0]
 
         active_buy = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'QUALIFIED' AND side = 'BUY'").fetchone()[0]
         active_sell = conn.execute("SELECT COUNT(*) FROM zones WHERE status = 'QUALIFIED' AND side = 'SELL'").fetchone()[0]
-
-        completed = tp_hits + sl_hits
-        win_rate = (tp_hits / completed * 100) if completed > 0 else 0.0
 
         buy_completed = buy_tp + buy_sl
         buy_wr = (buy_tp / buy_completed * 100) if buy_completed > 0 else 0.0
@@ -308,7 +315,7 @@ def get_performance_stats() -> Dict[str, Any]:
         sell_completed = sell_tp + sell_sl
         sell_wr = (sell_tp / sell_completed * 100) if sell_completed > 0 else 0.0
 
-        last_alert = get_metric("last_alert", "None yet")
+        last_alert = get_metric("last_alert", "Hermes 2.0 Apex Live Engine Armed")
 
         return {
             "total_signals": total_signals,
@@ -316,10 +323,10 @@ def get_performance_stats() -> Dict[str, Any]:
             "sell_signals": sell_signals,
             "open_pending": open_pending,
             "qualified_untriggered": qualified_untriggered,
-            "tp_hits": tp_hits,
-            "sl_hits": sl_hits,
-            "wins": tp_hits,
-            "losses": sl_hits,
+            "tp_hits": win_count,
+            "sl_hits": loss_count,
+            "wins": win_count,
+            "losses": loss_count,
             "win_rate": round(win_rate, 1),
             "buy_wr": round(buy_wr, 1),
             "sell_wr": round(sell_wr, 1),
@@ -328,6 +335,40 @@ def get_performance_stats() -> Dict[str, Any]:
             "total_active_zones": active_buy + active_sell,
             "last_alert": last_alert
         }
+
+def wipe_legacy_database_clean() -> Dict[str, Any]:
+    """Wipes all legacy SMC V17 zones, signals, and alerts for a 100% clean Hermes 2.0 Apex forward-test."""
+    with get_connection() as conn:
+        conn.execute("DELETE FROM zones;")
+        conn.execute("DELETE FROM signals;")
+        conn.execute("DELETE FROM sent_alerts;")
+        conn.execute("DELETE FROM paper_trades;")
+        conn.execute("""
+        UPDATE paper_account SET
+            initial_balance = 50.0,
+            current_balance = 50.0,
+            vault_balance = 0.0,
+            total_pnl = 0.0,
+            win_count = 0,
+            loss_count = 0,
+            milestone_target = 2000.0,
+            mode = 'HERMES_2.0_APEX'
+        WHERE id = 1;
+        """)
+        conn.execute("""
+        INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_2.0_APEX')
+        ON CONFLICT(key) DO UPDATE SET value = 'HERMES_2.0_APEX';
+        """)
+        conn.execute("""
+        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 2.0 Apex Live Engine Armed')
+        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 2.0 Apex Live Engine Armed';
+        """)
+        conn.commit()
+    return {
+        "status": "success",
+        "message": "All legacy SMC V17 zones, signals, and trades wiped clean. Hermes 2.0 Apex reset to fresh $50.00 virtual capital."
+    }
+
 
 # --- System Metrics ---
 def set_metric(key: str, value: Any):

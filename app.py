@@ -39,7 +39,8 @@ from database.db import (
     reset_paper_account,
     get_open_paper_trades,
     open_paper_trade,
-    close_paper_trade_manually
+    close_paper_trade_manually,
+    wipe_legacy_database_clean
 )
 from feed.binance_feed import binance_feed
 from engine.smc_v17 import analyze_candles_smc_v17, filter_active_zones
@@ -254,6 +255,12 @@ async def get_backtest_1h():
     return {"status": "error", "message": "1H 100-trade backtest file not found"}
 
 # --- REST Endpoints ---
+@app.get("/api/admin/reset_clean")
+@app.post("/api/admin/reset_clean")
+async def admin_reset_clean():
+    res = wipe_legacy_database_clean()
+    return res
+
 @app.get("/api/status")
 async def get_system_status():
     stats = get_performance_stats()
