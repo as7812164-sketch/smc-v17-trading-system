@@ -402,35 +402,56 @@ def get_hermes_account() -> Dict[str, Any]:
 
 def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Deploys exactly 10% of current paper wallet balance into the signal.
+    Deploys 100% compounding margin at 5x Isolated Perpetual leverage under HERMES 2.0 APEX rules.
     """
     with get_connection() as conn:
         row = conn.execute("SELECT current_balance FROM paper_account WHERE id = 1").fetchone()
-        balance = float(row[0]) if row else 100.0
+        balance = float(row[0]) if row and float(row[0]) > 0 else 50.0
 
         # Check if already open for this zone
         existing = conn.execute("SELECT * FROM paper_trades WHERE zone_id = ? AND status = 'OPEN'", (zone.get("id"),)).fetchone()
         if existing:
             tr = dict(existing)
             tr["balance_at_entry"] = balance
-            tr["expected_tp_usdt"] = round(tr["position_size_usdt"] * 0.04, 2)
-            tr["max_sl_usdt"] = round(tr["position_size_usdt"] * 0.03, 2)
             return tr
 
-        # 10% allocation
-        position_size = round(balance * 0.10, 2)
-        if position_size < 1.0:
-            position_size = 1.0
+        # Strict 1-Trade Sequential Queue: Check if ANY trade is already OPEN
+        open_count = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN'").fetchone()[0]
+        if open_count > 0:
+            return {"error": "Trade already open in sequential queue"}
+
+        # 100% of compounding margin @ 5x Isolated
+        margin = balance
+        position_size = round(margin * 5.0, 2)
+        side = zone["side"].upper()
+        entry_price = float(zone["entry_price"])
+        tf = zone.get("timeframe", "4h")
+
+        # HERMES 2.0 APEX Battle Targets:
+        # 4H: TP +2.80% (+14.0% ROE) | SL -2.80% (-14.0% ROE) | Hard SL -3.80% (-19.0% ROE)
+        # 1H: TP +2.20% (+11.0% ROE) | SL -2.50% (-12.5% ROE) | Hard SL -3.60% (-18.0% ROE)
+        if tf == "1h":
+            tp_pct = 0.022
+            sl_pct = 0.025
+            hard_sl_pct = 0.036
+        else:
+            tp_pct = 0.028
+            sl_pct = 0.028
+            hard_sl_pct = 0.038
+
+        tp_price = entry_price * (1.0 + tp_pct) if side == "BUY" else entry_price * (1.0 - tp_pct)
+        sl_price = entry_price * (1.0 - sl_pct) if side == "BUY" else entry_price * (1.0 + sl_pct)
+        hard_sl_price = entry_price * (1.0 - hard_sl_pct) if side == "BUY" else entry_price * (1.0 + hard_sl_pct)
 
         now = int(time.time() * 1000)
         cursor = conn.execute("""
         INSERT INTO paper_trades (
             zone_id, symbol, side, entry_price, position_size_usdt,
-            tp_price, sl_price, status, entry_time
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?)
+            tp_price, sl_price, hard_sl_price, timeframe, status, entry_time
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?)
         """, (
-            zone.get("id"), zone["symbol"], zone["side"], float(zone["entry_price"]),
-            position_size, float(zone["tp_price"]), float(zone["sl_price"]), now
+            zone.get("id"), zone["symbol"], side, entry_price,
+            position_size, tp_price, sl_price, hard_sl_price, tf, now
         ))
         conn.commit()
         trade_id = cursor.lastrowid
@@ -438,20 +459,23 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             "id": trade_id,
             "zone_id": zone.get("id"),
             "symbol": zone["symbol"],
-            "side": zone["side"],
-            "entry_price": float(zone["entry_price"]),
+            "side": side,
+            "timeframe": tf,
+            "entry_price": entry_price,
             "position_size_usdt": position_size,
-            "tp_price": float(zone["tp_price"]),
-            "sl_price": float(zone["sl_price"]),
+            "margin_usdt": margin,
+            "tp_price": tp_price,
+            "sl_price": sl_price,
+            "hard_sl_price": hard_sl_price,
             "balance_at_entry": balance,
-            "expected_tp_usdt": round(position_size * 0.04, 2),
-            "max_sl_usdt": round(position_size * 0.03, 2)
+            "expected_tp_usdt": round(position_size * tp_pct, 2),
+            "max_sl_usdt": round(position_size * sl_pct, 2)
         }
 
 def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, Any]]:
     """
-    Closes open paper trade on TP_HIT (+4%) or SL_HIT (-3%).
-    Updates balance and total PnL.
+    Closes open paper trade on TP_HIT (+14% / +11% ROE) or SL_HIT (-14% / -12.5% ROE).
+    Enforces 85% Reinvestment + 15% Cold Storage Vault compounding split.
     """
     with get_connection() as conn:
         trade = conn.execute("""
@@ -462,58 +486,80 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
 
         now = int(time.time() * 1000)
         if not trade:
-            pos_size = 10.0
-            pnl_pct = 4.0 if outcome == "TP_HIT" else -3.0
-            pnl_usdt = round(pos_size * (pnl_pct / 100.0), 2)
-            exit_price = float(zone.get("tp_price" if outcome == "TP_HIT" else "sl_price", 0))
-            cursor = conn.execute("""
-            INSERT INTO paper_trades (
-                zone_id, symbol, side, entry_price, position_size_usdt,
-                tp_price, sl_price, status, entry_time, exit_time, exit_price, pnl_usdt, pnl_pct
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                zone.get("id"), zone["symbol"], zone["side"], float(zone.get("entry_price", 0)),
-                pos_size, float(zone.get("tp_price", 0)), float(zone.get("sl_price", 0)),
-                outcome, now - 3600000, now, exit_price, pnl_usdt, pnl_pct
-            ))
-            trade_id = cursor.lastrowid
-        else:
-            trade_id = trade["id"]
-            pos_size = float(trade["position_size_usdt"])
-            pnl_pct = 4.0 if outcome == "TP_HIT" else -3.0
-            pnl_usdt = round(pos_size * (pnl_pct / 100.0), 2)
-            exit_price = float(zone.get("tp_price" if outcome == "TP_HIT" else "sl_price", trade["tp_price"]))
-            conn.execute("""
-            UPDATE paper_trades SET
-                status = ?, exit_time = ?, exit_price = ?, pnl_usdt = ?, pnl_pct = ?
-            WHERE id = ?
-            """, (outcome, now, exit_price, pnl_usdt, pnl_pct, trade_id))
+            return None
 
-        is_win = 1 if outcome == "TP_HIT" else 0
-        is_loss = 1 if outcome == "SL_HIT" else 0
+        trade_id = trade["id"]
+        pos_size = float(trade["position_size_usdt"])
+        side = trade["side"].upper()
+        entry_price = float(trade["entry_price"])
+        tf = trade["timeframe"] or "4h"
+
+        tp_pct = 0.022 if tf == "1h" else 0.028
+        sl_pct = 0.025 if tf == "1h" else 0.028
+
+        if outcome == "TP_HIT":
+            exit_price = float(trade["tp_price"])
+            gross_pnl_pct = tp_pct * 100.0
+        else:
+            exit_price = float(trade["sl_price"])
+            gross_pnl_pct = -sl_pct * 100.0
+
+        gross_pnl_usdt = pos_size * (gross_pnl_pct / 100.0)
+        roundtrip_fee = pos_size * 0.0016
+        net_pnl_usdt = round(gross_pnl_usdt - roundtrip_fee, 2)
+
+        # Compounding Split: 15% to Cold Storage Vault, 85% to active margin on Win
+        vault_stash = 0.0
+        acc_row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
+        curr_balance = float(acc_row["current_balance"]) if acc_row else 50.0
+        vault_balance = float(acc_row["vault_balance"]) if acc_row and "vault_balance" in acc_row.keys() else 0.0
+        win_count = int(acc_row["win_count"]) if acc_row else 0
+        loss_count = int(acc_row["loss_count"]) if acc_row else 0
+        total_pnl = float(acc_row["total_pnl"]) if acc_row else 0.0
+
+        if outcome == "TP_HIT" and net_pnl_usdt > 0:
+            win_count += 1
+            vault_stash = round(net_pnl_usdt * 0.15, 2)
+            margin_reinvest = round(net_pnl_usdt * 0.85, 2)
+            new_balance = round(curr_balance + margin_reinvest, 2)
+            new_vault = round(vault_balance + vault_stash, 2)
+        else:
+            loss_count += 1
+            new_balance = round(max(1.0, curr_balance + net_pnl_usdt), 2)
+            new_vault = vault_balance
+
+        new_total_pnl = round(total_pnl + net_pnl_usdt, 2)
+
+        conn.execute("""
+        UPDATE paper_trades SET
+            status = ?, exit_time = ?, exit_price = ?, pnl_usdt = ?, pnl_pct = ?, vault_stashed_usdt = ?
+        WHERE id = ?
+        """, (outcome, now, exit_price, net_pnl_usdt, round(gross_pnl_pct * 5.0, 2), vault_stash, trade_id))
+
         conn.execute("""
         UPDATE paper_account SET
-            current_balance = round(current_balance + ?, 2),
-            total_pnl = round(total_pnl + ?, 2),
-            win_count = win_count + ?,
-            loss_count = loss_count + ?
+            current_balance = ?,
+            vault_balance = ?,
+            total_pnl = ?,
+            win_count = ?,
+            loss_count = ?
         WHERE id = 1
-        """, (pnl_usdt, pnl_usdt, is_win, is_loss))
+        """, (new_balance, new_vault, new_total_pnl, win_count, loss_count))
         conn.commit()
 
-        acc = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
-        completed = acc["win_count"] + acc["loss_count"]
-        win_rate = round((acc["win_count"] / completed * 100), 1) if completed > 0 else 0.0
+        completed = win_count + loss_count
+        win_rate = round((win_count / completed * 100), 1) if completed > 0 else 0.0
         return {
             "trade_id": trade_id,
             "outcome": outcome,
-            "pnl_usdt": pnl_usdt,
-            "pnl_pct": pnl_pct,
+            "pnl_usdt": net_pnl_usdt,
+            "pnl_pct": round(gross_pnl_pct * 5.0, 2),
             "position_size": pos_size,
-            "new_balance": round(acc["current_balance"], 2),
-            "total_pnl": round(acc["total_pnl"], 2),
-            "win_count": acc["win_count"],
-            "loss_count": acc["loss_count"],
+            "new_balance": new_balance,
+            "vault_balance": new_vault,
+            "total_pnl": new_total_pnl,
+            "win_count": win_count,
+            "loss_count": loss_count,
             "win_rate": win_rate
         }
 

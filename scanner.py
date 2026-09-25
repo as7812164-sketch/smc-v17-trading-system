@@ -171,10 +171,12 @@ class SMCScanner:
 
                     entry_price = z["ob_high"] if side == "BUY" else z["ob_low"]
                     now_ms = int(time.time() * 1000)
-                    tp_price = entry_price * (1.04 if side == "BUY" else 0.96)
-                    sl_price = entry_price * (0.97 if side == "BUY" else 1.03)
+                    # HERMES 2.0 APEX Battle Targets (4H: +2.8% Move = +14.0% ROE | -2.8% Move = -14.0% ROE)
+                    tp_price = entry_price * (1.028 if side == "BUY" else 0.972)
+                    sl_price = entry_price * (0.972 if side == "BUY" else 1.028)
 
                     z["status"] = "ACTIVE"
+                    z["timeframe"] = "4h"
                     z["entry_price"] = entry_price
                     z["entry_time"] = now_ms
                     z["tp_price"] = tp_price
