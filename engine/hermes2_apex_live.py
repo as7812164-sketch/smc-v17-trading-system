@@ -846,6 +846,23 @@ class Hermes2ApexLiveEngine:
         logger.info("👑 HERMES 2.0 APEX Live Streaming Simulated Engine Started 24/7.")
         set_metric("hermes_status", "ACTIVE_24_7")
 
+        # Enforce 1-Trade Sequential Queue & Restore Active Position
+        try:
+            with get_connection() as conn:
+                open_rows = conn.execute("SELECT * FROM paper_trades WHERE status = 'OPEN' ORDER BY id DESC").fetchall()
+                if open_rows:
+                    self.active_position = dict(open_rows[0])
+                    logger.info(f"👑 Restored active Hermes position: {self.active_position.get('symbol')} {self.active_position.get('side')}")
+                    if len(open_rows) > 1:
+                        now_ms = int(time.time() * 1000)
+                        for extra in open_rows[1:]:
+                            conn.execute("UPDATE paper_trades SET status = 'CLOSED_LEGACY', exit_time = ?, exit_price = ? WHERE id = ?",
+                                         (now_ms, extra['entry_price'], extra['id']))
+                        conn.commit()
+                        logger.info(f"🧹 Cleaned up {len(open_rows)-1} extra legacy open trades to strictly maintain 1-Trade Sequential Queue.")
+        except Exception as e:
+            logger.warning(f"Error restoring active position on boot: {e}")
+
         # Initial Telegram Heartbeat on Boot
         try:
             acc = self.get_hermes_account()

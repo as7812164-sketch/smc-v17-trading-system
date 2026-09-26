@@ -1,4 +1,4 @@
-// SMC V17 Trading Terminal - TradingView Pro Frontend Engine
+// HERMES 2.0 APEX Trading Terminal - TradingView Pro Frontend Engine
 let currentSymbol = "BTCUSDT";
 let currentTimeframe = "4h";
 let candleLimit = 500;
@@ -443,7 +443,7 @@ function renderIndicators(candles) {
     }
 }
 
-// --- SMC V17 Overlays & Zone Boxes ---
+// --- Hermes 2.0 Apex Structural Overlays & Zone Boxes ---
 function renderSmcOverlays(candles, zones, currentPx) {
     if (!mainSeries) return;
 
@@ -564,7 +564,7 @@ function drawSmcZoneBoxes() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // 1. Render SMC V17 Master Unmitigated Order Block Zones
+    // 1. Render Hermes 2.0 Apex Master Unmitigated Order Block Zones
     if (showSmcZones && mainSeries && tvChart && rawZonesData && rawZonesData.length > 0) {
         const timeScale = tvChart.timeScale();
         const visibleRange = timeScale.getVisibleRange();
@@ -731,9 +731,9 @@ function drawSmcZoneBoxes() {
                 ctx.lineTo(bracketX + 5, yBot);
                 ctx.stroke();
 
-                // Airspace Center Badge
+                // Hermes Sentry Clearance Center Badge
                 const midY = (yTop + yBot) / 2;
-                const airLabel = `↕ Airspace Gap: ${midBuy.airspace_pct || '0'}% ${airValid ? 'PASSED ≥ 3% ✅' : 'RESTRICTED < 3% ❌'}`;
+                const airLabel = `↕ Hermes Sentry Clearance: ${midBuy.airspace_pct || '0'}% ${airValid ? 'PASSED ≥ 3% ✅' : 'RESTRICTED < 3% ❌'}`;
                 ctx.font = "bold 9px 'JetBrains Mono', monospace";
                 const airWidth = ctx.measureText(airLabel).width;
                 ctx.fillStyle = "rgba(10, 13, 20, 0.92)";
@@ -1943,7 +1943,7 @@ function calculateBollingerBands(candles, period = 20, mult = 2) {
     return { upper, lower, basis };
 }
 
-// --- Update SMC V17 Indicator Live Floating Chart HUD ---
+// --- Update Hermes 2.0 Apex Indicator Live Floating Chart HUD ---
 function updateSmcChartHud(data) {
     const hud = document.getElementById("smcChartHud");
     if (!hud) return;
@@ -1955,10 +1955,10 @@ function updateSmcChartHud(data) {
 
     const tf = (currentTimeframe || "4h").toUpperCase();
     const is1h = (currentTimeframe === "1h");
-    const targetRoe = is1h ? "+8.00% ROE" : "+12.00% ROE";
-    const slRoe = is1h ? "-10.00% ROE" : "-11.25% ROE";
+    const targetRoe = is1h ? "+8.00% ROE" : "+14.00% ROE";
+    const slRoe = is1h ? "-10.00% ROE" : "-14.00% ROE";
 
-    if (tfEl) tfEl.innerText = `${tf} SNIPER (${targetRoe})`;
+    if (tfEl) tfEl.innerText = `${tf} APEX (${targetRoe})`;
     if (targetSlEl) targetSlEl.innerHTML = `<span style="color:#00F59B; font-weight:700;">${targetRoe}</span> / <span style="color:#FF3B69; font-weight:700;">${slRoe}</span>`;
 
     // Locate active 2nd OB
@@ -1996,9 +1996,9 @@ function updateSmcChartHud(data) {
         if (airValEl) {
             const ind = data ? data.indicator_status : null;
             if (ind && (ind.buy_airspace_pct > 0 || ind.sell_airspace_pct > 0)) {
-                airValEl.innerHTML = `<span style="color:#94A3B8;">Airspace: ${ind.buy_airspace_pct || ind.sell_airspace_pct}% (Scanning 2nd OB)</span>`;
+                airValEl.innerHTML = `<span style="color:#94A3B8;">Clearance: ${ind.buy_airspace_pct || ind.sell_airspace_pct}% (Scanning 2nd OB)</span>`;
             } else {
-                airValEl.innerHTML = `<span style="color:#94A3B8;">Scanning 3-OB Stack...</span>`;
+                airValEl.innerHTML = `<span style="color:#94A3B8;">Scanning 4-Sentries Structure...</span>`;
             }
         }
         if (gateStatusEl) {
@@ -2013,7 +2013,7 @@ function renderActiveZonesStrip(zones, currentPx) {
     if (!container) return;
 
     if (!zones || zones.length === 0) {
-        container.innerHTML = `<span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> No active SMC V17 qualified zones for ${currentSymbol} on ${currentTimeframe.toUpperCase()} right now. Waiting for high-displacement setup.</span>`;
+        container.innerHTML = `<span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> No active Hermes 2.0 Apex qualified zones for ${currentSymbol} on ${currentTimeframe.toUpperCase()} right now. Waiting for high-displacement setup.</span>`;
         return;
     }
 
@@ -2278,7 +2278,7 @@ function updateTelegramPreview(data) {
         const m = data.metrics || {};
         const nowStr = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        const txt = `🟢 SMC V17 LIVE
+        const txt = `🟢 HERMES 2.0 APEX LIVE
 
 📡 CONNECTION
 🌌 Binance Live: ${m.binance_status || 'CONNECTED'}
@@ -2807,6 +2807,64 @@ function updateOpenTradesWithTickers(tickers) {
     }
 }
 
+function updateFuturesPositionsWithTickers(tickers) {
+    if (!tickers || !futuresPositionsData || futuresPositionsData.length === 0) return;
+
+    let hasChange = false;
+    let totalUnrealized = 0;
+
+    for (let pos of futuresPositionsData) {
+        if (tickers[pos.symbol] !== undefined) {
+            pos.mark_price = Number(tickers[pos.symbol]);
+            const entry = Number(pos.entry_price) || 0;
+            const mark = Number(pos.mark_price) || entry;
+            const sizeUsdt = Number(pos.size_usdt) || 250.0;
+            const marginUsdt = Number(pos.margin_usdt) || 50.0;
+            const isLong = pos.side === "LONG";
+
+            if (entry > 0) {
+                const priceDeltaPct = isLong ? ((mark - entry) / entry) : ((entry - mark) / entry);
+                pos.unrealized_pnl = Number((sizeUsdt * priceDeltaPct).toFixed(4));
+                pos.roi_pct = Number(((pos.unrealized_pnl / marginUsdt) * 100).toFixed(2));
+                hasChange = true;
+            }
+        }
+        totalUnrealized += (Number(pos.unrealized_pnl) || 0);
+    }
+
+    if (hasChange) {
+        const pnlSign = totalUnrealized >= 0 ? "+" : "";
+        const pnlClass = totalUnrealized >= 0 ? "text-buy" : "text-sell";
+        const firstPos = futuresPositionsData[0];
+        const roiVal = firstPos ? firstPos.roi_pct : 0.0;
+        const roiSign = roiVal >= 0 ? "+" : "";
+
+        // Update Pro Dock Header
+        const proDockPnl = document.getElementById("proDockTotalPnl");
+        if (proDockPnl) {
+            proDockPnl.innerHTML = `Floating PnL: <span class="${pnlClass}">${pnlSign}$${Math.abs(totalUnrealized).toFixed(2)} (${roiSign}${roiVal.toFixed(2)}% ROI)</span>`;
+        }
+
+        // Update KPI Strip on Positions Page & Dashboard
+        const kpiOpenPnL = document.getElementById("kpiOpenPnL");
+        if (kpiOpenPnL) {
+            kpiOpenPnL.innerHTML = `<span class="${pnlClass}">${pnlSign}$${Math.abs(totalUnrealized).toFixed(2)} (${roiSign}${roiVal.toFixed(2)}% ROI)</span>`;
+        }
+
+        // Update top ticker bar if active position matches
+        if (firstPos && currentSymbol === firstPos.symbol) {
+            const topMark = document.getElementById("bgTopMarkPrice");
+            if (topMark) topMark.innerText = `$${formatPrice(firstPos.mark_price)}`;
+            const topPnl = document.getElementById("bgTopFloatingPnl");
+            if (topPnl) topPnl.innerHTML = `<span class="${pnlClass}">${pnlSign}$${Math.abs(totalUnrealized).toFixed(2)} (${roiSign}${roiVal.toFixed(2)}% ROI)</span>`;
+        }
+
+        // Re-render position cards and Pro Dock table
+        renderFuturesPositions();
+        renderProDockTable();
+    }
+}
+
 // --- Live Bitget Real Compounding Goal Header & Hero Card ---
 async function updateBitgetGoalHeader() {
     try {
@@ -3097,7 +3155,7 @@ async function runAiAnalysis(customPrompt = "") {
     box.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;color:var(--color-purple);">
             <i class="fa-solid fa-spinner fa-spin fa-lg"></i>
-            <span>Mike AI (Flash Low) is analyzing ${currentTimeframe.toUpperCase()} SMC V17 structure for <b>${currentSymbol}</b>...</span>
+            <span>Mike AI (Gemini 2.5 Flash) is analyzing ${currentTimeframe.toUpperCase()} Hermes 2.0 Apex 4-Sentries structure for <b>${currentSymbol}</b>...</span>
         </div>
     `;
 
@@ -3169,9 +3227,9 @@ function setupEventListeners() {
                 showSmcZones = !showSmcZones;
                 chip.classList.toggle("active", showSmcZones);
                 if (showSmcZones) {
-                    chip.style.borderColor = "#FFD700";
-                    chip.style.color = "#FFD700";
-                    chip.style.background = "rgba(255, 215, 0, 0.12)";
+                    chip.style.borderColor = "#00F59B";
+                    chip.style.color = "#00F59B";
+                    chip.style.background = "rgba(0, 245, 155, 0.12)";
                 } else {
                     chip.style.borderColor = "";
                     chip.style.color = "";
@@ -3180,7 +3238,7 @@ function setupEventListeners() {
                 const hud = document.getElementById("smcChartHud");
                 if (hud) hud.style.display = showSmcZones ? "block" : "none";
                 drawSmcZoneBoxes();
-                showToast(`SMC V17 (3% Airspace) ${showSmcZones ? 'ON' : 'OFF'}`);
+                showToast(`Hermes 2.0 Apex Zones ${showSmcZones ? 'ON' : 'OFF'}`);
                 return;
             }
             activeIndicators[ind] = !activeIndicators[ind];
@@ -3241,7 +3299,7 @@ function setupEventListeners() {
                 zonesEyeIcon.className = showSmcZones ? "fa-solid fa-eye" : "fa-solid fa-eye-slash";
             }
             renderSmcOverlays(rawCandleData, rawZonesData, rawCandleData.length ? rawCandleData[rawCandleData.length - 1].close : 0);
-            showToast(`SMC V17 Zones: ${showSmcZones ? 'VISIBLE' : 'HIDDEN'}`);
+            showToast(`Hermes 2.0 Apex Zones: ${showSmcZones ? 'VISIBLE' : 'HIDDEN'}`);
         });
     }
 
@@ -3745,6 +3803,7 @@ function initWebSocket() {
                         renderCoinsList();
                     }
                     updateOpenTradesWithTickers(tickers);
+                    updateFuturesPositionsWithTickers(tickers);
                 }
             } catch (e) {}
         };
@@ -3924,7 +3983,7 @@ function renderFuturesPositions() {
             <div class="pos-empty-state">
                 <i class="fa-solid fa-shield-halved fa-2x" style="color: #64748B; opacity: 0.5;"></i>
                 <span style="font-weight:600; color:#94A3B8;">No Active Positions ${hideOtherPairs ? `for ${currentSymbol}` : ''}</span>
-                <span style="font-size:11px; color:#64748B;">SMC V17 Engine is scanning 50 coins for 4H 2nd OB (Confluence ≥ 90).</span>
+                <span style="font-size:11px; color:#64748B;">Hermes 2.0 Apex Engine is scanning Top-22 Champions (Confluence ≥ 90).</span>
             </div>
         `;
         return;
@@ -4109,7 +4168,7 @@ function renderProDockTable() {
     if (!futuresPositionsData || futuresPositionsData.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;">
-                <i class="fa-solid fa-circle-check text-buy"></i> No open positions. Scanner is searching for 4H 2nd Order Block setups.
+                <i class="fa-solid fa-circle-check text-buy"></i> No open positions. Hermes 2.0 Apex 4-Sentries Engine is searching Top-22 Champions.
             </div>
         `;
         return;

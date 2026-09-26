@@ -386,6 +386,10 @@ async def get_futures_positions():
     tickers = await get_live_tickers()
 
     open_trades_raw = get_open_paper_trades()
+    # Hermes 2.0 Apex strictly enforces 1-Trade Sequential Queue
+    if len(open_trades_raw) > 1:
+        open_trades_raw = open_trades_raw[:1]
+
     positions = []
     total_unrealized_pnl = 0.0
     total_margin = 0.0

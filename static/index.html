@@ -17,7 +17,7 @@
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="/static/style.css?v=104">
+    <link rel="stylesheet" href="/static/style.css?v=106">
 </head>
 <body class="dark-theme">
 
@@ -212,8 +212,8 @@
                     <button class="btn btn-icon" id="btnChartSnapshot" title="Take Screenshot (PNG)">
                         <i class="fa-solid fa-camera"></i>
                     </button>
-                    <!-- TOGGLE SMC ZONES -->
-                    <button class="btn btn-secondary active-toggle" id="btnToggleZones" title="Show/Hide SMC V17 Zones">
+                    <!-- TOGGLE HERMES ZONES -->
+                    <button class="btn btn-secondary active-toggle" id="btnToggleZones" title="Show/Hide Hermes 2.0 Apex Zones">
                         <i class="fa-solid fa-eye" id="zonesEyeIcon"></i>
                         <span>Zones</span>
                     </button>
@@ -223,7 +223,7 @@
                         <span id="fullscreenBtnText">Full Screen</span>
                     </button>
                     <!-- AI ANALYZE -->
-                    <button class="btn btn-ai" id="btnAnalyzeAI" title="Analyze with Mike AI (Flash Low)">
+                    <button class="btn btn-ai" id="btnAnalyzeAI" title="Analyze with Mike AI (Hermes 2.0 Apex)">
                         <i class="fa-solid fa-robot"></i>
                         <span>Ask Mike AI</span>
                     </button>
@@ -234,7 +234,7 @@
             <div class="chart-sub-toolbar">
                 <div class="sub-toolbar-left">
                     <span class="sub-label"><i class="fa-solid fa-chart-simple"></i></span>
-                    <button class="indicator-chip active" id="chipSmcV17" data-ind="smcv17" title="SMC V17 3-OB Sniper (Airspace 3.0%)" style="border-color: #FFD700; color: #FFD700; background: rgba(255, 215, 0, 0.12); font-weight: 700;"><i class="fa-solid fa-crosshairs"></i> SMC V17 (3% Airspace)</button>
+                    <button class="indicator-chip active" id="chipSmcV17" data-ind="smcv17" title="Hermes 2.0 Apex 4-Sentries Zone Matrix" style="border-color: #00F59B; color: #00F59B; background: rgba(0, 245, 155, 0.12); font-weight: 700;"><i class="fa-solid fa-shield-halved"></i> Hermes 2.0 Apex</button>
                     <button class="indicator-chip" id="chipEma20" data-ind="ema20" title="EMA 20 (Cyan)">EMA 20</button>
                     <button class="indicator-chip" id="chipEma50" data-ind="ema50" title="EMA 50 (Amber)">EMA 50</button>
                     <button class="indicator-chip" id="chipEma200" data-ind="ema200" title="EMA 200 (Purple)">EMA 200</button>
@@ -782,22 +782,22 @@
                 </div>
             </div>
 
-            <!-- TAB 1: MIKE - SMC V17 AI AGENT -->
+            <!-- TAB 1: MIKE - HERMES 2.0 APEX QUANT AGENT -->
             <div class="tab-content" id="ai-tab">
                 <div class="ai-intro-card">
-                    <div class="ai-badge"><i class="fa-solid fa-robot"></i> MIKE • SMC V17 AI AGENT (Flash Low)</div>
-                    <p>Mai <b>Mike</b> hoon — aapka 4H Smart Money Concepts (SMC V17) AI Agent, powered by Flash Low engine.</p>
+                    <div class="ai-badge"><i class="fa-solid fa-robot"></i> MIKE • HERMES 2.0 APEX QUANT AGENT</div>
+                    <p>Mai <b>Mike</b> hoon — aapka Hermes 2.0 Apex Institutional Quant Agent, powered by Google Gemini 2.5 Flash & 4-Sentries Diagnostic Matrix.</p>
                 </div>
 
                 <div class="ai-quick-prompts">
-                    <button class="prompt-chip" data-query="Mike, is coin ka SMC V17 setup detail me explain karo. Entry, risk aur grade batao.">
+                    <button class="prompt-chip" data-query="Mike, is coin ka Hermes 2.0 Apex 4-Sentries setup detail me explain karo. Entry, risk aur grade batao.">
                         ⚡ Setup Breakdown
                     </button>
-                    <button class="prompt-chip" data-query="Mike, displacement candle ki body strength aur 6-bar origin candle evaluate karo.">
-                        📐 Origin & Displacement
+                    <button class="prompt-chip" data-query="Mike, Sentry 2 Displacement (≥5%) aur Fair Value Gap validation status evaluate karo.">
+                        📐 Sentry 2 Displacement
                     </button>
-                    <button class="prompt-chip" data-query="Mike, soft tags check karo: Sweep, FVG, BOS. Trap risk kitna hai?">
-                        🏷 Soft Tags Check
+                    <button class="prompt-chip" data-query="Mike, Sentry 3 IDM Sweep & Rejection Wick (≥18%) evaluate karo. Trap risk kitna hai?">
+                        🛡️ Sentry 3 IDM & Wick
                     </button>
                 </div>
 
@@ -1183,16 +1183,16 @@
         </div>
     </div>
 
-    <!-- TRADINGVIEW PINE SCRIPT MODAL -->
+    <!-- STRATEGY BLUEPRINT MODAL -->
     <div class="modal-overlay" id="pineScriptModal">
         <div class="modal-card" style="max-width: 680px; width: 90%;">
             <div class="modal-header">
-                <div class="modal-title"><i class="fa-solid fa-code text-buy"></i> SMC V17 TradingView Pine Script (v5)</div>
+                <div class="modal-title"><i class="fa-solid fa-shield-halved text-buy"></i> Hermes 2.0 Apex Strategy Architecture</div>
                 <button class="btn-close" id="btnClosePineModal">&times;</button>
             </div>
             <div class="modal-body" style="gap: 12px;">
                 <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
-                    Yeh indicator aapke TradingView chart par identical 4H Order Blocks, First Tap entries aur +4% TP / -3% SL targets auto-draw karega.
+                    Hermes 2.0 Apex autonomous trading architecture: Macro BTC Causal Brake, Displacement + FVG, Inducement Sweep, and 28-Bar Freshness Guard.
                 </p>
                 <div style="position: relative;">
                     <textarea id="pineCodeArea" readonly style="width: 100%; height: 260px; background: #07090E; color: #38BDF8; font-family: var(--font-mono); font-size: 11px; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; resize: none;"></textarea>
@@ -1226,28 +1226,28 @@
                 <div class="form-group">
                     <label style="display:flex; justify-content:space-between;">
                         <span>Take Profit (TP) Price</span>
-                        <span class="text-buy" id="tpslEstProfit">+10.0% ROI (+$5.00)</span>
+                        <span class="text-buy" id="tpslEstProfit">+14.0% ROE (+$7.00)</span>
                     </label>
                     <div class="input-with-action">
                         <input type="number" step="any" id="tpslInputTp" placeholder="TP Price">
-                        <button class="btn-input-tag" id="btnSetDefaultTp">+2% Real</button>
+                        <button class="btn-input-tag" id="btnSetDefaultTp">+2.8% Real</button>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label style="display:flex; justify-content:space-between;">
                         <span>Stop Loss (SL) Price</span>
-                        <span class="text-sell" id="tpslEstLoss">-20.0% ROI (-$10.00)</span>
+                        <span class="text-sell" id="tpslEstLoss">-14.0% ROE (-$7.00)</span>
                     </label>
                     <div class="input-with-action">
                         <input type="number" step="any" id="tpslInputSl" placeholder="SL Price">
-                        <button class="btn-input-tag" id="btnSetDefaultSl">-4% Hard</button>
+                        <button class="btn-input-tag" id="btnSetDefaultSl">-2.8% Soft</button>
                     </div>
                 </div>
 
                 <div class="tpsl-rules-hint">
                     <i class="fa-solid fa-circle-info text-buy"></i>
-                    <span>SMC V17 Rule: +2.0% Real Market move triggers +10% target on 5x leverage. SL protected by 2-candle close rule.</span>
+                    <span>Hermes 2.0 Apex Rule: +2.8% Real Target (+14% ROE on 5x Isolated). Protected by Sentry 4-Shield.</span>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
@@ -1279,7 +1279,7 @@
                     </div>
                 </div>
                 <p class="text-muted" style="font-size: 11px;">
-                    SMC V17 compounding model is mathematically calibrated for <b>5x Isolated Leverage</b> to ensure safe liquidation clearance while yielding +10% profit per winning trade.
+                    Hermes 2.0 Apex compounding model is mathematically calibrated for <b>5x Isolated Leverage</b> to ensure safe liquidation clearance while yielding +14% ROE per winning trade.
                 </p>
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
                     <button type="button" class="btn btn-secondary" id="levCancelBtn">Cancel</button>
@@ -1538,7 +1538,7 @@
                             </div>
                             <span class="ap-status-badge status-active">OPTIMIZING</span>
                         </div>
-                        <p class="ap-desc">Maintains SMC V17 PineScript V5 algorithms, TradingView indicators, and latency routing.</p>
+                        <p class="ap-desc">Maintains Hermes 2.0 Apex 4-Sentries quantitative execution and latency routing.</p>
                         <div class="ap-meta">
                             <span>PineScript: <b>v5 Pro</b></span>
                             <span>Latency: <b>12ms</b></span>
@@ -1921,7 +1921,7 @@
         }
     </script>
 
-    <script src="/static/app.js?v=104"></script>
+    <script src="/static/app.js?v=106"></script>
     <script>
         if (window.Telegram && window.Telegram.WebApp) {
             try {
