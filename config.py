@@ -13,8 +13,8 @@ def get_ist_now() -> datetime:
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-# --- SMC V17 Strategy Parameters ---
-STRATEGY_VERSION = "V17"
+# --- HERMES 2.0 APEX Quantitative Parameters ---
+STRATEGY_VERSION = "HERMES_2.0_APEX"
 TIMEFRAME = "4h"
 KLINES_LIMIT = 200
 
@@ -76,27 +76,18 @@ TIER1_QUICK_SNIPERS = [
     "LDOUSDT", "PEOPLEUSDT", "AEROUSDT", "INJUSDT", "SUSDT"
 ]
 
-# Combined Master Priority Queue (Tier 1 Elite)
-TIER1_COINS = [
-    "ARBUSDT", "STXUSDT", "LTCUSDT", "ZECUSDT", "ONEUSDT",
-    "PENDLEUSDT", "ETHFIUSDT", "UNIUSDT", "CRVUSDT", "1000BONKUSDT",
-    "SUIUSDT", "JUPUSDT", "1000PEPEUSDT", "AAVEUSDT", "AVAXUSDT",
-    "ETHUSDT", "BNBUSDT", "DOTUSDT", "SOLUSDT", "DOGEUSDT", "1000SHIBUSDT"
+# --- HERMES 2.0 APEX: TOP 22 VETTED INSTITUTIONAL CHAMPIONS ---
+TOP_22_CHAMPIONS = [
+    "DOGEUSDT", "ALGOUSDT", "FETUSDT", "SANDUSDT", "BTCUSDT", "THETAUSDT", "OPUSDT", "FILUSDT",
+    "RENDERUSDT", "RUNEUSDT", "AVAXUSDT", "SHIBUSDT", "SUIUSDT", "NEARUSDT", "APTUSDT", "LDOUSDT",
+    "MKRUSDT", "UNIUSDT", "AAVEUSDT", "GALAUSDT", "ICPUSDT", "PYTHUSDT"
 ]
 
-# --- Configured Coins (Top 50 Binance USDT-M Futures) ---
-DEFAULT_COINS = [
-    "ARBUSDT", "STXUSDT", "LTCUSDT", "ZECUSDT", "ONEUSDT",
-    "PENDLEUSDT", "ETHFIUSDT", "UNIUSDT", "CRVUSDT", "1000BONKUSDT",
-    "SUIUSDT", "JUPUSDT", "1000PEPEUSDT", "AAVEUSDT", "AVAXUSDT",
-    "ETHUSDT", "BTCUSDT", "SOLUSDT", "BNBUSDT", "DOGEUSDT",
-    "1000SHIBUSDT", "DOTUSDT", "NEARUSDT", "APTUSDT", "LINKUSDT",
-    "LDOUSDT", "INJUSDT", "AEROUSDT", "PEOPLEUSDT", "ONGUSDT",
-    "TIAUSDT", "RENDERUSDT", "OPUSDT", "WIFUSDT", "SEIUSDT",
-    "ENAUSDT", "PYTHUSDT", "1000FLOKIUSDT", "RUNEUSDT", "GALAUSDT",
-    "SANDUSDT", "MANAUSDT", "THETAUSDT", "ALGOUSDT", "AXSUSDT",
-    "DYDXUSDT", "EGLDUSDT", "FLOWUSDT", "CHZUSDT", "WLDUSDT"
-]
+# Combined Master Priority Queue (Strictly Top 22 Champions)
+TIER1_COINS = TOP_22_CHAMPIONS
+
+# --- Configured Active Universe (Strictly Top 22 Champions Only) ---
+DEFAULT_COINS = TOP_22_CHAMPIONS
 
 # --- Database ---
 DB_PATH = BASE_DIR / "database" / "smc_v17.db"
@@ -165,8 +156,8 @@ SOFT_SL_4H_PCT = 0.025        # 2.5% soft SL confirmed only on 4H candle close
 BREAKEVEN_TRIGGER_1H = 0.0075  # Lock entry at +0.75% price gain (+3.75% ROE)
 BREAKEVEN_TRIGGER_4H = 0.0102  # Lock entry at +1.02% price gain (+5.10% ROE)
 
-# --- Real vs Paper Trading Alerts ---
-MUTE_PAPER_TRADING_ALERTS = os.getenv("MUTE_PAPER_TRADING_ALERTS", "true").lower() == "true"
+# --- Real vs Paper Trading Alerts (Active: Broadcasts with Charts to Telegram) ---
+MUTE_PAPER_TRADING_ALERTS = os.getenv("MUTE_PAPER_TRADING_ALERTS", "false").lower() == "true"
 
 # --- Server Config ---
 HOST = "0.0.0.0"

@@ -718,10 +718,10 @@
         <!-- TOOLBAR & TABS -->
         <div class="table-toolbar">
             <div class="nav-tabs-wrap">
-                <button class="tab-btn active" onclick="filterMarketTable('all', this)">All Pairs</button>
-                <button class="tab-btn" onclick="filterMarketTable('champions', this)">Top-22 Champions</button>
-                <button class="tab-btn" onclick="filterMarketTable('gainers', this)">Top Gainers</button>
-                <button class="tab-btn" onclick="filterMarketTable('armed', this)">Armed Setups</button>
+                <button class="tab-btn active" onclick="filterMarketTable('champions', this)"><i class="fa-solid fa-crown" style="color: var(--gold-primary); margin-right: 4px;"></i> Top-22 Champions</button>
+                <button class="tab-btn" onclick="filterMarketTable('gainers', this)">🔥 Top Gainers</button>
+                <button class="tab-btn" onclick="filterMarketTable('armed', this)">🛡️ Armed Setups</button>
+                <button class="tab-btn" onclick="filterMarketTable('all', this)">All Pairs</button>
             </div>
             <div class="search-bar-wrap">
                 <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim); font-size: 11px;"></i>
@@ -794,7 +794,7 @@
     <!-- JAVASCRIPT CONTROLLER -->
     <script>
         let allCoinsData = [];
-        let currentFilter = 'all';
+        let currentFilter = 'champions';
 
         function toggleDrawer() {
             document.getElementById('drawerOverlay').classList.toggle('open');

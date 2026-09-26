@@ -35,6 +35,7 @@ from database.db import (
 )
 from feed.binance_feed import binance_feed
 from alerts.telegram_service import telegram_service
+from engine.chart_image_generator import render_smc_chart_image
 
 logger = logging.getLogger("Hermes2ApexLive")
 
@@ -462,7 +463,7 @@ class Hermes2ApexLiveEngine:
         }
         self.active_position = trade_obj
 
-        # Send Telegram Announcement to User's Bot
+        # Send Telegram Announcement to User's Bot WITH LIVE CANDLESTICK CHART
         try:
             tg_msg = (
                 f"👑 <b>HERMES 2.0 APEX: NEW POSITION ENTERED</b>\n"
@@ -476,14 +477,37 @@ class Hermes2ApexLiveEngine:
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"💰 <b>Active Margin</b>: ${margin:.2f} USDT (100% Compounding Queue)\n"
                 f"📦 <b>Effective Position</b>: ${position_size:.2f} USDT (5x Isolated)\n"
-                f"🔒 <b>Vault Reserve</b>: ${acc['vault_balance']:.2f} USDT\n"
+                f"🔒 <b>Vault Reserve</b>: ${acc.get('vault_balance', 0.0):.2f} USDT\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"🛡️ <b>4 SENTRIES VERIFIED</b>:\n"
                 f"• {sentry_reasons}\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"🚀 <i>24/7 Cloud Simulated Forward-Test: $50 ➔ $2,000 Milestone</i>"
             )
-            await telegram_service.send_raw_message(tg_msg)
+
+            # Generate chart with Entry, TP, and SL lines
+            chart_sent = False
+            try:
+                candles = await binance_feed.fetch_klines(sym, interval=tf, limit=50)
+                if candles:
+                    zone_dict = {
+                        "symbol": sym,
+                        "side": side,
+                        "entry_price": entry_price,
+                        "tp_price": tp_price,
+                        "sl_price": sl_price,
+                        "ob_high": setup.get("ob_high", entry_price),
+                        "ob_low": setup.get("ob_low", entry_price)
+                    }
+                    chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
+                    resp = await telegram_service.send_photo(chart_bytes, tg_msg)
+                    if resp and resp.get("ok"):
+                        chart_sent = True
+            except Exception as ce:
+                logger.warning(f"Failed to render/send chart image: {ce}")
+
+            if not chart_sent:
+                await telegram_service.send_raw_message(tg_msg)
         except Exception as e:
             logger.warning(f"Telegram alert error on entry: {e}")
 
@@ -636,7 +660,31 @@ class Hermes2ApexLiveEngine:
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     f"👑 <i>Hermes 2.0 Apex Autonomous Quant Engine</i>"
                 )
-            await telegram_service.send_raw_message(tg_msg)
+
+            # Send exit chart photo if available
+            chart_sent = False
+            try:
+                tf = trade.get("timeframe", "4h")
+                candles = await binance_feed.fetch_klines(sym, interval=tf, limit=50)
+                if candles:
+                    zone_dict = {
+                        "symbol": sym,
+                        "side": side,
+                        "entry_price": entry_price,
+                        "tp_price": float(trade.get("tp_price", exit_price)),
+                        "sl_price": float(trade.get("sl_price", exit_price)),
+                        "ob_high": max(entry_price, exit_price),
+                        "ob_low": min(entry_price, exit_price)
+                    }
+                    chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
+                    resp = await telegram_service.send_photo(chart_bytes, tg_msg)
+                    if resp and resp.get("ok"):
+                        chart_sent = True
+            except Exception as ce:
+                logger.warning(f"Failed to render/send exit chart photo: {ce}")
+
+            if not chart_sent:
+                await telegram_service.send_raw_message(tg_msg)
         except Exception as e:
             logger.warning(f"Telegram exit alert error: {e}")
 
