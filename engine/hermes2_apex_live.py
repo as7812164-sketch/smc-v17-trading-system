@@ -50,8 +50,8 @@ IST = timezone(timedelta(hours=5, minutes=30))
 class Hermes2ApexLiveEngine:
     def __init__(self):
         self.is_running = False
-        self.scan_interval_seconds = 180  # Scan every 3 minutes
-        self.tick_interval_seconds = 8    # Monitor active positions every 8 seconds
+        self.scan_interval_seconds = 180  # Scan heavy structure every 3 minutes
+        self.tick_interval_seconds = 5    # Real-time tap watchdog & exit monitor every 5 seconds
         self.last_scan_time = 0
         self.last_btc_bias = {"bias": "NEUTRAL", "pct": 0.0, "time": 0}
         self.active_position: Optional[Dict[str, Any]] = None
@@ -235,6 +235,7 @@ class Hermes2ApexLiveEngine:
                                 has_fvg = (candles[best_mid + 1]["low"] > candles[best_mid - 1]["high"]) if best_mid + 1 < n else False
 
                                 if has_fvg:
+                                    tapped_found = False
                                     # Check bars from high_idx to current candle
                                     for t in range(high_idx + 1, min(high_idx + max_tap_window, n)):
                                         tap_c = candles[t]
@@ -254,6 +255,8 @@ class Hermes2ApexLiveEngine:
                                                     "side": "LONG",
                                                     "interval": interval,
                                                     "entry_price": dec_top,
+                                                    "ob_high": dec_top,
+                                                    "ob_low": dec_bot,
                                                     "tp_price": dec_top * (1.0 + tp_pct),
                                                     "soft_sl_price": dec_top * (1.0 - soft_sl_pct),
                                                     "hard_sl_price": dec_top * (1.0 - hard_sl_pct),
@@ -265,9 +268,39 @@ class Hermes2ApexLiveEngine:
                                                     "tap_bar_age": age,
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh_trigger,
+                                                    "status": "FRESH_TRIGGERED" if is_fresh_trigger else "CONFIRMED_TAP",
                                                     "sentry_reasons": f"Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
                                                 })
+                                                tapped_found = True
                                             break
+
+                                    if not tapped_found:
+                                        bars_since_high = (n - 1) - high_idx
+                                        if 1 <= bars_since_high <= max_tap_window:
+                                            recent_bars = candles[high_idx + 1:n]
+                                            broken = any(b["close"] < dec_bot for b in recent_bars)
+                                            if not broken:
+                                                setups.append({
+                                                    "symbol": symbol,
+                                                    "side": "LONG",
+                                                    "interval": interval,
+                                                    "entry_price": dec_top,
+                                                    "ob_high": dec_top,
+                                                    "ob_low": dec_bot,
+                                                    "tp_price": dec_top * (1.0 + tp_pct),
+                                                    "soft_sl_price": dec_top * (1.0 - soft_sl_pct),
+                                                    "hard_sl_price": dec_top * (1.0 - hard_sl_pct),
+                                                    "tp_pct": tp_pct,
+                                                    "soft_sl_pct": soft_sl_pct,
+                                                    "hard_sl_pct": hard_sl_pct,
+                                                    "displacement_pct": round(gain * 100.0, 2),
+                                                    "wick_ratio_pct": 0.0,
+                                                    "tap_bar_age": 0,
+                                                    "tap_time": candles[-1]["time"],
+                                                    "is_fresh_trigger": False,
+                                                    "status": "ARMED_WAITING_TAP",
+                                                    "sentry_reasons": f"Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Armed IDM | Sentry 4 Fresh Window: {bars_since_high}/28 Bars"
+                                                })
 
             # -------------------------------------------------------------
             # 2. BEARISH SETUP DETECTION
@@ -298,6 +331,7 @@ class Hermes2ApexLiveEngine:
                                 has_bear_fvg = (candles[best_mid + 1]["high"] < candles[best_mid - 1]["low"]) if best_mid + 1 < n else False
 
                                 if has_bear_fvg:
+                                    tapped_found = False
                                     for t in range(low_idx + 1, min(low_idx + max_tap_window, n)):
                                         tap_c = candles[t]
                                         if tap_c["high"] >= dec_bot * 0.9995:
@@ -315,6 +349,8 @@ class Hermes2ApexLiveEngine:
                                                     "side": "SHORT",
                                                     "interval": interval,
                                                     "entry_price": dec_bot,
+                                                    "ob_high": dec_top,
+                                                    "ob_low": dec_bot,
                                                     "tp_price": dec_bot * (1.0 - tp_pct),
                                                     "soft_sl_price": dec_bot * (1.0 + soft_sl_pct),
                                                     "hard_sl_price": dec_bot * (1.0 + hard_sl_pct),
@@ -326,9 +362,39 @@ class Hermes2ApexLiveEngine:
                                                     "tap_bar_age": age,
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh_trigger,
+                                                    "status": "FRESH_TRIGGERED" if is_fresh_trigger else "CONFIRMED_TAP",
                                                     "sentry_reasons": f"Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
                                                 })
+                                                tapped_found = True
                                             break
+
+                                    if not tapped_found:
+                                        bars_since_low = (n - 1) - low_idx
+                                        if 1 <= bars_since_low <= max_tap_window:
+                                            recent_bars = candles[low_idx + 1:n]
+                                            broken = any(b["close"] > dec_top for b in recent_bars)
+                                            if not broken:
+                                                setups.append({
+                                                    "symbol": symbol,
+                                                    "side": "SHORT",
+                                                    "interval": interval,
+                                                    "entry_price": dec_bot,
+                                                    "ob_high": dec_top,
+                                                    "ob_low": dec_bot,
+                                                    "tp_price": dec_bot * (1.0 - tp_pct),
+                                                    "soft_sl_price": dec_bot * (1.0 + soft_sl_pct),
+                                                    "hard_sl_price": dec_bot * (1.0 + hard_sl_pct),
+                                                    "tp_pct": tp_pct,
+                                                    "soft_sl_pct": soft_sl_pct,
+                                                    "hard_sl_pct": hard_sl_pct,
+                                                    "displacement_pct": round(drop * 100.0, 2),
+                                                    "wick_ratio_pct": 0.0,
+                                                    "tap_bar_age": 0,
+                                                    "tap_time": candles[-1]["time"],
+                                                    "is_fresh_trigger": False,
+                                                    "status": "ARMED_WAITING_TAP",
+                                                    "sentry_reasons": f"Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 IDM Level | Sentry 4 Armed Fresh ({bars_since_low}/28 Bars)"
+                                                })
 
         return setups
 
@@ -399,16 +465,20 @@ class Hermes2ApexLiveEngine:
         sym = setup["symbol"]
         entry_price = float(setup["entry_price"])
 
-        # Live Proximity Check: Price must be within 0.50% of the Order Block boundary
+        # Live Proximity Check: Price must be within the Order Block zone or 0.50% range
+        cur_price = entry_price
         try:
             tickers = await binance_feed.fetch_all_tickers()
-            cur_price = tickers.get(sym)
-            if not cur_price or cur_price <= 0:
-                return
-            diff_pct = abs(cur_price - entry_price) / entry_price * 100.0
-            if diff_pct > 0.50:
-                logger.info(f"Skipping entry on {sym}: live price {cur_price} is {diff_pct:.2f}% away from entry limit {entry_price}")
-                return
+            cur_p = tickers.get(sym)
+            if cur_p and cur_p > 0:
+                cur_price = cur_p
+                ob_high = float(setup.get("ob_high", entry_price))
+                ob_low = float(setup.get("ob_low", entry_price))
+                diff_pct = abs(cur_price - entry_price) / entry_price * 100.0
+                in_zone = (ob_low * 0.995) <= cur_price <= (ob_high * 1.005)
+                if diff_pct > 0.50 and not in_zone:
+                    logger.info(f"Skipping entry on {sym}: live price {cur_price} is {diff_pct:.2f}% away from entry limit {entry_price}")
+                    return
         except Exception:
             pass
 
@@ -425,10 +495,21 @@ class Hermes2ApexLiveEngine:
         sym = setup["symbol"]
         side = setup["side"]
         tf = setup["interval"]
-        entry_price = float(setup["entry_price"])
-        tp_price = float(setup["tp_price"])
-        sl_price = float(setup["soft_sl_price"])
-        hard_sl_price = float(setup["hard_sl_price"])
+        entry_price = cur_price
+
+        tp_pct = float(setup.get("tp_pct", 0.028 if tf == "4h" else 0.022))
+        soft_sl_pct = float(setup.get("soft_sl_pct", 0.028 if tf == "4h" else 0.025))
+        hard_sl_pct = float(setup.get("hard_sl_pct", 0.038 if tf == "4h" else 0.036))
+
+        if side in ("BUY", "LONG"):
+            tp_price = round(entry_price * (1.0 + tp_pct), 6)
+            sl_price = round(entry_price * (1.0 - soft_sl_pct), 6)
+            hard_sl_price = round(entry_price * (1.0 - hard_sl_pct), 6)
+        else:
+            tp_price = round(entry_price * (1.0 - tp_pct), 6)
+            sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
+            hard_sl_price = round(entry_price * (1.0 + hard_sl_pct), 6)
+
         sentry_reasons = setup.get("sentry_reasons", "")
 
         with get_connection() as conn:
@@ -514,47 +595,96 @@ class Hermes2ApexLiveEngine:
         await self.broadcast("HERMES_POSITION_OPENED", trade_obj)
 
     async def check_live_price_and_exits(self):
-        """Monitors live Binance tickers against active position every few seconds."""
+        """Monitors live Binance tickers against active position every few seconds, and triggers real-time Order Block taps."""
         open_trades = get_open_paper_trades()
-        if not open_trades:
-            self.active_position = None
+        if open_trades:
+            trade = open_trades[0]
+            sym = trade["symbol"]
+            side = trade["side"].upper()
+            entry_price = float(trade["entry_price"])
+            tp_price = float(trade["tp_price"])
+            sl_price = float(trade["sl_price"])
+            hard_sl_price = float(trade.get("hard_sl_price", 0.0) or (entry_price * 0.964 if side in ("BUY", "LONG") else entry_price * 1.036))
+            pos_size = float(trade["position_size_usdt"])
+            trade_id = trade["id"]
+
+            tickers = await binance_feed.fetch_all_tickers()
+            cur_price = tickers.get(sym)
+            if not cur_price or cur_price <= 0:
+                return
+
+            exit_triggered = None
+            exit_price = cur_price
+
+            if side in ("BUY", "LONG"):
+                if cur_price >= tp_price:
+                    exit_triggered = "TP_HIT"
+                    exit_price = tp_price
+                elif cur_price <= hard_sl_price:
+                    exit_triggered = "SL_HIT"
+                    exit_price = hard_sl_price
+            else: # SELL / SHORT
+                if cur_price <= tp_price:
+                    exit_triggered = "TP_HIT"
+                    exit_price = tp_price
+                elif cur_price >= hard_sl_price:
+                    exit_triggered = "SL_HIT"
+                    exit_price = hard_sl_price
+
+            if exit_triggered:
+                await self.resolve_trade_exit(trade, exit_triggered, exit_price)
             return
 
-        trade = open_trades[0]
-        sym = trade["symbol"]
-        side = trade["side"].upper()
-        entry_price = float(trade["entry_price"])
-        tp_price = float(trade["tp_price"])
-        sl_price = float(trade["sl_price"])
-        hard_sl_price = float(trade.get("hard_sl_price", 0.0) or (entry_price * 0.964 if side == "BUY" else entry_price * 1.036))
-        pos_size = float(trade["position_size_usdt"])
-        trade_id = trade["id"]
-
-        tickers = await binance_feed.fetch_all_tickers()
-        cur_price = tickers.get(sym)
-        if not cur_price or cur_price <= 0:
+        # -------------------------------------------------------------
+        # REAL-TIME TAP WATCHDOG (RUNS EVERY 5 SECONDS)
+        # Evaluates armed setups against live Binance tickers between macro scans.
+        # If price taps an Order Block zone right now, enters immediately!
+        # -------------------------------------------------------------
+        self.active_position = None
+        if not self.detected_setups:
             return
 
-        exit_triggered = None
-        exit_price = cur_price
+        btc_sentry = self.last_btc_bias or {}
 
-        if side in ("BUY", "LONG"):
-            if cur_price >= tp_price:
-                exit_triggered = "TP_HIT"
-                exit_price = tp_price
-            elif cur_price <= hard_sl_price:
-                exit_triggered = "SL_HIT"
-                exit_price = hard_sl_price
-        else: # SELL / SHORT
-            if cur_price <= tp_price:
-                exit_triggered = "TP_HIT"
-                exit_price = tp_price
-            elif cur_price >= hard_sl_price:
-                exit_triggered = "SL_HIT"
-                exit_price = hard_sl_price
+        try:
+            tickers = await binance_feed.fetch_all_tickers()
+            if not tickers:
+                return
 
-        if exit_triggered:
-            await self.resolve_trade_exit(trade, exit_triggered, exit_price)
+            for setup in self.detected_setups:
+                sym = setup.get("symbol")
+                cur_price = tickers.get(sym)
+                if not cur_price or cur_price <= 0:
+                    continue
+
+                side = setup.get("side", "LONG")
+                if side in ("BUY", "LONG") and btc_sentry.get("long_veto"):
+                    continue
+                if side in ("SELL", "SHORT") and btc_sentry.get("short_veto"):
+                    continue
+
+                entry_p = float(setup["entry_price"])
+                ob_high = float(setup.get("ob_high", entry_p))
+                ob_low = float(setup.get("ob_low", entry_p))
+                is_fresh = setup.get("is_fresh_trigger", False)
+
+                tapped = False
+                if side in ("BUY", "LONG"):
+                    # Price has touched or dipped into the top of the Order Block zone
+                    if (cur_price <= ob_high * 1.002) and (cur_price >= ob_low * 0.995):
+                        tapped = True
+                else: # SHORT / SELL
+                    # Price has touched or pushed up into the bottom of the Order Block zone
+                    if (cur_price >= ob_low * 0.998) and (cur_price <= ob_high * 1.005):
+                        tapped = True
+
+                diff_pct = abs(cur_price - entry_p) / entry_p * 100.0
+                if tapped or (is_fresh and diff_pct <= 0.40):
+                    logger.info(f"⚡ REAL-TIME TAP WATCHDOG TRIGGERED on {sym} ({side})! Live Price: {cur_price} tapped OB [{ob_low}, {ob_high}] (TF: {setup.get('interval')})")
+                    await self.execute_apex_entry(setup)
+                    break # Enforce strict 1-trade sequential compounding queue
+        except Exception as e:
+            logger.debug(f"Real-time tap watchdog error: {e}")
 
     async def resolve_trade_exit(self, trade: Dict[str, Any], outcome: str, exit_price: float):
         """Resolves trade exit, calculates fees, vault stashing (15%), and compounding reinvestment (85%)."""
