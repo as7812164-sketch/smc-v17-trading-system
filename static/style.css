@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
 :root {
     --bg-dark: #0A0D14;
     --panel-bg: #111622;
@@ -17,14 +19,16 @@
     --color-purple: #A855F7;
     --color-gold: #F59E0B;
 
-    --font-ui: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    /* Ultra-Clean Modern Typography */
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
 }
 
-* {
+*, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body.dark-theme {
@@ -36,6 +40,46 @@ body.dark-theme {
     flex-direction: column;
     overflow: hidden;
     user-select: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.011em;
+}
+
+/* Zero-Flicker GPU Hardware Layer Acceleration for Telegram & Mobile WebViews */
+.chart-container,
+.tv-chart-container,
+.bitget-pro-container,
+.orderbook-panel,
+.pro-dock-container,
+.kpi-row,
+.bg-ticker-bar,
+.panel,
+.nav-drawer {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* Tabular figures for prices, PnL, percentages and counters to eliminate horizontal number wobble */
+.font-mono,
+.coin-px,
+.stat-val,
+.pnl-val,
+.roi-val,
+.bg-last-price,
+.ob-price,
+.ob-size,
+.ob-total,
+.kpi-val,
+.drawer-clock,
+.hud-val,
+.price-tag,
+.order-estimate-val {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' on, 'zero' on;
 }
 
 /* Custom Scrollbar */
@@ -5020,6 +5064,343 @@ body.dark-theme {
         padding: 5px 10px;
         font-size: 11px;
     }
+}
+
+/* ========================================================
+   TRADE FORENSICS & COMPOUNDING AUDIT SYSTEM
+   ======================================================== */
+.forensics-container {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 20px 16px 80px 16px;
+    overflow-y: auto;
+    height: calc(100vh - 56px);
+}
+.forensics-header {
+    background: linear-gradient(135deg, rgba(18, 24, 38, 0.85) 0%, rgba(13, 17, 28, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+    position: relative;
+    overflow: hidden;
+}
+.forensics-header::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.forensics-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.forensics-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.forensics-subtitle {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-top: 6px;
+    line-height: 1.5;
+    max-width: 720px;
+}
+.forensics-kpis {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.forensics-kpi-pill {
+    background: rgba(22, 30, 48, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 16px;
+    text-align: center;
+    min-width: 110px;
+}
+.forensics-kpi-pill .kpi-lbl {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.forensics-kpi-pill .kpi-val {
+    font-size: 17px;
+    font-weight: 800;
+    margin-top: 2px;
+}
+.forensics-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.forensics-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.forensics-pill-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.forensics-pill-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+}
+.forensics-pill-btn.active {
+    background: #F59E0B;
+    color: #06090e;
+    font-weight: 800;
+    border-color: #F59E0B;
+}
+.forensics-search-box {
+    display: flex;
+    align-items: center;
+    background: rgba(11, 14, 20, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 12px;
+    gap: 8px;
+}
+.forensics-search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #FFFFFF;
+    font-size: 12px;
+    width: 140px;
+}
+.trade-card {
+    background: rgba(18, 24, 38, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+.trade-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+.trade-card.win-border {
+    border-left: 4px solid #00F59B;
+}
+.trade-card.loss-border {
+    border-left: 4px solid #FF3B69;
+}
+.trade-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.trade-card-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.trade-num-badge {
+    background: #172033;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #F59E0B;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+.trade-symbol-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.01em;
+}
+.trade-side-badge {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+.trade-side-badge.long {
+    background: rgba(0, 245, 155, 0.15);
+    color: #00F59B;
+    border: 1px solid rgba(0, 245, 155, 0.3);
+}
+.trade-side-badge.short {
+    background: rgba(255, 59, 105, 0.15);
+    color: #FF3B69;
+    border: 1px solid rgba(255, 59, 105, 0.3);
+}
+.trade-card-outcome {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.trade-outcome-pill {
+    font-size: 12px;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.trade-outcome-pill.tp-hit {
+    background: rgba(0, 245, 155, 0.16);
+    color: #00F59B;
+    border: 1px solid rgba(0, 245, 155, 0.4);
+}
+.trade-outcome-pill.sl-hit {
+    background: rgba(255, 59, 105, 0.16);
+    color: #FF3B69;
+    border: 1px solid rgba(255, 59, 105, 0.4);
+}
+.trade-pnl-block {
+    text-align: right;
+}
+.trade-pnl-lbl {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+.trade-pnl-val {
+    font-size: 17px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+.trade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    background: rgba(11, 15, 23, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+.trade-grid-col .cell-lbl {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+.trade-grid-col .cell-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.excursion-meters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+@media (max-width: 768px) {
+    .excursion-meters {
+        grid-template-columns: 1fr;
+    }
+}
+.meter-card {
+    background: rgba(11, 15, 23, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+.meter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    margin-bottom: 6px;
+}
+.meter-track {
+    width: 100%;
+    height: 7px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.meter-fill-mae {
+    height: 100%;
+    background: linear-gradient(90deg, #FF3B69, #ff7597);
+    border-radius: 10px;
+}
+.meter-fill-mfe {
+    height: 100%;
+    background: linear-gradient(90deg, #00d285, #00F59B);
+    border-radius: 10px;
+}
+.meter-desc {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+.trade-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 11px;
+}
+.sentries-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.sentry-pass-tag {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(0, 245, 155, 0.25);
+    color: #00F59B;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+}
+.compounding-status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-weight: 600;
 }
 
 

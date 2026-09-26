@@ -44,6 +44,7 @@
             <a href="/markets" class="nav-page-link"><i class="fa-solid fa-chart-line"></i> <span>Markets</span></a>
             <a href="/positions" class="nav-page-link"><i class="fa-solid fa-layer-group"></i> <span>Positions</span> <span class="badge badge-success" id="navPosBadge">0</span></a>
             <a href="/compounding" class="nav-page-link"><i class="fa-solid fa-trophy"></i> <span>Compounding ($50 ➔ $2K)</span></a>
+            <a href="/trade-forensics" class="nav-page-link" style="color: #00F59B; font-weight: 700;"><i class="fa-solid fa-scale-balanced"></i> <span>Trade Forensics</span></a>
             <a href="/brain" class="nav-page-link"><i class="fa-solid fa-brain"></i> <span>Mike Brain</span></a>
             <a href="/hermes-ai" class="nav-page-link" style="color: #ffd700; border: 1px solid rgba(255,215,0,0.3); border-radius: 4px; padding: 4px 8px;"><i class="fa-solid fa-robot"></i> <span>Hermes AI</span></a>
             <a href="/signals" class="nav-page-link"><i class="fa-solid fa-satellite-dish"></i> <span>Signals & Zones</span></a>
@@ -122,10 +123,10 @@
                 <span class="text-sell" id="kpiActiveSell">0 SELL</span>
             </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-label"><i class="fa-solid fa-circle-check text-buy"></i> TP Hits (Apex)</div>
-            <div class="kpi-val text-buy" id="kpiTpHits">0</div>
-            <div class="kpi-sub">4H +2.8% / 1H +2.2%</div>
+        <div class="kpi-card" id="kpiTpHitsCard" style="cursor: pointer; position: relative;" onclick="window.location.href='/trade-forensics'" title="Click to view complete Trade Forensics & Compounding Audit Ledger">
+            <div class="kpi-label"><i class="fa-solid fa-circle-check text-buy"></i> TP Hits (Apex) <span style="font-size: 9px; background: rgba(0, 245, 155, 0.18); color: #00F59B; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: 800; border: 1px solid rgba(0, 245, 155, 0.35);">FORENSICS ↗</span></div>
+            <div class="kpi-val text-buy mono" id="kpiTpHits">0</div>
+            <div class="kpi-sub">4H +2.8% / 1H +2.2% • <span style="text-decoration: underline; color: #38BDF8; font-weight: 600;">View Audit Ledger</span></div>
         </div>
         <div class="kpi-card">
             <div class="kpi-label"><i class="fa-solid fa-circle-xmark text-sell"></i> SL Hits (Protected)</div>
@@ -1832,6 +1833,13 @@
                         <span>Compounding Goal ($50 ➔ $2,000)</span>
                     </div>
                     <span class="drawer-badge badge-hot">HOT</span>
+                </a>
+                <a href="/trade-forensics" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span>Trade Forensics & Audit</span>
+                    </div>
+                    <span class="drawer-badge badge-gold" style="background:#F59E0B; color:#000; font-weight:800;">AUDIT</span>
                 </a>
                 <a href="javascript:void(0)" onclick="closeDrawer(); toggleHermesDrawer();" class="drawer-nav-item">
                     <div class="left-group">

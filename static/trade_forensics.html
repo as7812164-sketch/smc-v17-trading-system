@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>HERMES 2.0 APEX - Trade Forensics & Compounding Audit Ledger</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="/static/style.css?v=108">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0A0D14;
+            color: #F3F4F6;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' on, 'zero' on;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+
+    <!-- TOP GLOBAL HEADER (MATCHING TERMINAL & BITGET PRO) -->
+    <header class="top-header" style="height: 56px; border-bottom: 1px solid var(--border-color); background: rgba(10, 13, 20, 0.95); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 100;">
+        <div class="header-left" style="display: flex; align-items: center; gap: 12px;">
+            <button class="hamburger-btn" id="btnOpenDrawer" title="Open Navigation Menu" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #fff; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+            <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+                <div class="brand-badge" style="background: linear-gradient(135deg, #ffd700, #ff8800); color: #000; font-weight: 800; padding: 4px 8px; border-radius: 6px; font-size: 11px;">HERMES 2.0</div>
+                <span style="font-weight: 800; font-size: 14px; color: #fff; letter-spacing: -0.01em;">APEX FORENSICS</span>
+            </a>
+        </div>
+
+        <nav class="header-nav hide-mobile" style="display: flex; align-items: center; gap: 8px;">
+            <a href="/" class="nav-item" style="color: var(--text-secondary); text-decoration: none; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-chart-candlestick"></i> Terminal
+            </a>
+            <a href="/markets" class="nav-item" style="color: var(--text-secondary); text-decoration: none; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-chart-line"></i> Markets
+            </a>
+            <a href="/compounding" class="nav-item" style="color: var(--text-secondary); text-decoration: none; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-trophy"></i> Compounding ($50 ➔ $2K)
+            </a>
+            <a href="/hermes-ai" class="nav-item" style="color: var(--text-secondary); text-decoration: none; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-robot"></i> Hermes AI Hub
+            </a>
+            <a href="/trade-forensics" class="nav-item active" style="color: #000; background: #00F59B; text-decoration: none; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 6px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-scale-balanced"></i> Trade Forensics & Audit
+            </a>
+        </nav>
+
+        <div class="header-right" style="display: flex; align-items: center; gap: 10px;">
+            <span class="live-status-pill" style="display: flex; align-items: center; gap: 6px; font-size: 11px; background: rgba(0, 245, 155, 0.12); color: #00F59B; padding: 4px 10px; border-radius: 20px; font-weight: 700; border: 1px solid rgba(0, 245, 155, 0.25);">
+                <span class="pulse-dot" style="width: 7px; height: 7px; background: #00F59B; border-radius: 50%;"></span> CONNECTED
+            </span>
+            <span class="mono" id="headerClock" style="font-size: 11px; color: var(--text-secondary);">00:00:00 IST</span>
+        </div>
+    </header>
+
+    <!-- MAIN FORENSICS CONTAINER -->
+    <main class="forensics-container">
+
+        <!-- HEADER BANNER & SUMMARY MATRIX -->
+        <section class="forensics-header">
+            <div class="forensics-title-row">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; background: rgba(245, 158, 11, 0.18); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.35); padding: 2px 8px; border-radius: 12px;">Institutional Audit</span>
+                        <span style="font-size: 10px; font-weight: 700; background: rgba(0, 245, 155, 0.18); color: #00F59B; border: 1px solid rgba(0, 245, 155, 0.35); padding: 2px 8px; border-radius: 12px;"><i class="fa-solid fa-bolt"></i> Live Ledger Sync</span>
+                    </div>
+                    <h1 class="forensics-title">
+                        <span>🏛️</span> Trade Forensics & Compounding Audit Ledger
+                    </h1>
+                    <p class="forensics-subtitle">
+                        Complete institutional forensic analysis of every Hermes 2.0 Apex execution: Execution timestamps (IST), Coin name & direction, Entry/SL/TP levels, Position duration, MAE/MFE excursion data, 4 Sentries pass verification, and sequential compounding vault growth.
+                    </p>
+                </div>
+
+                <!-- KPI PILLS -->
+                <div class="forensics-kpis">
+                    <div class="forensics-kpi-pill">
+                        <div class="kpi-lbl">Total Realized PnL</div>
+                        <div class="kpi-val text-buy mono" id="kpiTotalPnl">+$0.00</div>
+                    </div>
+                    <div class="forensics-kpi-pill">
+                        <div class="kpi-lbl">Active Capital</div>
+                        <div class="kpi-val mono" style="color: #F59E0B;" id="kpiActiveCapital">$50.00</div>
+                    </div>
+                    <div class="forensics-kpi-pill">
+                        <div class="kpi-lbl">Cold Storage Vault</div>
+                        <div class="kpi-val mono" style="color: #38BDF8;" id="kpiColdVault">$0.00</div>
+                    </div>
+                    <div class="forensics-kpi-pill">
+                        <div class="kpi-lbl">Apex Win Rate</div>
+                        <div class="kpi-val mono" style="color: #00F59B;" id="kpiWinRate">0.0%</div>
+                    </div>
+                    <div class="forensics-kpi-pill">
+                        <div class="kpi-lbl">Total Trades</div>
+                        <div class="kpi-val mono text-primary" id="kpiTotalTrades">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOOLBAR: FILTER PILLS, SEARCH, CSV EXPORT -->
+            <div class="forensics-toolbar">
+                <div class="forensics-filter-pills" id="filterPillsContainer">
+                    <button class="forensics-pill-btn active" data-filter="all">All Trades (<span id="countAll">0</span>)</button>
+                    <button class="forensics-pill-btn" data-filter="tp_hit">🎯 TP Hits (<span id="countTpHit">0</span>)</button>
+                    <button class="forensics-pill-btn" data-filter="sl_hit">🛑 Protected Stops (<span id="countSlHit">0</span>)</button>
+                    <button class="forensics-pill-btn" data-filter="4h">⏱️ 4H Apex Setups</button>
+                    <button class="forensics-pill-btn" data-filter="1h">⚡ 1H Apex Setups</button>
+                    <button class="forensics-pill-btn" data-filter="buy">🟢 LONG Positions</button>
+                    <button class="forensics-pill-btn" data-filter="sell">🔴 SHORT Positions</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="forensics-search-box">
+                        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); font-size: 11px;"></i>
+                        <input type="text" id="forensicsSearchInput" placeholder="Search coin (e.g. DOGE)...">
+                    </div>
+                    <a href="/api/journal/export-csv" class="btn" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <i class="fa-solid fa-file-arrow-down" style="color: #38BDF8;"></i> Export CSV
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- FORENSIC CARDS LIST CONTAINER -->
+        <section id="forensicCardsList">
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color: #F59E0B; margin-bottom: 12px;"></i>
+                <div style="font-weight: 600;">Loading institutional trade forensics...</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SLIDE-OUT MOBILE NAVIGATION DRAWER OVERLAY -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+
+    <!-- SLIDE-OUT MOBILE NAVIGATION DRAWER -->
+    <aside class="nav-drawer" id="slideDrawer" aria-label="Navigation Drawer">
+        <div class="drawer-header">
+            <div class="drawer-header-top">
+                <div class="drawer-user-info">
+                    <div class="drawer-avatar">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div class="drawer-user-meta">
+                        <div class="drawer-username">
+                            <span>HERMES APEX</span>
+                            <span class="drawer-vip-pill">VIP 1 PRO</span>
+                        </div>
+                        <span class="drawer-user-sub">UID: 9283-APEX-V17</span>
+                    </div>
+                </div>
+                <button class="drawer-close-btn" id="btnCloseDrawer" title="Close Menu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Compounding Goal Progress Snapshot -->
+            <div class="drawer-compounding-card">
+                <div class="drawer-comp-title-row">
+                    <span class="drawer-comp-title">
+                        <i class="fa-solid fa-trophy"></i> Compounding Goal
+                    </span>
+                    <span class="drawer-comp-val" id="drawerCompProgressVal">$50 ➔ $2,000</span>
+                </div>
+                <div class="drawer-comp-bar">
+                    <div class="drawer-comp-fill" id="drawerCompBar" style="width: 52%;"></div>
+                </div>
+                <div class="drawer-comp-meta">
+                    <span>5x Isolated Perpetual</span>
+                    <span id="drawerCompPercent">52.1% Target</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-nav-content">
+            <div class="drawer-section-label">Core Terminal & Markets</div>
+            <div class="drawer-links-group">
+                <a href="/" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-chart-candlestick"></i>
+                        <span>Terminal (Trade / Chart)</span>
+                    </div>
+                    <span class="drawer-badge badge-cyan">5X PRO</span>
+                </a>
+                <a href="/markets" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Markets Overview</span>
+                    </div>
+                    <span class="drawer-badge badge-gold">22 CHAMPIONS</span>
+                </a>
+            </div>
+
+            <div class="drawer-section-label">Apex Wealth Engine</div>
+            <div class="drawer-links-group">
+                <a href="/compounding" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>Compounding Goal ($50 ➔ $2,000)</span>
+                    </div>
+                    <span class="drawer-badge badge-hot">HOT</span>
+                </a>
+                <a href="/trade-forensics" class="drawer-nav-item active">
+                    <div class="left-group">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span>Trade Forensics & Audit</span>
+                    </div>
+                    <span class="drawer-badge badge-gold" style="background:#F59E0B; color:#000; font-weight:800;">AUDIT</span>
+                </a>
+                <a href="/hermes-ai" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>Hermes AI Hub</span>
+                    </div>
+                    <span class="drawer-badge badge-cyan">LIVE</span>
+                </a>
+                <a href="/positions" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Positions & History</span>
+                    </div>
+                </a>
+                <a href="/brain" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>Mike Cognitive Brain</span>
+                    </div>
+                    <span class="drawer-badge">AI AGENT</span>
+                </a>
+            </div>
+
+            <div class="drawer-section-label">Platform & Setup</div>
+            <div class="drawer-links-group">
+                <a href="/signals" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>Signals & Zones</span>
+                    </div>
+                </a>
+                <a href="/settings" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-gear"></i>
+                        <span>Settings</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            <div class="drawer-footer-status">
+                <span class="drawer-status-pill">
+                    <span class="drawer-live-dot"></span> Binance Feed: CONNECTED
+                </span>
+                <span class="mono" style="font-size: 10px;" id="drawerClock">00:00:00 IST</span>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        // Telegram WebApp Viewport & Swipe Stability
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+                if (typeof window.Telegram.WebApp.disableVerticalSwipes === 'function') {
+                    window.Telegram.WebApp.disableVerticalSwipes();
+                }
+            }
+        } catch (tgErr) {
+            console.warn("Telegram init:", tgErr);
+        }
+
+        // Live Clock
+        function updateClock() {
+            const now = new Date();
+            const istTime = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false });
+            const clockEl = document.getElementById("headerClock");
+            const drawerClockEl = document.getElementById("drawerClock");
+            if (clockEl) clockEl.innerText = `${istTime} IST`;
+            if (drawerClockEl) drawerClockEl.innerText = `${istTime} IST`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Slide Drawer Controls
+        const btnOpenDrawer = document.getElementById("btnOpenDrawer");
+        const btnCloseDrawer = document.getElementById("btnCloseDrawer");
+        const drawerOverlay = document.getElementById("drawerOverlay");
+        const slideDrawer = document.getElementById("slideDrawer");
+
+        function openDrawer() {
+            if (slideDrawer && drawerOverlay) {
+                slideDrawer.classList.add("active");
+                drawerOverlay.classList.add("active");
+            }
+        }
+        function closeDrawer() {
+            if (slideDrawer && drawerOverlay) {
+                slideDrawer.classList.remove("active");
+                drawerOverlay.classList.remove("active");
+            }
+        }
+        if (btnOpenDrawer) btnOpenDrawer.addEventListener("click", openDrawer);
+        if (btnCloseDrawer) btnCloseDrawer.addEventListener("click", closeDrawer);
+        if (drawerOverlay) drawerOverlay.addEventListener("click", closeDrawer);
+
+        // State & Data
+        let allForensicTrades = [];
+        let activeForensicFilter = "all";
+        let searchQuery = "";
+
+        async function loadTradeForensics() {
+            try {
+                const resp = await fetch("/api/trades/forensics");
+                if (!resp.ok) throw new Error("Network response not ok");
+                const data = await resp.json();
+                
+                const summary = data.summary || {};
+                allForensicTrades = data.trades || [];
+
+                // Update summary KPIs
+                const kpiPnl = document.getElementById("kpiTotalPnl");
+                if (kpiPnl) {
+                    kpiPnl.textContent = `${summary.total_pnl >= 0 ? '+' : ''}$${summary.total_pnl.toFixed(2)} USDT`;
+                    kpiPnl.className = `kpi-val mono ${summary.total_pnl >= 0 ? 'text-buy' : 'text-sell'}`;
+                }
+                const kpiCap = document.getElementById("kpiActiveCapital");
+                if (kpiCap) kpiCap.textContent = `$${summary.current_capital.toFixed(2)}`;
+
+                const kpiVault = document.getElementById("kpiColdVault");
+                if (kpiVault) kpiVault.textContent = `$${summary.cold_vault_total.toFixed(2)}`;
+
+                const kpiWr = document.getElementById("kpiWinRate");
+                if (kpiWr) kpiWr.textContent = `${summary.win_rate.toFixed(1)}%`;
+
+                const kpiTt = document.getElementById("kpiTotalTrades");
+                if (kpiTt) kpiTt.textContent = summary.total_trades;
+
+                // Update counts on filter pills
+                const cAll = document.getElementById("countAll");
+                if (cAll) cAll.textContent = summary.total_trades;
+
+                const cTp = document.getElementById("countTpHit");
+                if (cTp) cTp.textContent = summary.tp_hits;
+
+                const cSl = document.getElementById("countSlHit");
+                if (cSl) cSl.textContent = summary.sl_hits;
+
+                // Update drawer compounding bar
+                const drawerProgress = document.getElementById("drawerCompProgressVal");
+                const drawerBar = document.getElementById("drawerCompBar");
+                const drawerPct = document.getElementById("drawerCompPercent");
+                if (drawerProgress) drawerProgress.textContent = `$${summary.current_capital.toFixed(2)} ➔ $2,000`;
+                if (drawerBar) drawerBar.style.width = `${summary.goal_progress_pct}%`;
+                if (drawerPct) drawerPct.textContent = `${summary.goal_progress_pct}% Target`;
+
+                renderForensicCards();
+            } catch (err) {
+                console.error("Error loading forensics:", err);
+                document.getElementById("forensicCardsList").innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #FF3B69;">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x" style="margin-bottom: 10px;"></i>
+                        <div>Failed to load live forensic trades ledger. Retrying in 5 seconds...</div>
+                    </div>
+                `;
+                setTimeout(loadTradeForensics, 5000);
+            }
+        }
+
+        function renderForensicCards() {
+            const container = document.getElementById("forensicCardsList");
+            if (!container) return;
+
+            let filtered = allForensicTrades;
+
+            // Filter logic
+            if (activeForensicFilter === "tp_hit") {
+                filtered = filtered.filter(t => t.status === "TP_HIT");
+            } else if (activeForensicFilter === "sl_hit") {
+                filtered = filtered.filter(t => t.status === "SL_HIT");
+            } else if (activeForensicFilter === "4h") {
+                filtered = filtered.filter(t => t.timeframe && t.timeframe.toLowerCase().includes("4h"));
+            } else if (activeForensicFilter === "1h") {
+                filtered = filtered.filter(t => t.timeframe && t.timeframe.toLowerCase().includes("1h"));
+            } else if (activeForensicFilter === "buy") {
+                filtered = filtered.filter(t => t.side === "BUY");
+            } else if (activeForensicFilter === "sell") {
+                filtered = filtered.filter(t => t.side === "SELL");
+            }
+
+            // Search query
+            if (searchQuery) {
+                const q = searchQuery.toUpperCase();
+                filtered = filtered.filter(t => t.symbol.toUpperCase().includes(q));
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: var(--text-muted); background: rgba(18,24,38,0.4); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.08);">
+                        <i class="fa-solid fa-filter-circle-xmark fa-2x" style="margin-bottom: 12px; color: #64748B;"></i>
+                        <div style="font-weight: 600; font-size: 14px; color: var(--text-secondary);">No trades found matching current filter or search criteria</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = "";
+            filtered.forEach(t => {
+                const isTp = t.status === "TP_HIT";
+                const isBuy = t.side === "BUY";
+                const cardBorderClass = isTp ? "win-border" : "loss-border";
+                const pnlSign = t.pnl_usdt >= 0 ? "+" : "";
+                const pnlColorClass = t.pnl_usdt >= 0 ? "text-buy" : "text-sell";
+                const roiSign = t.roe_pct >= 0 ? "+" : "";
+
+                const formatPx = (px) => {
+                    if (!px) return "0.00";
+                    return px > 10 ? px.toFixed(2) : (px > 1 ? px.toFixed(4) : px.toFixed(6));
+                };
+
+                // Excursion bar percentages
+                const maeFillPct = Math.min(100, Math.max(8, Math.round((Math.abs(t.mae_pct) / 3.0) * 100)));
+                const mfeFillPct = Math.min(100, Math.max(12, Math.round((t.mfe_pct / 4.0) * 100)));
+
+                html += `
+                    <div class="trade-card ${cardBorderClass}">
+                        <!-- TOP IDENTITY ROW -->
+                        <div class="trade-card-top">
+                            <div class="trade-card-identity">
+                                <span class="trade-num-badge">#${String(t.trade_num).padStart(3, '0')}</span>
+                                <span class="trade-symbol-title">${t.symbol}</span>
+                                <span class="trade-side-badge ${isBuy ? 'long' : 'short'}">${isBuy ? 'LONG 5x' : 'SHORT 5x'}</span>
+                                <span class="mono" style="font-size: 11px; color: var(--text-secondary); background: rgba(255,255,255,0.04); padding: 2px 7px; border-radius: 4px;">${t.timeframe}</span>
+                            </div>
+
+                            <div class="trade-card-outcome">
+                                <div class="trade-pnl-block">
+                                    <div class="trade-pnl-lbl">Net PnL / ROI</div>
+                                    <div class="trade-pnl-val mono ${pnlColorClass}">
+                                        <span>${pnlSign}$${t.pnl_usdt.toFixed(2)} USDT</span>
+                                        <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${isTp ? 'rgba(0,245,155,0.15)' : 'rgba(255,59,105,0.15)'};">${roiSign}${t.roe_pct.toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                                <span class="trade-outcome-pill ${isTp ? 'tp-hit' : 'sl-hit'}">
+                                    ${isTp ? '<span>🎯</span> TP HIT (+2.8%)' : '<span>🛡️</span> SL PROTECTED'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 6-COLUMN EXECUTION GRID -->
+                        <div class="trade-grid">
+                            <div class="trade-grid-col">
+                                <div class="cell-lbl">Entry Price</div>
+                                <div class="cell-val mono">$${formatPx(t.entry_price)}</div>
+                            </div>
+                            <div class="trade-grid-col">
+                                <div class="cell-lbl">Take Profit (TP)</div>
+                                <div class="cell-val mono text-buy">$${formatPx(t.tp_price)}</div>
+                            </div>
+                            <div class="trade-grid-col">
+                                <div class="cell-lbl">Stop Loss (SL)</div>
+                                <div class="cell-val mono text-sell">$${formatPx(t.hard_sl_price)}</div>
+                            </div>
+                            <div class="trade-grid-col">
+                                <div class="cell-lbl">Actual Exit Price</div>
+                                <div class="cell-val mono text-primary">$${formatPx(t.exit_price)}</div>
+                            </div>
+                            <div class="trade-grid-col">
+                                <div class="cell-lbl">Position Duration</div>
+                                <div class="cell-val mono" style="color: #F59E0B;"><i class="fa-solid fa-stopwatch" style="font-size: 10px;"></i> ${t.duration_str}</div>
+                            </div>
+                            <div class="trade-grid-col">
+                                <div class="cell-lbl">Closed Timestamp (IST)</div>
+                                <div class="cell-val mono" style="font-size: 11px; color: var(--text-secondary);">${t.timestamp_ist}</div>
+                            </div>
+                        </div>
+
+                        <!-- ADVANCED INSTITUTIONAL EXCURSION METERS: MAE & MFE -->
+                        <div class="excursion-meters">
+                            <!-- MAE (Maximum Adverse Excursion) -->
+                            <div class="meter-card">
+                                <div class="meter-header">
+                                    <span style="color: var(--text-secondary); font-weight: 600;"><i class="fa-solid fa-arrow-trend-down" style="color: #FF3B69;"></i> MAE (Max Adverse Excursion / Peak Drawdown)</span>
+                                    <span class="mono text-sell font-bold">-${Math.abs(t.mae_pct).toFixed(2)}% (-$${t.mae_usdt.toFixed(2)})</span>
+                                </div>
+                                <div class="meter-track">
+                                    <div class="meter-fill-mae" style="width: ${maeFillPct}%;"></div>
+                                </div>
+                                <div class="meter-desc">${isTp ? 'Ultra-clean entry: Price experienced virtually zero adverse heat before surging to target.' : 'Risk capped by Sentry hard stop at exact threshold.'}</div>
+                            </div>
+
+                            <!-- MFE (Maximum Favorable Excursion) -->
+                            <div class="meter-card">
+                                <div class="meter-header">
+                                    <span style="color: var(--text-secondary); font-weight: 600;"><i class="fa-solid fa-arrow-trend-up" style="color: #00F59B;"></i> MFE (Max Favorable Excursion / Peak Move)</span>
+                                    <span class="mono text-buy font-bold">+${t.mfe_pct.toFixed(2)}% (+$${t.mfe_usdt.toFixed(2)})</span>
+                                </div>
+                                <div class="meter-track">
+                                    <div class="meter-fill-mfe" style="width: ${mfeFillPct}%;"></div>
+                                </div>
+                                <div class="meter-desc">${isTp ? `High Capture Efficiency: ${t.mfe_efficiency}% of maximum potential momentum secured.` : 'Early momentum was insufficient to clear liquidity pool.'}</div>
+                            </div>
+                        </div>
+
+                        <!-- SENTRY VALIDATION & COMPOUNDING SPLIT FOOTER -->
+                        <div class="trade-card-footer">
+                            <div class="sentries-chips">
+                                <span style="color: var(--text-muted); font-size: 11px; font-weight: 700;">🏛️ Sentries Verification:</span>
+                                <span class="sentry-pass-tag">${t.sentries.sentry1}</span>
+                                <span class="sentry-pass-tag">${t.sentries.sentry2}</span>
+                                <span class="sentry-pass-tag">${t.sentries.sentry3}</span>
+                                <span class="sentry-pass-tag">${t.sentries.sentry4}</span>
+                            </div>
+
+                            <div class="compounding-status-pill">
+                                <span style="color: var(--text-muted);">Post Capital: <strong class="mono" style="color: #F59E0B;">$${t.post_capital.toFixed(2)}</strong></span>
+                                <span style="color: var(--text-muted); margin-left: 8px;">Cold Vault: <strong class="mono" style="color: #38BDF8;">$${t.cold_vault.toFixed(2)}</strong> (15% Banked)</span>
+                                <span style="color: var(--text-muted); margin-left: 8px;">Equity: <strong class="mono" style="color: #00F59B;">$${t.total_equity.toFixed(2)}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Filter Pills Event Listener
+        document.getElementById("filterPillsContainer")?.addEventListener("click", (e) => {
+            const btn = e.target.closest(".forensics-pill-btn");
+            if (!btn) return;
+            document.querySelectorAll(".forensics-pill-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            activeForensicFilter = btn.getAttribute("data-filter") || "all";
+            renderForensicCards();
+        });
+
+        // Search Input Event Listener
+        document.getElementById("forensicsSearchInput")?.addEventListener("input", (e) => {
+            searchQuery = e.target.value.trim();
+            renderForensicCards();
+        });
+
+        // Initial Load & 10s auto-sync loop
+        loadTradeForensics();
+        setInterval(loadTradeForensics, 10000);
+    </script>
+</body>
+</html>

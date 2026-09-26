@@ -36,6 +36,19 @@ let drawingDragStartPos = null;
 
 // --- Application Bootstrap ---
 document.addEventListener("DOMContentLoaded", () => {
+    // Telegram WebApp Viewport & Swipe Stability (Eliminates mobile screen flickering & bounce)
+    try {
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+            if (typeof window.Telegram.WebApp.disableVerticalSwipes === 'function') {
+                window.Telegram.WebApp.disableVerticalSwipes();
+            }
+        }
+    } catch (tgErr) {
+        console.warn("Telegram WebApp init notice:", tgErr);
+    }
+
     try { initChart(); } catch (e) { console.error("initChart error:", e); }
     try { initWebSocket(); } catch (e) { console.error("initWebSocket error:", e); }
     try { loadCoinsList(); } catch (e) { console.error("loadCoinsList error:", e); }
@@ -160,16 +173,23 @@ function initChart() {
         drawSmcZoneBoxes();
     });
 
-    // Auto-resize observer
+    // Auto-resize observer with jitter threshold
+    let lastChartW = 0;
+    let lastChartH = 0;
     if (window.ResizeObserver) {
         const ro = new ResizeObserver(entries => {
             if (!entries || entries.length === 0 || !tvChart) return;
             const entry = entries[0];
-            const newWidth = entry.contentRect.width;
-            const newHeight = entry.contentRect.height;
+            const newWidth = Math.floor(entry.contentRect.width);
+            const newHeight = Math.floor(entry.contentRect.height);
             if (newWidth > 50 && newHeight > 50) {
-                tvChart.applyOptions({ width: newWidth, height: newHeight });
-                drawSmcZoneBoxes();
+                // Prevent micro-flicker: only resize if changed by >= 3px
+                if (Math.abs(newWidth - lastChartW) >= 3 || Math.abs(newHeight - lastChartH) >= 3) {
+                    lastChartW = newWidth;
+                    lastChartH = newHeight;
+                    tvChart.applyOptions({ width: newWidth, height: newHeight });
+                    drawSmcZoneBoxes();
+                }
             }
         });
         ro.observe(container);
@@ -2162,6 +2182,7 @@ async function loadCoinsList() {
     }
 }
 
+let lastRenderedCoinKeys = "";
 function renderCoinsList() {
     const container = document.getElementById("coinsListContainer");
     if (!container) return;
@@ -2184,9 +2205,24 @@ function renderCoinsList() {
 
     if (filtered.length === 0) {
         container.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No coins match filter</div>`;
+        lastRenderedCoinKeys = "";
         return;
     }
 
+    const currentKey = filtered.map(c => `${c.symbol}_${c.buy_zones}_${c.sell_zones}`).join(",") + `__${currentSymbol}`;
+    if (currentKey === lastRenderedCoinKeys) {
+        // Fast in-place price update - avoids DOM destruction and mobile flicker
+        const rows = container.querySelectorAll(".coin-row");
+        filtered.forEach((c, idx) => {
+            if (rows[idx]) {
+                const pxEl = rows[idx].querySelector(".coin-px");
+                if (pxEl) pxEl.textContent = `$${formatPrice(c.price)}`;
+            }
+        });
+        return;
+    }
+
+    lastRenderedCoinKeys = currentKey;
     container.innerHTML = filtered.map(c => {
         const isSelected = c.symbol === currentSymbol;
         return `
@@ -3979,13 +4015,15 @@ function renderFuturesPositions() {
     }
 
     if (!displayList || displayList.length === 0) {
-        container.innerHTML = `
-            <div class="pos-empty-state">
-                <i class="fa-solid fa-shield-halved fa-2x" style="color: #64748B; opacity: 0.5;"></i>
-                <span style="font-weight:600; color:#94A3B8;">No Active Positions ${hideOtherPairs ? `for ${currentSymbol}` : ''}</span>
-                <span style="font-size:11px; color:#64748B;">Hermes 2.0 Apex Engine is scanning Top-22 Champions (Confluence ≥ 90).</span>
-            </div>
-        `;
+        if (!container.querySelector(".pos-empty-state")) {
+            container.innerHTML = `
+                <div class="pos-empty-state">
+                    <i class="fa-solid fa-shield-halved fa-2x" style="color: #64748B; opacity: 0.5;"></i>
+                    <span style="font-weight:600; color:#94A3B8;">No Active Positions ${hideOtherPairs ? `for ${currentSymbol}` : ''}</span>
+                    <span style="font-size:11px; color:#64748B;">Hermes 2.0 Apex Engine is scanning Top-22 Champions (Confluence ≥ 90).</span>
+                </div>
+            `;
+        }
         return;
     }
 
@@ -4166,11 +4204,13 @@ function renderProDockTable() {
     if (!container) return;
 
     if (!futuresPositionsData || futuresPositionsData.length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;">
-                <i class="fa-solid fa-circle-check text-buy"></i> No open positions. Hermes 2.0 Apex 4-Sentries Engine is searching Top-22 Champions.
-            </div>
-        `;
+        if (!container.querySelector(".pro-dock-empty")) {
+            container.innerHTML = `
+                <div class="pro-dock-empty" style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;">
+                    <i class="fa-solid fa-circle-check text-buy"></i> No open positions. Hermes 2.0 Apex 4-Sentries Engine is searching Top-22 Champions.
+                </div>
+            `;
+        }
         return;
     }
 
@@ -4609,41 +4649,83 @@ function renderLiveOrderbook() {
     const baseP = coin ? coin.price : (rawCandleData.length ? rawCandleData[rawCandleData.length - 1].close : 100.0);
     if (!baseP || baseP <= 0) return;
 
-    if (midPrice) midPrice.textContent = `$${baseP > 10 ? baseP.toFixed(2) : baseP.toFixed(4)}`;
+    const formattedMid = `$${baseP > 10 ? baseP.toFixed(2) : baseP.toFixed(4)}`;
+    if (midPrice && midPrice.textContent !== formattedMid) midPrice.textContent = formattedMid;
 
-    let asksHtml = "";
-    for (let i = 5; i >= 1; i--) {
+    // Check asks DOM structure - build once
+    let askRows = asksBox.querySelectorAll(".ob-row");
+    if (askRows.length !== 5) {
+        let asksHtml = "";
+        for (let i = 5; i >= 1; i--) {
+            asksHtml += `
+                <div class="ob-row" data-idx="${i}">
+                    <span class="ob-price">0.00</span>
+                    <span class="ob-size">0.00</span>
+                    <span class="ob-total">0.00</span>
+                    <div class="ob-bar-fill" style="width: 0%;"></div>
+                </div>
+            `;
+        }
+        asksBox.innerHTML = asksHtml;
+        askRows = asksBox.querySelectorAll(".ob-row");
+    }
+
+    // In-place property update without destroying DOM
+    askRows.forEach((row, idx) => {
+        const i = 5 - idx;
         const p = (baseP * (1.0 + (i * 0.0004))).toFixed(baseP > 10 ? 2 : 4);
         const sz = (Math.random() * 4.5 + 0.5).toFixed(2);
         const tot = (parseFloat(sz) * (6 - i + 1)).toFixed(2);
         const fillPct = Math.min(100, Math.round((tot / 25.0) * 100));
-        asksHtml += `
-            <div class="ob-row" onclick="fillOrderPrice('${p}')">
-                <span class="ob-price">${p}</span>
-                <span class="ob-size">${sz}</span>
-                <span class="ob-total">${tot}</span>
-                <div class="ob-bar-fill" style="width: ${fillPct}%;"></div>
-            </div>
-        `;
-    }
-    asksBox.innerHTML = asksHtml;
 
-    let bidsHtml = "";
-    for (let i = 1; i <= 5; i++) {
+        const priceEl = row.querySelector(".ob-price");
+        const sizeEl = row.querySelector(".ob-size");
+        const totalEl = row.querySelector(".ob-total");
+        const barEl = row.querySelector(".ob-bar-fill");
+
+        if (priceEl && priceEl.textContent !== p) priceEl.textContent = p;
+        if (sizeEl) sizeEl.textContent = sz;
+        if (totalEl) totalEl.textContent = tot;
+        if (barEl) barEl.style.width = `${fillPct}%`;
+        row.onclick = () => fillOrderPrice(p);
+    });
+
+    // Check bids DOM structure - build once
+    let bidRows = bidsBox.querySelectorAll(".ob-row");
+    if (bidRows.length !== 5) {
+        let bidsHtml = "";
+        for (let i = 1; i <= 5; i++) {
+            bidsHtml += `
+                <div class="ob-row" data-idx="${i}">
+                    <span class="ob-price">0.00</span>
+                    <span class="ob-size">0.00</span>
+                    <span class="ob-total">0.00</span>
+                    <div class="ob-bar-fill" style="width: 0%;"></div>
+                </div>
+            `;
+        }
+        bidsBox.innerHTML = bidsHtml;
+        bidRows = bidsBox.querySelectorAll(".ob-row");
+    }
+
+    bidRows.forEach((row, idx) => {
+        const i = idx + 1;
         const p = (baseP * (1.0 - (i * 0.0004))).toFixed(baseP > 10 ? 2 : 4);
         const sz = (Math.random() * 4.5 + 0.5).toFixed(2);
         const tot = (parseFloat(sz) * i).toFixed(2);
         const fillPct = Math.min(100, Math.round((tot / 25.0) * 100));
-        bidsHtml += `
-            <div class="ob-row" onclick="fillOrderPrice('${p}')">
-                <span class="ob-price">${p}</span>
-                <span class="ob-size">${sz}</span>
-                <span class="ob-total">${tot}</span>
-                <div class="ob-bar-fill" style="width: ${fillPct}%;"></div>
-            </div>
-        `;
-    }
-    bidsBox.innerHTML = bidsHtml;
+
+        const priceEl = row.querySelector(".ob-price");
+        const sizeEl = row.querySelector(".ob-size");
+        const totalEl = row.querySelector(".ob-total");
+        const barEl = row.querySelector(".ob-bar-fill");
+
+        if (priceEl && priceEl.textContent !== p) priceEl.textContent = p;
+        if (sizeEl) sizeEl.textContent = sz;
+        if (totalEl) totalEl.textContent = tot;
+        if (barEl) barEl.style.width = `${fillPct}%`;
+        row.onclick = () => fillOrderPrice(p);
+    });
 }
 
 function fillOrderPrice(p) {
