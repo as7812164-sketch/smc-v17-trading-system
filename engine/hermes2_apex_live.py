@@ -609,7 +609,14 @@ class Hermes2ApexLiveEngine:
             trade_id = trade["id"]
 
             tickers = await binance_feed.fetch_all_tickers()
-            cur_price = tickers.get(sym)
+            if tickers:
+                self.last_tickers = tickers
+                self.last_ticker_time = time.time()
+                try:
+                    await self.broadcast("TICKER_UPDATE", {"tickers": tickers})
+                except Exception:
+                    pass
+            cur_price = tickers.get(sym) if tickers else None
             if not cur_price or cur_price <= 0:
                 return
 
@@ -650,6 +657,12 @@ class Hermes2ApexLiveEngine:
             tickers = await binance_feed.fetch_all_tickers()
             if not tickers:
                 return
+            self.last_tickers = tickers
+            self.last_ticker_time = time.time()
+            try:
+                await self.broadcast("TICKER_UPDATE", {"tickers": tickers})
+            except Exception:
+                pass
 
             for setup in self.detected_setups:
                 sym = setup.get("symbol")

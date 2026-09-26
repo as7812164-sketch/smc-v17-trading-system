@@ -3826,10 +3826,13 @@ async function loadFuturesPositions() {
         // Update counts and badges
         const posCount = futuresPositionsData.length;
         const fposBadge = document.getElementById("futuresPosBadge");
-        if (fposBadge) fposBadge.innerText = posCount;
+        if (fposBadge) fposBadge.innerText = `${posCount} Active`;
 
         const fposCountEl = document.getElementById("fposCount");
         if (fposCountEl) fposCountEl.innerText = posCount;
+
+        const activePositionsCountEl = document.getElementById("activePositionsCount");
+        if (activePositionsCountEl) activePositionsCountEl.innerText = posCount;
 
         const mobBadge = document.getElementById("mobOpenBadge");
         if (mobBadge) {
@@ -3840,7 +3843,7 @@ async function loadFuturesPositions() {
         const openTradesBadge = document.getElementById("openTradesBadge");
         if (openTradesBadge) openTradesBadge.innerText = posCount;
 
-        // Total Floating PnL
+        // Total Floating PnL & Live ROI
         const totalPnl = data.total_unrealized_pnl || 0.0;
         const pnlSign = totalPnl >= 0 ? "+" : "";
         const pnlClass = totalPnl >= 0 ? "text-buy" : "text-sell";
@@ -3850,7 +3853,34 @@ async function loadFuturesPositions() {
 
         const proDockPnl = document.getElementById("proDockTotalPnl");
         if (proDockPnl) {
-            proDockPnl.innerHTML = `Floating PnL: <span class="${pnlClass}">${pnlSign}$${Math.abs(totalPnl).toFixed(2)}</span>`;
+            const firstPos = futuresPositionsData.length > 0 ? futuresPositionsData[0] : null;
+            const roiVal = firstPos ? firstPos.roi_pct : 0.0;
+            const roiSign = roiVal >= 0 ? "+" : "";
+            proDockPnl.innerHTML = `Floating PnL: <span class="${pnlClass}">${pnlSign}$${Math.abs(totalPnl).toFixed(2)} (${roiSign}${roiVal.toFixed(2)}% ROI)</span>`;
+        }
+
+        // Update KPI Strip on Positions Page & Dashboard
+        const kpiOpenPnL = document.getElementById("kpiOpenPnL");
+        const kpiOpenTradesSub = document.getElementById("kpiOpenTradesSub");
+        if (kpiOpenPnL) {
+            const firstPos = futuresPositionsData.length > 0 ? futuresPositionsData[0] : null;
+            const roiVal = firstPos ? firstPos.roi_pct : 0.0;
+            const roiSign = roiVal >= 0 ? "+" : "";
+            kpiOpenPnL.innerHTML = `<span class="${pnlClass}">${pnlSign}$${Math.abs(totalPnl).toFixed(2)} (${roiSign}${roiVal.toFixed(2)}% ROI)</span>`;
+        }
+        if (kpiOpenTradesSub) {
+            kpiOpenTradesSub.innerText = `${posCount} Active (5x Isolated)`;
+        }
+
+        // Auto-sync currentSymbol if an active position exists and we are still on default BTCUSDT
+        if (futuresPositionsData.length > 0 && currentSymbol === "BTCUSDT" && futuresPositionsData[0].symbol !== "BTCUSDT") {
+            const activeSym = futuresPositionsData[0].symbol;
+            currentSymbol = activeSym;
+            const pairName = document.getElementById("bgPairName");
+            if (pairName) pairName.textContent = activeSym;
+            const tradeSym = document.getElementById("bgTradeSymbol");
+            if (tradeSym) tradeSym.textContent = activeSym;
+            if (typeof updateBitgetTickerBar === "function") updateBitgetTickerBar();
         }
 
         renderFuturesPositions();
@@ -4469,7 +4499,13 @@ function updateBitgetTickerBar() {
     if (tradeSym) tradeSym.textContent = currentSymbol;
 
     const coin = allCoinsData.find(c => c.symbol === currentSymbol);
-    const p = coin ? coin.price : (rawCandleData.length ? rawCandleData[rawCandleData.length - 1].close : 0);
+    let p = coin ? coin.price : (rawCandleData.length ? rawCandleData[rawCandleData.length - 1].close : 0);
+    if (futuresPositionsData && futuresPositionsData.length > 0) {
+        const matchingPos = futuresPositionsData.find(pos => pos.symbol === currentSymbol);
+        if (matchingPos && matchingPos.mark_price > 0) {
+            p = matchingPos.mark_price;
+        }
+    }
     const formattedP = p > 0 ? (p > 10 ? p.toFixed(2) : p.toFixed(4)) : "0.00";
 
     const lastP = document.getElementById("bgLastPrice");

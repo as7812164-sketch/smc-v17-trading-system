@@ -621,9 +621,9 @@
 
                         <div class="bg-est-summary">
                             <div class="bg-est-item"><span>Total Position Value:</span> <b id="bgEstPosVal">$250.00 USDT</b></div>
-                            <div class="bg-est-item"><span>Est. TP Target (+2% Move):</span> <b class="text-buy" id="bgEstTpTarget">+$5.00 USDT</b></div>
-                            <div class="bg-est-item"><span>Est. Hard Stop (-4% Move):</span> <b class="text-sell" id="bgEstSlTarget">-$10.00 USDT</b></div>
-                            <div class="bg-est-item"><span>Available Balance:</span> <b id="bgAvailBal">$77.59 USDT</b></div>
+                            <div class="bg-est-item"><span>Est. TP Target (+2.8% Move):</span> <b class="text-buy" id="bgEstTpTarget">+$7.00 USDT (+14% ROE)</b></div>
+                            <div class="bg-est-item"><span>Est. Soft Stop (-2.8% Move):</span> <b class="text-sell" id="bgEstSlTarget">-$7.00 USDT (-14% ROE)</b></div>
+                            <div class="bg-est-item"><span>Available Balance:</span> <b id="bgAvailBal">$50.00 USDT</b></div>
                         </div>
 
                         <!-- Buy Long & Sell Short Buttons -->
@@ -666,18 +666,18 @@
                                 </div>
                                 <div class="ap-title">
                                     <h4>$50 Compounding Ladder</h4>
-                                    <span>$50 ➔ $1,000 Roadmap</span>
+                                    <span>$50 ➔ $2,000 Roadmap</span>
                                 </div>
-                                <span class="ap-status-badge status-active">STAGE 1: $77.59</span>
+                                <span class="ap-status-badge status-active">STAGE 1: $50.00</span>
                             </div>
                             <div class="challenge-stage-ladder">
                                 <div class="stage-step-item active">
                                     <div class="step-lbl-row">
                                         <span class="step-name"><i class="fa-solid fa-circle-check text-buy"></i> Stage 1: $50 ➔ $100</span>
-                                        <span class="step-val text-buy">$77.59 (77.6%)</span>
+                                        <span class="step-val text-buy">$50.00 (0.0%)</span>
                                     </div>
                                     <div class="step-progress-track">
-                                        <div class="step-progress-fill" style="width: 77.6%;"></div>
+                                        <div class="step-progress-fill" style="width: 0.0%;"></div>
                                     </div>
                                 </div>
                                 <div class="stage-step-item">
@@ -938,18 +938,18 @@
                         <!-- Compounding Progress Bar -->
                         <div class="bg-ladder-container">
                             <div class="bg-ladder-header">
-                                <span class="bg-ladder-lbl">Compounding Roadmap ($50 ➔ $1,000)</span>
-                                <span class="bg-ladder-pct" id="bgLadderPct">Stage 1: $77.59 USDT (2.9%)</span>
+                                <span class="bg-ladder-lbl">Compounding Roadmap ($50 ➔ $2,000)</span>
+                                <span class="bg-ladder-pct" id="bgLadderPct">Stage 1: $50.00 USDT (0.0%)</span>
                             </div>
                             <div class="bg-ladder-track">
-                                <div class="bg-ladder-fill" id="bgLadderFill" style="width: 2.9%;"></div>
+                                <div class="bg-ladder-fill" id="bgLadderFill" style="width: 2.5%;"></div>
                             </div>
                             <div class="bg-ladder-milestones">
                                 <span class="milestone active">$50 Start</span>
                                 <span class="milestone">$100</span>
-                                <span class="milestone">$250</span>
                                 <span class="milestone">$500</span>
-                                <span class="milestone" style="color:#00F59B;">$1,000 Goal</span>
+                                <span class="milestone">$1,000</span>
+                                <span class="milestone" style="color:#00F59B;">$2,000 Goal</span>
                             </div>
                         </div>
 
@@ -1313,10 +1313,10 @@
                         </div>
                         <div class="dual-challenge-toggle" style="display:flex; gap:6px;">
                             <button class="btn btn-xs btn-primary active" id="btnTabBitget4h" style="padding:4px 10px; font-weight:700;">
-                                <i class="fa-solid fa-shield-halved"></i> Bitget 4H Swing ($77.59)
+                                <i class="fa-solid fa-shield-halved"></i> Hermes Compounding ($50.00)
                             </button>
                             <button class="btn btn-xs btn-secondary" id="btnTabBinance1h" style="padding:4px 10px; font-weight:700; border-color:#F59E0B; color:#F59E0B;">
-                                <i class="fa-solid fa-bolt"></i> Binance 1H Scalp ($50.00)
+                                <i class="fa-solid fa-bolt"></i> 5x Isolated Active
                             </button>
                         </div>
                     </div>
@@ -1330,10 +1330,10 @@
                                     <i class="fa-solid fa-bullseye"></i>
                                 </div>
                                 <div class="ap-title">
-                                    <h4>Bitget 4H Compounding Ladder</h4>
-                                    <span>Stage 1 of 5 • $50 ➔ $1,000 Swing Goal</span>
+                                    <h4>Hermes Compounding Ladder</h4>
+                                    <span>Stage 1 of 5 • $50 ➔ $2,000 Goal</span>
                                 </div>
-                                <span class="ap-status-badge status-active" id="modalStageBadge">STAGE 1: $77.59 / $100</span>
+                                <span class="ap-status-badge status-active" id="modalStageBadge">STAGE 1: $50.00 / $100</span>
                             </div>
                             
                             <!-- Ladder Stages Matrix -->
@@ -1341,10 +1341,10 @@
                                 <div class="stage-step-item active">
                                     <div class="step-lbl-row">
                                         <span class="step-name"><i class="fa-solid fa-circle-check text-buy"></i> Stage 1: $50 ➔ $100</span>
-                                        <span class="step-val text-buy" id="modalStage1Val">$77.59 USDT (77.6%)</span>
+                                        <span class="step-val text-buy" id="modalStage1Val">$50.00 USDT (0.0%)</span>
                                     </div>
                                     <div class="step-progress-track">
-                                        <div class="step-progress-fill" id="modalStage1Fill" style="width: 77.6%;"></div>
+                                        <div class="step-progress-fill" id="modalStage1Fill" style="width: 0.0%;"></div>
                                     </div>
                                 </div>
                                 <div class="stage-step-item">

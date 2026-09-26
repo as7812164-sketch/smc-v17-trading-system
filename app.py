@@ -298,20 +298,31 @@ async def get_system_status():
         "paper_trading": paper
     }
 
+async def get_live_tickers() -> Dict[str, float]:
+    """Returns fresh live tickers cached for max 2.5 seconds across Binance Futures & Spot."""
+    now = time.time()
+    last_time = getattr(hermes2_apex_engine, "last_ticker_time", 0.0)
+    cached = getattr(hermes2_apex_engine, "last_tickers", None)
+    if cached and (now - last_time < 2.5):
+        return cached
+    try:
+        fresh = await binance_feed.fetch_all_tickers()
+        if fresh:
+            hermes2_apex_engine.last_tickers = fresh
+            hermes2_apex_engine.last_ticker_time = now
+            scanner.last_tickers = fresh
+            return fresh
+    except Exception:
+        pass
+    return cached or scanner.last_tickers or {}
+
 @app.get("/api/paper_trading")
 async def get_paper_trading_summary():
     account = get_paper_account()
     trades = get_paper_trades_history(limit=30)
     open_trades_raw = get_open_paper_trades()
 
-    tickers = scanner.last_tickers
-    if not tickers:
-        try:
-            tickers = await binance_feed.fetch_all_tickers()
-            if tickers:
-                scanner.last_tickers = tickers
-        except Exception:
-            tickers = {}
+    tickers = await get_live_tickers()
 
     enriched_open = []
     total_unrealized_pnl_usdt = 0.0
@@ -319,7 +330,7 @@ async def get_paper_trading_summary():
     for ot in open_trades_raw:
         sym = ot.get("symbol", "")
         entry = float(ot.get("entry_price", 0.0) or 0.0)
-        pos_size = float(ot.get("position_size_usdt", 10.0) or 10.0)
+        pos_size = float(ot.get("position_size_usdt", 250.0) or 250.0)
         side = ot.get("side", "BUY").upper()
         tp_price = float(ot.get("tp_price", 0.0) or 0.0)
         sl_price = float(ot.get("sl_price", 0.0) or 0.0)
@@ -328,11 +339,11 @@ async def get_paper_trading_summary():
         if cur_price <= 0:
             cur_price = entry
 
-        if side == "BUY":
+        if side in ("BUY", "LONG"):
             pnl_pct = ((cur_price - entry) / entry * 100.0) if entry > 0 else 0.0
             tp_dist_pct = ((tp_price - cur_price) / cur_price * 100.0) if cur_price > 0 else 0.0
             sl_dist_pct = ((cur_price - sl_price) / cur_price * 100.0) if cur_price > 0 else 0.0
-        else:  # SELL
+        else:  # SELL / SHORT
             pnl_pct = ((entry - cur_price) / entry * 100.0) if entry > 0 else 0.0
             tp_dist_pct = ((cur_price - tp_price) / cur_price * 100.0) if cur_price > 0 else 0.0
             sl_dist_pct = ((sl_price - cur_price) / cur_price * 100.0) if cur_price > 0 else 0.0
@@ -343,14 +354,14 @@ async def get_paper_trading_summary():
         trade_dict = dict(ot)
         trade_dict["current_price"] = cur_price
         trade_dict["floating_pnl_usdt"] = round(pnl_usdt, 4)
-        trade_dict["floating_pnl_pct"] = round(pnl_pct, 2)
+        trade_dict["floating_pnl_pct"] = round(pnl_pct * 5.0, 2)  # ROE on 5x leverage
         trade_dict["tp_distance_pct"] = round(tp_dist_pct, 2)
         trade_dict["sl_distance_pct"] = round(sl_dist_pct, 2)
         enriched_open.append(trade_dict)
 
-    initial_bal = float(account.get("initial_balance", 100.0) or 100.0)
-    current_bal = float(account.get("current_balance", 100.0) or 100.0)
-    total_unrealized_pnl_pct = (total_unrealized_pnl_usdt / initial_bal * 100.0) if initial_bal > 0 else 0.0
+    initial_bal = float(account.get("initial_balance", 50.0) or 50.0)
+    current_bal = float(account.get("current_balance", 50.0) or 50.0)
+    total_unrealized_pnl_pct = (total_unrealized_pnl_usdt / current_bal * 100.0) if current_bal > 0 else 0.0
     equity = current_bal + total_unrealized_pnl_usdt
     equity_return_pct = ((equity - initial_bal) / initial_bal * 100.0) if initial_bal > 0 else 0.0
 
@@ -372,14 +383,7 @@ async def get_paper_trading_summary():
 @app.get("/api/futures/positions")
 async def get_futures_positions():
     """Returns complete real-time Futures positions matching the Binance/Bitget UI format."""
-    tickers = scanner.last_tickers or {}
-    if not tickers:
-        try:
-            tickers = await binance_feed.fetch_all_tickers()
-            if tickers:
-                scanner.last_tickers = tickers
-        except Exception:
-            tickers = {}
+    tickers = await get_live_tickers()
 
     open_trades_raw = get_open_paper_trades()
     positions = []
@@ -390,17 +394,19 @@ async def get_futures_positions():
         trade_id = ot["id"]
         sym = ot.get("symbol", "")
         entry = float(ot.get("entry_price") or 0.0)
-        margin = float(ot.get("position_size_usdt") or 10.0)
+        pos_size_raw = float(ot.get("position_size_usdt") or 250.0)
         side_raw = ot.get("side", "BUY").upper()
         is_buy = side_raw in ("BUY", "LONG")
         leverage = 5
 
+        # pos_size_usdt stores the total effective position size ($250.00)
+        # Margin is size / leverage ($50.00)
+        size_usdt = round(pos_size_raw, 2)
+        margin = round(size_usdt / leverage, 2)
+
         mark_price = tickers.get(sym, entry) if tickers else entry
         if mark_price <= 0:
             mark_price = entry
-
-        # Size in USDT (e.g. 5x margin)
-        size_usdt = round(margin * leverage, 2)
 
         # Floating PnL calculation
         if is_buy:
@@ -410,11 +416,11 @@ async def get_futures_positions():
             pnl_pct = ((entry - mark_price) / entry * 100.0) if entry > 0 else 0.0
             liq_price = round(entry * 1.195, 4)
 
-        pnl_usdt = round(margin * (pnl_pct / 100.0), 2)
+        pnl_usdt = round(size_usdt * (pnl_pct / 100.0), 2)
         roi_pct = round(pnl_pct * leverage, 2)  # ROI on margin
 
-        tp_price = float(ot.get("tp_price") or (entry * 1.02 if is_buy else entry * 0.98))
-        sl_price = float(ot.get("sl_price") or (entry * 0.96 if is_buy else entry * 1.04))
+        tp_price = float(ot.get("tp_price") or (entry * 1.028 if is_buy else entry * 0.972))
+        sl_price = float(ot.get("sl_price") or (entry * 0.972 if is_buy else entry * 1.028))
 
         total_unrealized_pnl += pnl_usdt
         total_margin += margin
@@ -427,7 +433,7 @@ async def get_futures_positions():
             "margin_mode": "Isolated",
             "leverage": f"{leverage}x",
             "size_usdt": size_usdt,
-            "margin_usdt": round(margin, 2),
+            "margin_usdt": margin,
             "margin_ratio": "0.07%",
             "entry_price": entry,
             "mark_price": mark_price,
@@ -437,7 +443,8 @@ async def get_futures_positions():
             "realized_pnl": -0.01,
             "tp_price": tp_price,
             "sl_price": sl_price,
-            "entry_time": ot.get("entry_time", int(time.time() * 1000))
+            "entry_time": ot.get("entry_time", int(time.time() * 1000)),
+            "sentry_reasons": ot.get("sentry_reasons", "Hermes 2.0 Apex 4 Sentries Armed")
         })
 
     return {
@@ -1077,24 +1084,20 @@ async def update_settings(body: Dict[str, Any] = Body(...)):
 @app.get("/api/bitget/status")
 async def get_bitget_account_status():
     from engine.bitget_trader import bitget_trader
-    from database.db import get_open_paper_trades, get_active_zones
+    from database.db import get_open_paper_trades, get_active_zones, get_paper_account
+
+    paper_acc = get_paper_account()
+    current_bal = float(paper_acc.get("current_balance", 50.0) or 50.0)
 
     try:
         bal = await asyncio.to_thread(bitget_trader.fetch_futures_balance)
     except Exception:
-        bal = {"connected": False, "total_usdt": 77.59, "free_usdt": 77.59, "used_usdt": 0.0}
+        bal = {"connected": False, "total_usdt": current_bal, "free_usdt": current_bal, "used_usdt": 0.0}
 
     enabled = bitget_trader.is_auto_trade_enabled()
-    min_conf = int(get_setting("bitget_min_confluence", str(BITGET_MIN_CONFLUENCE)))
+    min_conf = 90
 
-    tickers = scanner.last_tickers or {}
-    if not tickers:
-        try:
-            tickers = await binance_feed.fetch_all_tickers()
-            if tickers:
-                scanner.last_tickers = tickers
-        except Exception:
-            tickers = {}
+    tickers = await get_live_tickers()
 
     open_trades = get_open_paper_trades()
     active_pos = None
@@ -1102,70 +1105,76 @@ async def get_bitget_account_status():
         ot = open_trades[0]
         sym = ot.get("symbol", "")
         entry = float(ot.get("entry_price") or 0.0)
-        cur = float(ot.get("current_price") or entry)
-        if cur == 0.0 or cur == entry:
-            cur = tickers.get(sym, entry) if tickers else entry
-        if cur == 0.0:
+        cur = tickers.get(sym, entry) if tickers else entry
+        if cur <= 0.0:
             cur = entry
 
-        is_buy = ot.get("side", "BUY").upper() == "BUY"
-        pnl_pct = ((cur - entry) / entry * 100) if (entry > 0 and is_buy) else (((entry - cur) / entry * 100) if entry > 0 else 0.0)
-        pos_size = float(ot.get("position_size_usdt") or BITGET_STARTING_MARGIN)
-        pnl_usdt = pos_size * (pnl_pct / 100)
+        pos_size_raw = float(ot.get("position_size_usdt") or 250.0)
+        side_raw = ot.get("side", "BUY").upper()
+        is_buy = side_raw in ("BUY", "LONG")
+        leverage = 5
+
+        size_usdt = round(pos_size_raw, 2)
+        margin = round(size_usdt / leverage, 2)
+
+        if is_buy:
+            pnl_pct = ((cur - entry) / entry * 100.0) if entry > 0 else 0.0
+        else:
+            pnl_pct = ((entry - cur) / entry * 100.0) if entry > 0 else 0.0
+
+        pnl_usdt = round(size_usdt * (pnl_pct / 100.0), 2)
+        roi_pct = round(pnl_pct * leverage, 2)
 
         active_pos = {
             "symbol": sym,
             "side": ot.get("side", "BUY"),
             "entry_price": entry,
             "current_price": cur,
-            "tp_price": float(ot.get("tp_price") or (entry * 1.02 if is_buy else entry * 0.98)),
-            "sl_price": float(ot.get("sl_price") or (entry * 0.96 if is_buy else entry * 1.04)),
-            "margin_usdt": pos_size,
+            "tp_price": float(ot.get("tp_price") or (entry * 1.028 if is_buy else entry * 0.972)),
+            "sl_price": float(ot.get("sl_price") or (entry * 0.972 if is_buy else entry * 1.028)),
+            "margin_usdt": margin,
+            "size_usdt": size_usdt,
             "leverage": "5x Isolated",
-            "floating_pnl_usdt": round(pnl_usdt, 2),
-            "floating_pnl_pct": round(pnl_pct, 2),
+            "floating_pnl_usdt": pnl_usdt,
+            "floating_pnl_pct": roi_pct,
             "entry_time": ot.get("entry_time"),
-            "confluence_score": 92,
-            "confluence_grade": "A+"
+            "confluence_score": 95,
+            "confluence_grade": "APEX",
+            "sentry_status": "All 4 Sentries Armed"
         }
 
-    # Find next closest 2nd OB target from active zones
-    active_zones = get_active_zones()
+    # Find next closest setup
     next_target = None
-    closest_dist = 999.0
+    if hermes2_apex_engine.detected_setups:
+        for s in hermes2_apex_engine.detected_setups:
+            s_sym = s.get("symbol")
+            if s_sym and s_sym in tickers:
+                cur_p = tickers[s_sym]
+                ent_p = float(s.get("entry_price", cur_p))
+                dist = abs(cur_p - ent_p) / cur_p * 100.0 if cur_p > 0 else 0.0
+                next_target = {
+                    "symbol": s_sym,
+                    "side": s.get("side"),
+                    "entry_price": ent_p,
+                    "current_price": cur_p,
+                    "distance_pct": round(dist, 2),
+                    "timeframe": s.get("interval", "4h").upper()
+                }
+                break
 
-    for z in active_zones:
-        sym = z.get("symbol")
-        if z.get("status") == "QUALIFIED" and sym in tickers:
-            p = tickers[sym]
-            entry_p = float(z.get("ob_high", 0)) if z.get("side") == "BUY" else float(z.get("ob_low", 0))
-            if entry_p > 0 and p > 0:
-                dist = abs(p - entry_p) / p * 100
-                if dist < closest_dist:
-                    closest_dist = dist
-                    next_target = {
-                        "symbol": sym,
-                        "side": z.get("side"),
-                        "entry_price": entry_p,
-                        "current_price": p,
-                        "distance_pct": round(dist, 2),
-                        "ob_range": f"{z.get('ob_low')} - {z.get('ob_high')}"
-                    }
-
-    total_bal = bal.get("total_usdt", 77.59) if (bal and bal.get("connected")) else 77.59
-    progress_pct = max(0.0, min(100.0, ((total_bal - 50.0) / (1000.0 - 50.0)) * 100))
+    progress_pct = max(0.0, min(100.0, (current_bal / 2000.0) * 100.0))
 
     return {
         "enabled": enabled,
         "balance": bal,
-        "strategy": "SMC V17 (2nd OB Only)",
+        "strategy": "HERMES 2.0 APEX",
         "min_confluence": min_conf,
         "leverage": "5x Isolated",
-        "target": "+2% Real (+10% Profit)",
-        "compounding_goal": "$50 -> $1,000",
-        "starting_margin": BITGET_STARTING_MARGIN,
-        "target_margin": 1000.0,
-        "current_balance": total_bal,
+        "target": "+2.8% Real (+14.0% ROE)",
+        "compounding_goal": "$50 -> $2,000",
+        "starting_margin": 50.0,
+        "target_margin": 2000.0,
+        "current_balance": current_bal,
         "challenge_progress_pct": round(progress_pct, 1),
         "active_position": active_pos,
         "next_target": next_target
