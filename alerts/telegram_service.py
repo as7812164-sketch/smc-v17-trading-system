@@ -516,27 +516,125 @@ class TelegramService:
             await self.update_live_status_message()
             return
 
-        side_emoji = "🟢 BUY" if zone["side"] == "BUY" else "🔴 SELL"
-        pnl = paper_res["pnl_usdt"] if paper_res else 0.40
-        new_bal = paper_res["new_balance"] if paper_res else 100.40
-        tot_pnl = paper_res["total_pnl"] if paper_res else 0.40
-        wins = paper_res["win_count"] if paper_res else 1
-        losses = paper_res["loss_count"] if paper_res else 0
-        wr = paper_res["win_rate"] if paper_res else 100.0
+        side_emoji  = "🟢 LONG" if zone["side"] == "BUY" else "🔴 SHORT"
+        pnl         = paper_res["pnl_usdt"]    if paper_res else 0.40
+        new_bal     = paper_res["new_balance"] if paper_res else 100.40
+        wins        = paper_res["win_count"]   if paper_res else 1
+        losses      = paper_res["loss_count"]  if paper_res else 0
+        wr          = paper_res["win_rate"]    if paper_res else 100.0
+        trade_num   = wins + losses
+
+        # --- Compounding account data ---
+        try:
+            paper       = get_paper_account()
+            active_pool = paper.get("current_balance", new_bal)
+            vault_bal   = paper.get("vault_balance", 0.0)
+        except Exception:
+            active_pool = new_bal
+            vault_bal   = 0.0
+
+        total_equity = active_pool + vault_bal
+        goal_target  = 2000.0
+        goal_pct     = min((active_pool / goal_target) * 100, 100.0)
+        filled_bars  = int(goal_pct / 5)
+        bar_str      = "\u2588" * filled_bars + "\u2591" * (20 - filled_bars)
+
+        vault_cut    = pnl * 0.15
+        compound_cut = pnl * 0.85
+        roe_pct      = (pnl / max(active_pool - compound_cut, 1)) * 100 * 5
+
+        entry  = float(zone.get("entry_price", 1) or 1)
+        tp     = float(zone.get("tp_price",    entry) or entry)
+        tp_pct = abs((tp - entry) / entry * 100) if entry else 4.0
+
+        streak_label = f"{wins} in a Row! ({wr:.1f}% WR)" if wins > 0 else "\u2014"
+
+        duration_str = "\u2014"
+        try:
+            opened   = float(zone.get("opened_at", zone.get("origin_time", 0)) or 0)
+            elapsed  = int(time.time() - opened)
+            h, m     = divmod(elapsed // 60, 60)
+            duration_str = f"{h}h {m}m"
+        except Exception:
+            pass
+
+        try:
+            daily       = get_daily_trades_summary()
+            day_profit  = daily.get("total_profit", pnl)
+            day_trades  = daily.get("total_trades", trade_num)
+            day_wins    = daily.get("wins",         wins)
+            day_losses  = daily.get("losses",       losses)
+            day_wr      = daily.get("win_rate",     wr)
+            day_long_w  = daily.get("long_wins",    0)
+            day_long_l  = daily.get("long_losses",  0)
+            day_short_w = daily.get("short_wins",   0)
+            day_short_l = daily.get("short_losses", 0)
+        except Exception:
+            day_profit  = pnl;  day_trades = trade_num
+            day_wins    = wins; day_losses = losses; day_wr = wr
+            day_long_w  = day_long_l = day_short_w = day_short_l = 0
+
+        day_growth_pct = (day_profit / 50.0) * 100
+
+        try:
+            az = get_active_zones()
+            if az:
+                nxt = az[0]
+                next_target = f"#{nxt['symbol']} {'Long' if nxt['side']=='BUY' else 'Short'} (${float(nxt.get('entry_price',0)):.3f})"
+            else:
+                next_target = "Scanning market\u2026"
+        except Exception:
+            next_target = "Scanning market\u2026"
+
+        buying_power = active_pool * 5
+        sentry1 = zone.get("sentry1", "PASS")
+        sentry2 = zone.get("sentry2", "PASS")
+        sentry3 = zone.get("sentry3", "PASS")
+        sentry4 = zone.get("sentry4", "PASS")
+        ist_now = get_ist_now().strftime("%d %b %Y \u2022 %I:%M %p IST")
 
         text = (
-            f"🏆 <b>HERMES 2.0 APEX: TAKE PROFIT HIT!</b> 🎉\n\n"
-            f"🪙 <b>Coin:</b> #{zone['symbol']}\n"
-            f"🎯 <b>Direction:</b> {side_emoji}\n"
-            f"📍 <b>Entry:</b> {zone['entry_price']}\n"
-            f"💰 <b>Exit TP:</b> {zone['tp_price']}\n"
-            f"📈 <b>Result:</b> +4.0% Profit Target Reached!\n\n"
-            f"💼 <b>PAPER TRADING RESULT</b>\n"
-            f"🏆 <b>Outcome:</b> WIN (+4.0% Target Hit)\n"
-            f"💰 <b>Profit:</b> <code>+${pnl:.2f} USDT</code>\n"
-            f"💵 <b>New Balance:</b> <code>${new_bal:.2f} USDT</code>\n"
-            f"📈 <b>Net Total PnL:</b> <code>+${tot_pnl:.2f} USDT</code>\n"
-            f"📊 <b>Score:</b> {wins}W - {losses}L ({wr}% WR)"
+            f"🎯 <b>HERMES 2.0 APEX \u2022 TAKE PROFIT HIT!</b> 🏆\n"
+            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+            f"\u23f1 <i>{ist_now} | Sequential Trade #{trade_num:03d}</i>\n"
+            f"🔥 <b>Win Streak:</b> <code>{streak_label}</code>\n\n"
+            f"<blockquote>"
+            f"🪙 <b>TRADE EXECUTION TICKET:</b>\n"
+            f"\u2022 <b>Coin Pair:</b> <code>#{zone['symbol']}</code>\n"
+            f"\u2022 <b>Setup:</b> 4H Extreme Order Block\n"
+            f"\u2022 <b>Direction:</b> {side_emoji} (5x Isolated)\n"
+            f"\u2022 <b>Entry Price:</b> <code>${entry:.4f}</code>  \u27a1  <b>Exit TP:</b> <code>${tp:.4f}</code> (+{tp_pct:.1f}%)\n"
+            f"\u2022 <b>Duration:</b> <code>{duration_str}</code>\n\n"
+            f"💰 <b>THIS TRADE PROFIT:</b>\n"
+            f"\u251c\u2500 💵 <b>Net Profit:</b> <code>+${pnl:.2f} USDT</code> (+{roe_pct:.1f}% ROE)\n"
+            f"\u251c\u2500 🏦 <b>Cold Vault (15%):</b> <code>+${vault_cut:.2f} USDT</code> (Banked Safely)\n"
+            f"\u2514\u2500 🚀 <b>Compounding (85%):</b> <code>+${compound_cut:.2f} USDT</code> (Added to Pool)"
+            f"</blockquote>\n\n"
+            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+            f"📊 <b>TODAY'S DAILY PERFORMANCE SCORECARD</b>\n"
+            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+            f"💰 <b>Today's Net Profit:</b> <code>+${day_profit:.2f} USDT</code> (+{day_growth_pct:.2f}% Growth)\n"
+            f"🔢 <b>Completed Trades:</b> <code>{day_trades} Trades ({day_wins} Wins \u2022 {day_losses} Losses)</code>\n"
+            f"🎯 <b>Daily Win Rate:</b> <code>{day_wr:.1f}% Precision</code>\n"
+            f"🧭 <b>Direction:</b> 🟢 <b>LONG:</b> {day_long_w}W/{day_long_l}L  |  🔴 <b>SHORT:</b> {day_short_w}W/{day_short_l}L\n\n"
+            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+            f"🏦 <b>COMPOUNDING ROADMAP ($50 \u27a1 $2,000)</b>\n"
+            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+            f"💼 <b>Active Compounding Pool:</b> <code>${active_pool:.2f} USDT</code>\n"
+            f"🔒 <b>Cold Storage Vault:</b> <code>${vault_bal:.2f} USDT</code> (Profit Protected)\n"
+            f"💎 <b>Total Account Equity:</b> <code>${total_equity:.2f} USDT</code>\n\n"
+            f"🎯 <b>Milestone Progress:</b>\n"
+            f"<code>[{bar_str}] {goal_pct:.1f}% (${active_pool:.2f} / ${goal_target:.2f})</code>\n\n"
+            f"\u26a1 <b>NEXT TRADE POWER:</b>\n"
+            f"\u251c\u2500 💵 <b>Available Margin:</b> <code>${active_pool:.2f} USDT</code>\n"
+            f"\u251c\u2500 🚀 <b>5x Buying Power:</b> <code>${buying_power:.2f} USDT</code>\n"
+            f"\u2514\u2500 🎯 <b>Next Pipeline Target:</b> <code>{next_target}</code>\n\n"
+            f"🏛️ <b>4-Sentries Verification Audit:</b>\n"
+            f"\u251c\u2500 S1 (BTC Macro): <code>{sentry1}</code>\n"
+            f"\u251c\u2500 S2 (Displacement): <code>{sentry2}</code>\n"
+            f"\u251c\u2500 S3 (IDM Sweep): <code>{sentry3}</code>\n"
+            f"\u2514\u2500 S4 (Freshness): <code>{sentry4}</code>\n"
+            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
         )
         keyboard = get_alert_inline_keyboard(zone["symbol"])
 

@@ -41,7 +41,7 @@ logger = logging.getLogger("Hermes2ApexLive")
 
 TOP_22_CHAMPIONS = [
     "DOGEUSDT", "ALGOUSDT", "FETUSDT", "SANDUSDT", "BTCUSDT", "THETAUSDT", "OPUSDT", "FILUSDT",
-    "RENDERUSDT", "RUNEUSDT", "AVAXUSDT", "SHIBUSDT", "SUIUSDT", "NEARUSDT", "APTUSDT", "LDOUSDT",
+    "RENDERUSDT", "RUNEUSDT", "AVAXUSDT", "SOLUSDT", "SUIUSDT", "NEARUSDT", "APTUSDT", "LDOUSDT",
     "MKRUSDT", "UNIUSDT", "AAVEUSDT", "GALAUSDT", "ICPUSDT", "PYTHUSDT"
 ]
 
@@ -56,6 +56,7 @@ class Hermes2ApexLiveEngine:
         self.last_btc_bias = {"bias": "NEUTRAL", "pct": 0.0, "time": 0}
         self.active_position: Optional[Dict[str, Any]] = None
         self.detected_setups: List[Dict[str, Any]] = []
+        self.trade_cooldowns: Dict[str, float] = {}  # Symbol -> timestamp of when cooldown ends
         self.ws_broadcast_callback = None
         self._ensure_db_schema()
 
@@ -544,6 +545,13 @@ class Hermes2ApexLiveEngine:
         }
         self.active_position = trade_obj
 
+        # Check if paper trading alerts are muted
+        mute_paper = get_setting("mute_paper_trading_alerts", "false").lower() == "true"
+        if mute_paper:
+            logger.info("Paper trading alerts are muted. Skipping Telegram entry alert.")
+            await self.broadcast("HERMES_POSITION_OPENED", trade_obj)
+            return
+
         # Send Telegram Announcement to User's Bot WITH LIVE CANDLESTICK CHART
         try:
             tg_msg = (
@@ -664,8 +672,12 @@ class Hermes2ApexLiveEngine:
             except Exception:
                 pass
 
-            for setup in self.detected_setups:
+            for setup in list(self.detected_setups):
                 sym = setup.get("symbol")
+                # Cooldown check: prevent re-entering same symbol within cooldown window
+                if self.trade_cooldowns.get(sym, 0) > time.time():
+                    continue
+
                 cur_price = tickers.get(sym)
                 if not cur_price or cur_price <= 0:
                     continue
@@ -694,6 +706,8 @@ class Hermes2ApexLiveEngine:
                 diff_pct = abs(cur_price - entry_p) / entry_p * 100.0
                 if tapped or (is_fresh and diff_pct <= 0.40):
                     logger.info(f"⚡ REAL-TIME TAP WATCHDOG TRIGGERED on {sym} ({side})! Live Price: {cur_price} tapped OB [{ob_low}, {ob_high}] (TF: {setup.get('interval')})")
+                    if setup in self.detected_setups:
+                        self.detected_setups.remove(setup)
                     await self.execute_apex_entry(setup)
                     break # Enforce strict 1-trade sequential compounding queue
         except Exception as e:
@@ -759,77 +773,83 @@ class Hermes2ApexLiveEngine:
             conn.commit()
 
         self.active_position = None
+        self.trade_cooldowns[sym] = time.time() + 1800  # 30-minute cooldown on this symbol to prevent rapid loop
         total_equity = new_balance + new_vault
         completed = win_count + loss_count
         win_rate = round(win_count / completed * 100, 1) if completed > 0 else 0.0
         progress_pct = round(min(100.0, total_equity / 2000.0 * 100), 1)
 
-        # Send Telegram Announcement to User's Bot
-        try:
-            if outcome == "TP_HIT":
-                tg_msg = (
-                    f"🎉 <b>HERMES 2.0 APEX: TAKE PROFIT HIT!</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🏆 <b>Asset</b>: <code>{sym}</code> {side}\n"
-                    f"💵 <b>Exit Price</b>: ${exit_price:,.4f}\n"
-                    f"📈 <b>Net Realized PnL</b>: <b>+${net_pnl_usdt:,.2f} USDT</b> (+{gross_pnl_pct * 5.0:.1f}% ROE)\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🏦 <b>COMPOUNDING SPLIT (85 / 15)</b>:\n"
-                    f"• 💰 <b>Reinvested to Margin (85%)</b>: +${net_pnl_usdt * 0.85:,.2f} USDT\n"
-                    f"• 🔒 <b>Stashed to Vault Reserve (15%)</b>: +${vault_stash:,.2f} USDT\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"📊 <b>UPDATED PORTFOLIO LEDGER</b>:\n"
-                    f"• 🚀 <b>Active Compounding Balance</b>: ${new_balance:,.2f} USDT\n"
-                    f"• 🛡️ <b>Cold Storage Vault Total</b>: ${new_vault:,.2f} USDT\n"
-                    f"• 🎯 <b>Total Portfolio Equity</b>: ${total_equity:,.2f} USDT\n"
-                    f"• 🏁 <b>Goal Progress ($2,000 Milestone)</b>: <b>{progress_pct}%</b>\n"
-                    f"• 📊 <b>Lifetime Win Rate</b>: <b>{win_rate}%</b> ({win_count}W / {loss_count}L)\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"👑 <i>Hermes 2.0 Apex Autonomous Quant Engine</i>"
-                )
-            else:
-                tg_msg = (
-                    f"🛑 <b>HERMES 2.0 APEX: STOP LOSS HIT</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"⚠️ <b>Asset</b>: <code>{sym}</code> {side}\n"
-                    f"💵 <b>Exit Price</b>: ${exit_price:,.4f}\n"
-                    f"📉 <b>Realized Net Loss</b>: <b>-${abs(net_pnl_usdt):,.2f} USDT</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"📊 <b>CAPITAL INTEGRITY</b>:\n"
-                    f"• 🚀 <b>Remaining Margin</b>: ${new_balance:,.2f} USDT\n"
-                    f"• 🛡️ <b>Cold Storage Vault (Preserved)</b>: ${new_vault:,.2f} USDT\n"
-                    f"• 🎯 <b>Total Portfolio Equity</b>: ${total_equity:,.2f} USDT\n"
-                    f"• 📊 <b>Win Rate</b>: <b>{win_rate}%</b> ({win_count}W / {loss_count}L)\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"👑 <i>Hermes 2.0 Apex Autonomous Quant Engine</i>"
-                )
-
-            # Send exit chart photo if available
-            chart_sent = False
+        # Check if paper trading alerts are muted
+        mute_paper = get_setting("mute_paper_trading_alerts", "false").lower() == "true"
+        if mute_paper:
+            logger.info(f"Paper trading alerts are muted. Skipping Telegram exit alert for {sym}.")
+        else:
+            # Send Telegram Announcement to User's Bot
             try:
-                tf = trade.get("timeframe", "4h")
-                candles = await binance_feed.fetch_klines(sym, interval=tf, limit=50)
-                if candles:
-                    zone_dict = {
-                        "symbol": sym,
-                        "side": side,
-                        "entry_price": entry_price,
-                        "tp_price": float(trade.get("tp_price", exit_price)),
-                        "sl_price": float(trade.get("sl_price", exit_price)),
-                        "ob_high": max(entry_price, exit_price),
-                        "ob_low": min(entry_price, exit_price)
-                    }
-                    chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
-                    resp = await telegram_service.send_photo(chart_bytes, tg_msg)
-                    if resp and resp.get("ok"):
-                        chart_sent = True
-            except Exception as ce:
-                logger.warning(f"Failed to render/send exit chart photo: {ce}")
+                if outcome == "TP_HIT":
+                    tg_msg = (
+                        f"🎉 <b>HERMES 2.0 APEX: TAKE PROFIT HIT!</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"🏆 <b>Asset</b>: <code>{sym}</code> {side}\n"
+                        f"💵 <b>Exit Price</b>: ${exit_price:,.4f}\n"
+                        f"📈 <b>Net Realized PnL</b>: <b>+${net_pnl_usdt:,.2f} USDT</b> (+{gross_pnl_pct * 5.0:.1f}% ROE)\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"🏦 <b>COMPOUNDING SPLIT (85 / 15)</b>:\n"
+                        f"• 💰 <b>Reinvested to Margin (85%)</b>: +${net_pnl_usdt * 0.85:,.2f} USDT\n"
+                        f"• 🔒 <b>Stashed to Vault Reserve (15%)</b>: +${vault_stash:,.2f} USDT\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"📊 <b>UPDATED PORTFOLIO LEDGER</b>:\n"
+                        f"• 🚀 <b>Active Compounding Balance</b>: ${new_balance:,.2f} USDT\n"
+                        f"• 🛡️ <b>Cold Storage Vault Total</b>: ${new_vault:,.2f} USDT\n"
+                        f"• 🎯 <b>Total Portfolio Equity</b>: ${total_equity:,.2f} USDT\n"
+                        f"• 🏁 <b>Goal Progress ($2,000 Milestone)</b>: <b>{progress_pct}%</b>\n"
+                        f"• 📊 <b>Lifetime Win Rate</b>: <b>{win_rate}%</b> ({win_count}W / {loss_count}L)\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"👑 <i>Hermes 2.0 Apex Autonomous Quant Engine</i>"
+                    )
+                else:
+                    tg_msg = (
+                        f"🛑 <b>HERMES 2.0 APEX: STOP LOSS HIT</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"⚠️ <b>Asset</b>: <code>{sym}</code> {side}\n"
+                        f"💵 <b>Exit Price</b>: ${exit_price:,.4f}\n"
+                        f"📉 <b>Realized Net Loss</b>: <b>-${abs(net_pnl_usdt):,.2f} USDT</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"📊 <b>CAPITAL INTEGRITY</b>:\n"
+                        f"• 🚀 <b>Remaining Margin</b>: ${new_balance:,.2f} USDT\n"
+                        f"• 🛡️ <b>Cold Storage Vault (Preserved)</b>: ${new_vault:,.2f} USDT\n"
+                        f"• 🎯 <b>Total Portfolio Equity</b>: ${total_equity:,.2f} USDT\n"
+                        f"• 📊 <b>Win Rate</b>: <b>{win_rate}%</b> ({win_count}W / {loss_count}L)\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"👑 <i>Hermes 2.0 Apex Autonomous Quant Engine</i>"
+                    )
 
-            if not chart_sent:
-                await telegram_service.send_raw_message(tg_msg)
-        except Exception as e:
-            logger.warning(f"Telegram exit alert error: {e}")
+                # Send exit chart photo if available
+                chart_sent = False
+                try:
+                    tf = trade.get("timeframe", "4h")
+                    candles = await binance_feed.fetch_klines(sym, interval=tf, limit=50)
+                    if candles:
+                        zone_dict = {
+                            "symbol": sym,
+                            "side": side,
+                            "entry_price": entry_price,
+                            "tp_price": float(trade.get("tp_price", exit_price)),
+                            "sl_price": float(trade.get("sl_price", exit_price)),
+                            "ob_high": max(entry_price, exit_price),
+                            "ob_low": min(entry_price, exit_price)
+                        }
+                        chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
+                        resp = await telegram_service.send_photo(chart_bytes, tg_msg)
+                        if resp and resp.get("ok"):
+                            chart_sent = True
+                except Exception as ce:
+                    logger.warning(f"Failed to render/send exit chart photo: {ce}")
+
+                if not chart_sent:
+                    await telegram_service.send_raw_message(tg_msg)
+            except Exception as e:
+                logger.warning(f"Telegram exit alert error: {e}")
 
         await self.broadcast("HERMES_POSITION_CLOSED", {
             "symbol": sym,
