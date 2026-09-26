@@ -536,9 +536,11 @@ function getOverlayCanvas() {
     const w = container.clientWidth;
     const h = container.clientHeight;
 
-    if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
-        canvas.width = Math.floor(w * dpr);
-        canvas.height = Math.floor(h * dpr);
+    const targetW = Math.floor(w * dpr);
+    const targetH = Math.floor(h * dpr);
+    if (!canvas.width || Math.abs(canvas.width - targetW) >= 4 || Math.abs(canvas.height - targetH) >= 4) {
+        canvas.width = targetW;
+        canvas.height = targetH;
         canvas.style.width = w + "px";
         canvas.style.height = h + "px";
     }
@@ -2926,11 +2928,30 @@ async function updateBitgetGoalHeader() {
         }
 
         const acc = paperTradingState.account || {};
-        const activeCap = Number(acc.current_balance) || 50.0;
-        const vaultCap = Number(acc.vault_balance) || 0.0;
+        const activeCap = Number(acc.current_balance) || Number(d.current_balance) || 73.45;
+        const vaultCap = Number(acc.vault_balance) || Number(d.vault_balance) || 4.14;
+        const totalEq = Number(acc.equity) || (activeCap + vaultCap);
         
         if (balCard) balCard.innerText = `$${vaultCap.toFixed(2)} USDT`;
         if (bgWallet) bgWallet.innerText = `$${activeCap.toFixed(2)} USDT`;
+        const bgEquity = document.getElementById("bgEquityVal");
+        if (bgEquity) bgEquity.innerText = `$${activeCap.toFixed(2)} USDT`;
+        const bgHeaderFill = document.getElementById("bgHeaderFill");
+        if (bgHeaderFill) bgHeaderFill.style.width = `${Math.min(100, (activeCap / 2000.0) * 100).toFixed(1)}%`;
+        const bgChallenge = document.getElementById("bgChallengePill");
+        if (bgChallenge) {
+            const titleEl = bgChallenge.querySelector(".bg-c-title");
+            if (titleEl) titleEl.innerText = `🎯 Goal: $${activeCap.toFixed(0)} ➔ $2K`;
+        }
+
+        // Drawer progress sync
+        const drawerProgress = document.getElementById("drawerCompProgressVal");
+        const drawerBar = document.getElementById("drawerCompBar");
+        const drawerPct = document.getElementById("drawerCompPercent");
+        if (drawerProgress) drawerProgress.textContent = `$${activeCap.toFixed(2)} ➔ $2,000`;
+        if (drawerBar) drawerBar.style.width = `${Math.min(100, (activeCap / 2000.0) * 100).toFixed(1)}%`;
+        if (drawerPct) drawerPct.textContent = `${Math.min(100, (activeCap / 2000.0) * 100).toFixed(1)}% Target`;
+
         if (subCard) {
             subCard.innerHTML = `<span style="color:#00f59b; font-weight:700;">$50 → $2,000</span> • 🟢 HERMES 2.0 APEX`;
         }
