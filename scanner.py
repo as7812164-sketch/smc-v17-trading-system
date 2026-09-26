@@ -59,60 +59,10 @@ class SMCScanner:
 
     async def run_full_structure_scan(self) -> Dict[str, Any]:
         """
-        Scans 4H candles for all configured coins and identifies SMC V17 zones.
+        Legacy SMC V17 structure scan delegated completely to HERMES 2.0 APEX.
         """
-        scan_start = time.time()
-        now_dt = get_ist_now()
-        now_str = now_dt.strftime("%d %b %Y • %I:%M:%S %p IST")
-        next_dt = now_dt + timedelta(minutes=STRUCTURE_REFRESH_MINUTES)
-        next_str = next_dt.strftime("%d %b %Y • %I:%M:%S %p IST")
-
-        set_metric("last_ob_refresh", now_str)
-        set_metric("next_refresh", next_str)
-
-        all_klines = await binance_feed.fetch_multiple_symbols(self.active_coins, TIMEFRAME, KLINES_LIMIT)
-        successful_coins = len(all_klines)
-        set_metric("coins_subscribed", f"{successful_coins}/{len(self.active_coins)}")
-        set_metric("coins_active_count", str(len(self.active_coins)))
-
-        total_new_zones = 0
-
-        for symbol, candles in all_klines.items():
-            if not candles:
-                continue
-            detected = analyze_candles_smc_v17(symbol, candles)
-            filtered = filter_active_zones(detected)
-
-            for z in filtered:
-                zone_id = save_or_update_zone(z)
-                total_new_zones += 1
-
-                # If this zone was already entered or resolved in historical candles,
-                # pre-register its alert key so it NEVER triggers an old alert on startup
-                if z.get("status") in ("ACTIVE", "TP_HIT", "SL_HIT", "INVALIDATED"):
-                    alert_key = f"{z['symbol']}_{z['side']}_{z['origin_time']}_FIRST_TAP_ENTRY"
-                    if not is_alert_sent(alert_key):
-                        record_sent_alert(alert_key, z['symbol'], z['side'], "FIRST_TAP_ENTRY", z['origin_time'])
-                    if z.get("status") in ("TP_HIT", "SL_HIT"):
-                        res_key = f"{z['symbol']}_{z['side']}_{z['origin_time']}_{z['status']}"
-                        if not is_alert_sent(res_key):
-                            record_sent_alert(res_key, z['symbol'], z['side'], z['status'], z['origin_time'])
-
-        scan_duration = int(time.time() - scan_start)
-        set_metric("last_scan_duration", f"{scan_duration}s")
-        self.last_full_scan_time = time.time()
-
-        # Update Telegram status message
-        asyncio.create_task(telegram_service.update_live_status_message())
-
-        stats = get_performance_stats()
-        await self.broadcast("SCAN_COMPLETE", {
-            "duration": f"{scan_duration}s",
-            "active_zones": stats["total_active_zones"],
-            "timestamp": now_str
-        })
-
-        return {"scanned": successful_coins, "duration": scan_duration, "zones": total_new_zones}
+        from engine.hermes2_apex_live import hermes2_apex_engine
+        return await hermes2_apex_engine.run_full_champion_scan()
 
     async def check_live_prices_and_triggers(self):
         """
@@ -124,7 +74,8 @@ class SMCScanner:
         self.last_tickers = tickers
         # Broadcast live ticker updates over WebSocket
         await self.broadcast("TICKER_UPDATE", tickers)
-        active_zones = get_active_zones()
+        # All trade triggers and alerts are strictly handled by Hermes 2.0 Apex
+        return
 
         for z in active_zones:
             sym = z["symbol"]
@@ -385,49 +336,12 @@ class SMCScanner:
             asyncio.create_task(telegram_service.send_daily_summary())
 
     async def start(self):
-        self.is_running = True
-        set_metric("start_time", str(time.time()))
-
-        # Immediately fetch live tickers so prices are available to /api/coins within 1 second!
-        try:
-            await self.check_live_prices_and_triggers()
-        except Exception:
-            pass
-
-        # Short delay so server starts and serves UI immediately
-        await asyncio.sleep(2)
-        try:
-            await self.run_full_structure_scan()
-        except Exception as e:
-            increment_metric("errors")
-
-        # Main loops
-        price_check_timer = 0
-        structure_check_timer = 0
-        daily_check_timer = 0
-
-        while self.is_running:
-            try:
-                now = time.time()
-                # Live price ticker check
-                if now - price_check_timer >= LIVE_PRICE_INTERVAL_SECONDS:
-                    await self.check_live_prices_and_triggers()
-                    price_check_timer = now
-
-                # Structure refresh check (every 10 minutes)
-                if now - structure_check_timer >= (STRUCTURE_REFRESH_MINUTES * 60):
-                    await self.run_full_structure_scan()
-                    structure_check_timer = now
-
-                # Daily summary check (every 60 seconds)
-                if now - daily_check_timer >= 60:
-                    await self.check_daily_report_schedule()
-                    daily_check_timer = now
-
-                await asyncio.sleep(1)
-            except Exception as e:
-                increment_metric("errors")
-                await asyncio.sleep(3)
+        """
+        Legacy SMC V17 scanner is retired.
+        Hermes 2.0 Apex operates 24/7 autonomously on the cloud server.
+        """
+        self.is_running = False
+        return
 
     def stop(self):
         self.is_running = False

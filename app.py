@@ -90,22 +90,19 @@ async def keepalive_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: launch scanner, Hermes 2.0 Apex robot, keepalive, and telegram polling in background
-    scanner_task = asyncio.create_task(scanner.start())
+    # Startup: Hermes 2.0 Apex robot, keepalive, and telegram polling in background
     hermes2_task = asyncio.create_task(hermes2_apex_engine.start())
     tg_polling_task = asyncio.create_task(telegram_service.start_polling())
     keepalive_task = asyncio.create_task(keepalive_loop())
     yield
     # Shutdown
-    scanner.stop()
     hermes2_apex_engine.stop()
-    scanner_task.cancel()
     hermes2_task.cancel()
     tg_polling_task.cancel()
     keepalive_task.cancel()
     await binance_feed.close()
 
-app = FastAPI(title="SMC V17 Trading Terminal & AI Analyst", lifespan=lifespan)
+app = FastAPI(title="HERMES 2.0 APEX Autonomous Terminal & Quant Engine", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/", response_class=HTMLResponse)

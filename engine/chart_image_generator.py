@@ -163,7 +163,7 @@ def render_smc_chart_image(
 
         overlay_draw.rectangle([z_start_x, z_y1, zone_end_x, z_y2], fill=box_fill, outline=box_border, width=1)
         # Clean muted label
-        ob_lbl = f"4H {z_side} OB #{idx+1} [${format_px(z_l)} - ${format_px(z_h)}]"
+        ob_lbl = f"HERMES {timeframe.upper()} {z_side} OB [${format_px(z_l)} - ${format_px(z_h)}]"
         overlay_draw.text((z_start_x + 6, z_y1 + 3), ob_lbl, fill=lbl_color, font=font)
 
     # CRITICAL: Composite OB overlay BEFORE drawing candlesticks
@@ -209,44 +209,49 @@ def render_smc_chart_image(
             cur_x += dash_len + space_len
 
         # Right Axis Badge
-        badge_text = f"{label}: {format_px(price)}"
-        badge_w = 104
+        badge_text = f"{label} {format_px(price)}"
+        badge_w = 118
         badge_h = 16
         draw.rectangle(
             [pad_left + plot_w + 2, ly - (badge_h // 2), pad_left + plot_w + 2 + badge_w, ly + (badge_h // 2)],
             fill=badge_color
         )
-        draw.text((pad_left + plot_w + 6, ly - 5), badge_text, fill=(255, 255, 255, 255), font=font)
+        draw.text((pad_left + plot_w + 5, ly - 5), badge_text, fill=(255, 255, 255, 255), font=font)
 
-    # TP Line (+4%)
-    draw_level_line(tp_p, (0, 230, 118, 220), (0, 180, 80, 255), "TP (+4%)")
+    # Dynamic calculation of TP / SL move percentages
+    tp_move_pct = (abs(tp_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 2.8
+    sl_move_pct = (abs(sl_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 2.8
+
+    # TP Line (+% move)
+    draw_level_line(tp_p, (0, 230, 118, 220), (0, 180, 80, 255), f"TP (+{tp_move_pct:.1f}%):")
     # Entry Line
-    draw_level_line(entry_p, (0, 210, 255, 240), (0, 140, 200, 255), "ENTRY")
-    # SL Line (-3%)
-    draw_level_line(sl_p, (255, 82, 82, 220), (220, 40, 40, 255), "SL (-3%)")
+    draw_level_line(entry_p, (0, 210, 255, 240), (0, 140, 200, 255), "ENTRY:")
+    # SL Line (-% move)
+    draw_level_line(sl_p, (255, 82, 82, 220), (220, 40, 40, 255), f"SL (-{sl_move_pct:.1f}%):")
 
     # Header Banner (Top bar)
     draw.rectangle([0, 0, width, 52], fill=(18, 22, 32, 255))
     draw.line([(0, 52), (width, 52)], fill=(42, 46, 57, 255), width=1)
 
     # Symbol & Timeframe
-    draw.text((24, 18), f"{symbol}  {timeframe}", fill=(255, 255, 255, 255), font=font)
+    draw.text((24, 18), f"{symbol}  {timeframe.upper()}", fill=(255, 255, 255, 255), font=font)
 
-    # Signal Direction Badge
-    side_badge_text = f"SMC V17 FIRST TAP {side}"
-    badge_x = 180
-    badge_w = 180
-    badge_bg = (8, 153, 129, 255) if side == "BUY" else (242, 54, 69, 255)
+    # Signal Direction Badge: HERMES 2.0 APEX
+    action_str = "LONG" if side in ("BUY", "LONG") else "SHORT"
+    side_badge_text = f"HERMES 2.0 APEX {action_str}"
+    badge_x = 175
+    badge_w = 205
+    badge_bg = (8, 153, 129, 255) if action_str == "LONG" else (242, 54, 69, 255)
     draw.rectangle([badge_x, 14, badge_x + badge_w, 38], fill=badge_bg)
-    draw.text((badge_x + 12, 21), side_badge_text, fill=(255, 255, 255, 255), font=font)
+    draw.text((badge_x + 10, 21), side_badge_text, fill=(255, 255, 255, 255), font=font)
 
     # Current / Trigger Price
     cur_px_text = f"Trigger: ${format_px(entry_p)}  |  TP: ${format_px(tp_p)}  |  SL: ${format_px(sl_p)}"
-    draw.text((badge_x + badge_w + 20, 21), cur_px_text, fill=(200, 210, 225, 255), font=font)
+    draw.text((badge_x + badge_w + 15, 21), cur_px_text, fill=(200, 210, 225, 255), font=font)
 
     # Watermark Footer
     now_str = get_ist_now().strftime("%d %b %Y %I:%M %p IST")
-    watermark = f"SMC V17 AI AGENT | BINANCE FUTURES 4H | {now_str}"
+    watermark = f"HERMES 2.0 APEX QUANT ENGINE | 4 SENTRIES ARMED | {timeframe.upper()} BINANCE FUTURES | {now_str}"
     draw.text((pad_left, height - 25), watermark, fill=(80, 90, 105, 255), font=font)
 
     buf = io.BytesIO()

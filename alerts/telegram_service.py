@@ -301,7 +301,7 @@ class TelegramService:
         last_alert = stats["last_alert"]
 
         msg = (
-            f"🟢 <b>SMC V17 LIVE TERMINAL</b>\n\n"
+            f"🟢 <b>HERMES 2.0 APEX LIVE TERMINAL</b>\n\n"
             f"📡 <b>CONNECTION</b>\n"
             f"🌌 Binance Live: {binance_status}\n"
             f"💓 Heartbeat: 2s ago\n"
@@ -440,7 +440,7 @@ class TelegramService:
             )
 
         is_sniper = zone.get("is_super_sniper", False) or (order_flow and order_flow.get("is_rocket") and zone.get("side") == "BUY")
-        sniper_header = "🔥 <b>SMC V17 SUPER SNIPER BUY ENTRY! (92.3% WIN-RATE TIER)</b>" if is_sniper else "🚨 <b>SMC V17 FIRST TAP ENTRY!</b>"
+        sniper_header = "👑 <b>HERMES 2.0 APEX: SUPER SNIPER ENTRY (92.3% WIN-RATE TIER)</b>" if is_sniper else "👑 <b>HERMES 2.0 APEX: 4-SENTRY ENTRY TRIGGERED</b>"
         sniper_badge = (
             "👑 <b>SUPER SNIPER COMBO:</b> <code>DELTA + CVD REVERSAL + WHALE OI ACTIVE</code>\n"
             "⚡ <b>Reaction Speed:</b> <i>Instant 1.0 Hour Takeoff Expected</i>\n\n"
@@ -525,7 +525,7 @@ class TelegramService:
         wr = paper_res["win_rate"] if paper_res else 100.0
 
         text = (
-            f"🏆 <b>SMC V17 TP HIT! (+4%)</b> 🎉\n\n"
+            f"🏆 <b>HERMES 2.0 APEX: TAKE PROFIT HIT!</b> 🎉\n\n"
             f"🪙 <b>Coin:</b> #{zone['symbol']}\n"
             f"🎯 <b>Direction:</b> {side_emoji}\n"
             f"📍 <b>Entry:</b> {zone['entry_price']}\n"
@@ -581,7 +581,7 @@ class TelegramService:
         wr = paper_res["win_rate"] if paper_res else 0.0
 
         text = (
-            f"🛑 <b>SMC V17 SL HIT! (-3%)</b>\n\n"
+            f"🛑 <b>HERMES 2.0 APEX: STOP LOSS HIT</b>\n\n"
             f"🪙 <b>Coin:</b> #{zone['symbol']}\n"
             f"🎯 <b>Direction:</b> {side_emoji}\n"
             f"📍 <b>Entry:</b> {zone['entry_price']}\n"
@@ -737,7 +737,7 @@ class TelegramService:
         entry_level = zone["ob_high"] if zone["side"] == "BUY" else zone["ob_low"]
 
         text = (
-            f"⚠️ <b>SMC V17 PROXIMITY WATCHLIST</b>\n\n"
+            f"⚠️ <b>HERMES 2.0 APEX WATCHLIST</b>\n\n"
             f"🪙 <b>Coin:</b> #{zone['symbol']}\n"
             f"🎯 <b>Approaching:</b> {side_emoji} 4H Order Block\n"
             f"📍 <b>Planned Entry:</b> <code>{entry_level}</code>\n"
@@ -777,7 +777,7 @@ class TelegramService:
         date_str = now_ist.strftime("%d %b %Y")
 
         msg = (
-            f"📅 <b>SMC V17 DAILY PERFORMANCE REPORT</b>\n"
+            f"📅 <b>HERMES 2.0 APEX DAILY REPORT</b>\n"
             f"📆 Date: <b>{date_str}</b>\n\n"
             f"📊 <b>TODAY'S RECORD</b>\n"
             f"• Closed Trades: <b>{summary['trades_count']}</b>\n"
@@ -959,7 +959,7 @@ class TelegramService:
         proximity_list.sort(key=lambda x: x["distance_pct"])
         top_zones = proximity_list[:7]
 
-        lines = ["📦 <b>SMC V17 Top Nearby Order Blocks (4H):</b>\n"]
+        lines = ["📦 <b>HERMES 2.0 APEX Top Order Blocks:</b>\n"]
         for item in top_zones:
             z = item["zone"]
             side_icon = "🟢 BUY" if z["side"] == "BUY" else "🔴 SELL"
@@ -980,8 +980,8 @@ class TelegramService:
         history = get_paper_trades_history(limit=5)
 
         lines = [
-            f"⚡ <b>BITGET REAL 5X & SMC V17 TRADES</b>\n",
-            f"💰 <b>Bitget Wallet:</b> <code>${bg_bal:.2f} USDT</code> (Goal: $50 ➔ $1,000)\n"
+            f"⚡ <b>HERMES 2.0 APEX 5X COMPOUNDING TRADES</b>\n",
+            f"💰 <b>Bitget Wallet:</b> <code>${bg_bal:.2f} USDT</code> (Goal: $50 ➔ $2,000)\n"
         ]
 
         if open_trades:
@@ -1243,7 +1243,7 @@ class TelegramService:
                             # Start / Help / Greetings
                             if text in ("/start", "/help", "help", "menu", "❓ help"):
                                 reply = (
-                                    "🤖 <b>SMC V17 Autonomous Terminal Bot</b>\n\n"
+                                    "👑 <b>HERMES 2.0 APEX Autonomous Terminal Bot</b>\n\n"
                                     "<b>⚡ Interactive Commands:</b>\n"
                                     "• <code>/hermes</code> - Hermes AI Quant Status & Win Rates\n"
                                     "• <code>/hermes scan</code> - Live 15m Binance Order Blocks audit\n"
@@ -1253,10 +1253,10 @@ class TelegramService:
                                     "• <code>/ai &lt;coin&gt;</code> or <code>/analyze &lt;coin&gt;</code> - AI Deep Confluence & ICT Analysis\n"
                                     "• <code>/zones</code> - Top Order Blocks closest to live price\n"
                                     "• <code>/pnl</code> - Paper trading balance & performance\n"
-                                    "• <code>/trades</code> or <code>/positions</code> - $50 ➔ $1,000 Challenge Positions & Limit Orders\n"
+                                    "• <code>/trades</code> or <code>/positions</code> - $50 ➔ $2,000 Milestone Positions & Limit Orders\n"
                                     "• <code>/status</code> - Full live scanner dashboard\n"
                                     "• <code>/health</code> - Feed & container connection check\n"
-                                    "• <code>/reset_paper</code> - Reset paper wallet to $100.00\n\n"
+                                    "• <code>/reset_paper</code> - Reset paper wallet to $50.00\n\n"
                                     "👇 <i>Use the 1-Tap keyboard buttons below anytime!</i>"
                                 )
                                 menu_kb = get_main_menu_keyboard()
@@ -1315,7 +1315,7 @@ class TelegramService:
                                 if not signals:
                                     reply = "ℹ️ No signals recorded yet. Scanner is monitoring for First Tap entries."
                                 else:
-                                    lines = ["📊 <b>Recent SMC V17 Signals:</b>\n"]
+                                    lines = ["📊 <b>Recent HERMES 2.0 APEX Signals:</b>\n"]
                                     for s in signals:
                                         lines.append(f"• <b>{s['symbol']}</b> ({s['side']}): {s['signal_type']} @ {s['price']}")
                                     reply = "\n".join(lines)
