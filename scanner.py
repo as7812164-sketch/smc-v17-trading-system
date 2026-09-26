@@ -185,10 +185,9 @@ class SMCScanner:
                     save_or_update_zone(z)
                     add_signal(z.get("id"), sym, side, "FIRST_TAP_ENTRY", entry_price, now_ms, f"Triggered @ {current_price}")
 
-                    try:
-                        open_paper_trade(z)
-                    except Exception:
-                        pass
+                    # Paper trading is strictly handled by Hermes 2.0 Apex engine (engine/hermes2_apex_live.py)
+                    # to enforce Top-22 Champions, 4-Sentries verification, and 1-Trade Sequential Queue.
+                    pass
 
                     # Strict 3-OB Sandwich Rule (Exact Visual Price Stack on Screen)
                     coin_zones = [cz for cz in active_zones if cz["symbol"] == sym and cz["side"] == side and cz["status"] in ("QUALIFIED", "ACTIVE")]
