@@ -32,6 +32,9 @@ from database.db import (
     get_paper_trades_history,
     reset_paper_account,
     get_daily_trades_summary,
+    get_paper_trade_sequence_num,
+    get_dual_paper_accounts,
+    format_duration_str,
     is_alert_sent,
     record_sent_alert
 )
@@ -94,6 +97,203 @@ def get_alert_inline_keyboard(symbol: str) -> Dict[str, Any]:
             ]
         ]
     }
+
+def format_tg_ist_timestamp(ts_ms: Optional[int] = None) -> str:
+    """Formats millisecond timestamp to IST string matching '26 SEP 2026 • 16:30 IST'."""
+    from config import IST, get_ist_now
+    if ts_ms:
+        dt = datetime.fromtimestamp(ts_ms / 1000.0, IST)
+    else:
+        dt = get_ist_now()
+    return dt.strftime("%d %b %Y • %H:%M IST").upper()
+
+
+def format_trade_open_alert(
+    symbol: str,
+    side: str,
+    timeframe: str,
+    leverage: str,
+    trade_num: int,
+    entry_price: float,
+    tp_price: float,
+    sl_price: float,
+    balance: float,
+    deployed: float,
+    position_size: float,
+    quantity: float,
+    tp_dist_pct: float,
+    sl_dist_pct: float,
+    date_time_str: str,
+    coin: Optional[str] = None
+) -> str:
+    """ALERT 1 — TRADE OPEN: Exact compact fixed-width monospace <pre> format."""
+    side_raw = side.upper()
+    side_icon = "🟢 LONG" if side_raw in ("BUY", "LONG") else "🔴 SHORT"
+    tf_str = timeframe.upper()
+    coin = coin or symbol.replace("USDT", "")
+
+    tp_sign = "+" if tp_dist_pct >= 0 else ""
+    sl_sign = "+" if sl_dist_pct >= 0 else ""
+
+    lines = [
+        "<pre>⚡ HERMES 2.0 • TRADE OPEN",
+        "━━━━━━━━━━━━━━━━━━━━━━",
+        "",
+        f"{symbol:<24} {side_icon}",
+        f"{tf_str} • {leverage} ISOLATED".ljust(29) + f"#{trade_num:03d}",
+        "",
+        f"{'ENTRY':<28}{entry_price:.4f}",
+        f"{'TAKE PROFIT':<28}{tp_price:.4f}",
+        f"{'STOP LOSS':<28}{sl_price:.4f}",
+        "",
+        "──────── POSITION ────────",
+        "",
+        f"{'BALANCE':<25}{balance:.2f} USDT",
+        f"{'DEPLOYED':<25}{deployed:.2f} USDT",
+        f"{'POSITION SIZE':<24}{position_size:.2f} USDT",
+        f"{'QUANTITY':<25}{quantity:.4f} {coin}",
+        "",
+        f"{'TP DISTANCE':<28}{tp_sign}{tp_dist_pct:.2f}%",
+        f"{'SL DISTANCE':<28}{sl_sign}{sl_dist_pct:.2f}%",
+        "",
+        "🟢 POSITION LIVE",
+        "",
+        date_time_str + "</pre>"
+    ]
+    return "\n".join(lines)
+
+
+def format_trade_closed_alert(
+    symbol: str,
+    side: str,
+    timeframe: str,
+    leverage: str,
+    trade_num: int,
+    entry_price: float,
+    exit_price: float,
+    outcome: str,
+    pnl_pct: float,
+    deployed: float,
+    net_pnl: float,
+    new_balance: float,
+    roe_pct: float,
+    duration_str: str,
+    streak: int,
+    win_rate: float,
+    date_time_str: str
+) -> str:
+    """ALERT 2 — TRADE CLOSED: Exact compact fixed-width monospace <pre> format."""
+    side_raw = side.upper()
+    side_icon = "🟢 LONG" if side_raw in ("BUY", "LONG") else "🔴 SHORT"
+    tf_str = timeframe.upper()
+
+    pnl_pct_sign = "+" if pnl_pct >= 0 else ""
+    pct_formatted = f"{pnl_pct_sign}{pnl_pct:.2f}%"
+    if "TP" in outcome or outcome == "TP_HIT":
+        outcome_line = f"✅ TAKE PROFIT HIT           {pct_formatted}"
+    elif "SL" in outcome or outcome == "SL_HIT":
+        outcome_line = f"❌ STOP LOSS HIT             {pct_formatted}"
+    else:
+        outcome_line = f"⚠️ MANUAL CLOSE HIT         {pct_formatted}"
+
+    net_pnl_sign = "+" if net_pnl >= 0 else ""
+    roe_sign = "+" if roe_pct >= 0 else ""
+    wr_str = f"{win_rate:.0f}" if float(win_rate).is_integer() else f"{win_rate:.1f}"
+
+    lines = [
+        "<pre>🏆 HERMES 2.0 • TRADE CLOSED",
+        "━━━━━━━━━━━━━━━━━━━━━━",
+        "",
+        f"{symbol:<24} {side_icon}",
+        f"{tf_str} • {leverage} ISOLATED".ljust(29) + f"#{trade_num:03d}",
+        "",
+        f"{'ENTRY':<28}{entry_price:.4f}",
+        f"{'EXIT':<28}{exit_price:.4f}",
+        "",
+        outcome_line,
+        "",
+        "──────── RESULT ─────────",
+        "",
+        f"{'DEPLOYED':<25}{deployed:.2f} USDT",
+        f"{'NET P&L':<25}{net_pnl_sign}{net_pnl:.2f} USDT",
+        f"{'NEW BALANCE':<25}{new_balance:.2f} USDT",
+        "",
+        f"{'ROE':<28}{roe_sign}{roe_pct:.2f}%",
+        f"{'DURATION':<29}{duration_str}",
+        "",
+        f"🏆 STREAK {streak:<14}🎯 WR {wr_str}%",
+        "",
+        date_time_str + "</pre>"
+    ]
+    return "\n".join(lines)
+
+
+def format_daily_report_alert(
+    date_str: str,
+    acc_1h: dict,
+    acc_4h: dict,
+    today_stats_1h: dict,
+    today_stats_4h: dict
+) -> str:
+    """ALERT 3 — NIGHTLY DAILY REPORT: Exact compact fixed-width monospace <pre> format."""
+    # 1H Section
+    start_1h = float(today_stats_1h.get("start_balance", acc_1h.get("initial_balance", 50.0)))
+    curr_1h = float(acc_1h.get("current_balance", 50.0))
+    pnl_1h = float(today_stats_1h.get("day_pnl", 0.0))
+    trades_1h = int(today_stats_1h.get("trades_count", 0))
+    w_1h = int(today_stats_1h.get("tp_count", 0))
+    l_1h = int(today_stats_1h.get("sl_count", 0))
+    wr_1h = (w_1h / trades_1h * 100.0) if trades_1h > 0 else float(acc_1h.get("win_rate", 100.0))
+
+    # 4H Section
+    start_4h = float(today_stats_4h.get("start_balance", acc_4h.get("initial_balance", 50.0)))
+    curr_4h = float(acc_4h.get("current_balance", 50.0))
+    pnl_4h = float(today_stats_4h.get("day_pnl", 0.0))
+    trades_4h = int(today_stats_4h.get("trades_count", 0))
+    w_4h = int(today_stats_4h.get("tp_count", 0))
+    l_4h = int(today_stats_4h.get("sl_count", 0))
+    wr_4h = (w_4h / trades_4h * 100.0) if trades_4h > 0 else float(acc_4h.get("win_rate", 100.0))
+
+    # Total Section
+    comb_bal = curr_1h + curr_4h
+    comb_pnl = pnl_1h + pnl_4h
+
+    pnl_1h_sign = "+" if pnl_1h >= 0 else ""
+    pnl_4h_sign = "+" if pnl_4h >= 0 else ""
+    comb_pnl_sign = "+" if comb_pnl >= 0 else ""
+
+    lines = [
+        "<pre>📊 HERMES 2.0 • DAILY REPORT",
+        "━━━━━━━━━━━━━━━━━━━━━━",
+        "",
+        date_str,
+        "",
+        "──────── 1H ACCOUNT ────────",
+        "",
+        f"{'START BALANCE':<25}{start_1h:.2f}",
+        f"{'CURRENT BALANCE':<25}{curr_1h:.2f}",
+        f"{'TODAY P&L':<25}{pnl_1h_sign}{pnl_1h:.2f}",
+        f"{'TRADES':<30}{trades_1h}",
+        f"{'W / L':<26}{w_1h} / {l_1h}",
+        f"{'WIN RATE':<25}{wr_1h:.1f}%",
+        "",
+        "──────── 4H ACCOUNT ────────",
+        "",
+        f"{'START BALANCE':<25}{start_4h:.2f}",
+        f"{'CURRENT BALANCE':<25}{curr_4h:.2f}",
+        f"{'TODAY P&L':<25}{pnl_4h_sign}{pnl_4h:.2f}",
+        f"{'TRADES':<30}{trades_4h}",
+        f"{'W / L':<26}{w_4h} / {l_4h}",
+        f"{'WIN RATE':<25}{wr_4h:.1f}%",
+        "",
+        "──────── TOTAL ────────────",
+        "",
+        f"{'COMBINED BALANCE':<24}{comb_bal:.2f} USDT",
+        f"{'TODAY NET P&L':<24}{comb_pnl_sign}{comb_pnl:.2f} USDT",
+        "",
+        "HERMES 2.0 • PAPER TRADING</pre>"
+    ]
+    return "\n".join(lines)
 
 class TelegramService:
     def __init__(self):
@@ -394,94 +594,61 @@ class TelegramService:
             await self.update_live_status_message()
             return
 
-        side_emoji = "🟢 BUY" if zone["side"] == "BUY" else "🔴 SELL"
-        tags_str = ", ".join(zone.get("tags", [])) if zone.get("tags") else "Pure OB"
-        pos_size = paper_tr.get("position_size_usdt", 10.0)
-        exp_tp = paper_tr.get("expected_tp_usdt", 0.40)
-        max_sl = paper_tr.get("max_sl_usdt", 0.30)
-        cur_bal = paper_tr.get("balance_at_entry", 100.0)
+        tf = str(zone.get("timeframe", "4h")).lower()
+        acc = get_paper_account(timeframe=tf)
+        curr_bal = float(acc.get("current_balance", 50.0))
+        margin = curr_bal
+        pos_size = margin * 5.0
+        entry_price = float(zone.get("entry_price") or zone.get("ob_high") or 1.0)
+        tp_target_pct = 2.2 if "1h" in tf else 2.8
+        sl_target_pct = 2.5 if "1h" in tf else 2.8
+        side = zone.get("side", "BUY").upper()
+        if side in ("BUY", "LONG"):
+            default_tp = entry_price * (1.0 + tp_target_pct / 100.0)
+            default_sl = entry_price * (1.0 - sl_target_pct / 100.0)
+        else:
+            default_tp = entry_price * (1.0 - tp_target_pct / 100.0)
+            default_sl = entry_price * (1.0 + sl_target_pct / 100.0)
 
-        # Pre-fetch 4H candles to compute AI confluence & prepare chart
-        candles = None
-        confluence = None
-        try:
-            candles = await binance_feed.fetch_klines(zone["symbol"], interval="4h", limit=50)
-            if candles:
-                confluence = evaluate_setup_confluence(zone["symbol"], zone, candles, order_flow=order_flow)
-        except Exception:
-            pass
+        tp_price = float(zone.get("tp_price") or default_tp)
+        sl_price = float(zone.get("sl_price") or default_sl)
+        coin = zone["symbol"].replace("USDT", "")
+        qty = pos_size / entry_price if entry_price > 0 else 0.0
+        tp_dist = abs((tp_price - entry_price) / entry_price) * 100.0 if entry_price > 0 else tp_target_pct
+        sl_dist = abs((sl_price - entry_price) / entry_price) * 100.0 if entry_price > 0 else sl_target_pct
+        now_ms = int(time.time() * 1000)
+        date_time_str = format_tg_ist_timestamp(now_ms)
+        trade_num = get_paper_trade_sequence_num(tf)
 
-        ai_badge = ""
-        if confluence:
-            grade = confluence.get("grade", "A")
-            score = confluence.get("score", 85)
-            verdict = confluence.get("verdict", "STRONG SETUP")
-            ai_badge = (
-                f"🤖 <b>MIKE AI CONFLUENCE:</b> <code>{grade} ({score}/100)</code>\n"
-                f"🎯 <b>Mike's Verdict:</b> <i>{verdict}</i>\n\n"
-            )
-
-        of_badge = ""
-        if order_flow:
-            d_ratio = order_flow.get("delta_ratio", 0.5) * 100
-            d_usd = order_flow.get("delta_usd", 0.0)
-            d_usd_str = f"+${abs(d_usd):,.0f}" if d_usd >= 0 else f"-${abs(d_usd):,.0f}"
-            oi_pct = order_flow.get("oi_change_1h", 0.0)
-            oi_sent = order_flow.get("oi_sentiment", "STABLE")
-            rocket = order_flow.get("rocket_grade", "STANDARD")
-            depth_r = order_flow.get("depth_ratio", 1.0)
-            b_wall = order_flow.get("bid_wall_usd", 0.0)
-            wall_status = order_flow.get("wall_status", "NORMAL_DEPTH")
-            wall_line = f"🧱 <b>Resting Bid Wall:</b> <code>{depth_r:.2f}x (${b_wall:,.0f})</code>\n" if order_flow.get("is_heavy_bid_wall") else ""
-            of_badge = (
-                f"🌊 <b>ORDER FLOW (CVD, OI & DEPTH WALL):</b>\n"
-                f"📊 <b>Delta Absorption:</b> <code>{d_ratio:.1f}% ({d_usd_str})</code>\n"
-                f"📈 <b>Open Interest:</b> <code>{oi_pct:+.2f}% ({oi_sent})</code>\n"
-                f"{wall_line}"
-                f"⚡ <b>Momentum:</b> <b>{rocket}</b>\n\n"
-            )
-
-        is_sniper = zone.get("is_super_sniper", False) or (order_flow and order_flow.get("is_rocket") and zone.get("side") == "BUY")
-        sniper_header = "👑 <b>HERMES 2.0 APEX: SUPER SNIPER ENTRY (92.3% WIN-RATE TIER)</b>" if is_sniper else "👑 <b>HERMES 2.0 APEX: 4-SENTRY ENTRY TRIGGERED</b>"
-        sniper_badge = (
-            "👑 <b>SUPER SNIPER COMBO:</b> <code>DELTA + CVD REVERSAL + WHALE OI ACTIVE</code>\n"
-            "⚡ <b>Reaction Speed:</b> <i>Instant 1.0 Hour Takeoff Expected</i>\n\n"
-        ) if is_sniper else ""
-
-        alert_text = (
-            f"{sniper_header}\n\n"
-            f"🪙 <b>Coin:</b> #{zone['symbol']}\n"
-            f"🎯 <b>Direction:</b> {side_emoji} (First Tap Only)\n"
-            f"📍 <b>Entry Price:</b> <code>{zone['entry_price']}</code>\n"
-            f"🟢 <b>TP (+4%):</b> <code>{zone['tp_price']}</code>\n"
-            f"🛑 <b>SL (-3%):</b> <code>{zone['sl_price']}</code>\n"
-            f"📦 <b>OB High-Low:</b> {zone['ob_low']} - {zone['ob_high']}\n"
-            f"🏷 <b>Soft Tags:</b> {tags_str}\n"
-            f"⏱ <b>Timeframe:</b> {TIMEFRAME.upper()} | Binance Futures\n\n"
-            f"{sniper_badge}"
-            f"{of_badge}"
-            f"👑 <b>HERMES 2.0 APEX COMPOUNDING ($50 ➔ $2,000)</b>\n"
-            f"💰 <b>Active Margin Deployed (100%):</b> <code>${cur_bal:.2f} USDT</code>\n"
-            f"📦 <b>Effective Position (5x Isolated):</b> <code>${pos_size:.2f} USDT</code>\n"
-            f"🎯 <b>Target Gain (+14.0% ROE):</b> <code>+${exp_tp:.2f} USDT</code>\n"
-            f"🛑 <b>Risk Limit (-14.0% ROE):</b> <code>-${max_sl:.2f} USDT</code>\n"
-            f"🏁 <b>Sequential Queue:</b> <code>1 Trade At A Time (Zero Contagion)</code>\n\n"
-            f"⚡ <i>Strict discipline. Do not move SL.</i>"
+        alert_text = format_trade_open_alert(
+            symbol=zone["symbol"],
+            side=side,
+            timeframe=tf,
+            leverage="5x",
+            trade_num=trade_num,
+            entry_price=entry_price,
+            tp_price=tp_price,
+            sl_price=sl_price,
+            balance=curr_bal,
+            deployed=margin,
+            position_size=pos_size,
+            coin=coin,
+            quantity=qty,
+            tp_dist_pct=tp_dist,
+            sl_dist_pct=sl_dist,
+            date_time_str=date_time_str
         )
-        summary = f"{zone['symbol']} {zone['side']} Entry @ {zone['entry_price']}"
-        set_metric("last_alert", summary)
 
         keyboard = get_alert_inline_keyboard(zone["symbol"])
 
         sent_msg_id = None
         sent = False
         try:
-            if not candles:
-                candles = await binance_feed.fetch_klines(zone["symbol"], interval="4h", limit=50)
+            candles = await binance_feed.fetch_klines(zone["symbol"], interval=tf, limit=50)
             if candles:
                 all_sym_zones = get_active_zones(symbol=zone["symbol"])
-                chart_bytes = render_smc_chart_image(zone["symbol"], candles, zone, zones=all_sym_zones[:3], timeframe="4H")
-                resp = await self.send_photo(chart_bytes, alert_text, reply_markup=keyboard)
+                chart_bytes = render_smc_chart_image(zone["symbol"], candles, zone, zones=all_sym_zones[:3], timeframe=tf.upper())
+                resp = await self.send_photo(chart_bytes, alert_text, parse_mode="HTML", reply_markup=keyboard)
                 if resp and resp.get("ok"):
                     sent_msg_id = resp["result"]["message_id"]
                     sent = True
@@ -489,7 +656,7 @@ class TelegramService:
             pass
 
         if not sent:
-            resp = await self.send_raw_message(alert_text, reply_markup=keyboard)
+            resp = await self.send_raw_message(alert_text, parse_mode="HTML", reply_markup=keyboard)
             if resp and resp.get("ok"):
                 sent_msg_id = resp["result"]["message_id"]
 
@@ -510,7 +677,7 @@ class TelegramService:
             return
 
         paper_res = close_paper_trade(zone, "TP_HIT")
-        set_metric("last_alert", f"{zone['symbol']} TP HIT (+4%)")
+        set_metric("last_alert", f"{zone['symbol']} TP HIT")
 
         mute_paper = get_setting("mute_paper_trading_alerts", str(MUTE_PAPER_TRADING_ALERTS)).lower() == "true"
         if mute_paper:
@@ -518,125 +685,54 @@ class TelegramService:
             await self.update_live_status_message()
             return
 
-        side_emoji  = "🟢 LONG" if zone["side"] == "BUY" else "🔴 SHORT"
-        pnl         = paper_res["pnl_usdt"]    if paper_res else 0.40
-        new_bal     = paper_res["new_balance"] if paper_res else 100.40
-        wins        = paper_res["win_count"]   if paper_res else 1
-        losses      = paper_res["loss_count"]  if paper_res else 0
-        wr          = paper_res["win_rate"]    if paper_res else 100.0
-        trade_num   = wins + losses
+        tf = str(zone.get("timeframe", "4h")).lower()
+        acc = get_paper_account(timeframe=tf)
+        trade_num = get_paper_trade_sequence_num(tf)
+        now_ms = int(time.time() * 1000)
+        date_time_str = format_tg_ist_timestamp(now_ms)
 
-        # --- Compounding account data ---
+        entry = float(zone.get("entry_price") or 1.0)
+        tp = float(zone.get("tp_price") or entry)
+        tp_pct = abs((tp - entry) / entry * 100.0) if entry else (2.2 if "1h" in tf else 2.8)
+
+        net_pnl = float(paper_res["pnl_usdt"]) if paper_res else 0.0
+        new_bal = float(paper_res["new_balance"]) if paper_res else float(acc.get("current_balance", 50.0))
+        streak = int(acc.get("win_streak", 0))
+        wr = float(acc.get("win_rate", 100.0))
+
+        margin = float(paper_res.get("position_size", 0.0)) / 5.0 if paper_res and paper_res.get("position_size") else (new_bal - net_pnl)
+        if margin <= 0:
+            margin = 50.0
+        roe_pct = round((net_pnl / margin) * 100.0, 2)
+
+        duration_str = "—"
         try:
-            paper       = get_paper_account()
-            active_pool = paper.get("current_balance", new_bal)
-            vault_bal   = paper.get("vault_balance", 0.0)
-        except Exception:
-            active_pool = new_bal
-            vault_bal   = 0.0
-
-        total_equity = active_pool + vault_bal
-        goal_target  = 2000.0
-        goal_pct     = min((active_pool / goal_target) * 100, 100.0)
-        filled_bars  = int(goal_pct / 5)
-        bar_str      = "\u2588" * filled_bars + "\u2591" * (20 - filled_bars)
-
-        vault_cut    = pnl * 0.15
-        compound_cut = pnl * 0.85
-        roe_pct      = (pnl / max(active_pool - compound_cut, 1)) * 100 * 5
-
-        entry  = float(zone.get("entry_price", 1) or 1)
-        tp     = float(zone.get("tp_price",    entry) or entry)
-        tp_pct = abs((tp - entry) / entry * 100) if entry else 4.0
-
-        streak_label = f"{wins} in a Row! ({wr:.1f}% WR)" if wins > 0 else "\u2014"
-
-        duration_str = "\u2014"
-        try:
-            opened   = float(zone.get("opened_at", zone.get("origin_time", 0)) or 0)
-            elapsed  = int(time.time() - opened)
-            h, m     = divmod(elapsed // 60, 60)
-            duration_str = f"{h}h {m}m"
+            opened = float(zone.get("opened_at", zone.get("origin_time", 0)) or 0)
+            if opened > 0:
+                elapsed = int(time.time() - (opened / 1000 if opened > 1e11 else opened))
+                h, m = divmod(max(0, elapsed) // 60, 60)
+                duration_str = f"{h}h {m}m"
         except Exception:
             pass
 
-        try:
-            daily       = get_daily_trades_summary()
-            day_profit  = daily.get("total_profit", pnl)
-            day_trades  = daily.get("total_trades", trade_num)
-            day_wins    = daily.get("wins",         wins)
-            day_losses  = daily.get("losses",       losses)
-            day_wr      = daily.get("win_rate",     wr)
-            day_long_w  = daily.get("long_wins",    0)
-            day_long_l  = daily.get("long_losses",  0)
-            day_short_w = daily.get("short_wins",   0)
-            day_short_l = daily.get("short_losses", 0)
-        except Exception:
-            day_profit  = pnl;  day_trades = trade_num
-            day_wins    = wins; day_losses = losses; day_wr = wr
-            day_long_w  = day_long_l = day_short_w = day_short_l = 0
-
-        day_growth_pct = (day_profit / 50.0) * 100
-
-        try:
-            az = get_active_zones()
-            if az:
-                nxt = az[0]
-                next_target = f"#{nxt['symbol']} {'Long' if nxt['side']=='BUY' else 'Short'} (${float(nxt.get('entry_price',0)):.3f})"
-            else:
-                next_target = "Scanning market\u2026"
-        except Exception:
-            next_target = "Scanning market\u2026"
-
-        buying_power = active_pool * 5
-        sentry1 = zone.get("sentry1", "PASS")
-        sentry2 = zone.get("sentry2", "PASS")
-        sentry3 = zone.get("sentry3", "PASS")
-        sentry4 = zone.get("sentry4", "PASS")
-        ist_now = get_ist_now().strftime("%d %b %Y \u2022 %I:%M %p IST")
-
-        text = (
-            f"🎯 <b>HERMES 2.0 APEX \u2022 TAKE PROFIT HIT!</b> 🏆\n"
-            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            f"\u23f1 <i>{ist_now} | Sequential Trade #{trade_num:03d}</i>\n"
-            f"🔥 <b>Win Streak:</b> <code>{streak_label}</code>\n\n"
-            f"<blockquote>"
-            f"🪙 <b>TRADE EXECUTION TICKET:</b>\n"
-            f"\u2022 <b>Coin Pair:</b> <code>#{zone['symbol']}</code>\n"
-            f"\u2022 <b>Setup:</b> 4H Extreme Order Block\n"
-            f"\u2022 <b>Direction:</b> {side_emoji} (5x Isolated)\n"
-            f"\u2022 <b>Entry Price:</b> <code>${entry:.4f}</code>  \u27a1  <b>Exit TP:</b> <code>${tp:.4f}</code> (+{tp_pct:.1f}%)\n"
-            f"\u2022 <b>Duration:</b> <code>{duration_str}</code>\n\n"
-            f"💰 <b>THIS TRADE PROFIT:</b>\n"
-            f"\u251c\u2500 💵 <b>Net Profit:</b> <code>+${pnl:.2f} USDT</code> (+{roe_pct:.1f}% ROE)\n"
-            f"\u251c\u2500 🏦 <b>Cold Vault (15%):</b> <code>+${vault_cut:.2f} USDT</code> (Banked Safely)\n"
-            f"\u2514\u2500 🚀 <b>Compounding (85%):</b> <code>+${compound_cut:.2f} USDT</code> (Added to Pool)"
-            f"</blockquote>\n\n"
-            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            f"📊 <b>TODAY'S DAILY PERFORMANCE SCORECARD</b>\n"
-            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            f"💰 <b>Today's Net Profit:</b> <code>+${day_profit:.2f} USDT</code> (+{day_growth_pct:.2f}% Growth)\n"
-            f"🔢 <b>Completed Trades:</b> <code>{day_trades} Trades ({day_wins} Wins \u2022 {day_losses} Losses)</code>\n"
-            f"🎯 <b>Daily Win Rate:</b> <code>{day_wr:.1f}% Precision</code>\n"
-            f"🧭 <b>Direction:</b> 🟢 <b>LONG:</b> {day_long_w}W/{day_long_l}L  |  🔴 <b>SHORT:</b> {day_short_w}W/{day_short_l}L\n\n"
-            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            f"🏦 <b>COMPOUNDING ROADMAP ($50 \u27a1 $2,000)</b>\n"
-            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            f"💼 <b>Active Compounding Pool:</b> <code>${active_pool:.2f} USDT</code>\n"
-            f"🔒 <b>Cold Storage Vault:</b> <code>${vault_bal:.2f} USDT</code> (Profit Protected)\n"
-            f"💎 <b>Total Account Equity:</b> <code>${total_equity:.2f} USDT</code>\n\n"
-            f"🎯 <b>Milestone Progress:</b>\n"
-            f"<code>[{bar_str}] {goal_pct:.1f}% (${active_pool:.2f} / ${goal_target:.2f})</code>\n\n"
-            f"\u26a1 <b>NEXT TRADE POWER:</b>\n"
-            f"\u251c\u2500 💵 <b>Available Margin:</b> <code>${active_pool:.2f} USDT</code>\n"
-            f"\u251c\u2500 🚀 <b>5x Buying Power:</b> <code>${buying_power:.2f} USDT</code>\n"
-            f"\u2514\u2500 🎯 <b>Next Pipeline Target:</b> <code>{next_target}</code>\n\n"
-            f"🏛️ <b>4-Sentries Verification Audit:</b>\n"
-            f"\u251c\u2500 S1 (BTC Macro): <code>{sentry1}</code>\n"
-            f"\u251c\u2500 S2 (Displacement): <code>{sentry2}</code>\n"
-            f"\u251c\u2500 S3 (IDM Sweep): <code>{sentry3}</code>\n"
-            f"\u2514\u2500 S4 (Freshness): <code>{sentry4}</code>\n"
-            f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
+        text = format_trade_closed_alert(
+            symbol=zone["symbol"],
+            side=zone.get("side", "BUY"),
+            timeframe=tf,
+            leverage="5x",
+            trade_num=trade_num,
+            entry_price=entry,
+            exit_price=tp,
+            outcome="TP_HIT",
+            pnl_pct=round(tp_pct, 2),
+            deployed=round(margin, 2),
+            net_pnl=round(net_pnl, 2),
+            new_balance=round(new_bal, 2),
+            roe_pct=roe_pct,
+            duration_str=duration_str,
+            streak=streak,
+            win_rate=wr,
+            date_time_str=date_time_str
         )
         keyboard = get_alert_inline_keyboard(zone["symbol"])
 
@@ -647,13 +743,13 @@ class TelegramService:
 
         edited = False
         if existing_msg_id and existing_msg_id.isdigit():
-            edited = await self.edit_caption(int(existing_msg_id), text, reply_markup=keyboard)
+            edited = await self.edit_caption(int(existing_msg_id), text, parse_mode="HTML", reply_markup=keyboard)
             if not edited:
-                edited = await self.edit_raw_message(int(existing_msg_id), text, reply_markup=keyboard)
+                edited = await self.edit_raw_message(int(existing_msg_id), text, parse_mode="HTML", reply_markup=keyboard)
 
         # Fallback only if edit was impossible
         if not edited:
-            await self.send_raw_message(text, reply_markup=keyboard)
+            await self.send_raw_message(text, parse_mode="HTML", reply_markup=keyboard)
 
         record_sent_alert(alert_key, zone["symbol"], zone["side"], "TP_HIT", zone.get("origin_time", 0))
         await self.update_live_status_message()
@@ -664,7 +760,7 @@ class TelegramService:
             return
 
         paper_res = close_paper_trade(zone, "SL_HIT")
-        set_metric("last_alert", f"{zone['symbol']} SL HIT (-3%)")
+        set_metric("last_alert", f"{zone['symbol']} SL HIT")
 
         mute_paper = get_setting("mute_paper_trading_alerts", str(MUTE_PAPER_TRADING_ALERTS)).lower() == "true"
         if mute_paper:
@@ -672,27 +768,54 @@ class TelegramService:
             await self.update_live_status_message()
             return
 
-        side_emoji = "🟢 BUY" if zone["side"] == "BUY" else "🔴 SELL"
-        loss = abs(paper_res["pnl_usdt"]) if paper_res else 0.30
-        new_bal = paper_res["new_balance"] if paper_res else 99.70
-        tot_pnl = paper_res["total_pnl"] if paper_res else -0.30
-        wins = paper_res["win_count"] if paper_res else 0
-        losses = paper_res["loss_count"] if paper_res else 1
-        wr = paper_res["win_rate"] if paper_res else 0.0
+        tf = str(zone.get("timeframe", "4h")).lower()
+        acc = get_paper_account(timeframe=tf)
+        trade_num = get_paper_trade_sequence_num(tf)
+        now_ms = int(time.time() * 1000)
+        date_time_str = format_tg_ist_timestamp(now_ms)
 
-        text = (
-            f"🛑 <b>HERMES 2.0 APEX: STOP LOSS HIT</b>\n\n"
-            f"🪙 <b>Coin:</b> #{zone['symbol']}\n"
-            f"🎯 <b>Direction:</b> {side_emoji}\n"
-            f"📍 <b>Entry:</b> {zone['entry_price']}\n"
-            f"⚠️ <b>Exit SL:</b> {zone['sl_price']}\n"
-            f"📉 <b>Result:</b> -3.0% Stop hit. Risk protected.\n\n"
-            f"💼 <b>PAPER TRADING RESULT</b>\n"
-            f"🛑 <b>Outcome:</b> LOSS (-3.0% Stop Loss)\n"
-            f"⚠️ <b>Loss:</b> <code>-${loss:.2f} USDT</code>\n"
-            f"💵 <b>New Balance:</b> <code>${new_bal:.2f} USDT</code>\n"
-            f"📈 <b>Net Total PnL:</b> <code>{tot_pnl:+.2f} USDT</code>\n"
-            f"📊 <b>Score:</b> {wins}W - {losses}L ({wr}% WR)"
+        entry = float(zone.get("entry_price") or 1.0)
+        sl = float(zone.get("sl_price") or entry)
+        sl_pct = abs((sl - entry) / entry * 100.0) if entry else (2.5 if "1h" in tf else 2.8)
+
+        net_pnl = float(paper_res["pnl_usdt"]) if paper_res else 0.0
+        new_bal = float(paper_res["new_balance"]) if paper_res else float(acc.get("current_balance", 50.0))
+        streak = int(acc.get("win_streak", 0))
+        wr = float(acc.get("win_rate", 0.0))
+
+        margin = float(paper_res.get("position_size", 0.0)) / 5.0 if paper_res and paper_res.get("position_size") else (new_bal - net_pnl)
+        if margin <= 0:
+            margin = 50.0
+        roe_pct = round((net_pnl / margin) * 100.0, 2)
+
+        duration_str = "—"
+        try:
+            opened = float(zone.get("opened_at", zone.get("origin_time", 0)) or 0)
+            if opened > 0:
+                elapsed = int(time.time() - (opened / 1000 if opened > 1e11 else opened))
+                h, m = divmod(max(0, elapsed) // 60, 60)
+                duration_str = f"{h}h {m}m"
+        except Exception:
+            pass
+
+        text = format_trade_closed_alert(
+            symbol=zone["symbol"],
+            side=zone.get("side", "BUY"),
+            timeframe=tf,
+            leverage="5x",
+            trade_num=trade_num,
+            entry_price=entry,
+            exit_price=sl,
+            outcome="SL_HIT",
+            pnl_pct=round(-sl_pct, 2),
+            deployed=round(margin, 2),
+            net_pnl=round(net_pnl, 2),
+            new_balance=round(new_bal, 2),
+            roe_pct=roe_pct,
+            duration_str=duration_str,
+            streak=streak,
+            win_rate=wr,
+            date_time_str=date_time_str
         )
         keyboard = get_alert_inline_keyboard(zone["symbol"])
 
@@ -703,13 +826,13 @@ class TelegramService:
 
         edited = False
         if existing_msg_id and existing_msg_id.isdigit():
-            edited = await self.edit_caption(int(existing_msg_id), text, reply_markup=keyboard)
+            edited = await self.edit_caption(int(existing_msg_id), text, parse_mode="HTML", reply_markup=keyboard)
             if not edited:
-                edited = await self.edit_raw_message(int(existing_msg_id), text, reply_markup=keyboard)
+                edited = await self.edit_raw_message(int(existing_msg_id), text, parse_mode="HTML", reply_markup=keyboard)
 
         # Fallback only if edit was impossible
         if not edited:
-            await self.send_raw_message(text, reply_markup=keyboard)
+            await self.send_raw_message(text, parse_mode="HTML", reply_markup=keyboard)
 
         record_sent_alert(alert_key, zone["symbol"], zone["side"], "SL_HIT", zone.get("origin_time", 0))
         await self.update_live_status_message()
@@ -864,35 +987,30 @@ class TelegramService:
             set_metric("last_prox_sent_time", str(time.time()))
 
     async def send_daily_summary(self):
-        """Generates and broadcasts the Daily PnL and Performance Report Card."""
+        """Generates and broadcasts the Nightly Daily Report Card for 1H & 4H."""
         now_ist = get_ist_now()
         midnight_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
         midnight_ms = int(midnight_ist.timestamp() * 1000)
 
-        summary = get_daily_trades_summary(midnight_ms)
-        paper = get_paper_account()
-        stats = get_performance_stats()
+        acc_1h = get_paper_account(timeframe="1h")
+        acc_4h = get_paper_account(timeframe="4h")
+        stats_1h = get_daily_trades_summary(midnight_ms, timeframe="1h")
+        stats_4h = get_daily_trades_summary(midnight_ms, timeframe="4h")
 
-        pnl_sign = "+" if summary["day_pnl"] >= 0 else ""
-        date_str = now_ist.strftime("%d %b %Y")
+        # Compute starting balance for today
+        stats_1h["start_balance"] = round(acc_1h["current_balance"] - stats_1h["day_pnl"], 2)
+        stats_4h["start_balance"] = round(acc_4h["current_balance"] - stats_4h["day_pnl"], 2)
 
-        msg = (
-            f"📅 <b>HERMES 2.0 APEX DAILY REPORT</b>\n"
-            f"📆 Date: <b>{date_str}</b>\n\n"
-            f"📊 <b>TODAY'S RECORD</b>\n"
-            f"• Closed Trades: <b>{summary['trades_count']}</b>\n"
-            f"• ✅ TP Hits (+4%): <b>{summary['tp_count']}</b>\n"
-            f"• 🛑 SL Hits (-3%): <b>{summary['sl_count']}</b>\n"
-            f"• 💵 Today's Net PnL: <b>{pnl_sign}${summary['day_pnl']:.2f} USDT</b>\n\n"
-            f"💼 <b>WALLET BALANCE</b>\n"
-            f"• Current Balance: <b>${paper['current_balance']:.2f} USDT</b>\n"
-            f"• Net Return: <b>{paper['return_pct']:+.2f}%</b>\n"
-            f"• Win Rate: <b>{paper['win_rate']}%</b> ({paper['win_count']}W - {paper['loss_count']}L)\n"
-            f"• Active Qualified OBs: <b>{stats['total_active_zones']}</b>\n\n"
-            f"🤖 <i>System running 24/7 autonomously across 50 coins.</i>"
+        date_str = now_ist.strftime("%d %b %Y").upper()
+        msg = format_daily_report_alert(
+            date_str=date_str,
+            acc_1h=acc_1h,
+            acc_4h=acc_4h,
+            today_stats_1h=stats_1h,
+            today_stats_4h=stats_4h
         )
         menu_kb = get_main_menu_keyboard()
-        await self.send_raw_message(msg, reply_markup=menu_kb)
+        await self.send_raw_message(msg, parse_mode="HTML", reply_markup=menu_kb)
 
     # --- Interactive Command Handlers ---
     async def handle_chart_command(self, symbol_raw: str):

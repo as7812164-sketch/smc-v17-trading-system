@@ -126,6 +126,7 @@ def init_db():
             ("paper_account", "mode", "TEXT DEFAULT 'HERMES_2.0_APEX'"),
             ("paper_account", "timeframe", "TEXT DEFAULT '4h'"),
             ("paper_account", "name", "TEXT DEFAULT '4H Macro Swing'"),
+            ("paper_account", "win_streak", "INTEGER DEFAULT 0"),
             ("paper_trades", "timeframe", "TEXT DEFAULT '1h'"),
             ("paper_trades", "hard_sl_price", "REAL DEFAULT 0.0"),
             ("paper_trades", "vault_stashed_usdt", "REAL DEFAULT 0.0"),
@@ -472,6 +473,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
         acc["milestone_progress_pct"] = round(min(100.0, (total_equity / target) * 100.0), 2)
         acc["return_pct"] = round(((total_equity - init_b) / init_b * 100), 2)
         acc["mode"] = acc.get("mode", "HERMES_2.0_APEX")
+        acc["win_streak"] = int(row["win_streak"] if "win_streak" in row.keys() and row["win_streak"] is not None else (acc.get("win_count", 0) if acc.get("loss_count", 0) == 0 else 0))
         return acc
 
 def get_dual_paper_accounts() -> Dict[str, Any]:
@@ -677,26 +679,23 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
         roundtrip_fee = pos_size * 0.0016
         net_pnl_usdt = round(gross_pnl_usdt - roundtrip_fee, 2)
 
-        # Compounding Split: 15% to Cold Storage Vault, 85% to active margin on Win
-        vault_stash = 0.0
+        # 100% Compounding Rule: 100% of Net P&L compounded directly into current_balance
         acc_row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
         curr_balance = float(acc_row["current_balance"]) if acc_row else 50.0
         vault_balance = float(acc_row["vault_balance"]) if acc_row and "vault_balance" in acc_row.keys() else 0.0
         win_count = int(acc_row["win_count"]) if acc_row else 0
         loss_count = int(acc_row["loss_count"]) if acc_row else 0
+        win_streak = int(acc_row["win_streak"] or 0) if acc_row and "win_streak" in acc_row.keys() and acc_row["win_streak"] is not None else 0
         total_pnl = float(acc_row["total_pnl"]) if acc_row else 0.0
 
-        if outcome == "TP_HIT" and net_pnl_usdt > 0:
+        if outcome == "TP_HIT" or net_pnl_usdt > 0:
             win_count += 1
-            vault_stash = round(net_pnl_usdt * 0.15, 2)
-            margin_reinvest = round(net_pnl_usdt * 0.85, 2)
-            new_balance = round(curr_balance + margin_reinvest, 2)
-            new_vault = round(vault_balance + vault_stash, 2)
+            win_streak += 1
         else:
             loss_count += 1
-            new_balance = round(max(1.0, curr_balance + net_pnl_usdt), 2)
-            new_vault = vault_balance
+            win_streak = 0
 
+        new_balance = round(max(1.0, curr_balance + net_pnl_usdt), 2)
         new_total_pnl = round(total_pnl + net_pnl_usdt, 2)
 
         # Duration & MAE / MFE calculation
@@ -714,16 +713,20 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
             final_mfe = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
             final_mae = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
 
-        conn.execute("""
+        # Atomic idempotency: only update if status is still 'OPEN' (prevents duplicate settlement)
+        cursor = conn.execute("""
         UPDATE paper_trades SET
             status = ?, exit_time = ?, exit_price = ?, pnl_usdt = ?, pnl_pct = ?,
-            vault_stashed_usdt = ?, highest_price = ?, lowest_price = ?,
+            vault_stashed_usdt = 0.0, highest_price = ?, lowest_price = ?,
             mae_pct = ?, mfe_pct = ?, duration_str = ?, roi_pct = ?
-        WHERE id = ?
+        WHERE id = ? AND status = 'OPEN'
         """, (
             outcome, now, exit_price, net_pnl_usdt, round(gross_pnl_pct * 5.0, 2),
-            vault_stash, highest, lowest, final_mae, final_mfe, duration_str, round(gross_pnl_pct * 5.0, 2), trade_id
+            highest, lowest, final_mae, final_mfe, duration_str, round(gross_pnl_pct * 5.0, 2), trade_id
         ))
+        if cursor.rowcount == 0:
+            # Already settled by another event; do not update account again!
+            return None
 
         conn.execute("""
         UPDATE paper_account SET
@@ -731,9 +734,10 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
             vault_balance = ?,
             total_pnl = ?,
             win_count = ?,
-            loss_count = ?
+            loss_count = ?,
+            win_streak = ?
         WHERE id = ?
-        """, (new_balance, new_vault, new_total_pnl, win_count, loss_count, acc_id))
+        """, (new_balance, vault_balance, new_total_pnl, win_count, loss_count, win_streak, acc_id))
         conn.commit()
 
         completed = win_count + loss_count
@@ -750,7 +754,7 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
             "duration": duration_str,
             "position_size": pos_size,
             "new_balance": new_balance,
-            "vault_balance": new_vault,
+            "vault_balance": vault_balance,
             "total_pnl": new_total_pnl,
             "win_count": win_count,
             "loss_count": loss_count,
@@ -795,24 +799,43 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
             final_mfe = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
             final_mae = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
 
-        conn.execute("""
+        cursor = conn.execute("""
         UPDATE paper_trades SET
             status = ?, exit_time = ?, exit_price = ?, pnl_usdt = ?, pnl_pct = ?,
             highest_price = ?, lowest_price = ?, mae_pct = ?, mfe_pct = ?,
             duration_str = ?, roi_pct = ?
-        WHERE id = ?
+        WHERE id = ? AND status = 'OPEN'
         """, (status, now, exit_price, pnl_usdt, roi_pct, highest, lowest, final_mae, final_mfe, duration_str, roi_pct, trade_id))
+        if cursor.rowcount == 0:
+            return {"success": False, "error": "Trade was already closed"}
 
-        is_win = 1 if pnl_usdt > 0 else 0
-        is_loss = 1 if pnl_usdt <= 0 else 0
+        acc_row = conn.execute("SELECT current_balance, total_pnl, win_count, loss_count, win_streak FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
+        curr_balance = float(acc_row["current_balance"]) if acc_row else 50.0
+        total_pnl = float(acc_row["total_pnl"]) if acc_row else 0.0
+        win_count = int(acc_row["win_count"]) if acc_row else 0
+        loss_count = int(acc_row["loss_count"]) if acc_row else 0
+        win_streak = int(acc_row["win_streak"] or 0) if acc_row and "win_streak" in acc_row.keys() and acc_row["win_streak"] is not None else 0
+
+        is_win = pnl_usdt > 0
+        if is_win:
+            win_count += 1
+            win_streak += 1
+        else:
+            loss_count += 1
+            win_streak = 0
+
+        new_balance = round(max(1.0, curr_balance + pnl_usdt), 2)
+        new_total_pnl = round(total_pnl + pnl_usdt, 2)
+
         conn.execute("""
         UPDATE paper_account SET
-            current_balance = round(current_balance + ?, 2),
-            total_pnl = round(total_pnl + ?, 2),
-            win_count = win_count + ?,
-            loss_count = loss_count + ?
+            current_balance = ?,
+            total_pnl = ?,
+            win_count = ?,
+            loss_count = ?,
+            win_streak = ?
         WHERE id = ?
-        """, (pnl_usdt, pnl_usdt, is_win, is_loss, acc_id))
+        """, (new_balance, new_total_pnl, win_count, loss_count, win_streak, acc_id))
         conn.commit()
 
         return {
@@ -822,6 +845,8 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
             "pnl_usdt": pnl_usdt,
             "pnl_pct": roi_pct,
             "roi_pct": roi_pct,
+            "new_balance": new_balance,
+            "win_streak": win_streak,
             "mae_pct": final_mae,
             "mfe_pct": final_mfe,
             "duration": duration_str,
@@ -888,18 +913,41 @@ def reset_paper_account(starting_balance: float = 50.0, timeframe: Optional[str]
 
     return get_dual_paper_accounts()
 
-def get_daily_trades_summary(since_timestamp_ms: int) -> Dict[str, Any]:
+def get_paper_trade_sequence_num(timeframe: str, trade_id: Optional[int] = None) -> int:
+    """Returns sequential trade number for this timeframe (e.g. 1, 2, 3) to render #001, #002."""
     with get_connection() as conn:
-        rows = conn.execute("""
-        SELECT * FROM paper_trades 
-        WHERE exit_time >= ? AND status IN ('TP_HIT', 'SL_HIT')
-        ORDER BY exit_time ASC
-        """, (since_timestamp_ms,)).fetchall()
+        tf = timeframe.lower()
+        if trade_id:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM paper_trades WHERE LOWER(timeframe) = LOWER(?) AND id <= ?",
+                (tf, trade_id)
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM paper_trades WHERE LOWER(timeframe) = LOWER(?)",
+                (tf,)
+            ).fetchone()
+        return max(1, row[0] if row else 1)
+
+def get_daily_trades_summary(since_timestamp_ms: int, timeframe: Optional[str] = None) -> Dict[str, Any]:
+    with get_connection() as conn:
+        if timeframe:
+            rows = conn.execute("""
+            SELECT * FROM paper_trades 
+            WHERE exit_time >= ? AND status != 'OPEN' AND LOWER(timeframe) = LOWER(?)
+            ORDER BY exit_time ASC
+            """, (since_timestamp_ms, timeframe)).fetchall()
+        else:
+            rows = conn.execute("""
+            SELECT * FROM paper_trades 
+            WHERE exit_time >= ? AND status != 'OPEN'
+            ORDER BY exit_time ASC
+            """, (since_timestamp_ms,)).fetchall()
         trades = [dict(r) for r in rows]
 
-        tp_count = sum(1 for t in trades if t["status"] == "TP_HIT")
-        sl_count = sum(1 for t in trades if t["status"] == "SL_HIT")
-        day_pnl = sum(t["pnl_usdt"] for t in trades)
+        tp_count = sum(1 for t in trades if "TP" in str(t.get("status", "")) or (t.get("pnl_usdt") or 0) > 0)
+        sl_count = sum(1 for t in trades if "SL" in str(t.get("status", "")) or (t.get("pnl_usdt") or 0) <= 0)
+        day_pnl = sum((t.get("pnl_usdt") or 0.0) for t in trades)
 
         return {
             "trades_count": len(trades),
