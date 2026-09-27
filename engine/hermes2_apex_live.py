@@ -89,7 +89,7 @@ class Hermes2ApexLiveEngine:
             if "milestone_target" not in cols:
                 conn.execute("ALTER TABLE paper_account ADD COLUMN milestone_target REAL DEFAULT 2000.0")
             if "mode" not in cols:
-                conn.execute("ALTER TABLE paper_account ADD COLUMN mode TEXT DEFAULT 'HERMES_2.0_APEX'")
+                conn.execute("ALTER TABLE paper_account ADD COLUMN mode TEXT DEFAULT 'HERMES_2.5_APEX_HYBRID'")
 
             # Check paper_trades columns
             trade_cols = [r[1] for r in conn.execute("PRAGMA table_info(paper_trades)").fetchall()]
@@ -108,7 +108,7 @@ class Hermes2ApexLiveEngine:
                 conn.execute("""
                 INSERT OR IGNORE INTO paper_account 
                 (id, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-                VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.0_APEX');
+                VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.5_APEX_HYBRID');
                 """)
             elif acc["current_balance"] <= 0.0 and acc["win_count"] == 0 and acc["loss_count"] == 0:
                 conn.execute("""
@@ -120,13 +120,13 @@ class Hermes2ApexLiveEngine:
                     win_count = 0,
                     loss_count = 0,
                     milestone_target = 2000.0,
-                    mode = 'HERMES_2.0_APEX'
+                    mode = 'HERMES_2.5_APEX_HYBRID'
                 WHERE id = 1
                 """)
             conn.commit()
 
     def get_hermes_account(self) -> Dict[str, Any]:
-        """Retrieves live Hermes 2.0 Apex account state with compounding metrics."""
+        """Retrieves live Hermes 2.5 Apex Hybrid account state with compounding metrics."""
         with get_connection() as conn:
             row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
             if not row:
@@ -147,7 +147,7 @@ class Hermes2ApexLiveEngine:
             acc["equity"] = round(equity, 2)
             acc["return_pct"] = round(((equity - init_b) / init_b * 100), 2)
             acc["milestone_progress_pct"] = round(min(100.0, (equity / target) * 100.0), 2)
-            acc["mode"] = "HERMES_2.0_APEX"
+            acc["mode"] = "HERMES_2.5_APEX_HYBRID"
             return acc
 
     async def evaluate_btc_macro_sentry(self) -> Dict[str, Any]:
@@ -657,10 +657,31 @@ class Hermes2ApexLiveEngine:
                     elif cur_price <= hard_sl_price:
                         exit_triggered = "SL_HIT"
                         exit_price = hard_sl_price
-                else: # SELL / SHORT
+                else: # SELL / SHORT (HERMES 3.0-C MULTI-STAGE DYNAMIC PROFIT ARMOR)
+                    lowest = min(float(trade.get("lowest_price") or entry_price), cur_price)
+                    drop_from_entry = (entry_price - lowest) / entry_price if entry_price > 0 else 0.0
+
+                    # Evaluate Multi-Stage Dynamic Profit Armor
+                    current_effective_sl = sl_price
+                    if drop_from_entry >= 0.022:
+                        stage2_sl = round(entry_price * (1.0 - 0.012), 6)
+                        if stage2_sl < current_effective_sl:
+                            current_effective_sl = stage2_sl
+                            logger.info(f"🛡️ HERMES 3.0-C ARMOR STAGE 2 ACTIVE: {sym} SHORT SL locked at {stage2_sl} (+1.20% profit)")
+                    elif drop_from_entry >= 0.016:
+                        stage1_sl = round(entry_price * (1.0 - 0.002), 6)
+                        if stage1_sl < current_effective_sl:
+                            current_effective_sl = stage1_sl
+                            logger.info(f"🛡️ HERMES 3.0-C ARMOR STAGE 1 ACTIVE: {sym} SHORT SL locked at {stage1_sl} (BE +0.20% profit)")
+
                     if cur_price <= tp_price:
                         exit_triggered = "TP_HIT"
                         exit_price = tp_price
+                    elif current_effective_sl < entry_price and cur_price >= current_effective_sl:
+                        # Price bounced back up and touched our tightened profitable SL -> Protected Profit Exit!
+                        exit_triggered = "TP_HIT"
+                        exit_price = current_effective_sl
+                        logger.info(f"🛡️ HERMES 3.0-C ARMOR PROFIT LOCKED EXIT TRIGGERED: {sym} SHORT at {exit_price}")
                     elif cur_price >= hard_sl_price:
                         exit_triggered = "SL_HIT"
                         exit_price = hard_sl_price
@@ -894,7 +915,7 @@ class Hermes2ApexLiveEngine:
             "outcome": outcome,
             "net_pnl": net_pnl_usdt,
             "new_balance": new_balance,
-            "vault_balance": new_vault,
+            "vault_balance": vault_balance,
             "win_rate": win_rate
         })
 

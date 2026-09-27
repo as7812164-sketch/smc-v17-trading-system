@@ -123,7 +123,7 @@ def init_db():
         for col_def in [
             ("paper_account", "vault_balance", "REAL DEFAULT 0.0"),
             ("paper_account", "milestone_target", "REAL DEFAULT 2000.0"),
-            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_2.0_APEX'"),
+            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_2.5_APEX_HYBRID'"),
             ("paper_account", "timeframe", "TEXT DEFAULT '4h'"),
             ("paper_account", "name", "TEXT DEFAULT '4H Macro Swing'"),
             ("paper_account", "win_streak", "INTEGER DEFAULT 0"),
@@ -157,10 +157,10 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (1, '4h', '4H Macro Swing', 50.0, 50.0, 0.0, 0.0, 0, 0, 40000.0, 'HERMES_2.0_APEX');
+            VALUES (1, '4h', '4H Macro Swing', 50.0, 50.0, 0.0, 0.0, 0, 0, 40000.0, 'HERMES_2.5_APEX_HYBRID');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = '4H Macro Swing' WHERE id = 1 AND (timeframe IS NULL OR timeframe = '')")
+            conn.execute("UPDATE paper_account SET timeframe = '4h', name = '4H Macro Swing', mode = 'HERMES_2.5_APEX_HYBRID' WHERE id = 1 AND (timeframe IS NULL OR timeframe = '' OR mode != 'HERMES_2.5_APEX_HYBRID')")
 
         # Ensure Account 2 (1H Fast Scalp - $50.00 Starting Capital) exists
         acc2_exists = conn.execute("SELECT id FROM paper_account WHERE id = 2").fetchone()
@@ -168,8 +168,10 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (2, '1h', '1H Fast Scalp', 50.0, 50.0, 0.0, 0.0, 0, 0, 10000.0, 'HERMES_2.0_APEX');
+            VALUES (2, '1h', '1H Fast Scalp', 50.0, 50.0, 0.0, 0.0, 0, 0, 10000.0, 'HERMES_2.5_APEX_HYBRID');
             """)
+        else:
+            conn.execute("UPDATE paper_account SET timeframe = '1h', name = '1H Fast Scalp', mode = 'HERMES_2.5_APEX_HYBRID' WHERE id = 2 AND (timeframe IS NULL OR timeframe = '' OR mode != 'HERMES_2.5_APEX_HYBRID')")
 
         # Initialize default metrics if not present
         default_metrics = {
@@ -185,7 +187,7 @@ def init_db():
             "network_status": "STABLE",
             "coins_active_count": "50",
             "hermes_status": "ACTIVE_24_7",
-            "hermes_mode": "HERMES_2.0_APEX"
+            "hermes_mode": "HERMES_2.5_APEX_HYBRID"
         }
         for k, v in default_metrics.items():
             conn.execute("INSERT OR IGNORE INTO system_metrics (key, value) VALUES (?, ?)", (k, v))
@@ -372,16 +374,16 @@ def wipe_legacy_database_clean() -> Dict[str, Any]:
             win_count = 2,
             loss_count = 0,
             milestone_target = 2000.0,
-            mode = 'HERMES_2.0_APEX'
+            mode = 'HERMES_2.5_APEX_HYBRID'
         WHERE id = 1;
         """)
         conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_2.0_APEX')
-        ON CONFLICT(key) DO UPDATE SET value = 'HERMES_2.0_APEX';
+        INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_2.5_APEX_HYBRID')
+        ON CONFLICT(key) DO UPDATE SET value = 'HERMES_2.5_APEX_HYBRID';
         """)
         conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 2.0 Apex Live Engine Armed')
-        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 2.0 Apex Live Engine Armed';
+        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 2.5 Apex Hybrid Engine Armed')
+        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 2.5 Apex Hybrid Engine Armed';
         """)
         conn.commit()
 
@@ -451,7 +453,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
             conn.execute("""
             INSERT OR IGNORE INTO paper_account 
             (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.0_APEX')
+            VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.5_APEX_HYBRID')
             """, (acc_id, tf_str, tf_name))
             conn.commit()
             row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
@@ -472,7 +474,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
         acc["milestone_target"] = target
         acc["milestone_progress_pct"] = round(min(100.0, (total_equity / target) * 100.0), 2)
         acc["return_pct"] = round(((total_equity - init_b) / init_b * 100), 2)
-        acc["mode"] = acc.get("mode", "HERMES_2.0_APEX")
+        acc["mode"] = acc.get("mode", "HERMES_2.5_APEX_HYBRID")
         acc["win_streak"] = int(row["win_streak"] if "win_streak" in row.keys() and row["win_streak"] is not None else (acc.get("win_count", 0) if acc.get("loss_count", 0) == 0 else 0))
         return acc
 
@@ -611,7 +613,7 @@ def update_paper_trade_mark_price(trade_id: int, mark_price: float):
         return
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT entry_price, highest_price, lowest_price, side, position_size_usdt FROM paper_trades WHERE id = ? AND status = 'OPEN'",
+            "SELECT entry_price, highest_price, lowest_price, side, position_size_usdt, sl_price FROM paper_trades WHERE id = ? AND status = 'OPEN'",
             (trade_id,)
         ).fetchone()
         if not row:
@@ -626,26 +628,53 @@ def update_paper_trade_mark_price(trade_id: int, mark_price: float):
             roi_pct = round(((mark_price - entry_price) / entry_price * 100.0) * leverage, 2) if entry_price > 0 else 0.0
             mfe_pct = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
             mae_pct = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
+            conn.execute("""
+            UPDATE paper_trades SET
+                highest_price = ?,
+                lowest_price = ?,
+                roi_pct = ?,
+                mfe_pct = ?,
+                mae_pct = ?
+            WHERE id = ?
+            """, (highest, lowest, roi_pct, mfe_pct, mae_pct, trade_id))
         else:
             roi_pct = round(((entry_price - mark_price) / entry_price * 100.0) * leverage, 2) if entry_price > 0 else 0.0
             mfe_pct = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
             mae_pct = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
 
-        conn.execute("""
-        UPDATE paper_trades SET
-            highest_price = ?,
-            lowest_price = ?,
-            roi_pct = ?,
-            mfe_pct = ?,
-            mae_pct = ?
-        WHERE id = ?
-        """, (highest, lowest, roi_pct, mfe_pct, mae_pct, trade_id))
+            # HERMES 3.0-C MULTI-STAGE DYNAMIC PROFIT ARMOR FOR SHORT TRADES:
+            # Stage 1: lowest drops >= +1.60% from entry -> Lock Break-Even +0.20% Profit
+            # Stage 2: lowest drops >= +2.20% from entry -> Lock +1.20% Guaranteed Profit
+            cur_sl = float(row["sl_price"]) if ("sl_price" in row.keys() and row["sl_price"]) else round(entry_price * 1.028, 6)
+            drop_from_entry = (entry_price - lowest) / entry_price if entry_price > 0 else 0.0
+
+            updated_sl = cur_sl
+            if drop_from_entry >= 0.022:
+                armor_sl_stage2 = round(entry_price * (1.0 - 0.012), 6)
+                if armor_sl_stage2 < updated_sl:
+                    updated_sl = armor_sl_stage2
+            elif drop_from_entry >= 0.016:
+                armor_sl_stage1 = round(entry_price * (1.0 - 0.002), 6)
+                if armor_sl_stage1 < updated_sl:
+                    updated_sl = armor_sl_stage1
+
+            conn.execute("""
+            UPDATE paper_trades SET
+                highest_price = ?,
+                lowest_price = ?,
+                sl_price = ?,
+                roi_pct = ?,
+                mfe_pct = ?,
+                mae_pct = ?
+            WHERE id = ?
+            """, (highest, lowest, updated_sl, roi_pct, mfe_pct, mae_pct, trade_id))
+
         conn.commit()
 
-def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, Any]]:
+def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[float] = None) -> Optional[Dict[str, Any]]:
     """
-    Closes open paper trade on TP_HIT or SL_HIT.
-    Enforces 85% Reinvestment + 15% Cold Storage Vault compounding split on the specific timeframe account.
+    Closes open paper trade on TP_HIT, SL_HIT, or DYNAMIC ARMOR EXIT.
+    Enforces 100% compounding directly on the specific timeframe account.
     """
     with get_connection() as conn:
         trade = conn.execute("""
@@ -665,15 +694,16 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
         tf = (trade["timeframe"] or "4h").lower()
         acc_id = 2 if "1h" in tf else 1
 
-        tp_pct = 0.022 if tf == "1h" else 0.028
-        sl_pct = 0.025 if tf == "1h" else 0.028
+        if exit_price is None:
+            if outcome == "TP_HIT":
+                exit_price = float(trade["tp_price"])
+            else:
+                exit_price = float(trade["sl_price"])
 
-        if outcome == "TP_HIT":
-            exit_price = float(trade["tp_price"])
-            gross_pnl_pct = tp_pct * 100.0
+        if side in ("BUY", "LONG"):
+            gross_pnl_pct = (exit_price - entry_price) / entry_price * 100.0
         else:
-            exit_price = float(trade["sl_price"])
-            gross_pnl_pct = -sl_pct * 100.0
+            gross_pnl_pct = (entry_price - exit_price) / entry_price * 100.0
 
         gross_pnl_usdt = pos_size * (gross_pnl_pct / 100.0)
         roundtrip_fee = pos_size * 0.0016
@@ -691,6 +721,7 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
         if outcome == "TP_HIT" or net_pnl_usdt > 0:
             win_count += 1
             win_streak += 1
+            outcome = "TP_HIT"
         else:
             loss_count += 1
             win_streak = 0
