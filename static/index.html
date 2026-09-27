@@ -48,32 +48,32 @@
             <div class="top-metric-card" title="Paper Trading Starting / Current Balance">
                 <span class="tmc-label">Paper Balance</span>
                 <div class="tmc-val-row">
-                    <span class="tmc-val" id="topPaperBalVal">$10,284.32</span>
-                    <span class="tmc-badge" id="topPaperBalPct">+2.34%</span>
+                    <span class="tmc-val" id="topPaperBalVal">$50.00</span>
+                    <span class="tmc-badge" id="topPaperBalPct">+0.00%</span>
                 </div>
             </div>
             <!-- Card 2: Equity -->
             <div class="top-metric-card" title="Real-Time Portfolio Equity">
                 <span class="tmc-label">Equity</span>
                 <div class="tmc-val-row">
-                    <span class="tmc-val" id="topEquityVal">$10,512.43</span>
-                    <span class="tmc-badge" id="topEquityPct">+4.28%</span>
+                    <span class="tmc-val" id="topEquityVal">$50.00</span>
+                    <span class="tmc-badge" id="topEquityPct">+0.00%</span>
                 </div>
             </div>
             <!-- Card 3: Open P&L -->
             <div class="top-metric-card" title="Current Floating PnL Across Active Positions">
                 <span class="tmc-label">Open P&L</span>
                 <div class="tmc-val-row">
-                    <span class="tmc-val text-buy" id="topOpenPnlVal">+$228.11</span>
-                    <span class="tmc-badge" id="topOpenPnlPct">+2.22%</span>
+                    <span class="tmc-val" id="topOpenPnlVal">$0.00</span>
+                    <span class="tmc-badge" id="topOpenPnlPct">+0.00%</span>
                 </div>
             </div>
             <!-- Card 4: Daily P&L -->
             <div class="top-metric-card" title="24h Realized + Floating Daily P&L">
                 <span class="tmc-label">Daily P&L</span>
                 <div class="tmc-val-row">
-                    <span class="tmc-val text-buy" id="topDailyPnlVal">+$146.32</span>
-                    <span class="tmc-badge" id="topDailyPnlPct">+1.45%</span>
+                    <span class="tmc-val" id="topDailyPnlVal">$0.00</span>
+                    <span class="tmc-badge" id="topDailyPnlPct">+0.00%</span>
                 </div>
             </div>
         </div>
@@ -542,69 +542,45 @@
                                     <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="dashPositionsTbody">
                                 <tr>
-                                    <td>
-                                        <div style="display:flex; align-items:center; gap:6px;">
-                                            <span class="mtc-icon btc" style="width:16px; height:16px;"><i class="fa-brands fa-bitcoin"></i></span>
-                                            <b>BTCUSDT</b>
-                                        </div>
+                                    <td colspan="8" style="text-align:center; padding: 24px 12px; color: #64748B;">
+                                        <div style="font-size: 16px; margin-bottom: 4px; color: #38BDF8;"><i class="fa-solid fa-radar fa-spin"></i></div>
+                                        <div style="font-size: 12px; font-weight: 600; color: #94A3B8;">Loading Live Positions...</div>
                                     </td>
-                                    <td><span class="dsi-badge long">LONG</span></td>
-                                    <td>118,120.5</td>
-                                    <td>118,642.5</td>
-                                    <td>50 (5x)</td>
-                                    <td class="text-buy">+$26.10</td>
-                                    <td class="text-buy">+4.42%</td>
-                                    <td><button class="btn-pos-close" onclick="alert('Position close requested');">Close</button></td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div style="display:flex; align-items:center; gap:6px;">
-                                            <span class="mtc-icon eth" style="width:16px; height:16px;"><i class="fa-brands fa-ethereum"></i></span>
-                                            <b>ETHUSDT</b>
-                                        </div>
-                                    </td>
-                                    <td><span class="dsi-badge long">LONG</span></td>
-                                    <td>3,720.12</td>
-                                    <td>3,764.28</td>
-                                    <td>100 (5x)</td>
-                                    <td class="text-buy">+$22.08</td>
-                                    <td class="text-buy">+1.19%</td>
-                                    <td><button class="btn-pos-close" onclick="alert('Position close requested');">Close</button></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- RIGHT: PERFORMANCE (7D) CARD -->
+                <!-- RIGHT: PERFORMANCE (LIVE QUANTUM STATS) CARD -->
                 <div class="dashboard-perf-box">
                     <div class="perf-header-row">
-                        <span><i class="fa-solid fa-chart-pie" style="color:#00F59B;"></i> Performance (7D)</span>
-                        <span class="perf-pill-tag" style="font-size:9.5px; background:rgba(56,189,248,0.15); color:#38BDF8; padding:1px 6px; border-radius:4px; font-weight:700;">7D</span>
+                        <span><i class="fa-solid fa-chart-pie" style="color:#00F59B;"></i> Performance</span>
+                        <span class="perf-pill-tag" id="perfPillTag" style="font-size:9.5px; background:rgba(56,189,248,0.15); color:#38BDF8; padding:1px 6px; border-radius:4px; font-weight:700;">LIVE</span>
                     </div>
 
                     <div class="perf-main-stat">
                         <span class="p-lbl">Total P&amp;L</span>
                         <div class="p-val-row">
-                            <span class="p-val" id="kpiTotalPnlVal">+$2,148.32</span>
-                            <span class="p-pill">+26.4%</span>
+                            <span class="p-val" id="kpiTotalPnlVal">+$0.00</span>
+                            <span class="p-pill" id="kpiTotalPnlPct">+0.00%</span>
                         </div>
                     </div>
 
                     <div class="perf-footer-grid">
                         <div class="pf-item">
                             <span class="pf-lbl">Win Rate</span>
-                            <span class="pf-val text-buy" id="kpiWinRate">69.3%</span>
+                            <span class="pf-val text-buy" id="kpiWinRate">0.0%</span>
                         </div>
                         <div class="pf-item">
                             <span class="pf-lbl">Total Trades</span>
-                            <span class="pf-val" id="kpiTradesTotal">156</span>
+                            <span class="pf-val" id="kpiTradesTotal">0</span>
                         </div>
                         <div class="pf-item">
                             <span class="pf-lbl">Profit Factor</span>
-                            <span class="pf-val text-buy">2.14</span>
+                            <span class="pf-val text-buy" id="kpiProfitFactor">0.00</span>
                         </div>
                         <div class="pf-item">
                             <span class="pf-lbl">Sentries Guard</span>
@@ -2348,6 +2324,7 @@
             </div>
         </div>
     </div>
+    </div><!-- End legacyHiddenBridge -->
 
     <!-- SLIDE-OUT MOBILE NAVIGATION DRAWER OVERLAY -->
     <div class="drawer-overlay" id="drawerOverlay"></div>
@@ -2562,34 +2539,151 @@
             });
         }
 
-        // Live Top Bar & Sidebar Metrics Synchronization
-        function syncDashboardMetrics() {
-            const kpiBal = document.getElementById("paperCurBalance") || document.getElementById("kpiBitgetBal");
-            const kpiEq = document.getElementById("bgEquityVal") || document.getElementById("paperEquityVal");
-            const kpiPnl = document.getElementById("kpiOpenPnL") || document.getElementById("proDockTotalPnl");
-            const posBadge = document.getElementById("fposCount") || document.getElementById("proDockCountBadge");
+        // Live Top Bar & Performance & Positions Synchronization
+        async function syncDashboardMetrics() {
+            try {
+                const [accRes, perfRes, posRes] = await Promise.all([
+                    fetch('/api/paper/account'),
+                    fetch('/api/performance'),
+                    fetch('/api/paper/positions')
+                ]);
 
-            const topBal = document.getElementById("topPaperBalVal");
-            const topEq = document.getElementById("topEquityVal");
-            const topPnl = document.getElementById("topOpenPnlVal");
-            const sidePos = document.getElementById("sidebarPosBadge");
-            const drawPos = document.getElementById("drawerPosBadge");
+                if (accRes.ok) {
+                    const acc = await accRes.json();
+                    const bal = Number(acc.current_balance) || 50.0;
+                    const eq = Number(acc.equity) || bal;
+                    const unPnl = Number(acc.unrealized_pnl_usdt) || 0.0;
+                    const totPnl = Number(acc.total_pnl) || 0.0;
+                    const retPct = Number(acc.return_pct) || 0.0;
+                    const wr = Number(acc.win_rate) || 0.0;
+                    const wins = Number(acc.win_count) || 0;
+                    const losses = Number(acc.loss_count) || 0;
+                    const totalTrades = wins + losses;
 
-            if (topBal && kpiBal && kpiBal.innerText && kpiBal.innerText.trim() !== "") {
-                topBal.innerText = kpiBal.innerText.replace("Portfolio Balance", "").trim();
-            }
-            if (topEq && kpiEq && kpiEq.innerText && kpiEq.innerText.trim() !== "") {
-                topEq.innerText = kpiEq.innerText.replace("Equity:", "").trim();
-            }
-            if (topPnl && kpiPnl && kpiPnl.innerText && kpiPnl.innerText.trim() !== "") {
-                topPnl.innerText = kpiPnl.innerText.replace("Floating PnL:", "").trim();
-            }
-            if (posBadge && posBadge.innerText) {
-                const count = posBadge.innerText.replace(/[^0-9]/g, "") || "0";
-                if (sidePos) sidePos.innerText = count;
-                if (drawPos) drawPos.innerText = count;
+                    // 1. Top Bar Metric Cards
+                    const topBal = document.getElementById("topPaperBalVal");
+                    const topEq = document.getElementById("topEquityVal");
+                    const topOpenPnl = document.getElementById("topOpenPnlVal");
+                    const topDailyPnl = document.getElementById("topDailyPnlVal");
+                    const topPaperBalPct = document.getElementById("topPaperBalPct");
+
+                    if (topBal) topBal.textContent = `$${bal.toFixed(2)}`;
+                    if (topEq) topEq.textContent = `$${eq.toFixed(2)}`;
+                    if (topPaperBalPct) topPaperBalPct.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
+
+                    if (topOpenPnl) {
+                        topOpenPnl.textContent = `${unPnl >= 0 ? '+' : ''}$${unPnl.toFixed(2)}`;
+                        topOpenPnl.className = unPnl >= 0 ? 'tmc-val text-buy' : 'tmc-val text-sell';
+                    }
+                    if (topDailyPnl) {
+                        topDailyPnl.textContent = `${totPnl >= 0 ? '+' : ''}$${totPnl.toFixed(2)}`;
+                        topDailyPnl.className = totPnl >= 0 ? 'tmc-val text-buy' : 'tmc-val text-sell';
+                    }
+
+                    // 2. Performance (Live Quant Stats) Card (Dynamic real-time sync)
+                    const pnlEl = document.getElementById("kpiTotalPnlVal");
+                    const pnlPctEl = document.getElementById("kpiTotalPnlPct");
+                    const wrEl = document.getElementById("kpiWinRate");
+                    const tradesEl = document.getElementById("kpiTradesTotal");
+
+                    if (pnlEl) {
+                        pnlEl.textContent = `${totPnl >= 0 ? '+' : ''}$${totPnl.toFixed(2)}`;
+                        pnlEl.className = `p-val ${totPnl >= 0 ? 'text-buy' : 'text-sell'}`;
+                    }
+                    if (pnlPctEl) {
+                        pnlPctEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
+                        pnlPctEl.className = `p-pill ${retPct >= 0 ? 'pos' : 'neg'}`;
+                    }
+                    if (wrEl) wrEl.textContent = `${wr.toFixed(1)}%`;
+                    if (tradesEl) tradesEl.textContent = totalTrades;
+                }
+
+                if (perfRes.ok) {
+                    const perf = await perfRes.json();
+                    const pfEl = document.getElementById("kpiProfitFactor");
+                    if (pfEl && perf.profit_factor !== undefined) {
+                        const pf = Number(perf.profit_factor) || 0.0;
+                        pfEl.textContent = pf.toFixed(2);
+                    }
+                }
+
+                if (posRes.ok) {
+                    const posData = await posRes.json();
+                    const positions = posData.positions || [];
+                    
+                    const sidePos = document.getElementById("sidebarPosBadge");
+                    const drawPos = document.getElementById("drawerPosBadge");
+                    const dockBadge = document.getElementById("proDockCountBadge");
+                    if (sidePos) sidePos.textContent = positions.length;
+                    if (drawPos) drawPos.textContent = positions.length;
+                    if (dockBadge) dockBadge.textContent = `${positions.length} Active`;
+
+                    renderDashboardPositions(positions);
+                }
+            } catch (err) {
+                console.warn("syncDashboardMetrics error:", err);
             }
         }
+
+        function renderDashboardPositions(positions) {
+            const tbody = document.getElementById("dashPositionsTbody");
+            if (!tbody) return;
+
+            if (!positions || positions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding: 28px 12px; color: #64748B;">
+                            <div style="font-size: 18px; margin-bottom: 6px; color: #38BDF8;"><i class="fa-solid fa-layer-group"></i></div>
+                            <div style="font-size: 12px; font-weight: 600; color: #94A3B8;">No Open Positions</div>
+                            <div style="font-size: 11px; margin-top: 2px; color: #64748B;">HERMES 2.0 Apex Sentries scanning 23 pairs for 4H/1H setups...</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = positions.map(pos => {
+                const isBuy = (pos.side || '').toUpperCase() === 'BUY' || (pos.side_pill || '').toUpperCase() === 'BUY';
+                const sideClass = isBuy ? 'long' : 'short';
+                const sideText = isBuy ? 'LONG' : 'SHORT';
+                const pnl = Number(pos.unrealized_pnl || pos.unrealized_pnl_usdt) || 0.0;
+                const pnlPct = Number(pos.pnl_pct || pos.roi_pct) || 0.0;
+                const pnlClass = pnl >= 0 ? 'text-buy' : 'text-sell';
+                const sign = pnl >= 0 ? '+' : '';
+
+                return `
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="mtc-icon" style="width:16px; height:16px; border-radius:50%; background:#1e293b; display:inline-flex; align-items:center; justify-content:center; font-size:9px; color:#38bdf8;">#</span>
+                                <b>${pos.symbol}</b>
+                            </div>
+                        </td>
+                        <td><span class="dsi-badge ${sideClass}">${sideText}</span></td>
+                        <td>$${Number(pos.entry_price || 0).toFixed(4)}</td>
+                        <td>$${Number(pos.mark_price || pos.current_price || 0).toFixed(4)}</td>
+                        <td>$${Number(pos.margin_usdt || 50).toFixed(2)} (${pos.leverage || '5x'})</td>
+                        <td class="${pnlClass}">${sign}$${pnl.toFixed(2)}</td>
+                        <td class="${pnlClass}">${sign}${pnlPct.toFixed(2)}%</td>
+                        <td><button class="btn-pos-close" onclick="closePositionDirect('${pos.symbol}')">Close</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function closePositionDirect(symbol) {
+            if (!confirm(`Are you sure you want to close position for ${symbol}?`)) return;
+            try {
+                const res = await fetch(`/api/paper/close?symbol=${symbol}`, { method: 'POST' });
+                if (res.ok) {
+                    syncDashboardMetrics();
+                }
+            } catch (e) {
+                console.error("Close error:", e);
+            }
+        }
+
+        syncDashboardMetrics();
         setInterval(syncDashboardMetrics, 3000);
 
         // Account Selector Mode Listener
