@@ -605,14 +605,16 @@ class Hermes2ApexLiveEngine:
                         "ob_low": setup.get("ob_low", entry_price)
                     }
                     chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
-                    resp = await telegram_service.send_photo(chart_bytes, tg_msg, parse_mode="HTML")
+                    keyboard = telegram_service.get_alert_inline_keyboard(sym)
+                    resp = await telegram_service.send_photo(chart_bytes, tg_msg, parse_mode="HTML", reply_markup=keyboard)
                     if resp and resp.get("ok"):
                         chart_sent = True
             except Exception as ce:
                 logger.warning(f"Failed to render/send chart image: {ce}")
 
             if not chart_sent:
-                await telegram_service.send_raw_message(tg_msg, parse_mode="HTML")
+                keyboard = telegram_service.get_alert_inline_keyboard(sym)
+                await telegram_service.send_raw_message(tg_msg, parse_mode="HTML", reply_markup=keyboard)
         except Exception as e:
             logger.warning(f"Telegram alert error on entry: {e}")
 
@@ -899,14 +901,16 @@ class Hermes2ApexLiveEngine:
                             "ob_low": min(entry_price, exit_price)
                         }
                         chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf_chart.upper())
-                        resp = await telegram_service.send_photo(chart_bytes, tg_msg, parse_mode="HTML")
+                        keyboard = telegram_service.get_alert_inline_keyboard(sym)
+                        resp = await telegram_service.send_photo(chart_bytes, tg_msg, parse_mode="HTML", reply_markup=keyboard)
                         if resp and resp.get("ok"):
                             chart_sent = True
                 except Exception as ce:
                     logger.warning(f"Failed to render/send exit chart photo: {ce}")
 
                 if not chart_sent:
-                    await telegram_service.send_raw_message(tg_msg, parse_mode="HTML")
+                    keyboard = telegram_service.get_alert_inline_keyboard(sym)
+                    await telegram_service.send_raw_message(tg_msg, parse_mode="HTML", reply_markup=keyboard)
             except Exception as e:
                 logger.warning(f"Telegram exit alert error: {e}")
 
