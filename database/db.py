@@ -188,6 +188,10 @@ def init_db():
         }
         for k, v in default_metrics.items():
             conn.execute("INSERT OR IGNORE INTO system_metrics (key, value) VALUES (?, ?)", (k, v))
+        
+        # Ensure default Telegram Chat ID is set to Akash's ID
+        conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('telegram_chat_id', '752247227')")
+        conn.execute("UPDATE settings SET value = '752247227' WHERE key = 'telegram_chat_id' AND value IN ('-100123456789', '123456789', '', 'None')")
         conn.commit()
 
 # --- Zone CRUD ---

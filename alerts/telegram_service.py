@@ -45,8 +45,10 @@ TELEGRAM_API_BASE = "https://api.telegram.org/bot"
 gemini_analyst = GeminiAnalyst()
 
 def get_tg_credentials() -> tuple:
-    token = get_setting("telegram_bot_token", TELEGRAM_BOT_TOKEN)
+    token = get_setting("telegram_bot_token", TELEGRAM_BOT_TOKEN) or TELEGRAM_BOT_TOKEN
     chat_id = get_setting("telegram_chat_id", TELEGRAM_CHAT_ID)
+    if not chat_id or chat_id in ("-100123456789", "123456789", "your_chat_id"):
+        chat_id = TELEGRAM_CHAT_ID or "752247227"
     msg_id = get_setting("telegram_status_msg_id", TELEGRAM_STATUS_MSG_ID)
     return token, chat_id, msg_id
 
