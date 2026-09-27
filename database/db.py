@@ -663,13 +663,13 @@ def get_open_paper_trades() -> List[Dict[str, Any]]:
         rows = conn.execute("SELECT * FROM paper_trades WHERE status = 'OPEN' ORDER BY entry_time DESC").fetchall()
         return [dict(r) for r in rows]
 
-def reset_paper_account() -> Dict[str, Any]:
+def reset_paper_account(starting_balance: float = 50.0) -> Dict[str, Any]:
     with get_connection() as conn:
         conn.execute("DELETE FROM paper_trades")
         conn.execute("""
         UPDATE paper_account SET
-            initial_balance = 50.0,
-            current_balance = 50.0,
+            initial_balance = ?,
+            current_balance = ?,
             vault_balance = 0.0,
             total_pnl = 0.0,
             win_count = 0,
@@ -677,11 +677,11 @@ def reset_paper_account() -> Dict[str, Any]:
             milestone_target = 2000.0,
             mode = 'HERMES_2.0_APEX'
         WHERE id = 1
-        """)
+        """, (starting_balance, starting_balance))
         conn.commit()
     return {
-        "initial_balance": 50.0,
-        "current_balance": 50.0,
+        "initial_balance": starting_balance,
+        "current_balance": starting_balance,
         "vault_balance": 0.0,
         "total_pnl": 0.0,
         "win_count": 0,

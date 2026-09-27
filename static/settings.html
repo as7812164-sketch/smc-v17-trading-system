@@ -2,347 +2,2029 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>System Settings & Architecture - HERMES 2.0 APEX</title>
+    <title>System Settings &amp; Architecture • HERMES 2.0 SMC AI AGENT</title>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/static/style.css?v=106">
+
+    <!-- Global Design System CSS -->
+    <link rel="stylesheet" href="/static/style.css?v=115">
+
+    <style>
+        /* Scoped Settings Page Modern Styling */
+        :root {
+            --settings-primary: #00F59B;
+            --settings-accent: #38BDF8;
+            --settings-purple: #A855F7;
+            --settings-gold: #F59E0B;
+            --settings-danger: #EF4444;
+            --settings-card-bg: rgba(13, 20, 34, 0.82);
+            --settings-border: rgba(56, 189, 248, 0.16);
+            --settings-border-subtle: rgba(255, 255, 255, 0.08);
+            --settings-input-bg: rgba(7, 11, 20, 0.88);
+        }
+
+        .settings-main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 24px 80px 24px;
+            gap: 20px;
+            scroll-behavior: smooth;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Hero Header */
+        .settings-header-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(10, 16, 30, 0.88) 100%);
+            border: 1px solid var(--settings-border);
+            border-radius: 12px;
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(16px);
+        }
+
+        .settings-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .settings-header-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(0, 245, 155, 0.2));
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: var(--settings-accent);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+        }
+
+        .settings-header-title {
+            font-size: 19px;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-header-subtitle {
+            font-size: 12px;
+            color: var(--text-muted, #94A3B8);
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .settings-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-header-save {
+            background: linear-gradient(135deg, #00F59B 0%, #38BDF8 100%);
+            color: #060B14;
+            font-weight: 800;
+            font-size: 12.5px;
+            padding: 9px 18px;
+            border-radius: 7px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 14px rgba(0, 245, 155, 0.35);
+        }
+
+        .btn-header-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 20px rgba(0, 245, 155, 0.55);
+        }
+
+        .btn-header-secondary {
+            background: rgba(30, 41, 59, 0.75);
+            color: #E2E8F0;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 9px 15px;
+            border-radius: 7px;
+            border: 1px solid var(--settings-border-subtle);
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header-secondary:hover {
+            background: rgba(51, 65, 85, 0.85);
+            border-color: rgba(56, 189, 248, 0.3);
+            color: #FFFFFF;
+        }
+
+        /* 4 TAB NAVIGATION (PANEL 14 SPECIFICATION) */
+        .settings-tabs-container {
+            display: flex;
+            align-items: center;
+            background: rgba(11, 17, 30, 0.85);
+            border: 1px solid var(--settings-border);
+            border-radius: 10px;
+            padding: 5px;
+            gap: 6px;
+            backdrop-filter: blur(14px);
+            overflow-x: auto;
+        }
+
+        .settings-tab-btn {
+            flex: 1;
+            min-width: 170px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: var(--text-muted, #94A3B8);
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .settings-tab-btn i {
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .settings-tab-btn:hover {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .settings-tab-btn.active {
+            background: linear-gradient(135deg, rgba(30, 58, 95, 0.7) 0%, rgba(15, 30, 55, 0.9) 100%);
+            border-color: rgba(56, 189, 248, 0.45);
+            color: #38BDF8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        .settings-tab-btn.active i {
+            transform: scale(1.1);
+        }
+
+        .tab-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(56, 189, 248, 0.15);
+            color: #38BDF8;
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        /* TAB PANES */
+        .settings-tab-pane {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeInTab 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .settings-tab-pane.active {
+            display: flex;
+        }
+
+        @keyframes fadeInTab {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Grid Layouts inside Tabs */
+        .settings-grid-2col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+            gap: 20px;
+        }
+
+        @media (max-width: 992px) {
+            .settings-grid-2col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Institutional Pro Cards */
+        .settings-card {
+            background: var(--settings-card-bg);
+            border: 1px solid var(--settings-border);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .settings-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.4), transparent);
+            pointer-events: none;
+        }
+
+        .settings-card.highlight-green::before {
+            background: linear-gradient(90deg, transparent, rgba(0, 245, 155, 0.5), transparent);
+        }
+
+        .settings-card.highlight-purple::before {
+            background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.5), transparent);
+        }
+
+        .settings-card.highlight-gold::before {
+            background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.5), transparent);
+        }
+
+        .settings-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--settings-border-subtle);
+            padding-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .settings-card-title {
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            letter-spacing: -0.01em;
+        }
+
+        .settings-card-subtitle {
+            font-size: 11px;
+            color: var(--text-muted, #94A3B8);
+            margin-top: 2px;
+        }
+
+        /* Form Controls & Inputs */
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-row label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #E2E8F0;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .form-row label i {
+            color: var(--settings-accent);
+            font-size: 12px;
+        }
+
+        .form-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-input-wrap input,
+        .form-input-wrap select,
+        .form-input-wrap textarea {
+            width: 100%;
+            background: var(--settings-input-bg);
+            border: 1px solid var(--settings-border-subtle);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 12.5px;
+            font-family: var(--font-mono);
+            color: #FFFFFF;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input-wrap input:focus,
+        .form-input-wrap select:focus,
+        .form-input-wrap textarea:focus {
+            border-color: var(--settings-accent);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+            background: rgba(10, 16, 28, 0.95);
+        }
+
+        .form-input-wrap select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338BDF8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+            padding-right: 36px;
+        }
+
+        .form-input-wrap .input-right-btn {
+            position: absolute;
+            right: 6px;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: var(--settings-accent);
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .form-input-wrap .input-right-btn:hover {
+            background: rgba(56, 189, 248, 0.3);
+            color: #FFFFFF;
+        }
+
+        .form-hint {
+            font-size: 11px;
+            color: var(--text-muted, #94A3B8);
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Toggle Switches */
+        .toggle-switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(10, 14, 24, 0.65);
+            border: 1px solid var(--settings-border-subtle);
+            border-radius: 7px;
+            gap: 12px;
+        }
+
+        .toggle-text-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .toggle-title {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .toggle-desc {
+            font-size: 11px;
+            color: var(--text-muted, #94A3B8);
+        }
+
+        .custom-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .custom-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #FFFFFF;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        input:checked + .switch-slider {
+            background-color: #00F59B;
+            border-color: #00F59B;
+            box-shadow: 0 0 10px rgba(0, 245, 155, 0.4);
+        }
+
+        input:checked + .switch-slider:before {
+            transform: translateX(20px);
+            background-color: #060B14;
+        }
+
+        /* Action Buttons Inside Cards */
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-family: var(--font-ui);
+        }
+
+        .btn-action-primary {
+            background: linear-gradient(135deg, #00F59B 0%, #38BDF8 100%);
+            color: #060B14;
+        }
+        .btn-action-primary:hover {
+            box-shadow: 0 0 12px rgba(0, 245, 155, 0.4);
+        }
+
+        .btn-action-cyan {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #38BDF8;
+        }
+        .btn-action-cyan:hover {
+            background: rgba(56, 189, 248, 0.25);
+            color: #FFFFFF;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-action-purple {
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #A855F7;
+        }
+        .btn-action-purple:hover {
+            background: rgba(168, 85, 247, 0.25);
+            color: #FFFFFF;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-action-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #EF4444;
+        }
+        .btn-action-danger:hover {
+            background: rgba(239, 68, 68, 0.25);
+            color: #FFFFFF;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Metric Pill Strip */
+        .info-pill-strip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 10px 12px;
+            background: rgba(8, 12, 22, 0.6);
+            border: 1px solid var(--settings-border-subtle);
+            border-radius: 7px;
+        }
+
+        .info-pill {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+            min-width: 110px;
+        }
+
+        .info-pill-lbl {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted, #94A3B8);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-pill-val {
+            font-size: 13px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: #FFFFFF;
+        }
+
+        /* Guardrail List */
+        .guardrail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .guardrail-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 10px;
+            background: rgba(6, 10, 18, 0.5);
+            border-radius: 6px;
+            border-left: 3px solid var(--settings-accent);
+        }
+
+        .guardrail-item i {
+            color: var(--settings-accent);
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .guardrail-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .guardrail-title {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #F8FAFC;
+        }
+
+        .guardrail-desc {
+            font-size: 10.5px;
+            color: var(--text-muted, #94A3B8);
+            line-height: 1.35;
+        }
+
+        /* Pine Script Area */
+        .pine-editor-box {
+            background: #05070D;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pine-editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(15, 23, 42, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .pine-editor-body textarea {
+            width: 100%;
+            height: 380px;
+            background: transparent;
+            color: #38BDF8;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 1.5;
+            padding: 12px 14px;
+            border: none;
+            resize: none;
+            outline: none;
+        }
+
+        /* Toast Notifications */
+        .settings-toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 99999;
+            pointer-events: none;
+        }
+
+        .settings-toast {
+            pointer-events: auto;
+            min-width: 300px;
+            max-width: 420px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--settings-border);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            backdrop-filter: blur(12px);
+            animation: slideInToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.3s ease;
+        }
+
+        .settings-toast.success {
+            border-color: rgba(0, 245, 155, 0.5);
+            box-shadow: 0 0 15px rgba(0, 245, 155, 0.25);
+        }
+        .settings-toast.success i { color: #00F59B; }
+
+        .settings-toast.error {
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+        }
+        .settings-toast.error i { color: #EF4444; }
+
+        .settings-toast.info {
+            border-color: rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+        }
+        .settings-toast.info i { color: #38BDF8; }
+
+        @keyframes slideInToast {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Sticky Bottom Bar */
+        .settings-bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 240px;
+            right: 0;
+            background: rgba(10, 15, 28, 0.92);
+            border-top: 1px solid var(--settings-border);
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+            transition: left 0.3s ease;
+        }
+
+        @media (max-width: 992px) {
+            .settings-bottom-bar {
+                left: 0;
+            }
+        }
+
+        .settings-bottom-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11.5px;
+            color: #94A3B8;
+            font-family: var(--font-mono);
+        }
+
+        .settings-bottom-status .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #00F59B;
+            box-shadow: 0 0 8px #00F59B;
+        }
+    </style>
 </head>
 <body class="dark-theme">
 
-    <!-- TOP NAVIGATION BAR -->
-    <header class="top-nav">
-        <div class="nav-brand">
-            <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
-                <div class="brand-badge" style="background: linear-gradient(135deg, #00F59B, #00B87A); color: #000; font-weight: 800;">HERMES 2.0</div>
-                <div class="brand-titles">
-                    <span class="brand-main">HERMES 2.0 APEX QUANTUM PLATFORM</span>
-                    <span class="brand-sub">4-SENTRIES STRUCTURAL SNIPER • $50 ➔ $2,000 COMPOUNDING</span>
+    <!-- GLOBAL TOP AREA (MATCHING 14-PAGE MASTER REFERENCE) -->
+    <header class="global-top-bar">
+        <div class="top-bar-left">
+            <!-- Mobile Hamburger Button -->
+            <button class="hamburger-btn" id="btnOpenDrawer" title="Open Navigation Menu" aria-label="Open Navigation Drawer" onclick="toggleDrawer()">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+
+            <!-- Brand Logo with Wing / Eagle Icon -->
+            <a href="/" class="top-brand-group" style="display:flex; align-items:center; gap:9px; text-decoration:none;">
+                <div class="top-brand-icon" style="width:30px; height:30px; border-radius:7px; background:linear-gradient(135deg, #1d4ed8, #38bdf8); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; box-shadow:0 0 10px rgba(56,189,248,0.3);">
+                    <i class="fa-solid fa-feather-pointed"></i>
+                </div>
+                <div class="brand-titles" style="display: flex; flex-direction: column;">
+                    <span class="top-brand-text" style="font-size: 13px; font-weight: 800; letter-spacing: 0.6px; color:#FFFFFF;">HERMES 2.0</span>
+                    <span class="top-brand-sub" style="font-size: 9.5px; font-weight: 700; color:#38BDF8; font-family:var(--font-mono); letter-spacing:0.8px;">SMC AI AGENT</span>
                 </div>
             </a>
         </div>
 
-        <nav class="nav-pages-menu">
-            <a href="/" class="nav-page-link"><i class="fa-solid fa-chart-candlestick"></i> <span>Terminal</span></a>
-            <a href="/positions" class="nav-page-link"><i class="fa-solid fa-layer-group"></i> <span>Positions</span> <span class="badge badge-success" id="navPosBadge">0</span></a>
-            <a href="/compounding" class="nav-page-link"><i class="fa-solid fa-trophy"></i> <span>Compounding ($50)</span></a>
-            <a href="/brain" class="nav-page-link"><i class="fa-solid fa-brain"></i> <span>Mike Brain</span></a>
-            <a href="/signals" class="nav-page-link"><i class="fa-solid fa-satellite-dish"></i> <span>Signals & Zones</span></a>
-            <a href="/settings" class="nav-page-link active"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
-        </nav>
-
-        <div class="nav-right-cluster">
-            <div class="live-pill" id="binanceStatusPill">
-                <span class="pulse-dot"></span>
-                <span id="binanceStatusText">Binance: CONNECTED</span>
+        <!-- Center: 4 Metric Cards (Paper Balance, Equity, Open P&L, Daily P&L) -->
+        <div class="top-bar-center" style="display: flex; align-items: center; gap: 8px;">
+            <!-- Card 1: Paper Balance -->
+            <div class="top-metric-card" title="Paper Trading Starting / Current Balance">
+                <span class="tmc-label">Paper Balance</span>
+                <div class="tmc-val-row">
+                    <span class="tmc-val" id="topPaperBalVal">$50.00</span>
+                    <span class="tmc-badge" id="topPaperBalPct">+0.00%</span>
+                </div>
             </div>
-            <button class="btn btn-secondary btn-sm" id="btnTgTest" title="Send Live Status to Telegram">
-                <i class="fa-brands fa-telegram"></i> <span>Telegram</span>
+            <!-- Card 2: Equity -->
+            <div class="top-metric-card" title="Real-Time Portfolio Equity">
+                <span class="tmc-label">Equity</span>
+                <div class="tmc-val-row">
+                    <span class="tmc-val" id="topEquityVal">$50.00</span>
+                    <span class="tmc-badge" id="topEquityPct">+0.00%</span>
+                </div>
+            </div>
+            <!-- Card 3: Open P&L -->
+            <div class="top-metric-card" title="Current Floating PnL Across Active Positions">
+                <span class="tmc-label">Open P&L</span>
+                <div class="tmc-val-row">
+                    <span class="tmc-val text-buy" id="topOpenPnlVal">+$0.00</span>
+                    <span class="tmc-badge" id="topOpenPnlPct">+0.00%</span>
+                </div>
+            </div>
+            <!-- Card 4: Daily P&L -->
+            <div class="top-metric-card" title="24h Realized + Floating Daily P&L">
+                <span class="tmc-label">Daily P&L</span>
+                <div class="tmc-val-row">
+                    <span class="tmc-val text-buy" id="topDailyPnlVal">+$0.00</span>
+                    <span class="tmc-badge" id="topDailyPnlPct">+0.00%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Search, Theme, Notifications, Account Dropdown Pill -->
+        <div class="top-bar-right" style="display: flex; align-items: center; gap: 8px;">
+            <!-- Quick Search -->
+            <button class="top-icon-btn" id="btnTopSearch" title="Search Markets" onclick="window.location.href='/markets';">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+
+            <!-- Theme Toggle Icon -->
+            <button class="top-icon-btn" id="btnThemeToggle" title="Theme Mode">
+                <i class="fa-solid fa-sun" style="color: #ffd700;"></i>
+            </button>
+
+            <!-- Notifications Bell with Glowing Dot -->
+            <button class="top-icon-btn" id="btnOpenNotifications" title="System Alerts &amp; Notifications" onclick="showNotification('info', 'System Alerts', 'All 4 Hermes sentries online and armed.')">
+                <i class="fa-solid fa-bell"></i>
+                <span class="badge-dot"></span>
+            </button>
+
+            <!-- Account Selector Dropdown Pill: [S] Paper Trading ▼ -->
+            <div class="top-account-selector" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 6px;" title="Switch Account">
+                <span style="width: 18px; height: 18px; border-radius: 50%; background: #2563eb; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; font-family: var(--font-mono);">S</span>
+                <select id="topAccountSelector" aria-label="Select Trading Account" style="background: transparent; border: none; color: #F8FAFC; font-size: 11px; font-family: var(--font-mono); outline: none; cursor: pointer;">
+                    <option value="paper_trading" selected>Paper Trading</option>
+                    <option value="1h_paper">1H Paper ($50)</option>
+                    <option value="4h_paper">4H Paper ($50)</option>
+                    <option value="bitget_live">Live Bitget 5x</option>
+                </select>
+            </div>
+
+            <!-- Settings Shortcut Button -->
+            <button class="top-icon-btn" id="btnOpenSettings" title="System Settings &amp; API Keys" onclick="window.location.href='/settings';">
+                <i class="fa-solid fa-gear"></i>
             </button>
         </div>
     </header>
 
-    <!-- 24H TICKER STRIP -->
-    <div class="bitget-pro-ticker-strip">
-        <div class="ticker-left-info">
-            <div class="pair-title">
-                <span class="pair-symbol" id="bgPairName">BTCUSDT</span>
-                <span class="bg-perp-badge">USDT-M Perpetual</span>
-                <span class="bg-lev-pill"><i class="fa-solid fa-bolt"></i> 5x Isolated</span>
-            </div>
-            <div class="price-block">
-                <span class="bg-last-price" id="bgLastPrice">$0.00</span>
-                <span class="bg-24h-chg" id="bg24hChg">+0.00%</span>
-            </div>
-        </div>
-        <div class="ticker-stats-grid">
-            <div class="t-stat"><span class="t-lbl">Mark Price</span><span class="t-val" id="bgMarkPrice">$0.00</span></div>
-            <div class="t-stat"><span class="t-lbl">Index Price</span><span class="t-val" id="bgIndexPrice">$0.00</span></div>
-            <div class="t-stat"><span class="t-lbl">24h High</span><span class="t-val" id="bg24hHigh">$0.00</span></div>
-            <div class="t-stat"><span class="t-lbl">24h Low</span><span class="t-val" id="bg24hLow">$0.00</span></div>
-            <div class="t-stat"><span class="t-lbl">24h Volume</span><span class="t-val" id="bg24hVol">$1.24B</span></div>
-            <div class="t-stat"><span class="t-lbl">Funding / Countdown</span><span class="t-val text-buy" id="bgFundingRate">0.0100% / 03:45:12</span></div>
-            <div class="t-stat highlight"><span class="t-lbl">Bitget Balance</span><span class="t-val text-buy" id="bgEquityVal">$77.59 USDT</span></div>
-        </div>
-        <div class="ticker-right-actions">
-            <a href="/compounding" style="text-decoration:none;">
-                <div class="bg-challenge-pill" id="bgChallengePill">
-                    <span class="bg-c-title">🎯 Goal: $50 ➔ $1K</span>
-                    <div class="bg-c-bar"><div class="bg-c-fill" id="bgHeaderFill" style="width: 2.9%;"></div></div>
-                </div>
-            </a>
-        </div>
-    </div>
+    <!-- APP SHELL: SIDEBAR + MAIN CONTENT AREA -->
+    <div class="app-shell">
 
-    <!-- MAIN PAGE CONTAINER -->
-    <div class="page-container">
-        
-        <!-- HERO HEADER -->
-        <div class="page-hero-header">
-            <div class="hero-title-group">
-                <div class="hero-icon-box" style="background: rgba(168, 85, 247, 0.15); color: #A855F7;">
+        <!-- GLOBAL PERSISTENT INSTITUTIONAL SIDEBAR (14 LINKS, ITEM #14 ACTIVE) -->
+        <aside class="global-sidebar" id="globalSidebar" aria-label="Main Navigation">
+            <div class="sidebar-nav-list">
+                <div class="sidebar-section-title">Trading Terminal</div>
+
+                <!-- 1. Dashboard -->
+                <a href="/" class="sidebar-nav-item" title="Terminal Dashboard">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Dashboard</span>
+                    </div>
+                </a>
+
+                <!-- 2. Markets -->
+                <a href="/markets" class="sidebar-nav-item" title="Markets Overview">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Markets</span>
+                    </div>
+                    <span class="sidebar-badge badge-gold" id="sidebarCoinCountBadge">22</span>
+                </a>
+
+                <!-- 3. Live Chart -->
+                <a href="/#tvChartContainer" class="sidebar-nav-item" title="Full Chart View">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-chart-candlestick"></i>
+                        <span>Live Chart</span>
+                    </div>
+                    <span class="sidebar-badge badge-cyan">PRO</span>
+                </a>
+
+                <!-- 4. Signals & Zones -->
+                <a href="/signals" class="sidebar-nav-item" title="Real-Time SMC Signals &amp; Order Blocks">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>Signals &amp; Zones</span>
+                    </div>
+                </a>
+
+                <!-- 5. Positions -->
+                <a href="/positions" class="sidebar-nav-item" title="Open Positions &amp; Execution">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Positions</span>
+                    </div>
+                    <span class="sidebar-badge badge-green" id="sidebarPosBadge">0</span>
+                </a>
+
+                <!-- 6. Trade History -->
+                <a href="/positions#history" class="sidebar-nav-item" title="Historical Closed Trades">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Trade History</span>
+                    </div>
+                </a>
+
+                <div class="sidebar-section-title">Quantitative AI</div>
+
+                <!-- 7. Performance -->
+                <a href="/compounding#performance" class="sidebar-nav-item" title="Performance &amp; Win Rate Metrics">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Performance</span>
+                    </div>
+                </a>
+
+                <!-- 8. Compounding -->
+                <a href="/compounding" class="sidebar-nav-item" title="$50 ➔ $2,000 Milestone Ladder">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>Compounding</span>
+                    </div>
+                    <span class="sidebar-badge badge-gold">$2K</span>
+                </a>
+
+                <!-- 9. HERMES AI -->
+                <a href="/hermes-ai" class="sidebar-nav-item" title="HERMES AI 4-Sentries Quant Agent">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>HERMES AI</span>
+                    </div>
+                    <span class="sidebar-badge badge-cyan">4 SENTRIES</span>
+                </a>
+
+                <!-- 10. Mike Brain -->
+                <a href="/brain" class="sidebar-nav-item" title="Mike AI Cognitive Brain">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>Mike Brain</span>
+                    </div>
+                    <span class="sidebar-badge badge-gold">AI</span>
+                </a>
+
+                <!-- 11. Trade Forensics -->
+                <a href="/trade-forensics" class="sidebar-nav-item" title="Trade Forensics &amp; Compounding Audit">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span>Trade Forensics</span>
+                    </div>
+                    <span class="sidebar-badge badge-green">AUDIT</span>
+                </a>
+
+                <div class="sidebar-section-title">Logs &amp; System</div>
+
+                <!-- 12. Journal -->
+                <a href="/positions#journal" class="sidebar-nav-item" title="Permanent Trade Journal Ledger">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-book-journal-whills"></i>
+                        <span>Journal</span>
+                    </div>
+                </a>
+
+                <!-- 13. Scanner Logs -->
+                <a href="/signals#logs" class="sidebar-nav-item" title="Live Terminal Scanner Logs">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-terminal"></i>
+                        <span>Scanner Logs</span>
+                    </div>
+                </a>
+
+                <!-- 14. Settings (ACTIVE ON PAGE 14) -->
+                <a href="/settings" class="sidebar-nav-item active" title="System Settings &amp; API Keys">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-gear"></i>
+                        <span>Settings</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Sidebar Footer Status (Matching Reference: Scanner: 4H LIVE, 1H LIVE) -->
+            <div class="sidebar-scanner-status" id="sidebarScannerStatus">
+                <span class="scanner-lbl">Scanner:</span>
+                <span class="scanner-tag" id="scanner4hBadge"><span class="dot"></span> 4H LIVE</span>
+                <span class="scanner-tag" id="scanner1hBadge"><span class="dot"></span> 1H LIVE</span>
+            </div>
+        </aside>
+
+        <!-- MAIN SETTINGS CONTAINER (PANEL 14 MATCHING REFERENCE) -->
+        <main class="settings-main-container" id="settingsMainContainer">
+
+            <!-- PAGE HERO HEADER -->
+            <div class="settings-header-card">
+                <div class="settings-header-left">
+                    <div class="settings-header-icon">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
+                    <div>
+                        <div class="settings-header-title">
+                            <span>System Settings &amp; Architecture</span>
+                            <span class="badge" style="background: rgba(0, 245, 155, 0.15); color: #00F59B; border: 1px solid rgba(0, 245, 155, 0.35); font-size: 11px;">PANEL 14</span>
+                        </div>
+                        <div class="settings-header-subtitle">
+                            <span>API Integrations</span>
+                            <span>•</span>
+                            <span>Bitget 5x Auto-Execution</span>
+                            <span>•</span>
+                            <span>Telegram Live Broadcast</span>
+                            <span>•</span>
+                            <span>Google Gemini AI</span>
+                            <span>•</span>
+                            <span>Pine Script v5</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-header-actions">
+                    <button type="button" class="btn-header-secondary" id="btnTestAlertHeader" title="Send Instant Test Alert">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Test Alert</span>
+                    </button>
+                    <button type="button" class="btn-header-save" id="btnSaveSettings" title="Save All Configurations">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Settings</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB NAVIGATION: "General", "Trading & Risk Engine", "Telegram Alerts", "AI & API Keys" -->
+            <nav class="settings-tabs-container" id="settingsTabsNav" aria-label="Settings Navigation Tabs">
+                <!-- Tab 1: General -->
+                <button type="button" class="settings-tab-btn active" data-tab="general" id="tabBtnGeneral">
                     <i class="fa-solid fa-sliders"></i>
-                </div>
-                <div>
-                    <h1>System Configurations & TradingView Pine Script v5</h1>
-                    <p>API Integrations • Telegram Live Feeds • Bitget Auto-Trade Safety Switches • Indicator Code</p>
-                </div>
-            </div>
-            <div class="hero-actions">
-                <button class="btn btn-secondary btn-sm" id="btnTestTgAlertPage">
-                    <i class="fa-solid fa-vial"></i> Test Telegram
+                    <span>General</span>
                 </button>
-                <button class="btn btn-primary btn-sm" id="btnSaveSettingsPage" style="background: linear-gradient(135deg, #00f59b 0%, #38bdf8 100%); color: #0f172a; font-weight: 800; border: none;">
-                    <i class="fa-solid fa-floppy-disk"></i> Save Settings
+
+                <!-- Tab 2: Trading & Risk Engine -->
+                <button type="button" class="settings-tab-btn" data-tab="trading-risk" id="tabBtnTradingRisk">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>Trading &amp; Risk Engine</span>
+                    <span class="tab-badge">5x ISOLATED</span>
                 </button>
-            </div>
-        </div>
 
-        <!-- 2-COLUMN SETTINGS GRID -->
-        <div class="settings-page-grid">
-            
-            <!-- LEFT COLUMN: SYSTEM & API SETTINGS -->
-            <div style="display: flex; flex-direction: column; gap: 18px;">
-                
-                <!-- 1. TELEGRAM ALERTS -->
-                <div class="pro-card">
-                    <div class="pro-card-header">
-                        <div class="pro-card-title">
-                            <i class="fa-brands fa-telegram" style="color: #38BDF8;"></i> Telegram Live Broadcast Alerts
-                        </div>
-                        <span class="badge" style="color: #38BDF8; border-color: rgba(56, 189, 248, 0.3);">REAL-TIME</span>
-                    </div>
+                <!-- Tab 3: Telegram Alerts -->
+                <button type="button" class="settings-tab-btn" data-tab="telegram-alerts" id="tabBtnTelegramAlerts">
+                    <i class="fa-brands fa-telegram"></i>
+                    <span>Telegram Alerts</span>
+                    <span class="tab-badge" id="tgTabStatusBadge">LIVE</span>
+                </button>
 
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-key"></i> Telegram Bot Token</label>
-                        <input type="password" id="inputTgToken" placeholder="e.g. 123456789:ABCDefgh-xyz...">
-                        <small>Telegram BotFather token for automated signal broadcasts.</small>
-                    </div>
+                <!-- Tab 4: AI & API Keys -->
+                <button type="button" class="settings-tab-btn" data-tab="ai-api-keys" id="tabBtnAiApiKeys">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>AI &amp; API Keys</span>
+                    <span class="tab-badge" style="background: rgba(168, 85, 247, 0.15); color: #A855F7;">FLASH LOW</span>
+                </button>
+            </nav>
 
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-comments"></i> Telegram Chat ID / Channel ID</label>
-                        <input type="text" id="inputTgChatId" placeholder="e.g. -100123456789 or user ID">
-                        <small>Target chat or channel ID where signals will be sent.</small>
-                    </div>
-                </div>
-
-                <!-- 2. GOOGLE GEMINI AI -->
-                <div class="pro-card">
-                    <div class="pro-card-header">
-                        <div class="pro-card-title">
-                            <i class="fa-solid fa-brain" style="color: #A855F7;"></i> Google Gemini AI Engine Configuration
-                        </div>
-                        <span class="badge badge-success">FLASH LOW ENABLED</span>
-                    </div>
-
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-lock"></i> Google Gemini API Key</label>
-                        <input type="password" id="inputGeminiKey" placeholder="e.g. AIzaSy...">
-                        <small>Google AI Studio API Key for institutional chart evaluation.</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label><i class="fa-solid fa-microchip"></i> Mike AI Engine Model</label>
-                        <select id="inputGeminiModel" style="width: 100%; background: #0A0D14; color: #FFFFFF; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px; font-family: var(--font-mono); font-size: 12px;">
-                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Flash Low / Ultra Fast)</option>
-                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
-                            <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B (Lowest Latency)</option>
-                            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                        </select>
-                        <small>Used by Mike to evaluate order flow, origin candle displacement, and soft tags.</small>
-                    </div>
-                </div>
-
-                <!-- 3. BITGET FUTURES AUTO-TRADING SWITCHES -->
-                <div class="pro-card" style="border-color: rgba(0, 245, 155, 0.3); background: rgba(0, 245, 155, 0.03);">
-                    <div class="pro-card-header">
-                        <div class="pro-card-title" style="color: #00F59B;">
-                            <i class="fa-solid fa-bolt text-buy"></i> Bitget Futures Auto-Trading ($50 Compounding)
-                        </div>
-                        <label style="position:relative; display:inline-block; width:36px; height:20px;">
-                            <input type="checkbox" id="inputBitgetAutoTrade" style="opacity:0; width:0; height:0;">
-                            <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#374151; transition:.3s; border-radius:20px;" id="bitgetToggleSlider"></span>
-                        </label>
-                    </div>
-
-                    <div id="bitgetLiveBalBadge" style="font-size:11px; font-family:var(--font-mono); color:#38BDF8; margin-bottom:4px;">
-                        Bitget Live Balance: $77.59 USDT
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:8px;">
-                        <label style="font-size:11px;">Bitget API Key</label>
-                        <input type="text" id="inputBitgetKey" placeholder="bg_..." style="font-family:var(--font-mono); font-size:11px;">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:8px;">
-                        <label style="font-size:11px;">Bitget Secret Key</label>
-                        <input type="password" id="inputBitgetSecret" placeholder="••••••••" style="font-family:var(--font-mono); font-size:11px;">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:8px;">
-                        <label style="font-size:11px;">Bitget Passphrase</label>
-                        <input type="password" id="inputBitgetPassphrase" placeholder="Passphrase" style="font-family:var(--font-mono); font-size:11px;">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:6px;">
-                        <label style="font-size:11px; color:#00f59b; font-weight:600;">Minimum Mike AI Confluence Score</label>
-                        <select id="inputBitgetMinConf" style="font-family:var(--font-mono); font-size:11px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border); padding:6px 8px; border-radius:4px; width:100%;">
-                            <option value="90" selected>90+ (Grade A+ | Elite Sniper Setups Only - Highest Win Rate)</option>
-                            <option value="85">85+ (Grade A | High Quality Setups)</option>
-                            <option value="80">80+ (Grade A- | Standard SMC Confluence)</option>
-                        </select>
-                    </div>
-
-                    <div style="background: rgba(10, 14, 26, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 10px; font-size: 11px; color: #94A3B8; line-height: 1.4;">
-                        🔒 <b>Institutional Safety Guardrails:</b> 5x Isolated Leverage • 2nd Order Block Priority • +2.0% Real Target (+10% ROI) • Strict 2-Candle Close Validation • Emergency Hard Stop -4%.
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- RIGHT COLUMN: TRADINGVIEW PINE SCRIPT V5 CODEBOX -->
-            <div style="display: flex; flex-direction: column; gap: 18px;">
-                
-                <div class="pro-card" style="padding: 0; overflow: hidden;">
-                    <div style="padding: 16px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                        <div>
-                            <div class="pro-card-title">
-                                <i class="fa-solid fa-shield-halved text-buy"></i> Hermes 2.0 Apex Strategy Architecture (v2 Pro)
+            <!-- ========================================== -->
+            <!-- TAB PANE 1: GENERAL                        -->
+            <!-- ========================================== -->
+            <div class="settings-tab-pane active" id="pane-general">
+                <div class="settings-grid-2col">
+                    
+                    <!-- CARD: PAPER TRADING & ACCOUNT RESET -->
+                    <div class="settings-card highlight-green">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-solid fa-wallet text-buy"></i>
+                                    <span>Paper Trading Configuration</span>
+                                </div>
+                                <div class="settings-card-subtitle">Isolated virtual ledger for SMC algorithm execution &amp; compounding</div>
                             </div>
-                            <div class="pro-card-subtitle">Draws identical 4H Order Blocks, First-Taps, and targets directly on TradingView charts</div>
+                            <span class="badge" style="background: rgba(0, 245, 155, 0.12); color: #00F59B; border: 1px solid rgba(0, 245, 155, 0.3);">ACTIVE SIMULATION</span>
                         </div>
-                        <div style="display: flex; gap: 8px;">
-                            <a href="https://www.tradingview.com/chart/" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open TV
-                            </a>
-                            <button class="btn btn-primary btn-sm" id="btnCopyPineCodePage" style="background: #10b981; color: #0f172a; font-weight: 800; border: none;">
-                                <i class="fa-solid fa-copy"></i> Copy Script (1-Click)
+
+                        <!-- Live Account Stats Strip -->
+                        <div class="info-pill-strip">
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Current Balance</span>
+                                <span class="info-pill-val text-buy" id="paperDisplayCurrentBal">$50.00</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Initial Balance</span>
+                                <span class="info-pill-val" id="paperDisplayInitialBal">$50.00</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Total Realized P&amp;L</span>
+                                <span class="info-pill-val text-buy" id="paperDisplayTotalPnl">+$0.00</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Milestone Target</span>
+                                <span class="info-pill-val" style="color: #F59E0B;">$2,000.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Starting Balance -->
+                        <div class="form-row">
+                            <label for="inputPaperStartingBalance">
+                                <i class="fa-solid fa-coins"></i>
+                                <span>Paper Trading Starting Balance ($ USDT)</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="number" id="inputPaperStartingBalance" placeholder="50.00" value="50.00" min="10" step="5">
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Default: $50.00 USDT. Sets the compounding starting foundation.</span>
+                            </div>
+                        </div>
+
+                        <!-- Account Reset Action -->
+                        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <div style="font-size: 12.5px; font-weight: 700; color: #EF4444; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                        <span>Reset Paper Trading Account</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #94A3B8; margin-top: 2px;">
+                                        Wipes all open positions, trade history, and resets balance to starting amount.
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-action btn-action-danger" id="btnResetPaper" title="Reset Paper Account">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                    <span>Reset Balance</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD: SYSTEM & ARCHITECTURE OVERVIEW -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-solid fa-server text-cyan"></i>
+                                    <span>Institutional System Architecture</span>
+                                </div>
+                                <div class="settings-card-subtitle">Core engine runtime, database, and scanner heartbeat parameters</div>
+                            </div>
+                            <span class="badge" style="background: rgba(56, 189, 248, 0.12); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3);">FASTAPI V2</span>
+                        </div>
+
+                        <div class="guardrail-list">
+                            <div class="guardrail-item">
+                                <i class="fa-solid fa-microchip"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">Master Unified Engine (Hermes 2.0 Apex)</span>
+                                    <span class="guardrail-desc">Continuous background scanning across 22 elite crypto assets with 4-Sentries validation.</span>
+                                </div>
+                            </div>
+                            <div class="guardrail-item">
+                                <i class="fa-solid fa-database"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">High-Concurrency SQLite WAL Engine</span>
+                                    <span class="guardrail-desc">Atomic position writes with sub-millisecond local telemetry logging.</span>
+                                </div>
+                            </div>
+                            <div class="guardrail-item">
+                                <i class="fa-solid fa-clock"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">Dual Timeframe Synchronization</span>
+                                    <span class="guardrail-desc">4H Macro Swing bias synchronized with 1H Sniper Scalp execution triggers.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- General UI Preferences -->
+                        <div class="toggle-switch-row">
+                            <div class="toggle-text-block">
+                                <span class="toggle-title"><i class="fa-solid fa-volume-high text-cyan"></i> Audio Chime on Signals</span>
+                                <span class="toggle-desc">Plays institutional alert sound when high-confluence OB is identified</span>
+                            </div>
+                            <label class="custom-switch">
+                                <input type="checkbox" id="toggleSoundAlerts" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB PANE 2: TRADING & RISK ENGINE          -->
+            <!-- ========================================== -->
+            <div class="settings-tab-pane" id="pane-trading-risk">
+                <div class="settings-grid-2col">
+                    
+                    <!-- CARD: BITGET 5X AUTO-TRADE TOGGLES -->
+                    <div class="settings-card highlight-green">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-solid fa-bolt text-buy"></i>
+                                    <span>Bitget 5x Auto-Trade Controls</span>
+                                </div>
+                                <div class="settings-card-subtitle">Real-time Bitget V2 API execution for automated compounding ladder</div>
+                            </div>
+                            <span class="badge" id="bitgetConnStatus" style="background: rgba(0, 245, 155, 0.15); color: #00F59B; border: 1px solid rgba(0, 245, 155, 0.35);">
+                                LIVE 5X FUTURES
+                            </span>
+                        </div>
+
+                        <!-- Auto-Trade Switch -->
+                        <div class="toggle-switch-row" style="background: rgba(0, 245, 155, 0.05); border-color: rgba(0, 245, 155, 0.25);">
+                            <div class="toggle-text-block">
+                                <span class="toggle-title" style="color: #00F59B;">
+                                    <i class="fa-solid fa-power-off"></i>
+                                    <span>Bitget Auto-Trade Master Switch</span>
+                                </span>
+                                <span class="toggle-desc">Automatically executes 5x Isolated Futures orders upon 90+ Mike AI confluence</span>
+                            </div>
+                            <label class="custom-switch">
+                                <input type="checkbox" id="inputBitgetAutoTrade">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Live Bitget Balance Strip -->
+                        <div class="info-pill-strip" style="background: rgba(0, 245, 155, 0.04); border-color: rgba(0, 245, 155, 0.2);">
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Bitget Live Balance</span>
+                                <span class="info-pill-val text-buy" id="bitgetLiveBalBadge">$77.59 USDT</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Leverage Mode</span>
+                                <span class="info-pill-val" style="color: #38BDF8;">5x Isolated Fixed</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Target ROI</span>
+                                <span class="info-pill-val text-buy">+14.00% ROE</span>
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Bitget API Key -->
+                        <div class="form-row">
+                            <label for="inputBitgetKey">
+                                <i class="fa-solid fa-key"></i>
+                                <span>Bitget API Key</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="text" id="inputBitgetKey" placeholder="bg_..." autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Bitget Secret -->
+                        <div class="form-row">
+                            <label for="inputBitgetSecret">
+                                <i class="fa-solid fa-lock"></i>
+                                <span>Bitget Secret Key</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="password" id="inputBitgetSecret" placeholder="••••••••" autocomplete="new-password">
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Bitget Passphrase -->
+                        <div class="form-row">
+                            <label for="inputBitgetPassphrase">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span>Bitget Passphrase</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="password" id="inputBitgetPassphrase" placeholder="Passphrase" autocomplete="new-password">
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Max Margin -->
+                        <div class="form-row">
+                            <label for="inputBitgetMaxMargin">
+                                <i class="fa-solid fa-scale-unbalanced-flip"></i>
+                                <span>Max Margin per Position ($ USDT)</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="number" id="inputBitgetMaxMargin" placeholder="50.00" value="50.00" min="10" step="5">
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Limits maximum USDT collateral allocated to a single active 5x position.</span>
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Min Confluence -->
+                        <div class="form-row">
+                            <label for="inputBitgetMinConf">
+                                <i class="fa-solid fa-award text-buy"></i>
+                                <span>Minimum Mike AI Confluence Score</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <select id="inputBitgetMinConf">
+                                    <option value="90" selected>90+ (Grade A+ | Elite Sniper Setups Only - Recommended)</option>
+                                    <option value="85">85+ (Grade A | High Quality Order Flow Confluence)</option>
+                                    <option value="80">80+ (Grade A- | Standard SMC Confluence)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD: INSTITUTIONAL RISK GUARDRAILS -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-solid fa-shield-halved text-cyan"></i>
+                                    <span>Institutional Risk Guardrails</span>
+                                </div>
+                                <div class="settings-card-subtitle">Zero-compromise capital preservation policies enforced on all orders</div>
+                            </div>
+                            <span class="badge badge-gold">5-LAYER SHIELD</span>
+                        </div>
+
+                        <div class="guardrail-list">
+                            <div class="guardrail-item" style="border-left-color: #00F59B;">
+                                <i class="fa-solid fa-shield-check text-buy"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">5x Isolated Leverage Fixed</span>
+                                    <span class="guardrail-desc">Strictly isolated positions prevent cross-margin liquidation contagion. Maximum risk capped at 100% of margin.</span>
+                                </div>
+                            </div>
+                            <div class="guardrail-item" style="border-left-color: #38BDF8;">
+                                <i class="fa-solid fa-layer-group text-cyan"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">2nd Order Block Priority (&ge; +7.0% Displacement)</span>
+                                    <span class="guardrail-desc">Eliminates weak 1st order block traps. Demands true institutional origin candle expansion before entry.</span>
+                                </div>
+                            </div>
+                            <div class="guardrail-item" style="border-left-color: #A855F7;">
+                                <i class="fa-solid fa-lock" style="color: #A855F7;"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">1-Trade Sequential Queue Lock</span>
+                                    <span class="guardrail-desc">Strictly executes 1 active trade at a time to preserve full mathematical compounding integrity.</span>
+                                </div>
+                            </div>
+                            <div class="guardrail-item" style="border-left-color: #F59E0B;">
+                                <i class="fa-solid fa-filter" style="color: #F59E0B;"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">King BTC Causal Brake Veto</span>
+                                    <span class="guardrail-desc">Blocks long signals when Bitcoin experiences sudden flash dump volatility (-1.5% causal threshold).</span>
+                                </div>
+                            </div>
+                            <div class="guardrail-item" style="border-left-color: #EF4444;">
+                                <i class="fa-solid fa-ban" style="color: #EF4444;"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">Emergency Hard Circuit Breaker (-4.0% Max Loss)</span>
+                                    <span class="guardrail-desc">Automated market stop execution if unexpected macro slippage occurs, ensuring drawdown safety.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: rgba(10, 15, 28, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 7px; padding: 12px; font-size: 11.5px; color: #94A3B8; line-height: 1.45;">
+                            🎯 <b>Compounding Formula:</b> $50.00 Initial ➔ +2.8% Real Target (+14% ROE) ➔ 15% Vault Stash Reallocation ➔ $2,000.00 Milestone Goal.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB PANE 3: TELEGRAM ALERTS                -->
+            <!-- ========================================== -->
+            <div class="settings-tab-pane" id="pane-telegram-alerts">
+                <div class="settings-grid-2col">
+                    
+                    <!-- CARD: TELEGRAM LIVE BROADCAST SETTINGS -->
+                    <div class="settings-card highlight-cyan">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-brands fa-telegram text-cyan"></i>
+                                    <span>Telegram Bot Live Broadcast</span>
+                                </div>
+                                <div class="settings-card-subtitle">Real-time alerts, entry confirmation pings, and interactive terminal buttons</div>
+                            </div>
+                            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.35);">REAL-TIME PING</span>
+                        </div>
+
+                        <!-- Form Field: Bot Token -->
+                        <div class="form-row">
+                            <label for="inputTgToken">
+                                <i class="fa-solid fa-robot"></i>
+                                <span>Telegram Bot Token</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="password" id="inputTgToken" placeholder="e.g. 123456789:ABCDefgh-xyz..." autocomplete="off">
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Created via @BotFather on Telegram. Controls the automated signal dispatcher.</span>
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Chat ID -->
+                        <div class="form-row">
+                            <label for="inputTgChatId">
+                                <i class="fa-solid fa-comments"></i>
+                                <span>Telegram Chat ID / Channel ID</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="text" id="inputTgChatId" placeholder="e.g. -100123456789 or personal numeric ID" autocomplete="off">
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Channel ID (starts with -100) or your personal User ID.</span>
+                            </div>
+                        </div>
+
+                        <!-- Action: Test Alert Button -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <div style="font-size: 12.5px; font-weight: 700; color: #FFFFFF;">
+                                    <span>Dispatch Verification Ping</span>
+                                </div>
+                                <div style="font-size: 11px; color: #94A3B8;">
+                                    Sends formatted SMC setup status &amp; interactive keyboard to your chat.
+                                </div>
+                            </div>
+                            <button type="button" class="btn-action btn-action-cyan" id="btnTestAlert" title="Send Live Status to Telegram">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>Test Alert</span>
                             </button>
                         </div>
                     </div>
 
-                    <div style="padding: 14px 18px; background: #07090E; position: relative;">
-                        <textarea id="pineCodeAreaPage" readonly style="width: 100%; height: 420px; background: transparent; color: #38BDF8; font-family: var(--font-mono); font-size: 11px; border: none; resize: none; outline: none; line-height: 1.5;"></textarea>
+                    <!-- CARD: TELEGRAM BROADCAST CHANNELS & PREFERENCES -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-solid fa-bell text-gold"></i>
+                                    <span>Notification Filters &amp; Frequency</span>
+                                </div>
+                                <div class="settings-card-subtitle">Granular controls for trade alerts and daily compounding digests</div>
+                            </div>
+                            <span class="badge badge-gold">INSTITUTIONAL</span>
+                        </div>
+
+                        <!-- Toggle: Mute Paper Trading Alerts -->
+                        <div class="toggle-switch-row">
+                            <div class="toggle-text-block">
+                                <span class="toggle-title">
+                                    <i class="fa-solid fa-bell-slash text-gold"></i>
+                                    <span>Mute Paper Trading Alerts</span>
+                                </span>
+                                <span class="toggle-desc">Silence simulation trades to keep Telegram feed exclusively live</span>
+                            </div>
+                            <label class="custom-switch">
+                                <input type="checkbox" id="inputMutePaperAlerts">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="guardrail-list">
+                            <div class="guardrail-item" style="border-left-color: #00F59B;">
+                                <i class="fa-solid fa-check text-buy"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">4H Order Block Formations</span>
+                                    <span class="guardrail-desc">Instant ping when 2nd OB origin candle forms with displacement &ge; 7%.</span>
+                                </div>
+                            </div>
+                            <div class="guardrail-item" style="border-left-color: #38BDF8;">
+                                <i class="fa-solid fa-crosshairs text-cyan"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">1H Sniper First-Tap Triggers</span>
+                                    <span class="guardrail-desc">Real-time notification upon IDM sweep + mitigated order block retest.</span>
+                                </div>
+                            </div>
+                            <div class="guardrail-item" style="border-left-color: #F59E0B;">
+                                <i class="fa-solid fa-calendar-check" style="color: #F59E0B;"></i>
+                                <div class="guardrail-content">
+                                    <span class="guardrail-title">Daily 24h Compounding Summary</span>
+                                    <span class="guardrail-desc">End-of-day ledger broadcast summarizing closed trades, win rate, and equity.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Daily Summary Button -->
+                        <div style="display: flex; justify-content: flex-end;">
+                            <button type="button" class="btn-action btn-action-primary" id="btnTestDailySummary" title="Dispatch 24h Daily Summary">
+                                <i class="fa-solid fa-calendar-day"></i>
+                                <span>Send 24H Summary Now</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- STEP-BY-STEP SETUP GUIDE -->
-                    <div style="padding: 16px 18px; border-top: 1px solid rgba(255,255,255,0.08); background: rgba(17, 22, 34, 0.6);">
-                        <h4 style="font-size: 13px; font-weight: 700; margin: 0 0 10px 0; color: #F8FAFC;">
-                            <i class="fa-solid fa-circle-question text-buy"></i> TradingView Setup Guide (3 Steps):
-                        </h4>
-                        <ol style="margin: 0; padding-left: 18px; font-size: 12px; color: #94A3B8; display: flex; flex-direction: column; gap: 6px;">
-                            <li>Click the green <b>"Copy Script (1-Click)"</b> button above to copy the complete Pine Script v5 code.</li>
-                            <li>Open <a href="https://www.tradingview.com/chart/" target="_blank" style="color: #38BDF8;">TradingView Chart</a>, click on the <b>"Pine Editor"</b> tab at the bottom, create a new indicator, paste the code, and click <b>"Save"</b>.</li>
-                            <li>Click <b>"Add to Chart"</b>. Set your chart timeframe to <b>4H</b> for macro swings or <b>1H</b> for scalp setups. Unmitigated Order Blocks, 2nd OB gold badges, and TP/SL levels will auto-draw instantly.</li>
-                        </ol>
-                    </div>
                 </div>
-
             </div>
 
-        </div>
+            <!-- ========================================== -->
+            <!-- TAB PANE 4: AI & API KEYS                  -->
+            <!-- ========================================== -->
+            <div class="settings-tab-pane" id="pane-ai-api-keys">
+                <div class="settings-grid-2col">
+                    
+                    <!-- CARD: GOOGLE GEMINI AI CONFIGURATION -->
+                    <div class="settings-card highlight-purple">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-solid fa-brain" style="color: #A855F7;"></i>
+                                    <span>Google Gemini AI Engine</span>
+                                </div>
+                                <div class="settings-card-subtitle">Multi-modal neural consultant for SMC structure &amp; origin candle evaluation</div>
+                            </div>
+                            <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #A855F7; border: 1px solid rgba(168, 85, 247, 0.35);">
+                                GEMINI 2.5 FLASH LITE
+                            </span>
+                        </div>
 
+                        <!-- Form Field: Gemini API Key -->
+                        <div class="form-row">
+                            <label for="inputGeminiKey">
+                                <i class="fa-solid fa-key" style="color: #A855F7;"></i>
+                                <span>Google Gemini API Key</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="password" id="inputGeminiKey" placeholder="e.g. AIzaSy..." autocomplete="off">
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Google AI Studio API key for chart perception and deep sentry gating.</span>
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Gemini Model Selection -->
+                        <div class="form-row">
+                            <label for="inputGeminiModel">
+                                <i class="fa-solid fa-microchip" style="color: #A855F7;"></i>
+                                <span>AI Perception Engine Model</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <select id="inputGeminiModel">
+                                    <option value="gemini-2.5-flash-lite" selected>Gemini 2.5 Flash Lite (Flash Low / Ultra Fast - Recommended)</option>
+                                    <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fast Reasoning)</option>
+                                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
+                                    <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B (Lowest Latency)</option>
+                                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (High Precision)</option>
+                                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Architectural Reasoning)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Action: Test Connection Button -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 8px; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <div style="font-size: 12.5px; font-weight: 700; color: #FFFFFF;">
+                                    <span>Verify AI Studio Connection</span>
+                                </div>
+                                <div style="font-size: 11px; color: #94A3B8;">
+                                    Tests neural handshake with Google Gemini AI models.
+                                </div>
+                            </div>
+                            <button type="button" class="btn-action btn-action-purple" id="btnTestConnection" title="Test Gemini API Connection">
+                                <i class="fa-solid fa-satellite"></i>
+                                <span>Test Connection</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CARD: TRADINGVIEW PINE SCRIPT V5 EXPORT -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-solid fa-code text-buy"></i>
+                                    <span>TradingView Pine Script v5 Codebox</span>
+                                </div>
+                                <div class="settings-card-subtitle">Automated 4H Order Blocks, First-Tap markers &amp; TP/SL overlays for TV</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <a href="https://www.tradingview.com/chart/" target="_blank" class="btn-action btn-action-cyan" style="text-decoration: none; padding: 6px 10px; font-size: 11px;">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open TV
+                                </a>
+                                <button type="button" class="btn-action btn-action-primary" id="btnCopyPineCodePage" style="padding: 6px 12px; font-size: 11px;">
+                                    <i class="fa-solid fa-copy"></i> Copy Script
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Pine Script Code Viewer -->
+                        <div class="pine-editor-box">
+                            <div class="pine-editor-header">
+                                <span style="font-size: 11px; color: #94A3B8; font-family: var(--font-mono);">
+                                    <i class="fa-solid fa-file-code" style="color: #00F59B;"></i> SMC_V17_TradingView_Indicator.pine
+                                </span>
+                                <span class="badge badge-cyan" style="font-size: 10px;">PINE v5 PRO</span>
+                            </div>
+                            <div class="pine-editor-body">
+                                <textarea id="pineCodeAreaPage" readonly placeholder="// Fetching TradingView Pine Script v5 indicator code..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 3-Step Setup Instructions -->
+                        <div style="background: rgba(10, 16, 28, 0.7); border: 1px solid var(--settings-border-subtle); border-radius: 7px; padding: 12px; font-size: 11.5px; color: #94A3B8; line-height: 1.45;">
+                            <b>TradingView Quick Setup:</b>
+                            <ol style="margin: 6px 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 4px;">
+                                <li>Click <b>"Copy Script"</b> above to copy the complete Pine Script v5 source code.</li>
+                                <li>In <a href="https://www.tradingview.com/chart/" target="_blank" style="color: #38BDF8;">TradingView Chart</a>, open <b>Pine Editor</b> at bottom, paste code, and click <b>Save</b>.</li>
+                                <li>Click <b>Add to Chart</b>. Timeframe: <b>4H</b> for macro Order Blocks or <b>1H</b> for scalps.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
     </div>
 
-    <!-- NOTIFICATION TOAST -->
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- STICKY BOTTOM ACTION BAR -->
+    <div class="settings-bottom-bar" id="settingsBottomBar">
+        <div class="settings-bottom-status">
+            <span class="pulse-dot"></span>
+            <span id="bottomStatusText">Institutional configurations ready • Hermes 2.0 Apex active</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" class="btn-action btn-action-cyan" id="btnReloadSettingsBottom" title="Reload Saved Settings">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Reload</span>
+            </button>
+            <button type="button" class="btn-action btn-action-primary" id="btnSaveSettingsBottom" title="Save All Settings">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Save Settings</span>
+            </button>
+        </div>
+    </div>
 
-    <script src="/static/app.js?v=106"></script>
+    <!-- NOTIFICATION TOAST CONTAINER -->
+    <div class="settings-toast-container" id="toastContainer"></div>
+
+    <!-- App JavaScript Core -->
+    <script src="/static/app.js?v=115"></script>
+
     <script>
-        async function initSettingsPage() {
+        // Notification Toast System
+        function showNotification(type, title, message, duration = 3500) {
+            const container = document.getElementById("toastContainer");
+            if (!container) return;
+
+            const toast = document.createElement("div");
+            toast.className = `settings-toast ${type}`;
+
+            let iconHtml = '<i class="fa-solid fa-circle-check"></i>';
+            if (type === 'error') iconHtml = '<i class="fa-solid fa-circle-xmark"></i>';
+            if (type === 'info') iconHtml = '<i class="fa-solid fa-circle-info"></i>';
+
+            toast.innerHTML = `
+                ${iconHtml}
+                <div style="display:flex; flex-direction:column; gap:2px; flex:1;">
+                    <div style="font-size:12.5px; font-weight:700; color:#FFFFFF;">${title}</div>
+                    <div style="font-size:11px; color:#94A3B8; line-height:1.35;">${message}</div>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Mobile Navigation Drawer Toggle
+        function toggleDrawer() {
+            const sidebar = document.getElementById("globalSidebar");
+            if (sidebar) {
+                sidebar.classList.toggle("open");
+            }
+        }
+
+        // Tab Navigation Controller
+        function setupTabNavigation() {
+            const tabButtons = document.querySelectorAll(".settings-tab-btn");
+            const tabPanes = document.querySelectorAll(".settings-tab-pane");
+
+            tabButtons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const targetTab = btn.getAttribute("data-tab");
+                    if (!targetTab) return;
+
+                    tabButtons.forEach(b => b.classList.remove("active"));
+                    tabPanes.forEach(p => p.classList.remove("active"));
+
+                    btn.classList.add("active");
+                    const targetPane = document.getElementById(`pane-${targetTab}`);
+                    if (targetPane) targetPane.classList.add("active");
+
+                    // Update URL hash without scroll jump
+                    history.replaceState(null, null, `#${targetTab}`);
+                });
+            });
+
+            // Check if hash matches an existing tab
+            if (window.location.hash) {
+                const hash = window.location.hash.replace("#", "");
+                const matchedBtn = document.querySelector(`.settings-tab-btn[data-tab="${hash}"]`);
+                if (matchedBtn) matchedBtn.click();
+            }
+        }
+
+        // Load Settings from /api/settings
+        async function loadSettings() {
             try {
-                // 1. Fetch Pine Script code
+                const resp = await fetch('/api/settings');
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+
+                // 1. Telegram Fields
+                const inputTgToken = document.getElementById("inputTgToken");
+                const inputTgChatId = document.getElementById("inputTgChatId");
+                if (inputTgToken && data.telegram_bot_token) inputTgToken.value = data.telegram_bot_token;
+                if (inputTgChatId && data.telegram_chat_id) inputTgChatId.value = data.telegram_chat_id;
+
+                // 2. Gemini Fields
+                const inputGeminiKey = document.getElementById("inputGeminiKey");
+                const inputGeminiModel = document.getElementById("inputGeminiModel");
+                if (inputGeminiKey && data.gemini_api_key) inputGeminiKey.value = data.gemini_api_key;
+                if (inputGeminiModel && data.gemini_model) inputGeminiModel.value = data.gemini_model;
+
+                // 3. Bitget Fields
+                const inputBitgetAutoTrade = document.getElementById("inputBitgetAutoTrade");
+                const inputBitgetKey = document.getElementById("inputBitgetKey");
+                const inputBitgetSecret = document.getElementById("inputBitgetSecret");
+                const inputBitgetPassphrase = document.getElementById("inputBitgetPassphrase");
+                const inputBitgetMaxMargin = document.getElementById("inputBitgetMaxMargin");
+                const inputBitgetMinConf = document.getElementById("inputBitgetMinConf");
+
+                if (inputBitgetAutoTrade) inputBitgetAutoTrade.checked = !!data.bitget_auto_trade;
+                if (inputBitgetKey && data.bitget_api_key) inputBitgetKey.value = data.bitget_api_key;
+                if (inputBitgetSecret && data.bitget_secret) inputBitgetSecret.value = data.bitget_secret;
+                if (inputBitgetPassphrase && data.bitget_passphrase) inputBitgetPassphrase.value = data.bitget_passphrase;
+                if (inputBitgetMaxMargin && data.bitget_max_margin) inputBitgetMaxMargin.value = data.bitget_max_margin;
+                if (inputBitgetMinConf && data.bitget_min_confluence) inputBitgetMinConf.value = data.bitget_min_confluence;
+
+                // 4. Paper Trading
+                const inputPaperStartingBalance = document.getElementById("inputPaperStartingBalance");
+                if (inputPaperStartingBalance && data.paper_starting_balance) {
+                    inputPaperStartingBalance.value = parseFloat(data.paper_starting_balance).toFixed(2);
+                }
+
+                // 5. Mute Alerts
+                const inputMutePaperAlerts = document.getElementById("inputMutePaperAlerts");
+                if (inputMutePaperAlerts && typeof data.mute_paper_trading_alerts !== "undefined") {
+                    inputMutePaperAlerts.checked = !!data.mute_paper_trading_alerts;
+                }
+
+                // 6. Update Paper and Bitget status badges if present
+                if (data.paper_current_balance) {
+                    const curBalEl = document.getElementById("paperDisplayCurrentBal");
+                    if (curBalEl) curBalEl.innerText = `$${parseFloat(data.paper_current_balance).toFixed(2)}`;
+                    const topPaper = document.getElementById("topPaperBalVal");
+                    if (topPaper) topPaper.innerText = `$${parseFloat(data.paper_current_balance).toFixed(2)}`;
+                }
+
+                if (data.paper_starting_balance) {
+                    const initBalEl = document.getElementById("paperDisplayInitialBal");
+                    if (initBalEl) initBalEl.innerText = `$${parseFloat(data.paper_starting_balance).toFixed(2)}`;
+                }
+
+                if (data.bitget_balance && data.bitget_balance.total_usdt) {
+                    const bgBalBadge = document.getElementById("bitgetLiveBalBadge");
+                    if (bgBalBadge) bgBalBadge.innerText = `$${parseFloat(data.bitget_balance.total_usdt).toFixed(2)} USDT`;
+                }
+
+            } catch (err) {
+                console.warn("Could not load /api/settings:", err);
+            }
+        }
+
+        // Save Settings to /api/settings
+        async function saveSettings() {
+            const saveBtns = [document.getElementById("btnSaveSettings"), document.getElementById("btnSaveSettingsBottom")];
+            saveBtns.forEach(btn => {
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            });
+
+            const payload = {
+                telegram_bot_token: document.getElementById("inputTgToken")?.value || "",
+                telegram_chat_id: document.getElementById("inputTgChatId")?.value || "",
+                gemini_api_key: document.getElementById("inputGeminiKey")?.value || "",
+                gemini_model: document.getElementById("inputGeminiModel")?.value || "gemini-2.5-flash-lite",
+                bitget_auto_trade: document.getElementById("inputBitgetAutoTrade")?.checked || false,
+                bitget_api_key: document.getElementById("inputBitgetKey")?.value || "",
+                bitget_secret: document.getElementById("inputBitgetSecret")?.value || "",
+                bitget_passphrase: document.getElementById("inputBitgetPassphrase")?.value || "",
+                bitget_max_margin: document.getElementById("inputBitgetMaxMargin")?.value || "50.00",
+                bitget_min_confluence: document.getElementById("inputBitgetMinConf")?.value || "90",
+                paper_starting_balance: document.getElementById("inputPaperStartingBalance")?.value || "50.00",
+                mute_paper_trading_alerts: document.getElementById("inputMutePaperAlerts")?.checked || false
+            };
+
+            try {
+                const resp = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await resp.json();
+
+                if (resp.ok && result.success) {
+                    showNotification('success', 'Settings Saved', result.message || 'All institutional settings updated successfully!');
+                    saveBtns.forEach(btn => {
+                        if (btn) {
+                            btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved!';
+                            setTimeout(() => {
+                                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Settings';
+                            }, 2500);
+                        }
+                    });
+                } else {
+                    showNotification('error', 'Save Failed', result.message || 'Error occurred while saving settings.');
+                    saveBtns.forEach(btn => {
+                        if (btn) btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Settings';
+                    });
+                }
+            } catch (err) {
+                console.error("Save settings error:", err);
+                showNotification('error', 'Network Error', 'Failed to reach server to save settings.');
+                saveBtns.forEach(btn => {
+                    if (btn) btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Settings';
+                });
+            }
+        }
+
+        // Test Telegram Alert (/api/telegram/test)
+        async function testTelegramAlert(btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch('/api/telegram/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await resp.json();
+
+                if (resp.ok && data.success) {
+                    showNotification('success', 'Telegram Ping Sent', data.message || 'Telegram test alert dispatched successfully!');
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Alert Sent!';
+                } else {
+                    showNotification('error', 'Telegram Test Failed', data.message || 'Failed to dispatch Telegram message. Check Bot Token & Chat ID.');
+                    btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Failed';
+                }
+            } catch (err) {
+                console.error("Telegram test error:", err);
+                showNotification('error', 'Connection Error', 'Failed to contact Telegram API service.');
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+            } finally {
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }, 2500);
+            }
+        }
+
+        // Test Gemini Connection (/api/gemini/test)
+        async function testGeminiConnection(btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...';
+            btn.disabled = true;
+
+            const apiKey = document.getElementById("inputGeminiKey")?.value || "";
+
+            try {
+                const resp = await fetch('/api/gemini/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gemini_api_key: apiKey })
+                });
+                const data = await resp.json();
+
+                if (resp.ok && data.success) {
+                    showNotification('success', 'Gemini AI Handshake OK', data.message || 'Google Gemini AI connected successfully!');
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Connected!';
+                } else {
+                    showNotification('error', 'Gemini Handshake Failed', data.message || 'Failed to authenticate Gemini API Key.');
+                    btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Failed';
+                }
+            } catch (err) {
+                console.error("Gemini test error:", err);
+                showNotification('error', 'Handshake Error', 'Failed to reach Gemini API endpoint.');
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+            } finally {
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }, 2500);
+            }
+        }
+
+        // Reset Paper Trading Account (/api/paper/reset)
+        async function resetPaperAccount(btn) {
+            const startingBal = parseFloat(document.getElementById("inputPaperStartingBalance")?.value || "50.00");
+            
+            if (!confirm(`Are you sure you want to RESET the paper trading account to $${startingBal.toFixed(2)} USDT? This will clear all simulation trade history.`)) {
+                return;
+            }
+
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resetting...';
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch('/api/paper/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ starting_balance: startingBal })
+                });
+                const data = await resp.json();
+
+                if (resp.ok && (data.success || data.status === "success")) {
+                    showNotification('success', 'Paper Account Reset', data.message || `Account successfully reset to $${startingBal.toFixed(2)} USDT.`);
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Reset Complete!';
+
+                    // Update UI Displays
+                    const curBalEl = document.getElementById("paperDisplayCurrentBal");
+                    if (curBalEl) curBalEl.innerText = `$${startingBal.toFixed(2)}`;
+                    const initBalEl = document.getElementById("paperDisplayInitialBal");
+                    if (initBalEl) initBalEl.innerText = `$${startingBal.toFixed(2)}`;
+                    const pnlEl = document.getElementById("paperDisplayTotalPnl");
+                    if (pnlEl) pnlEl.innerText = `+$0.00`;
+                    const topPaper = document.getElementById("topPaperBalVal");
+                    if (topPaper) topPaper.innerText = `$${startingBal.toFixed(2)}`;
+                    const topEquity = document.getElementById("topEquityVal");
+                    if (topEquity) topEquity.innerText = `$${startingBal.toFixed(2)}`;
+                    const topOpen = document.getElementById("topOpenPnlVal");
+                    if (topOpen) topOpen.innerText = `+$0.00`;
+                    const topDaily = document.getElementById("topDailyPnlVal");
+                    if (topDaily) topDaily.innerText = `+$0.00`;
+                } else {
+                    showNotification('error', 'Reset Failed', data.message || 'Could not reset paper account.');
+                    btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Failed';
+                }
+            } catch (err) {
+                console.error("Paper reset error:", err);
+                showNotification('error', 'Network Error', 'Failed to reach paper trading reset endpoint.');
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+            } finally {
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }, 2500);
+            }
+        }
+
+        // Fetch Pine Script Code (/api/pinescript)
+        async function fetchPineScriptCode() {
+            try {
                 const resp = await fetch('/api/pinescript');
                 if (resp.ok) {
                     const data = await resp.json();
                     const area = document.getElementById("pineCodeAreaPage");
-                    if (area && data.code) {
-                        area.value = data.code;
+                    if (area && data.code) area.value = data.code;
+                }
+            } catch (err) {
+                console.warn("Could not fetch Pine Script code:", err);
+            }
+        }
+
+        // Copy Pine Script to Clipboard
+        function setupPineScriptCopy() {
+            const btnCopy = document.getElementById("btnCopyPineCodePage");
+            if (!btnCopy) return;
+
+            btnCopy.addEventListener("click", () => {
+                const area = document.getElementById("pineCodeAreaPage");
+                if (area && area.value) {
+                    navigator.clipboard.writeText(area.value).then(() => {
+                        const originalHtml = btnCopy.innerHTML;
+                        btnCopy.innerHTML = '<i class="fa-solid fa-check"></i> Copied to Clipboard!';
+                        showNotification('info', 'Pine Script v5', 'Indicator source code copied to clipboard!');
+                        setTimeout(() => { btnCopy.innerHTML = originalHtml; }, 2500);
+                    });
+                }
+            });
+        }
+
+        // Wire Event Listeners
+        function initSettingsPage() {
+            setupTabNavigation();
+            loadSettings();
+            fetchPineScriptCode();
+            setupPineScriptCopy();
+
+            // Save Buttons
+            const btnSave = document.getElementById("btnSaveSettings");
+            if (btnSave) btnSave.addEventListener("click", saveSettings);
+
+            const btnSaveBottom = document.getElementById("btnSaveSettingsBottom");
+            if (btnSaveBottom) btnSaveBottom.addEventListener("click", saveSettings);
+
+            // Reload Buttons
+            const btnReloadBottom = document.getElementById("btnReloadSettingsBottom");
+            if (btnReloadBottom) {
+                btnReloadBottom.addEventListener("click", () => {
+                    loadSettings();
+                    showNotification('info', 'Settings Reloaded', 'Fetched latest server configuration values.');
+                });
+            }
+
+            // Test Alert Buttons
+            const btnTestAlert = document.getElementById("btnTestAlert");
+            if (btnTestAlert) btnTestAlert.addEventListener("click", () => testTelegramAlert(btnTestAlert));
+
+            const btnTestAlertHeader = document.getElementById("btnTestAlertHeader");
+            if (btnTestAlertHeader) btnTestAlertHeader.addEventListener("click", () => testTelegramAlert(btnTestAlertHeader));
+
+            // Test Gemini Connection
+            const btnTestConn = document.getElementById("btnTestConnection");
+            if (btnTestConn) btnTestConn.addEventListener("click", () => testGeminiConnection(btnTestConn));
+
+            // Reset Paper Account
+            const btnResetPaper = document.getElementById("btnResetPaper");
+            if (btnResetPaper) btnResetPaper.addEventListener("click", () => resetPaperAccount(btnResetPaper));
+
+            // Daily Summary
+            const btnDailySummary = document.getElementById("btnTestDailySummary");
+            if (btnDailySummary) {
+                btnDailySummary.addEventListener("click", async () => {
+                    const orig = btnDailySummary.innerHTML;
+                    btnDailySummary.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending Summary...';
+                    try {
+                        const resp = await fetch('/api/telegram/daily_summary', { method: 'POST' });
+                        const res = await resp.json();
+                        if (resp.ok && res.success) {
+                            showNotification('success', 'Summary Sent', res.message || 'Daily summary sent to Telegram!');
+                            btnDailySummary.innerHTML = '<i class="fa-solid fa-check"></i> Sent!';
+                        } else {
+                            showNotification('error', 'Summary Failed', res.message || 'Could not send daily summary.');
+                            btnDailySummary.innerHTML = '<i class="fa-solid fa-xmark"></i> Failed';
+                        }
+                    } catch (e) {
+                        showNotification('error', 'Error', 'Failed to dispatch daily summary.');
+                        btnDailySummary.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+                    } finally {
+                        setTimeout(() => { btnDailySummary.innerHTML = orig; }, 2500);
                     }
-                }
-
-                // 2. Wire Copy button
-                const btnCopy = document.getElementById("btnCopyPineCodePage");
-                if (btnCopy) {
-                    btnCopy.addEventListener("click", () => {
-                        const area = document.getElementById("pineCodeAreaPage");
-                        if (area) {
-                            navigator.clipboard.writeText(area.value).then(() => {
-                                const orig = btnCopy.innerHTML;
-                                btnCopy.innerHTML = `<i class="fa-solid fa-check"></i> Copied to Clipboard!`;
-                                setTimeout(() => { btnCopy.innerHTML = orig; }, 2500);
-                            });
-                        }
-                    });
-                }
-
-                // 3. Load existing settings into inputs
-                const sResp = await fetch('/api/status');
-                if (sResp.ok) {
-                    const statusData = await sResp.json();
-                    if (statusData.performance) {
-                        const balEl = document.getElementById("bitgetLiveBalBadge");
-                        if (balEl) balEl.innerText = `Bitget Live Balance: $77.59 USDT`;
-                    }
-                }
-
-                // 4. Wire Save Settings
-                const btnSave = document.getElementById("btnSaveSettingsPage");
-                if (btnSave) {
-                    btnSave.addEventListener("click", async () => {
-                        const payload = {
-                            telegram_token: document.getElementById("inputTgToken")?.value || "",
-                            telegram_chat_id: document.getElementById("inputTgChatId")?.value || "",
-                            gemini_key: document.getElementById("inputGeminiKey")?.value || "",
-                            gemini_model: document.getElementById("inputGeminiModel")?.value || "gemini-2.5-flash-lite",
-                            bitget_auto_trade: document.getElementById("inputBitgetAutoTrade")?.checked || false,
-                            bitget_key: document.getElementById("inputBitgetKey")?.value || "",
-                            bitget_secret: document.getElementById("inputBitgetSecret")?.value || "",
-                            bitget_passphrase: document.getElementById("inputBitgetPassphrase")?.value || "",
-                            bitget_min_conf: parseInt(document.getElementById("inputBitgetMinConf")?.value || "90")
-                        };
-
-                        try {
-                            const saveResp = await fetch('/api/settings', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            });
-                            if (saveResp.ok) {
-                                btnSave.innerHTML = `<i class="fa-solid fa-check"></i> Settings Saved!`;
-                                setTimeout(() => { btnSave.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Settings`; }, 2000);
-                            }
-                        } catch (err) {
-                            console.error("Save error:", err);
-                        }
-                    });
-                }
-
-                // 5. Wire Telegram test
-                const btnTest = document.getElementById("btnTestTgAlertPage");
-                if (btnTest) {
-                    btnTest.addEventListener("click", async () => {
-                        btnTest.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Testing...`;
-                        try {
-                            const res = await fetch('/api/telegram/test', { method: 'POST' });
-                            btnTest.innerHTML = res.ok ? `<i class="fa-solid fa-check"></i> Sent!` : `<i class="fa-solid fa-xmark"></i> Failed`;
-                        } catch(e) {
-                            btnTest.innerHTML = `<i class="fa-solid fa-xmark"></i> Failed`;
-                        }
-                        setTimeout(() => { btnTest.innerHTML = `<i class="fa-solid fa-vial"></i> Test Telegram`; }, 2500);
-                    });
-                }
-
-            } catch (e) {
-                console.error("initSettingsPage error:", e);
+                });
             }
         }
 

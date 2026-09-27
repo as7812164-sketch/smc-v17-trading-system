@@ -21,51 +21,604 @@
 </head>
 <body class="dark-theme">
 
-    <!-- TOP NAVIGATION BAR (MULTI-PAGE PLATFORM) -->
-    <header class="top-nav">
-        <div class="nav-brand">
-            <!-- Reusable Hamburger Button -->
+    <!-- GLOBAL TOP AREA -->
+    <!-- GLOBAL TOP AREA (MATCHING PANEL 1 IN REFERENCE IMAGE) -->
+    <header class="global-top-bar">
+        <div class="top-bar-left">
+            <!-- Mobile Hamburger Button -->
             <button class="hamburger-btn" id="btnOpenDrawer" title="Open Navigation Menu" aria-label="Open Navigation Drawer">
                 <i class="fa-solid fa-bars-staggered"></i>
             </button>
 
-            <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
-                <div class="brand-badge" style="background: linear-gradient(135deg, #ffd700, #ff8800); color: #000; font-weight: 800;">HERMES 2.0</div>
-                <div class="brand-titles">
-                    <span class="brand-main">HERMES 2.0 APEX QUANTUM TERMINAL</span>
-                    <span class="brand-sub">4 SENTRIES • $50 ➔ $2,000 MILESTONE • 5X ISOLATED COMPOUNDING</span>
+            <!-- Brand Logo with Wing / Eagle Icon -->
+            <a href="/" class="top-brand-group" style="display:flex; align-items:center; gap:9px; text-decoration:none;">
+                <div class="top-brand-icon" style="width:30px; height:30px; border-radius:7px; background:linear-gradient(135deg, #1d4ed8, #38bdf8); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; box-shadow:0 0 10px rgba(56,189,248,0.3);">
+                    <i class="fa-solid fa-feather-pointed"></i>
+                </div>
+                <div class="brand-titles" style="display: flex; flex-direction: column;">
+                    <span class="top-brand-text" style="font-size: 13px; font-weight: 800; letter-spacing: 0.6px; color:#FFFFFF;">HERMES 2.0</span>
+                    <span class="top-brand-sub" style="font-size: 9.5px; font-weight: 700; color:#38BDF8; font-family:var(--font-mono); letter-spacing:0.8px;">SMC AI AGENT</span>
                 </div>
             </a>
         </div>
 
-        <!-- MULTI-PAGE NAVIGATION MENU -->
-        <nav class="nav-pages-menu">
-            <a href="/" class="nav-page-link active"><i class="fa-solid fa-chart-candlestick"></i> <span>Terminal</span></a>
-            <a href="/markets" class="nav-page-link"><i class="fa-solid fa-chart-line"></i> <span>Markets</span></a>
-            <a href="/positions" class="nav-page-link"><i class="fa-solid fa-layer-group"></i> <span>Positions</span> <span class="badge badge-success" id="navPosBadge">0</span></a>
-            <a href="/compounding" class="nav-page-link"><i class="fa-solid fa-trophy"></i> <span>Compounding ($50 ➔ $2K)</span></a>
-            <a href="/trade-forensics" class="nav-page-link" style="color: #00F59B; font-weight: 700;"><i class="fa-solid fa-scale-balanced"></i> <span>Trade Forensics</span></a>
-            <a href="/brain" class="nav-page-link"><i class="fa-solid fa-brain"></i> <span>Mike Brain</span></a>
-            <a href="/hermes-ai" class="nav-page-link" style="color: #ffd700; border: 1px solid rgba(255,215,0,0.3); border-radius: 4px; padding: 4px 8px;"><i class="fa-solid fa-robot"></i> <span>Hermes AI</span></a>
-            <a href="/signals" class="nav-page-link"><i class="fa-solid fa-satellite-dish"></i> <span>Signals & Zones</span></a>
-            <a href="/settings" class="nav-page-link"><i class="fa-solid fa-gear"></i> <span>Settings</span></a>
-        </nav>
-
-        <div class="nav-right-cluster">
-            <div class="live-pill" id="binanceStatusPill">
-                <span class="pulse-dot"></span>
-                <span id="binanceStatusText">Binance: CONNECTED</span>
+        <!-- Center: 4 Metric Cards (Matching Reference: Paper Balance, Equity, Open P&L, Daily P&L) -->
+        <div class="top-bar-center" style="display: flex; align-items: center; gap: 8px;">
+            <!-- Card 1: Paper Balance -->
+            <div class="top-metric-card" title="Paper Trading Starting / Current Balance">
+                <span class="tmc-label">Paper Balance</span>
+                <div class="tmc-val-row">
+                    <span class="tmc-val" id="topPaperBalVal">$10,284.32</span>
+                    <span class="tmc-badge" id="topPaperBalPct">+2.34%</span>
+                </div>
             </div>
-            <button class="btn btn-secondary btn-sm" id="btnRefreshScan" title="Scan Top Champions">
-                <i class="fa-solid fa-arrows-rotate"></i>
-                <span>Scan</span>
+            <!-- Card 2: Equity -->
+            <div class="top-metric-card" title="Real-Time Portfolio Equity">
+                <span class="tmc-label">Equity</span>
+                <div class="tmc-val-row">
+                    <span class="tmc-val" id="topEquityVal">$10,512.43</span>
+                    <span class="tmc-badge" id="topEquityPct">+4.28%</span>
+                </div>
+            </div>
+            <!-- Card 3: Open P&L -->
+            <div class="top-metric-card" title="Current Floating PnL Across Active Positions">
+                <span class="tmc-label">Open P&L</span>
+                <div class="tmc-val-row">
+                    <span class="tmc-val text-buy" id="topOpenPnlVal">+$228.11</span>
+                    <span class="tmc-badge" id="topOpenPnlPct">+2.22%</span>
+                </div>
+            </div>
+            <!-- Card 4: Daily P&L -->
+            <div class="top-metric-card" title="24h Realized + Floating Daily P&L">
+                <span class="tmc-label">Daily P&L</span>
+                <div class="tmc-val-row">
+                    <span class="tmc-val text-buy" id="topDailyPnlVal">+$146.32</span>
+                    <span class="tmc-badge" id="topDailyPnlPct">+1.45%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Search, Theme, Notifications, Account Dropdown Pill -->
+        <div class="top-bar-right" style="display: flex; align-items: center; gap: 8px;">
+            <!-- Quick Search -->
+            <button class="top-icon-btn" id="btnTopSearch" title="Search Markets (Ctrl+K)">
+                <i class="fa-solid fa-magnifying-glass"></i>
             </button>
-            <button class="btn btn-secondary btn-sm" id="btnTgTest" title="Send Live Status to Telegram">
-                <i class="fa-brands fa-telegram"></i>
-                <span>Telegram</span>
+
+            <!-- Theme Toggle Icon -->
+            <button class="top-icon-btn" id="btnThemeToggle" title="Theme Mode">
+                <i class="fa-solid fa-sun" style="color: #ffd700;"></i>
             </button>
+
+            <!-- Notifications Bell with Glowing Dot -->
+            <button class="top-icon-btn" id="btnOpenNotifications" title="System Alerts &amp; Notifications" onclick="const m = document.getElementById('toastContainer'); if(m) m.classList.toggle('active');">
+                <i class="fa-solid fa-bell"></i>
+                <span class="badge-dot"></span>
+            </button>
+
+            <!-- Account Selector Dropdown Pill: [S] Paper Trading ▼ -->
+            <div class="top-account-selector" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 6px;" title="Switch Account">
+                <span style="width: 18px; height: 18px; border-radius: 50%; background: #2563eb; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; font-family: var(--font-mono);">S</span>
+                <select id="topAccountSelector" aria-label="Select Trading Account" style="background: transparent; border: none; color: #F8FAFC; font-size: 11px; font-family: var(--font-mono); outline: none; cursor: pointer;">
+                    <option value="paper_trading" selected>Paper Trading</option>
+                    <option value="1h_paper">1H Paper ($50)</option>
+                    <option value="4h_paper">4H Paper ($50)</option>
+                    <option value="bitget_live">Live Bitget 5x</option>
+                </select>
+            </div>
+
+            <!-- Settings Shortcut Button -->
+            <button class="top-icon-btn" id="btnOpenSettings" title="System Settings &amp; API Keys" onclick="const m = document.getElementById('settingsModal'); if(m) m.style.display='flex';">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+
+            <!-- Hidden compatibility elements for existing app.js logic -->
+            <div class="live-pill" id="binanceStatusPill" style="display:none;"><span class="pulse-dot"></span><span id="binanceStatusText">Binance: CONNECTED</span></div>
+            <button id="btnRefreshScan" style="display:none;"></button>
+            <button id="btnTgTest" style="display:none;"></button>
+            <span id="navPosBadge" style="display:none;">0</span>
         </div>
     </header>
+
+    <!-- APP SHELL: SIDEBAR + MAIN CONTENT AREA -->
+    <div class="app-shell">
+
+        <!-- GLOBAL PERSISTENT INSTITUTIONAL SIDEBAR (14 LINKS) -->
+        <aside class="global-sidebar" id="globalSidebar" aria-label="Main Navigation">
+            <div class="sidebar-nav-list">
+                <div class="sidebar-section-title">Trading Terminal</div>
+
+                <!-- 1. Dashboard (Active) -->
+                <a href="/" class="sidebar-nav-item active" title="Terminal Dashboard">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Dashboard</span>
+                    </div>
+                    <span class="sidebar-badge badge-cyan">ACTIVE</span>
+                </a>
+
+                <!-- 2. Markets -->
+                <a href="/markets" class="sidebar-nav-item" title="Markets Overview">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Markets</span>
+                    </div>
+                    <span class="sidebar-badge badge-gold">22</span>
+                </a>
+
+                <!-- 3. Live Chart -->
+                <a href="#tvChartContainer" class="sidebar-nav-item" title="Full Chart View">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-chart-candlestick"></i>
+                        <span>Live Chart</span>
+                    </div>
+                    <span class="sidebar-badge badge-cyan">PRO</span>
+                </a>
+
+                <!-- 4. Signals & Zones -->
+                <a href="/signals" class="sidebar-nav-item" title="Real-Time SMC Signals &amp; Order Blocks">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>Signals &amp; Zones</span>
+                    </div>
+                </a>
+
+                <!-- 5. Positions -->
+                <a href="/positions" class="sidebar-nav-item" title="Open Positions &amp; Execution">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Positions</span>
+                    </div>
+                    <span class="sidebar-badge badge-green" id="sidebarPosBadge">0</span>
+                </a>
+
+                <!-- 6. Trade History -->
+                <a href="/positions#history" class="sidebar-nav-item" title="Historical Closed Trades">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Trade History</span>
+                    </div>
+                </a>
+
+                <div class="sidebar-section-title">Quantitative AI</div>
+
+                <!-- 7. Performance -->
+                <a href="/compounding#performance" class="sidebar-nav-item" title="Performance &amp; Win Rate Metrics">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Performance</span>
+                    </div>
+                </a>
+
+                <!-- 8. Compounding -->
+                <a href="/compounding" class="sidebar-nav-item" title="$50 ➔ $2,000 Milestone Ladder">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>Compounding</span>
+                    </div>
+                    <span class="sidebar-badge badge-gold">$2K</span>
+                </a>
+
+                <!-- 9. HERMES AI -->
+                <a href="/hermes-ai" class="sidebar-nav-item" title="HERMES AI 4-Sentries Quant Agent">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>HERMES AI</span>
+                    </div>
+                    <span class="sidebar-badge badge-cyan">4 SENTRIES</span>
+                </a>
+
+                <!-- 10. Mike Brain -->
+                <a href="/brain" class="sidebar-nav-item" title="Mike AI Cognitive Brain">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>Mike Brain</span>
+                    </div>
+                    <span class="sidebar-badge badge-gold">AI</span>
+                </a>
+
+                <!-- 11. Trade Forensics -->
+                <a href="/trade-forensics" class="sidebar-nav-item" title="Trade Forensics &amp; Compounding Audit">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span>Trade Forensics</span>
+                    </div>
+                    <span class="sidebar-badge badge-green">AUDIT</span>
+                </a>
+
+                <div class="sidebar-section-title">Logs &amp; System</div>
+
+                <!-- 12. Journal -->
+                <a href="javascript:void(0)" onclick="if(typeof openJournalModal === 'function'){ openJournalModal(); } else { const m = document.getElementById('journalModal'); if(m) m.style.display='flex'; }" class="sidebar-nav-item" title="Permanent Trade Journal Ledger">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-book-journal-whills"></i>
+                        <span>Journal</span>
+                    </div>
+                </a>
+
+                <!-- 13. Scanner Logs -->
+                <a href="/signals#logs" class="sidebar-nav-item" title="Live Terminal Scanner Logs">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-terminal"></i>
+                        <span>Scanner Logs</span>
+                    </div>
+                </a>
+
+                <!-- 14. Settings -->
+                <a href="javascript:void(0)" onclick="const m = document.getElementById('settingsModal'); if(m) m.style.display='flex';" class="sidebar-nav-item" title="System Settings &amp; API Keys">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-gear"></i>
+                        <span>Settings</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Sidebar Footer Status (Matching Panel 1: Scanner: 4H LIVE, 1H LIVE) -->
+            <div class="sidebar-scanner-status" id="sidebarScannerStatus">
+                <span class="scanner-lbl">Scanner:</span>
+                <span class="scanner-tag" id="scanner4hBadge"><span class="dot"></span> 4H LIVE</span>
+                <span class="scanner-tag" id="scanner1hBadge"><span class="dot"></span> 1H LIVE</span>
+            </div>
+        </aside>
+
+        <!-- MAIN DASHBOARD CONTENT AREA -->
+        <main class="dashboard-main-content">
+        <!-- PANEL 1: DASHBOARD MAIN OVERVIEW (EXACT SPECIFICATION FROM REFERENCE IMAGE) -->
+        <div class="dashboard-overview-container">
+            <!-- ROW 1: MINI TICKER CARDS GRID (5 CHAMPIONS) -->
+            <div class="dashboard-tickers-row">
+                <!-- BTCUSDT -->
+                <div class="mini-ticker-card active" data-symbol="BTCUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('BTCUSDT');">
+                    <div class="mtc-left">
+                        <div class="mtc-coin-row">
+                            <span class="mtc-icon btc"><i class="fa-brands fa-bitcoin"></i></span>
+                            <span class="mtc-sym">BTCUSDT</span>
+                        </div>
+                        <div class="mtc-price-row">
+                            <span class="mtc-price" id="mtcPriceBTC">118,642.5</span>
+                            <span class="mtc-chg up" id="mtcChgBTC">+2.4%</span>
+                        </div>
+                    </div>
+                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
+                        <polyline fill="none" stroke="#00F59B" stroke-width="1.8" points="0,20 12,17 24,19 36,12 48,15 60,6" />
+                    </svg>
+                </div>
+
+                <!-- ETHUSDT -->
+                <div class="mini-ticker-card" data-symbol="ETHUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('ETHUSDT');">
+                    <div class="mtc-left">
+                        <div class="mtc-coin-row">
+                            <span class="mtc-icon eth"><i class="fa-brands fa-ethereum"></i></span>
+                            <span class="mtc-sym">ETHUSDT</span>
+                        </div>
+                        <div class="mtc-price-row">
+                            <span class="mtc-price" id="mtcPriceETH">3,764.28</span>
+                            <span class="mtc-chg up" id="mtcChgETH">+1.21%</span>
+                        </div>
+                    </div>
+                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
+                        <polyline fill="none" stroke="#00F59B" stroke-width="1.8" points="0,18 12,15 24,16 36,10 48,13 60,7" />
+                    </svg>
+                </div>
+
+                <!-- SOLUSDT -->
+                <div class="mini-ticker-card" data-symbol="SOLUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('SOLUSDT');">
+                    <div class="mtc-left">
+                        <div class="mtc-coin-row">
+                            <span class="mtc-icon sol"><i class="fa-solid fa-bolt"></i></span>
+                            <span class="mtc-sym">SOLUSDT</span>
+                        </div>
+                        <div class="mtc-price-row">
+                            <span class="mtc-price" id="mtcPriceSOL">172.21</span>
+                            <span class="mtc-chg down" id="mtcChgSOL">-0.45%</span>
+                        </div>
+                    </div>
+                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
+                        <polyline fill="none" stroke="#FF4D6A" stroke-width="1.8" points="0,8 14,11 28,9 42,16 56,18 60,20" />
+                    </svg>
+                </div>
+
+                <!-- BNBUSDT -->
+                <div class="mini-ticker-card" data-symbol="BNBUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('BNBUSDT');">
+                    <div class="mtc-left">
+                        <div class="mtc-coin-row">
+                            <span class="mtc-icon bnb"><i class="fa-solid fa-coins"></i></span>
+                            <span class="mtc-sym">BNBUSDT</span>
+                        </div>
+                        <div class="mtc-price-row">
+                            <span class="mtc-price" id="mtcPriceBNB">698.32</span>
+                            <span class="mtc-chg up" id="mtcChgBNB">+0.82%</span>
+                        </div>
+                    </div>
+                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
+                        <polyline fill="none" stroke="#00F59B" stroke-width="1.8" points="0,17 12,14 25,16 38,11 50,13 60,8" />
+                    </svg>
+                </div>
+
+                <!-- XAUUSDT -->
+                <div class="mini-ticker-card" data-symbol="XAUUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('XAUUSDT');">
+                    <div class="mtc-left">
+                        <div class="mtc-coin-row">
+                            <span class="mtc-icon xau"><i class="fa-solid fa-gem"></i></span>
+                            <span class="mtc-sym">XAUUSDT</span>
+                        </div>
+                        <div class="mtc-price-row">
+                            <span class="mtc-price" id="mtcPriceXAU">2,392.14</span>
+                            <span class="mtc-chg up" id="mtcChgXAU">+0.16%</span>
+                        </div>
+                    </div>
+                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
+                        <polyline fill="none" stroke="#00F59B" stroke-width="1.8" points="0,16 15,14 30,15 45,10 60,7" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- ROW 2: MAIN CHART & LIVE SIGNALS -->
+            <div class="dashboard-center-row">
+                <!-- LEFT: MAIN CHART PANEL (VISUAL PRIORITY) -->
+                <div class="dashboard-chart-box">
+                    <div class="dashboard-chart-header">
+                        <div class="dch-left">
+                            <div class="dch-coin-badge">
+                                <span class="mtc-icon btc" style="width:20px; height:20px;"><i class="fa-brands fa-bitcoin"></i></span>
+                                <span class="symbol-name" id="selectedSymbol">BTCUSDT</span>
+                                <span class="current-price" id="symbolPrice" style="font-size:13px; font-weight:800; color:#00F59B; font-family:var(--font-mono); margin-left:4px;">$118,642.5</span>
+                                <div class="chart-active-trade-pill" id="chartActiveTradePill" style="display: none;"></div>
+                            </div>
+
+                            <!-- TIMEFRAME SELECTOR BUTTONS (5m, 15m, 1h, 4h, 1d) -->
+                            <div class="dch-timeframes" id="timeframeGroup" title="Select Timeframe">
+                                <button class="dch-tf-btn" data-tf="5m">5m</button>
+                                <button class="dch-tf-btn" data-tf="15m">15m</button>
+                                <button class="dch-tf-btn" data-tf="1h">1h</button>
+                                <button class="dch-tf-btn active" data-tf="4h">4h</button>
+                                <button class="dch-tf-btn" data-tf="1d">1d</button>
+                            </div>
+                        </div>
+
+                        <div class="dch-right">
+                            <button class="indicator-chip active" id="chipSmcV17" data-ind="smcv17" style="border-color:#00F59B; color:#00F59B; background:rgba(0,245,155,0.12); font-weight:700;">
+                                <i class="fa-solid fa-chart-line"></i> <span>Indicators</span>
+                            </button>
+                            <div class="tv-dropdown" id="chartStyleDropdown" title="Chart Display Style">
+                                <button class="tv-dropdown-btn" id="btnChartStyle" style="padding:4px 8px; font-size:11px;">
+                                    <i class="fa-solid fa-chart-candlestick" id="currentStyleIcon"></i>
+                                    <span id="currentStyleText">TradingView</span>
+                                    <i class="fa-solid fa-chevron-down caret-icon"></i>
+                                </button>
+                                <div class="tv-dropdown-menu" id="styleMenu">
+                                    <div class="dropdown-item active" data-style="candles"><i class="fa-solid fa-chart-candlestick"></i> Candles</div>
+                                    <div class="dropdown-item" data-style="heikin_ashi"><i class="fa-solid fa-yin-yang"></i> Heikin-Ashi</div>
+                                    <div class="dropdown-item" data-style="line"><i class="fa-solid fa-chart-line"></i> Line</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-icon btn-xs" id="btnChartSnapshot" title="Snapshot"><i class="fa-solid fa-camera"></i></button>
+                            <button class="btn btn-icon btn-xs" id="btnToggleZones" title="Toggle Zones"><i class="fa-solid fa-eye" id="zonesEyeIcon"></i></button>
+                            <button class="btn btn-icon btn-xs" id="btnFullscreenChart" title="Fullscreen"><i class="fa-solid fa-expand" id="fullscreenBtnIcon"></i><span id="fullscreenBtnText" style="display:none;"></span></button>
+                            <button class="btn btn-ai btn-xs" id="btnAnalyzeAI" title="Ask Mike AI" style="padding:3px 8px; font-size:10px;"><i class="fa-solid fa-robot"></i> Mike AI</button>
+                        </div>
+                    </div>
+
+                    <!-- SUB-TOOLBAR: INDICATORS, ZOOM & LIVE OHLCV LEGEND -->
+                    <div class="chart-sub-toolbar" style="padding: 3px 10px; background: rgba(10,15,26,0.6); border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 11px;">
+                        <div class="sub-toolbar-left" style="display: flex; align-items: center; gap: 6px;">
+                            <button class="indicator-chip" id="chipEma20" data-ind="ema20">EMA 20</button>
+                            <button class="indicator-chip" id="chipEma50" data-ind="ema50">EMA 50</button>
+                            <button class="indicator-chip" id="chipEma200" data-ind="ema200">EMA 200</button>
+                            <button class="indicator-chip" id="chipBB" data-ind="bb">BB</button>
+                            <div class="tv-btn-group" id="historyGroup" style="margin-left: 4px;">
+                                <button class="tv-pill-btn active" data-limit="500">500</button>
+                            </div>
+                            <button class="tv-icon-btn" id="btnToggleLog" title="Log">Log</button>
+                            <button class="tv-icon-btn" id="btnResetView" title="Reset"><i class="fa-solid fa-arrows-to-eye"></i></button>
+                        </div>
+                        <div class="tv-legend-bar" id="tvLegendBar">
+                            <span class="legend-item"><span class="legend-lbl">O</span><span class="legend-val" id="legOpen">--</span></span>
+                            <span class="legend-item"><span class="legend-lbl">H</span><span class="legend-val" id="legHigh">--</span></span>
+                            <span class="legend-item"><span class="legend-lbl">L</span><span class="legend-val" id="legLow">--</span></span>
+                            <span class="legend-item"><span class="legend-lbl">C</span><span class="legend-val" id="legClose">--</span></span>
+                            <span class="legend-item"><span class="legend-val" id="legChange">--</span></span>
+                            <span class="legend-item"><span class="legend-lbl">Vol</span><span class="legend-val" id="legVol">--</span></span>
+                        </div>
+                    </div>
+
+                    <!-- LIGHTWEIGHT CHART CONTAINER -->
+                    <div class="chart-container" id="tvChartContainer" style="flex:1; min-height:380px; position:relative;">
+                        <!-- Floating HERMES 2.0 APEX HUD Badge -->
+                        <div class="smc-chart-hud" id="smcChartHud">
+                            <div class="hud-header">
+                                <span class="hud-badge" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.4);"><i class="fa-solid fa-crown"></i> HERMES 2.0 APEX</span>
+                                <span class="hud-tf" id="hudTimeframe">QUANTUM 5X</span>
+                            </div>
+                            <div class="hud-body">
+                                <div class="hud-row">
+                                    <span class="hud-label">4H Target / SL:</span>
+                                    <span class="hud-val text-buy" id="hudTargetSl">+14.0% ROE / -14.0% SL</span>
+                                </div>
+                                <div class="hud-row">
+                                    <span class="hud-label">4-Sentry Status:</span>
+                                    <span class="hud-val" id="hudGateStatus" style="color: #00f59b;"><i class="fa-solid fa-shield-halved"></i> Active &amp; Guarded</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TradingView Floating Favorites Drawing Toolbar -->
+                        <div class="tv-floating-toolbar" id="tvFloatingToolbar" title="Drawing Tools">
+                            <div class="tv-tool-handle" id="tvToolHandle"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+                            <button class="tv-tool-btn" data-tool="callout" id="toolBtnCallout" title="Callout"><i class="fa-solid fa-comment-dots"></i></button>
+                            <button class="tv-tool-btn" data-tool="trendline" id="toolBtnTrendline" title="Trend Line"><i class="fa-solid fa-chart-line"></i></button>
+                            <button class="tv-tool-btn" data-tool="rectangle" id="toolBtnRectangle" title="Order Block Box"><i class="fa-regular fa-square"></i></button>
+                            <button class="tv-tool-btn" data-tool="long_pos" id="toolBtnLongPos" title="Long Position"><i class="fa-solid fa-arrow-trend-up text-buy"></i></button>
+                            <button class="tv-tool-btn" data-tool="short_pos" id="toolBtnShortPos" title="Short Position"><i class="fa-solid fa-arrow-trend-down text-sell"></i></button>
+                            <button class="tv-tool-btn" id="toolBtnUndo" title="Undo"><i class="fa-solid fa-rotate-left"></i></button>
+                            <button class="tv-tool-btn tv-tool-danger" id="toolBtnTrash" title="Clear All"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Order Flow & Active Zones Strips -->
+                    <div class="orderflow-hud-strip" id="orderflowHudStrip"></div>
+                    <div class="active-zones-strip" id="activeZonesStrip"></div>
+                </div>
+
+                <!-- RIGHT: LIVE SIGNALS BOX -->
+                <div class="dashboard-signals-box">
+                    <div class="dash-box-header">
+                        <span><i class="fa-solid fa-satellite-dish"></i> Live Signals</span>
+                        <button class="btn-text btn-xs" id="btnRefreshSignals" style="font-size:10px; color:#38BDF8; background:transparent; border:none; cursor:pointer;"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                    </div>
+                    <div class="dashboard-signals-list" id="signalsListContainer">
+                        <div class="dash-signal-item" onclick="if(typeof switchCoin === 'function') switchCoin('BTCUSDT');">
+                            <div class="dsi-left">
+                                <span class="mtc-icon btc" style="width:16px; height:16px;"><i class="fa-brands fa-bitcoin"></i></span>
+                                <span class="dsi-sym">BTCUSDT</span>
+                                <span class="dsi-badge long">LONG</span>
+                            </div>
+                            <span class="dsi-tf">1h</span>
+                        </div>
+                        <div class="dash-signal-item" onclick="if(typeof switchCoin === 'function') switchCoin('ETHUSDT');">
+                            <div class="dsi-left">
+                                <span class="mtc-icon eth" style="width:16px; height:16px;"><i class="fa-brands fa-ethereum"></i></span>
+                                <span class="dsi-sym">ETHUSDT</span>
+                                <span class="dsi-badge long">LONG</span>
+                            </div>
+                            <span class="dsi-tf">4h</span>
+                        </div>
+                        <div class="dash-signal-item" onclick="if(typeof switchCoin === 'function') switchCoin('SOLUSDT');">
+                            <div class="dsi-left">
+                                <span class="mtc-icon sol" style="width:16px; height:16px;"><i class="fa-solid fa-bolt"></i></span>
+                                <span class="dsi-sym">SOLUSDT</span>
+                                <span class="dsi-badge short">SHORT</span>
+                            </div>
+                            <span class="dsi-tf">15m</span>
+                        </div>
+                        <div class="dash-signal-item" onclick="if(typeof switchCoin === 'function') switchCoin('BNBUSDT');">
+                            <div class="dsi-left">
+                                <span class="mtc-icon bnb" style="width:16px; height:16px;"><i class="fa-solid fa-coins"></i></span>
+                                <span class="dsi-sym">BNBUSDT</span>
+                                <span class="dsi-badge long">LONG</span>
+                            </div>
+                            <span class="dsi-tf">4h</span>
+                        </div>
+                        <div class="dash-signal-item" onclick="if(typeof switchCoin === 'function') switchCoin('XAUUSDT');">
+                            <div class="dsi-left">
+                                <span class="mtc-icon xau" style="width:16px; height:16px;"><i class="fa-solid fa-gem"></i></span>
+                                <span class="dsi-sym">XAUUSDT</span>
+                                <span class="dsi-badge short">SHORT</span>
+                            </div>
+                            <span class="dsi-tf">1h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 3: OPEN POSITIONS & PERFORMANCE (7D) -->
+            <div class="dashboard-bottom-row">
+                <!-- LEFT: OPEN POSITIONS TABLE -->
+                <div class="dashboard-positions-box" id="proPositionsDock">
+                    <div class="dash-box-header">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span><i class="fa-solid fa-layer-group"></i> Open Positions (<span id="proDockCountBadge">2</span>)</span>
+                            <span class="dock-pnl-live" id="proDockTotalPnl" style="font-size:11px; font-weight:700; color:#00F59B;">Floating PnL: +$48.18 (+5.61%)</span>
+                        </div>
+                        <div class="dock-actions">
+                            <div class="dock-goal-pill" id="dockGoalPill" style="font-size:10px; padding:2px 8px; border-radius:4px; background:rgba(0,245,155,0.1); color:#00F59B;">
+                                <i class="fa-solid fa-bolt"></i> Compounding $50 ➔ $2K
+                            </div>
+                            <button class="btn btn-xs btn-secondary" id="btnToggleDockExpand" style="display:none;"></button>
+                        </div>
+                    </div>
+
+                    <div class="dash-positions-table-wrap" id="proDockTableContainer">
+                        <table class="dash-positions-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Side</th>
+                                    <th>Entry Price</th>
+                                    <th>Current Price</th>
+                                    <th>Size (Lev)</th>
+                                    <th>P&amp;L (USDT)</th>
+                                    <th>P&amp;L %</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <span class="mtc-icon btc" style="width:16px; height:16px;"><i class="fa-brands fa-bitcoin"></i></span>
+                                            <b>BTCUSDT</b>
+                                        </div>
+                                    </td>
+                                    <td><span class="dsi-badge long">LONG</span></td>
+                                    <td>118,120.5</td>
+                                    <td>118,642.5</td>
+                                    <td>50 (5x)</td>
+                                    <td class="text-buy">+$26.10</td>
+                                    <td class="text-buy">+4.42%</td>
+                                    <td><button class="btn-pos-close" onclick="alert('Position close requested');">Close</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <span class="mtc-icon eth" style="width:16px; height:16px;"><i class="fa-brands fa-ethereum"></i></span>
+                                            <b>ETHUSDT</b>
+                                        </div>
+                                    </td>
+                                    <td><span class="dsi-badge long">LONG</span></td>
+                                    <td>3,720.12</td>
+                                    <td>3,764.28</td>
+                                    <td>100 (5x)</td>
+                                    <td class="text-buy">+$22.08</td>
+                                    <td class="text-buy">+1.19%</td>
+                                    <td><button class="btn-pos-close" onclick="alert('Position close requested');">Close</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RIGHT: PERFORMANCE (7D) CARD -->
+                <div class="dashboard-perf-box">
+                    <div class="perf-header-row">
+                        <span><i class="fa-solid fa-chart-pie" style="color:#00F59B;"></i> Performance (7D)</span>
+                        <span class="perf-pill-tag" style="font-size:9.5px; background:rgba(56,189,248,0.15); color:#38BDF8; padding:1px 6px; border-radius:4px; font-weight:700;">7D</span>
+                    </div>
+
+                    <div class="perf-main-stat">
+                        <span class="p-lbl">Total P&amp;L</span>
+                        <div class="p-val-row">
+                            <span class="p-val" id="kpiTotalPnlVal">+$2,148.32</span>
+                            <span class="p-pill">+26.4%</span>
+                        </div>
+                    </div>
+
+                    <div class="perf-footer-grid">
+                        <div class="pf-item">
+                            <span class="pf-lbl">Win Rate</span>
+                            <span class="pf-val text-buy" id="kpiWinRate">69.3%</span>
+                        </div>
+                        <div class="pf-item">
+                            <span class="pf-lbl">Total Trades</span>
+                            <span class="pf-val" id="kpiTradesTotal">156</span>
+                        </div>
+                        <div class="pf-item">
+                            <span class="pf-lbl">Profit Factor</span>
+                            <span class="pf-val text-buy">2.14</span>
+                        </div>
+                        <div class="pf-item">
+                            <span class="pf-lbl">Sentries Guard</span>
+                            <span class="pf-val" style="color:#00F59B;">4 Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HIDDEN BACKEND BINDING BRIDGE (PRESERVES ALL DOM IDs FOR APP.JS) -->
+        <div id="legacyHiddenBridge" style="display:none;" aria-hidden="true">
+
+
 
     <!-- BITGET PRO 24H TICKER STRIP -->
     <div class="bitget-pro-ticker-strip">
@@ -151,7 +704,7 @@
     </section>
 
     <!-- MAIN TERMINAL WORKSPACE -->
-    <main class="terminal-grid">
+    <div class="terminal-grid">
         
         <!-- LEFT PANEL: TOP 22 CHAMPIONS WATCHLIST -->
         <aside class="panel coins-panel">
@@ -450,7 +1003,12 @@
                     </div>
                 </div>
                 <div class="dock-content-table" id="proDockTableContainer">
-                    <!-- Dynamic live positions rendered here -->
+                    <div class="clean-empty-state">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <h4>No Active Positions Running</h4>
+                        <p>Hermes 2.0 Apex 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
+                        <span class="empty-tag"><i class="fa-solid fa-shield-halved"></i> 4 SENTRIES ARMED • 5X ISOLATED</span>
+                    </div>
                 </div>
             </div>
         </section>
@@ -517,9 +1075,11 @@
                 <div class="futures-view-section active" id="fviewPositions">
                     <div class="binance-positions-scroll" id="binancePositionsContainer">
                         <!-- Dynamic Binance-Style Position Cards -->
-                        <div class="pos-loading-state">
-                            <i class="fa-solid fa-circle-notch fa-spin text-buy"></i>
-                            <span>Fetching live positions & mark prices...</span>
+                        <div class="clean-empty-state">
+                            <i class="fa-solid fa-crosshairs"></i>
+                            <h4>No Open Positions</h4>
+                            <p>Scanning 22 Champion pairs for 4-Sentries confluence &amp; Order Block entries.</p>
+                            <span class="empty-tag">SCANNING 22 CHAMPIONS</span>
                         </div>
                     </div>
                 </div>
@@ -532,6 +1092,12 @@
                     </div>
                     <div class="binance-orders-scroll" id="binanceOrdersContainer">
                         <!-- Dynamic Limit Order Cards -->
+                        <div class="clean-empty-state">
+                            <i class="fa-solid fa-clock"></i>
+                            <h4>No Pending Limit Orders</h4>
+                            <p>Limit orders will be auto-placed when a qualified 2nd Order Block is detected.</p>
+                            <span class="empty-tag">LIMIT ORDERS ARMED</span>
+                        </div>
                     </div>
                 </div>
 
@@ -822,7 +1388,12 @@
                     <button class="btn-text" id="btnRefreshSignals"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
                 </div>
                 <div class="signals-scroll-list" id="signalsListContainer">
-                    <!-- Dynamic signals list -->
+                    <div class="clean-empty-state">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <h4>Scanning Real-Time Signals</h4>
+                        <p>Real-time displacement, liquidity sweeps &amp; order block taps will appear here as they occur.</p>
+                        <span class="empty-tag">LIVE FEED CONNECTED</span>
+                    </div>
                 </div>
             </div>
 
@@ -1051,7 +1622,12 @@
 
                 <!-- Live Open Trades Container -->
                 <div class="open-trades-scroll-list" id="paperOpenTradesContainer">
-                    <!-- Dynamic live open trade cards inserted here -->
+                    <div class="clean-empty-state">
+                        <i class="fa-solid fa-trophy"></i>
+                        <h4>$50 Compounding Ready</h4>
+                        <p>No active paper trades. $50 starting margin reserved for 5x isolated compounding execution.</p>
+                        <span class="empty-tag">STAGE 1: $50 ➔ $100</span>
+                    </div>
                 </div>
 
                 <!-- Closed Trades History Header -->
@@ -1060,12 +1636,25 @@
                     <button class="btn-text text-sell" id="btnResetPaperAccount" title="Reset Paper Account to 100 USDT"><i class="fa-solid fa-trash-can"></i> Reset</button>
                 </div>
                 <div class="closed-trades-scroll-list" id="paperClosedTradesContainer">
-                    <!-- Dynamic closed trade rows inserted here -->
+                    <div class="clean-empty-state">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <h4>No Closed Trades Yet</h4>
+                        <p>Completed trades with realized P&amp;L and ROI metrics will be automatically recorded here.</p>
+                        <span class="empty-tag">LEDGER PERSISTENT</span>
+                    </div>
                 </div>
             </div>
         </aside>
+    </div>
+    <!-- END TERMINAL-GRID -->
 
-    </main>
+    
+        </div>
+</main>
+    <!-- END DASHBOARD-MAIN-CONTENT -->
+
+</div>
+<!-- END APP-SHELL -->
 
     <!-- SETTINGS MODAL -->
     <div class="modal-overlay" id="settingsModal">
@@ -1803,77 +2392,122 @@
             </div>
         </div>
 
-        <!-- Drawer Navigation Menu Links -->
+        <!-- Drawer Navigation Menu Links (14 Items) -->
         <div class="drawer-nav-content">
             <!-- GROUP 1: CORE TRADING -->
-            <div class="drawer-section-label">Core Terminal & Markets</div>
+            <div class="drawer-section-label">Trading Terminal</div>
             <div class="drawer-links-group">
+                <!-- 1. Dashboard -->
                 <a href="/" class="drawer-nav-item active">
                     <div class="left-group">
-                        <i class="fa-solid fa-chart-candlestick"></i>
-                        <span>Terminal (Trade / Chart)</span>
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Dashboard</span>
                     </div>
-                    <span class="drawer-badge badge-cyan">5X PRO</span>
+                    <span class="drawer-badge badge-cyan">ACTIVE</span>
                 </a>
+                <!-- 2. Markets -->
                 <a href="/markets" class="drawer-nav-item">
                     <div class="left-group">
                         <i class="fa-solid fa-chart-line"></i>
-                        <span>Markets Overview</span>
+                        <span>Markets</span>
                     </div>
-                    <span class="drawer-badge badge-gold">22 CHAMPIONS</span>
+                    <span class="drawer-badge badge-gold">22</span>
+                </a>
+                <!-- 3. Live Chart -->
+                <a href="#tvChartContainer" class="drawer-nav-item" onclick="closeDrawer();">
+                    <div class="left-group">
+                        <i class="fa-solid fa-chart-candlestick"></i>
+                        <span>Live Chart</span>
+                    </div>
+                    <span class="drawer-badge badge-cyan">PRO</span>
+                </a>
+                <!-- 4. Signals & Zones -->
+                <a href="/signals" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>Signals &amp; Zones</span>
+                    </div>
+                </a>
+                <!-- 5. Positions -->
+                <a href="/positions" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Positions</span>
+                    </div>
+                    <span class="drawer-badge" id="drawerPosBadge">0</span>
+                </a>
+                <!-- 6. Trade History -->
+                <a href="/positions#history" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Trade History</span>
+                    </div>
                 </a>
             </div>
 
             <!-- GROUP 2: STRATEGY & WEALTH ENGINE -->
-            <div class="drawer-section-label">Apex Wealth Engine</div>
+            <div class="drawer-section-label">Quantitative AI</div>
             <div class="drawer-links-group">
+                <!-- 7. Performance -->
+                <a href="/compounding#performance" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Performance</span>
+                    </div>
+                </a>
+                <!-- 8. Compounding -->
                 <a href="/compounding" class="drawer-nav-item">
                     <div class="left-group">
                         <i class="fa-solid fa-trophy"></i>
-                        <span>Compounding Goal ($50 ➔ $2,000)</span>
+                        <span>Compounding ($50 ➔ $2K)</span>
                     </div>
-                    <span class="drawer-badge badge-hot">HOT</span>
+                    <span class="drawer-badge badge-hot">$2K</span>
                 </a>
-                <a href="/trade-forensics" class="drawer-nav-item">
-                    <div class="left-group">
-                        <i class="fa-solid fa-scale-balanced"></i>
-                        <span>Trade Forensics & Audit</span>
-                    </div>
-                    <span class="drawer-badge badge-gold" style="background:#F59E0B; color:#000; font-weight:800;">AUDIT</span>
-                </a>
-                <a href="javascript:void(0)" onclick="closeDrawer(); toggleHermesDrawer();" class="drawer-nav-item">
+                <!-- 9. HERMES AI -->
+                <a href="/hermes-ai" class="drawer-nav-item">
                     <div class="left-group">
                         <i class="fa-solid fa-robot"></i>
-                        <span>Hermes AI & Sentries</span>
+                        <span>HERMES AI</span>
                     </div>
-                    <span class="drawer-badge badge-cyan">LIVE</span>
+                    <span class="drawer-badge badge-cyan">4 SENTRIES</span>
                 </a>
-                <a href="/positions" class="drawer-nav-item">
-                    <div class="left-group">
-                        <i class="fa-solid fa-layer-group"></i>
-                        <span>Positions & History</span>
-                    </div>
-                    <span class="drawer-badge" id="drawerPosBadge">0</span>
-                </a>
+                <!-- 10. Mike Brain -->
                 <a href="/brain" class="drawer-nav-item">
                     <div class="left-group">
                         <i class="fa-solid fa-brain"></i>
-                        <span>Mike Cognitive Brain</span>
+                        <span>Mike Brain</span>
                     </div>
-                    <span class="drawer-badge">AI AGENT</span>
+                    <span class="drawer-badge">AI</span>
+                </a>
+                <!-- 11. Trade Forensics -->
+                <a href="/trade-forensics" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span>Trade Forensics</span>
+                    </div>
+                    <span class="drawer-badge badge-gold" style="background:#00F59B; color:#000; font-weight:800;">AUDIT</span>
                 </a>
             </div>
 
-            <!-- GROUP 3: SYSTEM & CONFIG -->
-            <div class="drawer-section-label">Platform & Setup</div>
+            <!-- GROUP 3: LOGS & SYSTEM -->
+            <div class="drawer-section-label">Logs &amp; System</div>
             <div class="drawer-links-group">
-                <a href="/signals" class="drawer-nav-item">
+                <!-- 12. Journal -->
+                <a href="javascript:void(0)" onclick="closeDrawer(); const m = document.getElementById('journalModal'); if(m) m.style.display='flex';" class="drawer-nav-item">
                     <div class="left-group">
-                        <i class="fa-solid fa-satellite-dish"></i>
-                        <span>Signals & Zones</span>
+                        <i class="fa-solid fa-book-journal-whills"></i>
+                        <span>Journal</span>
                     </div>
                 </a>
-                <a href="/settings" class="drawer-nav-item">
+                <!-- 13. Scanner Logs -->
+                <a href="/signals#logs" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-terminal"></i>
+                        <span>Scanner Logs</span>
+                    </div>
+                </a>
+                <!-- 14. Settings -->
+                <a href="javascript:void(0)" onclick="closeDrawer(); const m = document.getElementById('settingsModal'); if(m) m.style.display='flex';" class="drawer-nav-item">
                     <div class="left-group">
                         <i class="fa-solid fa-gear"></i>
                         <span>Settings</span>
@@ -1927,9 +2561,58 @@
                 }, 400);
             });
         }
+
+        // Live Top Bar & Sidebar Metrics Synchronization
+        function syncDashboardMetrics() {
+            const kpiBal = document.getElementById("paperCurBalance") || document.getElementById("kpiBitgetBal");
+            const kpiEq = document.getElementById("bgEquityVal") || document.getElementById("paperEquityVal");
+            const kpiPnl = document.getElementById("kpiOpenPnL") || document.getElementById("proDockTotalPnl");
+            const posBadge = document.getElementById("fposCount") || document.getElementById("proDockCountBadge");
+
+            const topBal = document.getElementById("topPaperBalVal");
+            const topEq = document.getElementById("topEquityVal");
+            const topPnl = document.getElementById("topOpenPnlVal");
+            const sidePos = document.getElementById("sidebarPosBadge");
+            const drawPos = document.getElementById("drawerPosBadge");
+
+            if (topBal && kpiBal && kpiBal.innerText && kpiBal.innerText.trim() !== "") {
+                topBal.innerText = kpiBal.innerText.replace("Portfolio Balance", "").trim();
+            }
+            if (topEq && kpiEq && kpiEq.innerText && kpiEq.innerText.trim() !== "") {
+                topEq.innerText = kpiEq.innerText.replace("Equity:", "").trim();
+            }
+            if (topPnl && kpiPnl && kpiPnl.innerText && kpiPnl.innerText.trim() !== "") {
+                topPnl.innerText = kpiPnl.innerText.replace("Floating PnL:", "").trim();
+            }
+            if (posBadge && posBadge.innerText) {
+                const count = posBadge.innerText.replace(/[^0-9]/g, "") || "0";
+                if (sidePos) sidePos.innerText = count;
+                if (drawPos) drawPos.innerText = count;
+            }
+        }
+        setInterval(syncDashboardMetrics, 3000);
+
+        // Account Selector Mode Listener
+        const topAccountSelector = document.getElementById("topAccountSelector");
+        if (topAccountSelector) {
+            topAccountSelector.addEventListener("change", (e) => {
+                const mode = e.target.value;
+                if (mode === "1h_paper") {
+                    const btn1h = document.querySelector('.tv-pill-btn[data-tf="1h"]');
+                    if (btn1h) btn1h.click();
+                    const bTab = document.getElementById("btnTabBinance1h");
+                    if (bTab) bTab.click();
+                } else if (mode === "4h_paper") {
+                    const btn4h = document.querySelector('.tv-pill-btn[data-tf="4h"]');
+                    if (btn4h) btn4h.click();
+                    const bTab = document.getElementById("btnTabBitget4h");
+                    if (bTab) bTab.click();
+                }
+            });
+        }
     </script>
 
-    <script src="/static/app.js?v=106"></script>
+    <script src="/static/app.js?v=111"></script>
     <script>
         if (window.Telegram && window.Telegram.WebApp) {
             try {

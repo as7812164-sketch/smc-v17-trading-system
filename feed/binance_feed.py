@@ -235,34 +235,15 @@ class BinanceFeed:
     async def fetch_24hr_tickers(self) -> Dict[str, Dict[str, Any]]:
         """Fetch live 24h ticker statistics (price, change %, high, low, volume) with caching and fallbacks."""
         now = time.time()
-        if self.last_24h_tickers and (now - self.last_24h_time < 5):
+        if self.last_24h_tickers and (now - self.last_24h_time < 10.0):
             return self.last_24h_tickers
 
         session = await self.get_session()
         data_map: Dict[str, Dict[str, Any]] = {}
 
-        # 1. Binance Futures 24hr
+        # 1. Binance Vision 24hr (Global, super-fast, no US/India geo-restrictions)
         try:
-            async with session.get(f"{BINANCE_FAPI_BASE}/fapi/v1/ticker/24hr", timeout=5) as resp:
-                if resp.status == 200:
-                    raw = await resp.json()
-                    for item in raw:
-                        sym = item.get("symbol")
-                        data_map[sym] = {
-                            "price": float(item.get("lastPrice", 0.0) or 0.0),
-                            "change_24h": float(item.get("priceChangePercent", 0.0) or 0.0),
-                            "high_24h": float(item.get("highPrice", 0.0) or 0.0),
-                            "low_24h": float(item.get("lowPrice", 0.0) or 0.0),
-                            "volume_24h": float(item.get("quoteVolume", 0.0) or 0.0),
-                        }
-                    self.is_connected = True
-                    set_metric("binance_status", "CONNECTED")
-        except Exception:
-            pass
-
-        # 2. Binance Vision 24hr (spot fallback)
-        try:
-            async with session.get(f"{BINANCE_VISION_BASE}/api/v3/ticker/24hr", timeout=5) as resp:
+            async with session.get(f"{BINANCE_VISION_BASE}/api/v3/ticker/24hr", timeout=2.5) as resp:
                 if resp.status == 200:
                     raw = await resp.json()
                     for item in raw:
@@ -284,12 +265,19 @@ class BinanceFeed:
                                 "low_24h": float(item.get("lowPrice", 0.0) or 0.0) * 1000.0,
                                 "volume_24h": float(item.get("quoteVolume", 0.0) or 0.0),
                             }
+                    self.is_connected = True
+                    set_metric("binance_status", "CONNECTED")
+                    self.last_24h_tickers = data_map
+                    self.last_24h_time = time.time()
+                    self.last_heartbeat = time.time()
+                    self.last_data_time = time.time()
+                    return self.last_24h_tickers
         except Exception:
             pass
 
-        # 3. Bybit Fallback
+        # 2. Bybit Fallback (if Binance Vision is unreachable)
         try:
-            async with session.get(f"{BYBIT_BASE}/v5/market/tickers?category=linear", timeout=5) as resp:
+            async with session.get(f"{BYBIT_BASE}/v5/market/tickers?category=linear", timeout=2.5) as resp:
                 if resp.status == 200:
                     res_json = await resp.json()
                     for item in res_json.get("result", {}).get("list", []):
@@ -307,12 +295,36 @@ class BinanceFeed:
                                 "low_24h": l,
                                 "volume_24h": vol,
                             }
+                    if data_map:
+                        self.last_24h_tickers = data_map
+                        self.last_24h_time = time.time()
+                        return self.last_24h_tickers
+        except Exception:
+            pass
+
+        # 3. Binance Futures 24hr (Fallback)
+        try:
+            async with session.get(f"{BINANCE_FAPI_BASE}/fapi/v1/ticker/24hr", timeout=2.0) as resp:
+                if resp.status == 200:
+                    raw = await resp.json()
+                    for item in raw:
+                        sym = item.get("symbol")
+                        if sym:
+                            data_map[sym] = {
+                                "price": float(item.get("lastPrice", 0.0) or 0.0),
+                                "change_24h": float(item.get("priceChangePercent", 0.0) or 0.0),
+                                "high_24h": float(item.get("highPrice", 0.0) or 0.0),
+                                "low_24h": float(item.get("lowPrice", 0.0) or 0.0),
+                                "volume_24h": float(item.get("quoteVolume", 0.0) or 0.0),
+                            }
         except Exception:
             pass
 
         if data_map:
             self.last_24h_tickers = data_map
             self.last_24h_time = time.time()
+            self.last_heartbeat = time.time()
+            self.last_data_time = time.time()
             self.last_heartbeat = time.time()
             self.last_data_time = time.time()
 
