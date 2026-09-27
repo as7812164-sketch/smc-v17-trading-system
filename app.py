@@ -36,11 +36,14 @@ from database.db import (
     set_setting,
     set_metric,
     get_paper_account,
+    get_dual_paper_accounts,
     get_paper_trades_history,
     reset_paper_account,
     get_open_paper_trades,
     open_paper_trade,
     close_paper_trade_manually,
+    update_paper_trade_mark_price,
+    format_duration_str,
     wipe_legacy_database_clean
 )
 from feed.binance_feed import binance_feed
@@ -548,68 +551,80 @@ async def get_paper_trading_summary():
         "open_count": len(enriched_open)
     }
 
+@app.get("/api/paper/dual-accounts")
+async def get_dual_paper_accounts_route():
+    """Returns independent accounts for 4H Macro Swing ($50 start) and 1H Fast Scalp ($50 start)."""
+    return get_dual_paper_accounts()
+
 @app.get("/api/paper/account")
-async def get_paper_account_route():
-    summary = await get_paper_trading_summary()
-    acc = dict(summary.get("account", {}))
-    acc["open_trades"] = summary.get("open_trades", [])
-    acc["open_count"] = summary.get("open_count", 0)
-    acc["total_unrealized_pnl_usdt"] = summary.get("total_unrealized_pnl_usdt", 0.0)
-    acc["total_unrealized_pnl_pct"] = summary.get("total_unrealized_pnl_pct", 0.0)
-    acc.setdefault("initial_balance", 50.0)
-    acc.setdefault("current_balance", acc.get("equity", 50.0))
-    acc["balance"] = acc.get("current_balance", 50.0)
-    acc["unrealized_pnl"] = acc.get("unrealized_pnl_usdt", 0.0)
-    acc["daily_pnl"] = acc.get("total_pnl", 0.0)
-    acc.setdefault("milestone_target", 2000.0)
-    acc.setdefault("win_rate", 84.0)
+async def get_paper_account_route(timeframe: Optional[str] = None):
+    acc = get_paper_account(timeframe=timeframe)
+    open_trades = get_open_paper_trades(timeframe=timeframe)
+    acc["open_trades"] = open_trades
+    acc["open_count"] = len(open_trades)
+    acc.setdefault("balance", acc.get("current_balance", 50.0))
+    acc.setdefault("daily_pnl", acc.get("total_pnl", 0.0))
+    acc.setdefault("unrealized_pnl", 0.0)
     return acc
 
 @app.get("/api/paper/trades")
-async def get_paper_trades_route(limit: int = 100):
-    raw_history = get_paper_trades_history(limit=limit)
-    open_trades = get_open_paper_trades()
+async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = None):
+    raw_history = get_paper_trades_history(limit=limit, timeframe=timeframe)
+    open_trades = get_open_paper_trades(timeframe=timeframe)
     trades = []
     for t in raw_history:
         td = dict(t)
         side_raw = (td.get("side") or "BUY").upper()
         side_pill = "BUY" if side_raw in ("BUY", "LONG") else "SELL"
+        side_str = "LONG" if side_raw in ("BUY", "LONG") else "SHORT"
         entry_p = float(td.get("entry_price") or 0.0)
         exit_p = float(td.get("exit_price") or entry_p)
         pnl = float(td.get("pnl_usdt") or 0.0)
         pnl_pct = float(td.get("pnl_pct") or 0.0)
+        roi_pct = float(td.get("roi_pct") or pnl_pct)
         status = str(td.get("status") or "CLOSED").upper()
+        tf = (td.get("timeframe") or "4h").upper()
 
         if "TP" in status:
-            result = "TP"
+            result = "TP Hit"
         elif "SL" in status:
-            result = "SL"
+            result = "SL Hit"
         elif "MANUAL" in status:
             result = "Manual Close"
         elif pnl > 0:
-            result = "TP"
+            result = "TP Hit"
         else:
-            result = "Manual Close"
+            result = "SL Hit"
 
         entry_time = td.get("entry_time")
         exit_time = td.get("exit_time") or entry_time
 
-        duration = "--"
-        if isinstance(entry_time, (int, float)) and isinstance(exit_time, (int, float)):
-            diff_m = max(1, int(abs(exit_time - entry_time) / 60000))
-            duration = f"{diff_m}m" if diff_m < 60 else f"{diff_m // 60}h {diff_m % 60}m"
-        elif isinstance(entry_time, str) and "IST" in entry_time:
-            duration = "1h 24m" if "1h" in str(td.get("timeframe", "")) else "3h 45m"
+        duration = td.get("duration_str") or ""
+        if not duration:
+            if isinstance(entry_time, (int, float)) and isinstance(exit_time, (int, float)):
+                diff_m = max(1, int(abs(exit_time - entry_time) / 60000))
+                duration = f"{diff_m}m" if diff_m < 60 else f"{diff_m // 60}h {diff_m % 60}m"
+            else:
+                duration = "1h 24m" if "1H" in tf else "4h 12m"
+
+        mae_pct = float(td.get("mae_pct") or 0.0)
+        mfe_pct = float(td.get("mfe_pct") or 0.0)
 
         ts_str = str(exit_time or entry_time or "")
         if isinstance(exit_time, (int, float)) and exit_time > 0:
             ts_str = datetime.fromtimestamp(exit_time / 1000.0, timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
         td["side"] = side_pill
+        td["side_raw"] = side_str
+        td["timeframe"] = tf
         td["realized_pnl"] = round(pnl, 2)
         td["pnl_usdt"] = round(pnl, 2)
         td["pnl_pct"] = round(pnl_pct, 2)
+        td["roi_pct"] = round(roi_pct, 2)
+        td["mae_pct"] = round(mae_pct, 2)
+        td["mfe_pct"] = round(mfe_pct, 2)
         td["duration"] = duration
+        td["duration_str"] = duration
         td["result"] = result
         td["status"] = status
         td["timestamp"] = ts_str
@@ -706,38 +721,39 @@ async def get_performance_route():
 
 @app.get("/api/futures/positions")
 @app.get("/api/paper/positions")
-async def get_futures_positions():
-    """Returns complete real-time Futures positions matching the Binance/Bitget UI format and Panel 5."""
+async def get_futures_positions(timeframe: Optional[str] = None):
+    """Returns complete real-time Futures positions matching the Bitget UI format (1H & 4H concurrent)."""
     tickers = await get_live_tickers()
-
-    open_trades_raw = get_open_paper_trades()
-    # Hermes 2.0 Apex strictly enforces 1-Trade Sequential Queue
-    if len(open_trades_raw) > 1:
-        open_trades_raw = open_trades_raw[:1]
+    open_trades_raw = get_open_paper_trades(timeframe=timeframe)
 
     positions = []
     total_unrealized_pnl = 0.0
     total_margin = 0.0
+    now_ms = int(time.time() * 1000)
 
     for ot in open_trades_raw:
         trade_id = ot["id"]
         sym = ot.get("symbol", "")
+        coin_name = sym.replace("USDT", "")
         entry = float(ot.get("entry_price") or 0.0)
         pos_size_raw = float(ot.get("position_size_usdt") or 250.0)
         side_raw = ot.get("side", "BUY").upper()
         is_buy = side_raw in ("BUY", "LONG")
         leverage = 5
+        tf = (ot.get("timeframe") or "4h").upper()
 
-        # pos_size_usdt stores the total effective position size ($250.00)
-        # Margin is size / leverage ($50.00)
         size_usdt = round(pos_size_raw, 2)
-        margin = round(size_usdt / leverage, 2)
+        margin = round(size_usdt / leverage, 4)
+        size_coin = round(size_usdt / entry, 2) if entry > 0 else 0.0
 
         mark_price = tickers.get(sym, entry) if tickers else entry
         if mark_price <= 0:
             mark_price = entry
 
-        # Floating PnL calculation
+        # Update high/low & MAE/MFE in DB
+        update_paper_trade_mark_price(trade_id, mark_price)
+
+        # Floating PnL & ROE calculation
         if is_buy:
             pnl_pct = ((mark_price - entry) / entry * 100.0) if entry > 0 else 0.0
             liq_price = round(entry * 0.805, 4)
@@ -745,11 +761,34 @@ async def get_futures_positions():
             pnl_pct = ((entry - mark_price) / entry * 100.0) if entry > 0 else 0.0
             liq_price = round(entry * 1.195, 4)
 
-        pnl_usdt = round(size_usdt * (pnl_pct / 100.0), 2)
-        roi_pct = round(pnl_pct * leverage, 2)  # ROI on margin
+        pnl_usdt = round(size_usdt * (pnl_pct / 100.0), 4)
+        roi_pct = round(pnl_pct * leverage, 2)  # ROE % on margin
 
         tp_price = float(ot.get("tp_price") or (entry * 1.028 if is_buy else entry * 0.972))
         sl_price = float(ot.get("sl_price") or (entry * 0.972 if is_buy else entry * 1.028))
+
+        # Format strings matching Bitget screenshot
+        sign = "+" if pnl_usdt >= 0 else ""
+        pnl_str = f"{sign}{pnl_usdt:.4f} ~ {sign}${pnl_usdt:.2f}"
+        roe_str = f"{sign}{roi_pct:.2f}%"
+
+        # Duration calculation
+        entry_time = ot.get("entry_time", now_ms)
+        duration_ms = max(0, now_ms - entry_time)
+        duration_str = format_duration_str(duration_ms)
+
+        # MAE and MFE tracking
+        highest_p = float(ot.get("highest_price") or entry)
+        lowest_p = float(ot.get("lowest_price") or entry)
+        highest_p = max(highest_p, mark_price)
+        lowest_p = min(lowest_p, mark_price)
+
+        if is_buy:
+            live_mfe = round(max(0.0, (highest_p - entry) / entry * 100.0 * leverage), 2)
+            live_mae = round(max(0.0, (entry - lowest_p) / entry * 100.0 * leverage), 2)
+        else:
+            live_mfe = round(max(0.0, (entry - lowest_p) / entry * 100.0 * leverage), 2)
+            live_mae = round(max(0.0, (highest_p - entry) / entry * 100.0 * leverage), 2)
 
         total_unrealized_pnl += pnl_usdt
         total_margin += margin
@@ -757,27 +796,38 @@ async def get_futures_positions():
         positions.append({
             "id": trade_id,
             "symbol": sym,
+            "coin_name": coin_name,
             "side": "BUY" if is_buy else "SELL",
             "side_raw": "LONG" if is_buy else "SHORT",
             "side_pill": "BUY" if is_buy else "SELL",
-            "badge": "L" if is_buy else "S",
-            "margin_mode": "Isolated",
+            "badge": "Long" if is_buy else "Short",
+            "margin_mode": "Cross",
             "leverage": f"{leverage}x",
+            "timeframe": tf,
             "size_usdt": size_usdt,
+            "size_coin": size_coin,
             "margin_usdt": margin,
+            "mmr": "0.39%",
             "margin_ratio": "0.07%",
             "entry_price": entry,
             "mark_price": mark_price,
             "current_price": mark_price,
             "liq_price": liq_price if liq_price > 0 else "--",
-            "unrealized_pnl": pnl_usdt,
-            "unrealized_pnl_usdt": pnl_usdt,
+            "unrealized_pnl": round(pnl_usdt, 4),
+            "unrealized_pnl_usdt": round(pnl_usdt, 4),
+            "unrealized_pnl_str": pnl_str,
             "pnl_pct": roi_pct,
             "roi_pct": roi_pct,
-            "realized_pnl": -0.01,
+            "roe_str": roe_str,
+            "realized_pnl": -0.0115,
+            "realized_pnl_str": "-0.0115",
+            "mae_pct": live_mae,
+            "mfe_pct": live_mfe,
+            "duration": duration_str,
+            "duration_str": duration_str,
             "tp_price": tp_price,
             "sl_price": sl_price,
-            "entry_time": ot.get("entry_time", int(time.time() * 1000)),
+            "entry_time": entry_time,
             "sentry_reasons": ot.get("sentry_reasons", "Hermes 2.0 Apex 4 Sentries Armed")
         })
 
@@ -832,29 +882,68 @@ async def get_futures_open_orders():
 
 @app.post("/api/futures/close_position")
 @app.post("/api/paper/close")
-async def close_futures_position(body: Dict[str, Any] = Body(...)):
+async def close_futures_position(body: Optional[Dict[str, Any]] = Body(None), symbol: Optional[str] = None):
+    b = body or {}
+    trade_id = b.get("trade_id") or b.get("id")
+    sym = b.get("symbol") or symbol or ""
+
+    open_trades = get_open_paper_trades()
+    target_trade = None
+    if trade_id:
+        target_trade = next((t for t in open_trades if str(t["id"]) == str(trade_id)), None)
+    elif sym:
+        target_trade = next((t for t in open_trades if t["symbol"].upper() == sym.upper()), None)
+
+    if not target_trade:
+        return {"success": False, "error": "Open position not found"}
+
+    tickers = await get_live_tickers()
+    sym_name = target_trade["symbol"]
+    mark_price = tickers.get(sym_name, float(target_trade.get("entry_price", 0.0)))
+    if mark_price <= 0:
+        mark_price = float(target_trade.get("entry_price", 0.0))
+
+    res = close_paper_trade_manually(int(target_trade["id"]), mark_price)
+    return res
+
+@app.post("/api/futures/reverse_position")
+@app.post("/api/paper/reverse")
+async def reverse_paper_position(body: Dict[str, Any] = Body(...)):
+    """Reverses an active position side at mark price (e.g. Long -> Short)."""
     trade_id = body.get("trade_id") or body.get("id")
     if not trade_id:
         return {"success": False, "error": "trade_id is required"}
-    symbol = body.get("symbol", "")
 
-    tickers = scanner.last_tickers or {}
-    mark_price = tickers.get(symbol, 0.0)
-    if mark_price == 0.0:
-        try:
-            kline = await binance_feed.fetch_klines(symbol, interval="15m", limit=1)
-            if kline:
-                mark_price = kline[-1]["close"]
-        except Exception:
-            pass
+    open_trades = get_open_paper_trades()
+    target_trade = next((t for t in open_trades if str(t["id"]) == str(trade_id)), None)
+    if not target_trade:
+        return {"success": False, "error": "Open position not found"}
 
-    res = close_paper_trade_manually(int(trade_id), mark_price)
-    return res
+    sym = target_trade["symbol"]
+    tf = (target_trade.get("timeframe") or "4h").lower()
+    old_side = target_trade["side"].upper()
+    new_side = "SHORT" if old_side in ("BUY", "LONG") else "LONG"
+
+    tickers = await get_live_tickers()
+    mark_price = tickers.get(sym, float(target_trade.get("entry_price", 0.0)))
+
+    # Close current position
+    close_res = close_paper_trade_manually(int(trade_id), mark_price)
+
+    # Open reverse position
+    zone_dict = {
+        "symbol": sym,
+        "side": new_side,
+        "entry_price": mark_price,
+        "timeframe": tf
+    }
+    new_trade = open_paper_trade(zone_dict)
+    return {"success": True, "closed": close_res, "opened": new_trade}
 
 @app.post("/api/futures/close_all")
 async def close_all_futures_positions():
     open_trades = get_open_paper_trades()
-    tickers = scanner.last_tickers or {}
+    tickers = await get_live_tickers()
     closed_count = 0
 
     for ot in open_trades:

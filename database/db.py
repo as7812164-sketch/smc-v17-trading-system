@@ -119,15 +119,23 @@ def init_db():
         VALUES (1, 50.0, 50.0, 0.0, 0, 0);
         """)
 
-        # Ensure Hermes 2.0 Apex columns exist
+        # Ensure Hermes 2.0 Apex & Dual-Account columns exist
         for col_def in [
             ("paper_account", "vault_balance", "REAL DEFAULT 0.0"),
             ("paper_account", "milestone_target", "REAL DEFAULT 2000.0"),
             ("paper_account", "mode", "TEXT DEFAULT 'HERMES_2.0_APEX'"),
+            ("paper_account", "timeframe", "TEXT DEFAULT '4h'"),
+            ("paper_account", "name", "TEXT DEFAULT '4H Macro Swing'"),
             ("paper_trades", "timeframe", "TEXT DEFAULT '1h'"),
             ("paper_trades", "hard_sl_price", "REAL DEFAULT 0.0"),
             ("paper_trades", "vault_stashed_usdt", "REAL DEFAULT 0.0"),
             ("paper_trades", "sentry_reasons", "TEXT DEFAULT ''"),
+            ("paper_trades", "highest_price", "REAL"),
+            ("paper_trades", "lowest_price", "REAL"),
+            ("paper_trades", "mae_pct", "REAL DEFAULT 0.0"),
+            ("paper_trades", "mfe_pct", "REAL DEFAULT 0.0"),
+            ("paper_trades", "duration_str", "TEXT DEFAULT ''"),
+            ("paper_trades", "roi_pct", "REAL DEFAULT 0.0"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE {col_def[0]} ADD COLUMN {col_def[1]} {col_def[2]}")
@@ -142,13 +150,24 @@ def init_db():
             conn.execute("DELETE FROM sent_alerts")
             conn.execute("DELETE FROM paper_trades")
 
-        # Ensure paper_account exists with starting capital of $50.00 if not present
-        acc_exists = conn.execute("SELECT id FROM paper_account WHERE id = 1").fetchone()
-        if not acc_exists:
+        # Ensure Account 1 (4H Macro Swing - $50.00 Starting Capital) exists
+        acc1_exists = conn.execute("SELECT id FROM paper_account WHERE id = 1").fetchone()
+        if not acc1_exists:
             conn.execute("""
             INSERT INTO paper_account 
-            (id, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.0_APEX');
+            (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
+            VALUES (1, '4h', '4H Macro Swing', 50.0, 50.0, 0.0, 0.0, 0, 0, 40000.0, 'HERMES_2.0_APEX');
+            """)
+        else:
+            conn.execute("UPDATE paper_account SET timeframe = '4h', name = '4H Macro Swing' WHERE id = 1 AND (timeframe IS NULL OR timeframe = '')")
+
+        # Ensure Account 2 (1H Fast Scalp - $50.00 Starting Capital) exists
+        acc2_exists = conn.execute("SELECT id FROM paper_account WHERE id = 2").fetchone()
+        if not acc2_exists:
+            conn.execute("""
+            INSERT INTO paper_account 
+            (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
+            VALUES (2, '1h', '1H Fast Scalp', 50.0, 50.0, 0.0, 0.0, 0, 0, 10000.0, 'HERMES_2.0_APEX');
             """)
 
         # Initialize default metrics if not present
@@ -410,21 +429,31 @@ def get_setting(key: str, default: str = "") -> str:
         row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
         return row[0] if row else default
 
-# --- Paper Trading & Hermes 2.0 Apex Compounding Simulator ($50 -> $2,000) ---
-def get_paper_account() -> Dict[str, Any]:
+# --- Paper Trading & Hermes 2.0 Apex Compounding Simulator ($50 -> $2,000 / $40,000) ---
+def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int] = None) -> Dict[str, Any]:
+    """Retrieves paper account for either 4H (Account 1) or 1H (Account 2), or default."""
+    acc_id = 1
+    if account_id:
+        acc_id = account_id
+    elif timeframe:
+        acc_id = 2 if "1h" in timeframe.lower() else 1
+
     with get_connection() as conn:
-        row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
+        row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
         if not row:
+            tf_name = '1H Fast Scalp' if acc_id == 2 else '4H Macro Swing'
+            tf_str = '1h' if acc_id == 2 else '4h'
             conn.execute("""
             INSERT OR IGNORE INTO paper_account 
-            (id, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.0_APEX')
-            """)
+            (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
+            VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.0_APEX')
+            """, (acc_id, tf_str, tf_name))
             conn.commit()
-            row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
+            row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
 
         acc = dict(row)
-        open_trades = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN'").fetchone()[0]
+        tf_filter = acc.get("timeframe", "4h" if acc_id == 1 else "1h")
+        open_trades = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND timeframe = ?", (tf_filter,)).fetchone()[0]
         acc["open_trades_count"] = open_trades
         completed = (acc.get("win_count", 0) or 0) + (acc.get("loss_count", 0) or 0)
         acc["win_rate"] = round((acc.get("win_count", 0) / completed * 100), 1) if completed > 0 else 0.0
@@ -441,15 +470,68 @@ def get_paper_account() -> Dict[str, Any]:
         acc["mode"] = acc.get("mode", "HERMES_2.0_APEX")
         return acc
 
+def get_dual_paper_accounts() -> Dict[str, Any]:
+    """Returns separate states for 4H Macro Swing and 1H Fast Scalp, plus combined portfolio metrics."""
+    acc_4h = get_paper_account(timeframe='4h')
+    acc_1h = get_paper_account(timeframe='1h')
+    with get_connection() as conn:
+        total_open = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN'").fetchone()[0]
+
+    comb_init = acc_4h["initial_balance"] + acc_1h["initial_balance"]
+    comb_curr = acc_4h["current_balance"] + acc_1h["current_balance"]
+    comb_vault = acc_4h["vault_balance"] + acc_1h["vault_balance"]
+    comb_equity = comb_curr + comb_vault
+    comb_pnl = round(acc_4h["total_pnl"] + acc_1h["total_pnl"], 2)
+    comb_wins = acc_4h["win_count"] + acc_1h["win_count"]
+    comb_losses = acc_4h["loss_count"] + acc_1h["loss_count"]
+    comb_completed = comb_wins + comb_losses
+    comb_win_rate = round((comb_wins / comb_completed * 100), 1) if comb_completed > 0 else 0.0
+
+    return {
+        "account_4h": acc_4h,
+        "account_1h": acc_1h,
+        "combined": {
+            "initial_balance": round(comb_init, 2),
+            "current_balance": round(comb_curr, 2),
+            "vault_balance": round(comb_vault, 2),
+            "equity": round(comb_equity, 2),
+            "total_pnl": comb_pnl,
+            "win_count": comb_wins,
+            "loss_count": comb_losses,
+            "win_rate": comb_win_rate,
+            "open_trades_count": total_open
+        }
+    }
+
 def get_hermes_account() -> Dict[str, Any]:
     return get_paper_account()
 
+def format_duration_str(ms: int) -> str:
+    """Formats millisecond duration to clean human-readable string without glitches."""
+    if not ms or ms <= 0:
+        return "1m"
+    diff_m = int(ms / 60000)
+    if diff_m < 60:
+        return f"{max(1, diff_m)}m"
+    elif diff_m < 1440:
+        h = diff_m // 60
+        m = diff_m % 60
+        return f"{h}h {m}m"
+    else:
+        d = diff_m // 1440
+        h = (diff_m % 1440) // 60
+        return f"{d}d {h}h"
+
 def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Deploys 100% compounding margin at 5x Isolated Perpetual leverage under HERMES 2.0 APEX rules.
+    Deploys compounding margin at 5x Isolated Perpetual leverage under HERMES 2.0 APEX rules.
+    Independent sequential queues for 1H ($50 account) and 4H ($50 account).
     """
+    tf = str(zone.get("timeframe", "4h")).lower()
+    acc_id = 2 if "1h" in tf else 1
+
     with get_connection() as conn:
-        row = conn.execute("SELECT current_balance FROM paper_account WHERE id = 1").fetchone()
+        row = conn.execute("SELECT current_balance FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
         balance = float(row[0]) if row and float(row[0]) > 0 else 50.0
 
         # Check if already open for this zone
@@ -459,22 +541,21 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             tr["balance_at_entry"] = balance
             return tr
 
-        # Strict 1-Trade Sequential Queue: Check if ANY trade is already OPEN
-        open_count = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN'").fetchone()[0]
+        # Strict 1-Trade Sequential Queue PER TIMEFRAME (1H and 4H trade concurrently but each has 1 trade max)
+        open_count = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND timeframe = ?", (tf,)).fetchone()[0]
         if open_count > 0:
-            return {"error": "Trade already open in sequential queue"}
+            return {"error": f"Trade already open in {tf.upper()} sequential queue"}
 
         # 100% of compounding margin @ 5x Isolated
         margin = balance
         position_size = round(margin * 5.0, 2)
         side = zone["side"].upper()
         entry_price = float(zone["entry_price"])
-        tf = zone.get("timeframe", "4h")
 
-        # HERMES 2.0 APEX Battle Targets:
+        # HERMES 2.0 APEX Targets:
         # 4H: TP +2.80% (+14.0% ROE) | SL -2.80% (-14.0% ROE) | Hard SL -3.80% (-19.0% ROE)
         # 1H: TP +2.20% (+11.0% ROE) | SL -2.50% (-12.5% ROE) | Hard SL -3.60% (-18.0% ROE)
-        if tf == "1h":
+        if "1h" in tf:
             tp_pct = 0.022
             sl_pct = 0.025
             hard_sl_pct = 0.036
@@ -483,19 +564,21 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             sl_pct = 0.028
             hard_sl_pct = 0.038
 
-        tp_price = entry_price * (1.0 + tp_pct) if side == "BUY" else entry_price * (1.0 - tp_pct)
-        sl_price = entry_price * (1.0 - sl_pct) if side == "BUY" else entry_price * (1.0 + sl_pct)
-        hard_sl_price = entry_price * (1.0 - hard_sl_pct) if side == "BUY" else entry_price * (1.0 + hard_sl_pct)
+        tp_price = entry_price * (1.0 + tp_pct) if side in ("BUY", "LONG") else entry_price * (1.0 - tp_pct)
+        sl_price = entry_price * (1.0 - sl_pct) if side in ("BUY", "LONG") else entry_price * (1.0 + sl_pct)
+        hard_sl_price = entry_price * (1.0 - hard_sl_pct) if side in ("BUY", "LONG") else entry_price * (1.0 + hard_sl_pct)
 
         now = int(time.time() * 1000)
         cursor = conn.execute("""
         INSERT INTO paper_trades (
             zone_id, symbol, side, entry_price, position_size_usdt,
-            tp_price, sl_price, hard_sl_price, timeframe, status, entry_time
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?)
+            tp_price, sl_price, hard_sl_price, timeframe, status, entry_time,
+            highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, 0.0, 0.0, '', 0.0)
         """, (
             zone.get("id"), zone["symbol"], side, entry_price,
-            position_size, tp_price, sl_price, hard_sl_price, tf, now
+            position_size, tp_price, sl_price, hard_sl_price, tf, now,
+            entry_price, entry_price
         ))
         conn.commit()
         trade_id = cursor.lastrowid
@@ -516,10 +599,47 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             "max_sl_usdt": round(position_size * sl_pct, 2)
         }
 
+def update_paper_trade_mark_price(trade_id: int, mark_price: float):
+    """Updates highest_price, lowest_price, live ROI%, MAE% and MFE% seen during trade lifetime."""
+    if not mark_price or mark_price <= 0:
+        return
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT entry_price, highest_price, lowest_price, side, position_size_usdt FROM paper_trades WHERE id = ? AND status = 'OPEN'",
+            (trade_id,)
+        ).fetchone()
+        if not row:
+            return
+        entry_price = float(row["entry_price"])
+        highest = max(float(row["highest_price"] or entry_price), mark_price)
+        lowest = min(float(row["lowest_price"] or entry_price), mark_price)
+        side = (row["side"] or "BUY").upper()
+        leverage = 5.0
+
+        if side in ("BUY", "LONG"):
+            roi_pct = round(((mark_price - entry_price) / entry_price * 100.0) * leverage, 2) if entry_price > 0 else 0.0
+            mfe_pct = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
+            mae_pct = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
+        else:
+            roi_pct = round(((entry_price - mark_price) / entry_price * 100.0) * leverage, 2) if entry_price > 0 else 0.0
+            mfe_pct = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
+            mae_pct = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
+
+        conn.execute("""
+        UPDATE paper_trades SET
+            highest_price = ?,
+            lowest_price = ?,
+            roi_pct = ?,
+            mfe_pct = ?,
+            mae_pct = ?
+        WHERE id = ?
+        """, (highest, lowest, roi_pct, mfe_pct, mae_pct, trade_id))
+        conn.commit()
+
 def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, Any]]:
     """
-    Closes open paper trade on TP_HIT (+14% / +11% ROE) or SL_HIT (-14% / -12.5% ROE).
-    Enforces 85% Reinvestment + 15% Cold Storage Vault compounding split.
+    Closes open paper trade on TP_HIT or SL_HIT.
+    Enforces 85% Reinvestment + 15% Cold Storage Vault compounding split on the specific timeframe account.
     """
     with get_connection() as conn:
         trade = conn.execute("""
@@ -536,7 +656,8 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
         pos_size = float(trade["position_size_usdt"])
         side = trade["side"].upper()
         entry_price = float(trade["entry_price"])
-        tf = trade["timeframe"] or "4h"
+        tf = (trade["timeframe"] or "4h").lower()
+        acc_id = 2 if "1h" in tf else 1
 
         tp_pct = 0.022 if tf == "1h" else 0.028
         sl_pct = 0.025 if tf == "1h" else 0.028
@@ -554,7 +675,7 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
 
         # Compounding Split: 15% to Cold Storage Vault, 85% to active margin on Win
         vault_stash = 0.0
-        acc_row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
+        acc_row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
         curr_balance = float(acc_row["current_balance"]) if acc_row else 50.0
         vault_balance = float(acc_row["vault_balance"]) if acc_row and "vault_balance" in acc_row.keys() else 0.0
         win_count = int(acc_row["win_count"]) if acc_row else 0
@@ -574,11 +695,31 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
 
         new_total_pnl = round(total_pnl + net_pnl_usdt, 2)
 
+        # Duration & MAE / MFE calculation
+        entry_time = trade["entry_time"] or now
+        duration_ms = max(0, now - entry_time)
+        duration_str = format_duration_str(duration_ms)
+
+        highest = max(float(trade["highest_price"] or entry_price), exit_price)
+        lowest = min(float(trade["lowest_price"] or entry_price), exit_price)
+        leverage = 5.0
+        if side in ("BUY", "LONG"):
+            final_mfe = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
+            final_mae = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
+        else:
+            final_mfe = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
+            final_mae = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
+
         conn.execute("""
         UPDATE paper_trades SET
-            status = ?, exit_time = ?, exit_price = ?, pnl_usdt = ?, pnl_pct = ?, vault_stashed_usdt = ?
+            status = ?, exit_time = ?, exit_price = ?, pnl_usdt = ?, pnl_pct = ?,
+            vault_stashed_usdt = ?, highest_price = ?, lowest_price = ?,
+            mae_pct = ?, mfe_pct = ?, duration_str = ?, roi_pct = ?
         WHERE id = ?
-        """, (outcome, now, exit_price, net_pnl_usdt, round(gross_pnl_pct * 5.0, 2), vault_stash, trade_id))
+        """, (
+            outcome, now, exit_price, net_pnl_usdt, round(gross_pnl_pct * 5.0, 2),
+            vault_stash, highest, lowest, final_mae, final_mfe, duration_str, round(gross_pnl_pct * 5.0, 2), trade_id
+        ))
 
         conn.execute("""
         UPDATE paper_account SET
@@ -587,8 +728,8 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
             total_pnl = ?,
             win_count = ?,
             loss_count = ?
-        WHERE id = 1
-        """, (new_balance, new_vault, new_total_pnl, win_count, loss_count))
+        WHERE id = ?
+        """, (new_balance, new_vault, new_total_pnl, win_count, loss_count, acc_id))
         conn.commit()
 
         completed = win_count + loss_count
@@ -596,8 +737,13 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
         return {
             "trade_id": trade_id,
             "outcome": outcome,
+            "timeframe": tf,
             "pnl_usdt": net_pnl_usdt,
             "pnl_pct": round(gross_pnl_pct * 5.0, 2),
+            "roi_pct": round(gross_pnl_pct * 5.0, 2),
+            "mae_pct": final_mae,
+            "mfe_pct": final_mfe,
+            "duration": duration_str,
             "position_size": pos_size,
             "new_balance": new_balance,
             "vault_balance": new_vault,
@@ -608,7 +754,7 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str) -> Optional[Dict[str, 
         }
 
 def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, Any]:
-    """Manually close an open position at current mark price."""
+    """Manually close an open position at current mark price with full MAE/MFE and duration forensics."""
     with get_connection() as conn:
         trade = conn.execute("SELECT * FROM paper_trades WHERE id = ?", (trade_id,)).fetchone()
         if not trade or trade["status"] != "OPEN":
@@ -617,21 +763,41 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
         pos_size = float(trade["position_size_usdt"] or 10.0)
         entry_price = float(trade["entry_price"])
         side = trade["side"].upper()
+        tf = (trade["timeframe"] or "4h").lower()
+        acc_id = 2 if "1h" in tf else 1
         now = int(time.time() * 1000)
 
-        if side == "BUY":
+        if side in ("BUY", "LONG"):
             pnl_pct = ((exit_price - entry_price) / entry_price * 100.0) if entry_price > 0 else 0.0
         else:
             pnl_pct = ((entry_price - exit_price) / entry_price * 100.0) if entry_price > 0 else 0.0
 
         pnl_usdt = round(pos_size * (pnl_pct / 100.0), 4)
+        roi_pct = round(pnl_pct * 5.0, 2)
         status = "MANUAL_CLOSED"
+
+        # Duration & MAE / MFE calculation
+        entry_time = trade["entry_time"] or now
+        duration_ms = max(0, now - entry_time)
+        duration_str = format_duration_str(duration_ms)
+
+        highest = max(float(trade["highest_price"] or entry_price), exit_price)
+        lowest = min(float(trade["lowest_price"] or entry_price), exit_price)
+        leverage = 5.0
+        if side in ("BUY", "LONG"):
+            final_mfe = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
+            final_mae = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
+        else:
+            final_mfe = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
+            final_mae = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
 
         conn.execute("""
         UPDATE paper_trades SET
-            status = ?, exit_time = ?, exit_price = ?, pnl_usdt = ?, pnl_pct = ?
+            status = ?, exit_time = ?, exit_price = ?, pnl_usdt = ?, pnl_pct = ?,
+            highest_price = ?, lowest_price = ?, mae_pct = ?, mfe_pct = ?,
+            duration_str = ?, roi_pct = ?
         WHERE id = ?
-        """, (status, now, exit_price, pnl_usdt, round(pnl_pct, 2), trade_id))
+        """, (status, now, exit_price, pnl_usdt, roi_pct, highest, lowest, final_mae, final_mfe, duration_str, roi_pct, trade_id))
 
         is_win = 1 if pnl_usdt > 0 else 0
         is_loss = 1 if pnl_usdt <= 0 else 0
@@ -641,55 +807,82 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
             total_pnl = round(total_pnl + ?, 2),
             win_count = win_count + ?,
             loss_count = loss_count + ?
-        WHERE id = 1
-        """, (pnl_usdt, pnl_usdt, is_win, is_loss))
+        WHERE id = ?
+        """, (pnl_usdt, pnl_usdt, is_win, is_loss, acc_id))
         conn.commit()
 
         return {
             "success": True,
             "trade_id": trade_id,
+            "timeframe": tf,
             "pnl_usdt": pnl_usdt,
-            "pnl_pct": round(pnl_pct, 2),
+            "pnl_pct": roi_pct,
+            "roi_pct": roi_pct,
+            "mae_pct": final_mae,
+            "mfe_pct": final_mfe,
+            "duration": duration_str,
             "exit_price": exit_price
         }
 
-def get_paper_trades_history(limit: int = 20) -> List[Dict[str, Any]]:
+def get_paper_trades_history(limit: int = 50, timeframe: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Returns closed trade history, optionally filtered by timeframe (1h or 4h)."""
+    query = "SELECT * FROM paper_trades WHERE status != 'OPEN'"
+    params: List[Any] = []
+    if timeframe:
+        query += " AND timeframe = ?"
+        params.append(timeframe.lower())
+    query += " ORDER BY id DESC LIMIT ?"
+    params.append(limit)
+
     with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM paper_trades ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        rows = conn.execute(query, params).fetchall()
         return [dict(r) for r in rows]
 
-def get_open_paper_trades() -> List[Dict[str, Any]]:
+def get_open_paper_trades(timeframe: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Returns active open positions, optionally filtered by timeframe (1h or 4h)."""
+    query = "SELECT * FROM paper_trades WHERE status = 'OPEN'"
+    params: List[Any] = []
+    if timeframe:
+        query += " AND timeframe = ?"
+        params.append(timeframe.lower())
+    query += " ORDER BY entry_time DESC"
+
     with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM paper_trades WHERE status = 'OPEN' ORDER BY entry_time DESC").fetchall()
+        rows = conn.execute(query, params).fetchall()
         return [dict(r) for r in rows]
 
-def reset_paper_account(starting_balance: float = 50.0) -> Dict[str, Any]:
+def reset_paper_account(starting_balance: float = 50.0, timeframe: Optional[str] = None) -> Dict[str, Any]:
+    """Resets paper account(s) to starting balance ($50.00)."""
     with get_connection() as conn:
-        conn.execute("DELETE FROM paper_trades")
-        conn.execute("""
-        UPDATE paper_account SET
-            initial_balance = ?,
-            current_balance = ?,
-            vault_balance = 0.0,
-            total_pnl = 0.0,
-            win_count = 0,
-            loss_count = 0,
-            milestone_target = 2000.0,
-            mode = 'HERMES_2.0_APEX'
-        WHERE id = 1
-        """, (starting_balance, starting_balance))
+        if timeframe:
+            tf = timeframe.lower()
+            acc_id = 2 if "1h" in tf else 1
+            conn.execute("DELETE FROM paper_trades WHERE timeframe = ?", (tf,))
+            conn.execute("""
+            UPDATE paper_account SET
+                initial_balance = ?,
+                current_balance = ?,
+                vault_balance = 0.0,
+                total_pnl = 0.0,
+                win_count = 0,
+                loss_count = 0
+            WHERE id = ?
+            """, (starting_balance, starting_balance, acc_id))
+        else:
+            conn.execute("DELETE FROM paper_trades")
+            conn.execute("""
+            UPDATE paper_account SET
+                initial_balance = ?,
+                current_balance = ?,
+                vault_balance = 0.0,
+                total_pnl = 0.0,
+                win_count = 0,
+                loss_count = 0
+            WHERE id IN (1, 2)
+            """, (starting_balance, starting_balance))
         conn.commit()
-    return {
-        "initial_balance": starting_balance,
-        "current_balance": starting_balance,
-        "vault_balance": 0.0,
-        "total_pnl": 0.0,
-        "win_count": 0,
-        "loss_count": 0,
-        "win_rate": 0.0,
-        "milestone_target": 2000.0,
-        "mode": "HERMES_2.0_APEX"
-    }
+
+    return get_dual_paper_accounts()
 
 def get_daily_trades_summary(since_timestamp_ms: int) -> Dict[str, Any]:
     with get_connection() as conn:

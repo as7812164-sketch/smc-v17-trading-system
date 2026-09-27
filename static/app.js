@@ -4050,9 +4050,11 @@ function renderFuturesPositions() {
 
     let html = "";
     displayList.forEach(pos => {
-        const isLong = pos.side === "LONG";
+        const isLong = (pos.side_raw || pos.side) === "LONG" || (pos.side_raw || pos.side) === "BUY";
         const sideClass = isLong ? "badge-long" : "badge-short";
-        const pnlPositive = pos.unrealized_pnl >= 0;
+        const sideText = isLong ? "Long" : "Short";
+        const pnl = Number(pos.unrealized_pnl || 0);
+        const pnlPositive = pnl >= 0;
         const pnlColorClass = pnlPositive ? "text-buy" : "text-sell";
         const pnlSign = pnlPositive ? "+" : "";
 
@@ -4063,81 +4065,98 @@ function renderFuturesPositions() {
         prevMarkPrices[pos.symbol] = pos.mark_price;
 
         const roiSign = pos.roi_pct >= 0 ? "+" : "";
+        const tf = (pos.timeframe || "4H").toUpperCase();
+        const tfClass = tf === "1H" ? "pos-pill" : "pos-pill";
+        const coinName = pos.coin_name || (pos.symbol || "").replace("USDT", "");
+        const sizeDisplay = pos.size_coin || (pos.entry_price > 0 ? (pos.size_usdt / pos.entry_price).toFixed(2) : pos.size_usdt);
+
+        const pnlStr = pos.unrealized_pnl_str || `${pnlSign}${pnl.toFixed(4)} ≈ ${pnlSign}$${Math.abs(pnl).toFixed(2)}`;
+        const roeStr = pos.roe_str || `${roiSign}${pos.roi_pct.toFixed(2)}%`;
 
         html += `
             <div class="binance-pos-card" data-trade-id="${pos.id}" data-symbol="${pos.symbol}">
-                <!-- Card Header -->
+                <!-- Card Header matching screenshot -->
                 <div class="binance-pos-header">
-                    <div class="pos-header-left">
-                        <span class="side-badge ${sideClass}">${pos.badge}</span>
-                        <span class="pos-symbol">${pos.symbol}</span>
-                        <span class="pos-pill">Perp</span>
-                        <span class="pos-pill">${pos.margin_mode} ${pos.leverage}</span>
-                        <span class="pos-signal-bars" title="SMC Confluence: 92/100">
-                            <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
-                        </span>
+                    <div class="pos-header-left" style="gap:6px; flex-wrap:wrap;">
+                        <span class="pos-symbol" style="font-size:15px; cursor:pointer;" onclick="selectSymbol('${pos.symbol}')">${pos.symbol} <i class="fa-solid fa-chevron-right" style="font-size:10px; color:#94A3B8;"></i></span>
+                        <span class="side-badge ${sideClass}">${sideText}</span>
+                        <span class="pos-pill">${pos.leverage || '5x'}</span>
+                        <span class="pos-pill">${pos.margin_mode || 'Cross'}</span>
+                        <span class="pos-pill">USDT</span>
+                        <span class="pos-pill" style="color:#38BDF8; font-weight:700;">${tf}</span>
                     </div>
-                    <div class="pos-header-right">
+                    <div class="pos-header-right" style="display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color:#38BDF8; font-size:11px;" title="4-Sentries Verified"></i>
+                        <button class="btn-share-icon" title="View Chart" onclick="selectSymbol('${pos.symbol}')">
+                            <i class="fa-solid fa-chart-candlestick"></i>
+                        </button>
                         <button class="btn-share-icon" title="Share Position PnL" onclick="showToast('Copied ${pos.symbol} PnL summary to clipboard!')">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- PNL & ROI Row -->
+                <!-- PNL & ROE Row -->
                 <div class="binance-pnl-row">
                     <div class="pnl-block">
-                        <span class="pnl-lbl">PNL (USDT) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:8px;"></i></span>
-                        <span class="pnl-val ${pnlColorClass}">${pnlSign}${pos.unrealized_pnl.toFixed(2)}</span>
+                        <span class="pnl-lbl">Unrealized PnL (USDT)</span>
+                        <span class="pnl-val ${pnlColorClass}" style="font-size:19px;">${pnlStr}</span>
                     </div>
                     <div class="roi-block">
-                        <span class="roi-lbl">ROI</span>
-                        <span class="roi-val ${pnlColorClass}">${roiSign}${pos.roi_pct.toFixed(2)}%</span>
+                        <span class="roi-lbl">ROE</span>
+                        <span class="roi-val ${pnlColorClass}" style="font-size:19px;">${roeStr}</span>
                     </div>
                 </div>
 
-                <!-- 3-Column Metrics Row 1 -->
+                <!-- 3-Column Metrics Row 1 (Size, Margin, MMR) -->
                 <div class="binance-stats-grid">
                     <div class="stat-col">
-                        <span class="stat-lbl">Size (USDT) <i class="fa-solid fa-right-left" style="font-size:8px;"></i></span>
-                        <span class="stat-val">${pos.size_usdt.toFixed(2)}</span>
+                        <span class="stat-lbl">Size (${coinName}) <i class="fa-solid fa-caret-down" style="font-size:8px;"></i></span>
+                        <span class="stat-val">${sizeDisplay}</span>
                     </div>
                     <div class="stat-col">
                         <span class="stat-lbl">Margin (USDT)</span>
-                        <span class="stat-val">${pos.margin_usdt.toFixed(2)}</span>
+                        <span class="stat-val">${Number(pos.margin_usdt || 50).toFixed(4)}</span>
                     </div>
-                    <div class="stat-col">
-                        <span class="stat-lbl">Margin Ratio</span>
-                        <span class="stat-val text-buy">${pos.margin_ratio}</span>
+                    <div class="stat-col" style="align-items:flex-end;">
+                        <span class="stat-lbl">MMR</span>
+                        <span class="stat-val" style="color:#CBD5E1;">${pos.mmr || '0.39%'}</span>
                     </div>
                 </div>
 
-                <!-- 3-Column Metrics Row 2 -->
+                <!-- 3-Column Metrics Row 2 (Entry, Mark, Liq) -->
                 <div class="binance-stats-grid">
                     <div class="stat-col">
-                        <span class="stat-lbl">Entry Price (USDT)</span>
+                        <span class="stat-lbl">Entry price</span>
                         <span class="stat-val">${formatPrice(pos.entry_price)}</span>
                     </div>
                     <div class="stat-col">
-                        <span class="stat-lbl">Mark Price (USDT)</span>
+                        <span class="stat-lbl">Mark price</span>
                         <span class="stat-val mark-price-val ${flashClass}">${formatPrice(pos.mark_price)}</span>
                     </div>
-                    <div class="stat-col">
-                        <span class="stat-lbl">Liq. Price (USDT)</span>
+                    <div class="stat-col" style="align-items:flex-end;">
+                        <span class="stat-lbl">Est. liq. price</span>
                         <span class="stat-val text-muted">${pos.liq_price === '--' ? '--' : formatPrice(pos.liq_price)}</span>
                     </div>
                 </div>
 
                 <!-- Realized PNL Row -->
-                <div class="binance-realized-row">
-                    <span class="realized-lbl">Realized PNL (USDT)</span>
-                    <span class="realized-val">${pos.realized_pnl >= 0 ? '+' : ''}${pos.realized_pnl.toFixed(2)} <i class="fa-solid fa-chevron-right" style="font-size:9px;"></i></span>
+                <div class="binance-realized-row" style="background:rgba(30,41,59,0.4); border-radius:6px; padding:4px 8px; margin-bottom:8px;">
+                    <span class="realized-lbl">Realized PnL(USDT)</span>
+                    <span class="realized-val" style="color:${Number(pos.realized_pnl) >= 0 ? '#0ECB81' : '#F6465D'};">${pos.realized_pnl_str || '-0.0115'}</span>
                 </div>
 
-                <!-- Action Buttons: Leverage, TP/SL, Close -->
-                <div class="binance-action-group">
-                    <button class="binance-pill-btn" onclick="openLeverageModal(${pos.id})">Leverage</button>
+                <!-- Forensics Strip -->
+                <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#94A3B8; font-family:var(--font-mono); padding:4px 0 8px;">
+                    <span>MAE: <strong style="color:#F6465D;">-${pos.mae_pct ? Number(pos.mae_pct).toFixed(2) : '0.00'}%</strong></span>
+                    <span>MFE: <strong style="color:#0ECB81;">+${pos.mfe_pct ? Number(pos.mfe_pct).toFixed(2) : '0.00'}%</strong></span>
+                    <span>Dur: <strong style="color:#38BDF8;">${pos.duration_str || pos.duration || 'Live'}</strong></span>
+                </div>
+
+                <!-- Action Buttons: TP/SL, Reverse, Close matching screenshot -->
+                <div class="binance-action-group" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
                     <button class="binance-pill-btn" onclick="openTpSlModal(${pos.id})">TP/SL</button>
+                    <button class="binance-pill-btn" onclick="reversePositionAction(${pos.id}, '${pos.symbol}')">Reverse</button>
                     <button class="binance-pill-btn btn-action-close" onclick="closePositionAction(${pos.id}, '${pos.symbol}')">Close</button>
                 </div>
             </div>

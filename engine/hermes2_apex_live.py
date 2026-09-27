@@ -29,7 +29,10 @@ from typing import Dict, Any, List, Optional
 from database.db import (
     get_connection,
     get_paper_account,
+    get_dual_paper_accounts,
     get_open_paper_trades,
+    update_paper_trade_mark_price,
+    format_duration_str,
     get_setting,
     set_metric
 )
@@ -457,9 +460,11 @@ class Hermes2ApexLiveEngine:
         }
 
     async def execute_apex_entry(self, setup: Dict[str, Any]):
-        """Executes a 5x Isolated Simulated Compounding position on a verified setup."""
-        # Check if already in an open trade
-        open_trades = get_open_paper_trades()
+        """Executes a 5x Isolated Simulated Compounding position on a verified setup for its specific timeframe."""
+        tf = (setup.get("interval") or "4h").lower()
+
+        # Strict 1-Trade Sequential Queue per timeframe (1H and 4H trade concurrently)
+        open_trades = get_open_paper_trades(timeframe=tf)
         if open_trades:
             return
 
@@ -483,7 +488,7 @@ class Hermes2ApexLiveEngine:
         except Exception:
             pass
 
-        acc = self.get_hermes_account()
+        acc = get_paper_account(timeframe=tf)
         current_balance = float(acc.get("current_balance", 50.0) or 50.0)
         if current_balance < 1.0:
             current_balance = 50.0
@@ -495,7 +500,6 @@ class Hermes2ApexLiveEngine:
 
         sym = setup["symbol"]
         side = setup["side"]
-        tf = setup["interval"]
         entry_price = cur_price
 
         tp_pct = float(setup.get("tp_pct", 0.028 if tf == "4h" else 0.022))
@@ -518,12 +522,14 @@ class Hermes2ApexLiveEngine:
             INSERT INTO paper_trades (
                 symbol, side, entry_price, position_size_usdt,
                 tp_price, sl_price, hard_sl_price, timeframe,
-                status, entry_time, sentry_reasons
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?)
+                status, entry_time, sentry_reasons,
+                highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 0.0, 0.0, '', 0.0)
             """, (
                 sym, side, entry_price, position_size,
                 tp_price, sl_price, hard_sl_price, tf,
-                now_ms, sentry_reasons
+                now_ms, sentry_reasons,
+                entry_price, entry_price
             ))
             conn.commit()
             trade_id = cursor.lastrowid
@@ -603,19 +609,9 @@ class Hermes2ApexLiveEngine:
         await self.broadcast("HERMES_POSITION_OPENED", trade_obj)
 
     async def check_live_price_and_exits(self):
-        """Monitors live Binance tickers against active position every few seconds, and triggers real-time Order Block taps."""
+        """Monitors live Binance tickers against active positions (1H and 4H) every few seconds, and triggers real-time Order Block taps."""
         open_trades = get_open_paper_trades()
         if open_trades:
-            trade = open_trades[0]
-            sym = trade["symbol"]
-            side = trade["side"].upper()
-            entry_price = float(trade["entry_price"])
-            tp_price = float(trade["tp_price"])
-            sl_price = float(trade["sl_price"])
-            hard_sl_price = float(trade.get("hard_sl_price", 0.0) or (entry_price * 0.964 if side in ("BUY", "LONG") else entry_price * 1.036))
-            pos_size = float(trade["position_size_usdt"])
-            trade_id = trade["id"]
-
             tickers = await binance_feed.fetch_all_tickers()
             if tickers:
                 self.last_tickers = tickers
@@ -624,31 +620,47 @@ class Hermes2ApexLiveEngine:
                     await self.broadcast("TICKER_UPDATE", {"tickers": tickers})
                 except Exception:
                     pass
-            cur_price = tickers.get(sym) if tickers else None
-            if not cur_price or cur_price <= 0:
+
+            for trade in list(open_trades):
+                sym = trade["symbol"]
+                side = trade["side"].upper()
+                entry_price = float(trade["entry_price"])
+                tp_price = float(trade["tp_price"])
+                sl_price = float(trade["sl_price"])
+                hard_sl_price = float(trade.get("hard_sl_price", 0.0) or (entry_price * 0.964 if side in ("BUY", "LONG") else entry_price * 1.036))
+                trade_id = trade["id"]
+
+                cur_price = tickers.get(sym) if tickers else None
+                if not cur_price or cur_price <= 0:
+                    continue
+
+                # Continuously update high, low, MAE, MFE in database
+                update_paper_trade_mark_price(trade_id, cur_price)
+
+                exit_triggered = None
+                exit_price = cur_price
+
+                if side in ("BUY", "LONG"):
+                    if cur_price >= tp_price:
+                        exit_triggered = "TP_HIT"
+                        exit_price = tp_price
+                    elif cur_price <= hard_sl_price:
+                        exit_triggered = "SL_HIT"
+                        exit_price = hard_sl_price
+                else: # SELL / SHORT
+                    if cur_price <= tp_price:
+                        exit_triggered = "TP_HIT"
+                        exit_price = tp_price
+                    elif cur_price >= hard_sl_price:
+                        exit_triggered = "SL_HIT"
+                        exit_price = hard_sl_price
+
+                if exit_triggered:
+                    await self.resolve_trade_exit(trade, exit_triggered, exit_price)
+
+            # If both 1H and 4H queues are currently full (2 trades open), do not scan for new entries
+            if len(open_trades) >= 2:
                 return
-
-            exit_triggered = None
-            exit_price = cur_price
-
-            if side in ("BUY", "LONG"):
-                if cur_price >= tp_price:
-                    exit_triggered = "TP_HIT"
-                    exit_price = tp_price
-                elif cur_price <= hard_sl_price:
-                    exit_triggered = "SL_HIT"
-                    exit_price = hard_sl_price
-            else: # SELL / SHORT
-                if cur_price <= tp_price:
-                    exit_triggered = "TP_HIT"
-                    exit_price = tp_price
-                elif cur_price >= hard_sl_price:
-                    exit_triggered = "SL_HIT"
-                    exit_price = hard_sl_price
-
-            if exit_triggered:
-                await self.resolve_trade_exit(trade, exit_triggered, exit_price)
-            return
 
         # -------------------------------------------------------------
         # REAL-TIME TAP WATCHDOG (RUNS EVERY 5 SECONDS)
@@ -705,22 +717,29 @@ class Hermes2ApexLiveEngine:
 
                 diff_pct = abs(cur_price - entry_p) / entry_p * 100.0
                 if tapped or (is_fresh and diff_pct <= 0.40):
-                    logger.info(f"⚡ REAL-TIME TAP WATCHDOG TRIGGERED on {sym} ({side})! Live Price: {cur_price} tapped OB [{ob_low}, {ob_high}] (TF: {setup.get('interval')})")
+                    tf_setup = (setup.get("interval") or "4h").lower()
+                    # Check if this specific timeframe queue is already busy
+                    busy = get_open_paper_trades(timeframe=tf_setup)
+                    if busy:
+                        continue
+                    logger.info(f"⚡ REAL-TIME TAP WATCHDOG TRIGGERED on {sym} ({side})! Live Price: {cur_price} tapped OB [{ob_low}, {ob_high}] (TF: {tf_setup.upper()})")
                     if setup in self.detected_setups:
                         self.detected_setups.remove(setup)
                     await self.execute_apex_entry(setup)
-                    break # Enforce strict 1-trade sequential compounding queue
+                    break
         except Exception as e:
             logger.debug(f"Real-time tap watchdog error: {e}")
 
     async def resolve_trade_exit(self, trade: Dict[str, Any], outcome: str, exit_price: float):
-        """Resolves trade exit, calculates fees, vault stashing (15%), and compounding reinvestment (85%)."""
+        """Resolves trade exit, calculates fees, vault stashing (15%), compounding reinvestment (85%), and MAE/MFE forensics."""
         now_ms = int(time.time() * 1000)
         side = trade["side"].upper()
         entry_price = float(trade["entry_price"])
         pos_size = float(trade["position_size_usdt"])
         trade_id = trade["id"]
         sym = trade["symbol"]
+        tf = (trade.get("timeframe") or "4h").lower()
+        acc_id = 2 if "1h" in tf else 1
         roundtrip_fee = pos_size * 0.0016 # 0.16% roundtrip exchange fee
 
         if side in ("BUY", "LONG"):
@@ -731,7 +750,7 @@ class Hermes2ApexLiveEngine:
         gross_pnl_usdt = pos_size * (gross_pnl_pct / 100.0)
         net_pnl_usdt = gross_pnl_usdt - roundtrip_fee
 
-        acc = self.get_hermes_account()
+        acc = get_paper_account(timeframe=tf)
         current_balance = float(acc.get("current_balance", 50.0) or 50.0)
         vault_balance = float(acc.get("vault_balance", 0.0) or 0.0)
         win_count = int(acc.get("win_count", 0) or 0)
@@ -753,13 +772,33 @@ class Hermes2ApexLiveEngine:
 
         new_total_pnl = round(total_pnl + net_pnl_usdt, 2)
 
+        # Duration & MAE / MFE calculation
+        entry_time = trade["entry_time"] or now_ms
+        duration_ms = max(0, now_ms - entry_time)
+        duration_str = format_duration_str(duration_ms)
+
+        highest = max(float(trade.get("highest_price") or entry_price), exit_price)
+        lowest = min(float(trade.get("lowest_price") or entry_price), exit_price)
+        leverage = 5.0
+        if side in ("BUY", "LONG"):
+            final_mfe = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
+            final_mae = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
+        else:
+            final_mfe = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
+            final_mae = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
+
         with get_connection() as conn:
             conn.execute("""
             UPDATE paper_trades SET
                 status = ?, exit_time = ?, exit_price = ?,
-                pnl_usdt = ?, pnl_pct = ?, vault_stashed_usdt = ?
+                pnl_usdt = ?, pnl_pct = ?, vault_stashed_usdt = ?,
+                highest_price = ?, lowest_price = ?, mae_pct = ?, mfe_pct = ?,
+                duration_str = ?, roi_pct = ?
             WHERE id = ?
-            """, (outcome, now_ms, exit_price, round(net_pnl_usdt, 2), round(gross_pnl_pct * 5.0, 2), vault_stash, trade_id))
+            """, (
+                outcome, now_ms, exit_price, round(net_pnl_usdt, 2), round(gross_pnl_pct * 5.0, 2),
+                vault_stash, highest, lowest, final_mae, final_mfe, duration_str, round(gross_pnl_pct * 5.0, 2), trade_id
+            ))
 
             conn.execute("""
             UPDATE paper_account SET
@@ -768,8 +807,8 @@ class Hermes2ApexLiveEngine:
                 total_pnl = ?,
                 win_count = ?,
                 loss_count = ?
-            WHERE id = 1
-            """, (new_balance, new_vault, new_total_pnl, win_count, loss_count))
+            WHERE id = ?
+            """, (new_balance, new_vault, new_total_pnl, win_count, loss_count, acc_id))
             conn.commit()
 
         self.active_position = None
