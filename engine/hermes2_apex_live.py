@@ -837,6 +837,13 @@ class Hermes2ApexLiveEngine:
         new_balance = round(max(1.0, current_balance + net_pnl_usdt), 2)
         new_total_pnl = round(total_pnl + net_pnl_usdt, 2)
 
+        # Sync compounding ladder balance for Binance 4H Challenge ($50 -> $2,000)
+        if tf == "4h":
+            try:
+                set_setting("binance_compounding_balance", str(new_balance))
+            except Exception:
+                pass
+
         # Duration & MAE / MFE calculation
         entry_time = trade["entry_time"] or now_ms
         duration_ms = max(0, now_ms - entry_time)

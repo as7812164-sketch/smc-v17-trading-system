@@ -120,6 +120,7 @@ BINANCE_ALLOWED_SIDES = ["SHORT", "SELL"]  # Strictly SHORT ONLY per user mandat
 BINANCE_MARGIN_MODE = "ISOLATED"           # Strictly ISOLATED margin mode - CROSS mode prohibited
 BINANCE_DEFAULT_LEVERAGE = 5
 BINANCE_STARTING_MARGIN = 50.0  # $50 USDT compounding starting size
+BINANCE_COMPOUNDING_TARGET = 2000.0  # $2,000 USDT Milestone Target Goal
 BINANCE_4H_TP_PCT = 0.0280  # +2.80% price move (+14.00% ROE @ 5x)
 BINANCE_4H_SL_PCT = 0.0280  # -2.80% soft SL on 4H candle close
 BINANCE_HARD_DISASTER_SL_PCT = 0.0380  # +3.80% emergency disaster stop order on exchange
@@ -128,29 +129,29 @@ BINANCE_1H_SL_PCT = 0.0145  # -1.45% price move (-7.27% ROE @ 5x)
 BITGET_4H_TP_PCT  = 0.0220  # +2.20% price move (+11.00% ROE @ 5x)
 BITGET_4H_SL_PCT  = 0.0200  # -2.00% price move (-10.00% ROE @ 5x)
 
-# --- Dual Compounding Challenges Specs ---
+# --- Master Compounding Challenge Specifications ---
 DUAL_CHALLENGES = {
+    "binance_4h": {
+        "name": "Binance 4H Compounding Challenge",
+        "exchange": "Binance",
+        "timeframe": "4h",
+        "start_balance": 50.0,
+        "target_balance": 2000.0,
+        "leverage": 5,
+        "tp_pct": 0.0280,  # +2.80% price move (+14.00% ROE @ 5x)
+        "sl_pct": 0.0280,  # -2.80% soft SL on 4H candle close
+        "description": "HERMES 2.5 APEX HYBRID • 5x ISOLATED • SHORT ONLY ($50 -> $2,000)"
+    },
     "bitget_4h": {
-        "name": "Bitget 4H Swing Challenge",
+        "name": "Bitget 4H Swing Challenge (Paused)",
         "exchange": "Bitget",
         "timeframe": "4h",
         "start_balance": 50.0,
-        "target_balance": 40000.0,
+        "target_balance": 2000.0,
         "leverage": 5,
-        "tp_pct": 0.0220,  # +2.20% price move (+11.00% ROE @ 5x) | RR 1.1:1
-        "sl_pct": 0.0200,  # -2.00% price move (-10.00% ROE @ 5x) | RR 1.1:1
-        "description": "Macro institutional 4H Demand/Supply swings (11% ROE Target)"
-    },
-    "binance_1h": {
-        "name": "Binance 1H Fast Scalp Challenge",
-        "exchange": "Binance",
-        "timeframe": "1h",
-        "start_balance": 50.0,
-        "target_balance": 10000.0,
-        "leverage": 5,
-        "tp_pct": 0.0160,  # +1.60% price move (+8.00% ROE @ 5x) | RR 1.1:1
-        "sl_pct": 0.0145,  # -1.45% price move (-7.27% ROE @ 5x) | RR 1.1:1
-        "description": "Rapid 1H 1st boundary tap scalp reaction (8% ROE Target)"
+        "tp_pct": 0.0220,
+        "sl_pct": 0.0200,
+        "description": "Bitget Auto-Trading currently paused per user mandate"
     }
 }
 

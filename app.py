@@ -1997,47 +1997,57 @@ async def tradingview_webhook(request: Request):
 # --- Dual Compounding Challenges REST Endpoints ---
 @app.get("/api/challenge/dual-status")
 async def get_dual_challenge_status():
-    """Returns combined live metrics for both Bitget 4H and Binance 1H challenges."""
-    # 1. Bitget 4H Challenge Status
-    bitget_bal = bitget_trader.fetch_futures_balance() if bitget_trader else {}
-    b_total = float(bitget_bal.get("total_usdt", 77.59) or 77.59)
-    bitget_stage = 1 if b_total < 100.0 else (2 if b_total < 250.0 else (3 if b_total < 500.0 else (4 if b_total < 750.0 else 5)))
-    bitget_pct = min(100.0, round((b_total / 1000.0) * 100, 1))
+    """Returns live metrics for Binance 4H Compounding ($50 -> $2,000) and legacy challenges."""
+    from engine.binance_trader import binance_trader
+    from database.db import get_setting
 
-    # 2. Binance 1H Challenge Status
+    comp_bal = float(get_setting("binance_compounding_balance", "50.0"))
     binance_bal = binance_trader.fetch_futures_balance() if binance_trader else {}
-    bin_total = float(binance_bal.get("total_usdt", 50.0) or 50.0)
-    bin_stage = 1 if bin_total < 100.0 else (2 if bin_total < 250.0 else (3 if bin_total < 500.0 else (4 if bin_total < 750.0 else 5)))
-    bin_pct = min(100.0, round((bin_total / 1000.0) * 100, 1))
+    target_goal = float(get_setting("binance_compounding_target", "2000.0"))
+
+    # Calculate Stage for $50 -> $2,000 (5 Stages)
+    stages = [
+        {"stage": 1, "target": 100.0, "desc": "$50 -> $100 (Stage 1)"},
+        {"stage": 2, "target": 250.0, "desc": "$100 -> $250 (Stage 2)"},
+        {"stage": 3, "target": 500.0, "desc": "$250 -> $500 (Stage 3)"},
+        {"stage": 4, "target": 1000.0, "desc": "$500 -> $1,000 (Stage 4)"},
+        {"stage": 5, "target": 2000.0, "desc": "$1,000 -> $2,000 (Goal Reached!)"}
+    ]
+    curr_stage = 1
+    for s in stages:
+        if comp_bal < s["target"]:
+            curr_stage = s["stage"]
+            break
+        curr_stage = 5
+    pct = min(100.0, round((comp_bal / target_goal) * 100, 1))
 
     return {
         "status": "success",
         "challenges": {
+            "binance_4h": {
+                "name": "Binance 4H Compounding Challenge",
+                "exchange": "Binance",
+                "timeframe": "4h",
+                "start_balance": 50.0,
+                "current_compounding_balance": round(comp_bal, 2),
+                "wallet_total_usdt": binance_bal.get("total_usdt", 0.0),
+                "wallet_free_usdt": binance_bal.get("free_usdt", 0.0),
+                "goal": target_goal,
+                "current_stage": curr_stage,
+                "progress_pct": pct,
+                "target_roe_per_trade": "+14.0% (+$7.00 initial)",
+                "hard_sl": "-19.0% (-$9.50 emergency stop)",
+                "leverage": 5,
+                "margin_mode": "ISOLATED",
+                "mode": "Active Real Binance Futures (5x ISOLATED SHORT)" if binance_bal.get("connected") else "Simulated Live 4H"
+            },
             "bitget_4h": {
-                "name": "Bitget 4H Swing Compounding",
+                "name": "Bitget 4H Swing Challenge (Paused)",
                 "exchange": "Bitget",
                 "timeframe": "4h",
-                "balance": round(b_total, 2),
-                "goal": 1000.0,
-                "current_stage": bitget_stage,
-                "progress_pct": bitget_pct,
-                "target_roe_per_trade": "+10.0% (+$5.00)",
-                "hard_sl": "-20.0% (-$10.00)",
-                "leverage": 5,
-                "mode": "Active Real Bitget Futures" if bitget_bal.get("connected") else "Simulated Live 4H"
-            },
-            "binance_1h": {
-                "name": "Binance 1H Fast Scalp Compounding",
-                "exchange": "Binance",
-                "timeframe": "1h",
-                "balance": round(bin_total, 2),
-                "goal": 1000.0,
-                "current_stage": bin_stage,
-                "progress_pct": bin_pct,
-                "target_roe_per_trade": "+7.5% (+$3.75)",
-                "hard_sl": "-12.5% (-$6.25)",
-                "leverage": 5,
-                "mode": "Active Real Binance Futures" if binance_bal.get("connected") else "Simulated Live 1H"
+                "start_balance": 50.0,
+                "goal": 2000.0,
+                "mode": "Paused per user mandate"
             }
         }
     }

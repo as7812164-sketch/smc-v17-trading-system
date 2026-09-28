@@ -237,7 +237,9 @@ class BinanceTrader:
                 if free_usdt < 5.0:
                     return {"success": False, "error": f"Insufficient Binance free balance (${free_usdt:.2f} USDT). Min $5 required."}
 
-                margin = min(free_usdt, max(BINANCE_STARTING_MARGIN, free_usdt))
+                # Compounding Challenge Capital Allocation ($50.00 -> $2,000.00 Milestone)
+                comp_bal = float(get_setting("binance_compounding_balance", str(BINANCE_STARTING_MARGIN)))
+                margin = min(free_usdt, max(BINANCE_STARTING_MARGIN, comp_bal))
                 notional = margin * BINANCE_DEFAULT_LEVERAGE
                 raw_amount = notional / entry_price
 
