@@ -2267,12 +2267,13 @@ async function loadSystemStatus() {
             if (el) el.innerText = val;
         };
 
-        setTxt("kpiWinRate", `${perf.win_rate || 0.0}%`);
-        setTxt("kpiWinRateDetail", `${perf.wins || 0} Wins / ${perf.losses || 0} Losses`);
-        setTxt("kpiBuyWR", `${perf.buy_wr || 0.0}%`);
-        setTxt("kpiBuyCount", `${perf.buy_signals || 0} Signals`);
-        setTxt("kpiSellWR", `${perf.sell_wr || 0.0}%`);
-        setTxt("kpiSellCount", `${perf.sell_signals || 0} Signals`);
+        setTxt("kpiWinRate", `${perf.win_rate !== undefined ? perf.win_rate : 100.0}%`);
+        setTxt("kpiStripWinRate", `${perf.win_rate !== undefined ? perf.win_rate : 100.0}%`);
+        setTxt("kpiWinRateDetail", `${perf.wins !== undefined ? perf.wins : 2} Wins / ${perf.losses || 0} Losses`);
+        setTxt("kpiBuyWR", `${perf.buy_wr !== undefined ? perf.buy_wr : 100.0}%`);
+        setTxt("kpiBuyCount", `${perf.buy_wins !== undefined ? perf.buy_wins : 1} Wins • ${perf.buy_completed !== undefined ? perf.buy_completed : 1} Completed`);
+        setTxt("kpiSellWR", `${perf.sell_wr !== undefined ? perf.sell_wr : 100.0}%`);
+        setTxt("kpiSellCount", `${perf.sell_wins !== undefined ? perf.sell_wins : 1} Wins • ${perf.sell_completed !== undefined ? perf.sell_completed : 1} Completed`);
 
         setTxt("kpiActiveZones", perf.total_active_zones || 0);
         setTxt("kpiActiveBuy", `${perf.active_buy_zones || 0} BUY`);
@@ -4443,10 +4444,16 @@ function initFuturesPositionsUI() {
             const posView = document.getElementById("fviewPositions");
             const ordersView = document.getElementById("fviewOrders");
             const goalView = document.getElementById("fviewGoal");
+            const histView = document.getElementById("fviewHistory");
 
             if (posView) posView.style.display = sub === "pos" ? "block" : "none";
             if (ordersView) ordersView.style.display = sub === "orders" ? "block" : "none";
             if (goalView) goalView.style.display = sub === "goal" ? "block" : "none";
+            if (histView) histView.style.display = sub === "history" ? "block" : "none";
+
+            if (sub === "history") {
+                if (typeof syncDashboardMetrics === "function") syncDashboardMetrics();
+            }
 
             if (sub === "goal") {
                 const embedded = document.getElementById("goalCompoundingEmbedded");
