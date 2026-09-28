@@ -634,14 +634,23 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
     sell_wins = 0
     sell_losses = 0
 
+    seen_trade_sigs = set()
     for idx, t in enumerate(raw_history, start=1):
         td = dict(t)
+        sym = str(td.get("symbol") or "").upper()
         side_raw = (td.get("side") or "BUY").upper()
         is_buy = side_raw in ("BUY", "LONG")
         side_pill = "BUY" if is_buy else "SELL"
         side_str = "LONG" if is_buy else "SHORT"
         entry_p = float(td.get("entry_price") or 0.0)
         exit_p = float(td.get("exit_price") or entry_p)
+
+        # Defense-in-depth deduplication: never process or render the same trade twice
+        trade_sig = (sym, side_str, round(entry_p, 4), round(exit_p, 4))
+        if trade_sig in seen_trade_sigs:
+            continue
+        seen_trade_sigs.add(trade_sig)
+
         pnl = float(td.get("pnl_usdt") or 0.0)
         pnl_pct = float(td.get("pnl_pct") or 0.0)
         roi_pct = float(td.get("roi_pct") or pnl_pct)

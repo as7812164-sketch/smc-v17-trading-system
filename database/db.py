@@ -310,16 +310,31 @@ def _sync_journal_to_paper_trades(conn):
     Ensures zero data loss and prevents missing trade records across container restarts.
     """
     try:
+        # First, purge any duplicate records in paper_trades keeping the original primary record
+        conn.execute("""
+        DELETE FROM paper_trades 
+        WHERE id NOT IN (
+            SELECT MIN(id) FROM paper_trades 
+            GROUP BY symbol, 
+                     CASE WHEN UPPER(side) IN ('BUY', 'LONG') THEN 'LONG' ELSE 'SHORT' END, 
+                     ROUND(entry_price, 4), 
+                     ROUND(exit_price, 4)
+        )
+        """)
+        conn.commit()
+
         j_rows = conn.execute("SELECT * FROM trade_journal WHERE status != 'OPEN'").fetchall()
         for jr in j_rows:
             jd = dict(jr)
             sym = str(jd.get('symbol', '')).upper()
-            side = 'BUY' if str(jd.get('side', '')).upper() in ('BUY', 'LONG') else 'SELL'
+            is_buy = str(jd.get('side', '')).upper() in ('BUY', 'LONG')
+            side = 'BUY' if is_buy else 'SELL'
+            side_variants = ('BUY', 'LONG') if is_buy else ('SELL', 'SHORT')
             ep = float(jd.get('entry_price') or 0.0)
             tf = (jd.get('timeframe') or '4h').lower()
             existing = conn.execute(
-                "SELECT id FROM paper_trades WHERE symbol = ? AND side = ? AND ABS(entry_price - ?) < 0.0001",
-                (sym, side, ep)
+                "SELECT id FROM paper_trades WHERE symbol = ? AND UPPER(side) IN (?, ?) AND ABS(entry_price - ?) < 0.0001",
+                (sym, side_variants[0], side_variants[1], ep)
             ).fetchone()
             if not existing:
                 margin = float(jd.get('margin_usdt') or 50.0)
@@ -980,7 +995,8 @@ def get_paper_trades_history(limit: int = 50, timeframe: Optional[str] = None) -
         # Deduplication signature check against trade_journal
         signatures = set()
         for t in trades:
-            sig = (str(t.get("symbol")).upper(), str(t.get("side")).upper()[:3], round(float(t.get("entry_price") or 0), 4))
+            t_side = "LONG" if str(t.get("side", "")).upper() in ("BUY", "LONG") else "SHORT"
+            sig = (str(t.get("symbol")).upper(), t_side, round(float(t.get("entry_price") or 0), 4))
             signatures.add(sig)
 
         jq = "SELECT * FROM trade_journal WHERE status != 'OPEN'"
@@ -995,9 +1011,10 @@ def get_paper_trades_history(limit: int = 50, timeframe: Optional[str] = None) -
         for jr in j_rows:
             jd = dict(jr)
             sym = str(jd.get("symbol")).upper()
-            side = "BUY" if str(jd.get("side")).upper() in ("BUY", "LONG") else "SELL"
+            j_side = "LONG" if str(jd.get("side")).upper() in ("BUY", "LONG") else "SHORT"
+            side = "BUY" if j_side == "LONG" else "SELL"
             ep = round(float(jd.get("entry_price") or 0), 4)
-            sig = (sym, side[:3], ep)
+            sig = (sym, j_side, ep)
             if sig not in signatures:
                 signatures.add(sig)
                 margin = float(jd.get("margin_usdt") or 50.0)
