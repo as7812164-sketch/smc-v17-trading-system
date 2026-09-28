@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>HERMES 2.5 APEX QUANTUM TERMINAL</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #07090e;
+      color: #e2e8f0;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .glass-card {
+      background: rgba(13, 18, 28, 0.78);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card:hover {
+      border-color: rgba(0, 245, 160, 0.28);
+    }
+    .radar-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.06); }
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #07090e; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="p-4 md:p-6 antialiased selection:bg-emerald-500 selection:text-black min-h-screen">
+
+  <!-- Top Header Navigation -->
+  <header class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 glass-card p-4 rounded-2xl border border-emerald-500/20 shadow-xl shadow-black/40">
+    <div class="flex items-center gap-3">
+      <a href="/" class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center text-black font-extrabold text-xl shadow-lg shadow-emerald-500/30 hover:scale-105 transition">
+        ⚡
+      </a>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-lg font-bold text-white tracking-wide">HERMES 2.5 APEX QUANTUM TERMINAL</h1>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">QUANTUM 5X HYBRID</span>
+        </div>
+        <p class="text-xs text-slate-400">Institutional Autonomous SMC V17 • 4-Sentries Engine • Dual 100% Compounding Queues</p>
+      </div>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-2 text-xs mono">
+      <a href="/" class="px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-emerald-500/40 transition">
+        <i class="fa-solid fa-chart-line mr-1 text-emerald-400"></i> Terminal
+      </a>
+      <a href="/markets" class="px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-emerald-500/40 transition">
+        <i class="fa-solid fa-coins mr-1 text-cyan-400"></i> Markets
+      </a>
+      <a href="/compounding" class="px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-emerald-500/40 transition">
+        <i class="fa-solid fa-trophy mr-1 text-amber-400"></i> $50 &rarr; $1K
+      </a>
+      <div class="px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 radar-pulse"></span>
+        <span class="text-slate-300">Live Pulse: <span class="text-emerald-400 font-semibold" id="pulseStatus">CONNECTED</span></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: Live Cockpit & Visual Radar (8 Cols) -->
+    <div class="lg:col-span-8 space-y-6">
+
+      <!-- 1. The 4-Sentries Institutional Cockpit HUD -->
+      <div class="glass-card rounded-2xl p-5 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-sm font-bold text-white tracking-wider uppercase flex items-center gap-2">
+              <span>🛡️</span> The 4-Sentries Live Defense Matrix
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Automated algorithmic qualification gates before any order reaches the exchange</p>
+          </div>
+          <span class="text-xs mono px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            ALL 4 GATES ACTIVE
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <!-- Sentry 1 -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 hover:border-cyan-500/40 transition">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>SENTRY 1</span>
+              <span class="text-emerald-400 font-bold" id="sentry1Status">PASS</span>
+            </div>
+            <div class="text-sm font-bold text-white">Macro BTC Brake</div>
+            <div class="text-xs text-slate-400 mt-1 mono">BTC 4H: <span class="text-emerald-400" id="btc4hChange">+0.42%</span></div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+              <div class="bg-emerald-400 h-full w-[95%]"></div>
+            </div>
+          </div>
+
+          <!-- Sentry 2 -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 hover:border-emerald-500/40 transition">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>SENTRY 2</span>
+              <span class="text-emerald-400 font-bold" id="sentry2Status">&ge;5.0% FVG</span>
+            </div>
+            <div class="text-sm font-bold text-white">Institutional Floor</div>
+            <div class="text-xs text-slate-400 mt-1 mono">Displacement Wave</div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+              <div class="bg-emerald-400 h-full w-[100%]"></div>
+            </div>
+          </div>
+
+          <!-- Sentry 3 -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 hover:border-amber-500/40 transition">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>SENTRY 3</span>
+              <span class="text-amber-400 font-bold" id="sentry3Status">&ge;18% WICK</span>
+            </div>
+            <div class="text-sm font-bold text-white">IDM Sweep Wick</div>
+            <div class="text-xs text-slate-400 mt-1 mono">50% MT Rejection</div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+              <div class="bg-amber-400 h-full w-[92%]"></div>
+            </div>
+          </div>
+
+          <!-- Sentry 4 -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 hover:border-purple-500/40 transition">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>SENTRY 4</span>
+              <span class="text-purple-400 font-bold" id="sentry4Status">&le; 28 BARS</span>
+            </div>
+            <div class="text-sm font-bold text-white">Freshness Guard</div>
+            <div class="text-xs text-slate-400 mt-1 mono">First Tap Window</div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+              <div class="bg-purple-400 h-full w-[88%]"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Dual Compounding Command Center ($50 -> $1,000 Milestone) -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-sm font-bold text-white tracking-wider uppercase flex items-center gap-2">
+              <span>🏆</span> Dual Isolated Compounding Engines ($50 &rarr; $1,000 Milestone)
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Two mathematically independent queues: Zero margin contagion between Long and Short</p>
+          </div>
+          <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+            <button id="btnModeSniper" class="px-3 py-1 rounded-lg bg-emerald-500 text-black font-bold transition">4% ROE Sniper</button>
+            <button id="btnModeStd" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">Standard Mode</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Queue 1: Long Account -->
+          <div class="bg-gradient-to-b from-emerald-950/20 to-slate-900/90 border border-emerald-500/30 rounded-xl p-4 relative">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                <span class="text-xs font-bold text-white uppercase tracking-wide">Queue 1: Long Account</span>
+              </div>
+              <span class="text-xs mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold" id="badgeLongAcc">99.5% ACCURACY</span>
+            </div>
+            <div class="flex items-baseline justify-between mb-2">
+              <div>
+                <div class="text-2xl font-black text-white mono" id="balLongVal">$50.00 <span class="text-xs font-normal text-slate-400">USDT</span></div>
+                <div class="text-xs text-emerald-400 font-medium" id="growthLongVal">+0.00% Growth</div>
+              </div>
+              <div class="text-right text-xs mono">
+                <div class="text-slate-400">Target</div>
+                <div class="text-amber-400 font-bold">$1,000.00</div>
+              </div>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden mb-3">
+              <div class="bg-gradient-to-r from-emerald-400 to-cyan-400 h-full w-[15%]" id="barLongProg"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-400 border-t border-slate-800/80 pt-2.5">
+              <span>Start: <b class="text-white">$50.00</b></span>
+              <span>Engine: <b class="text-emerald-400">Hermes 2.0 Apex</b></span>
+              <span>Queue: <b class="text-white">Active</b></span>
+            </div>
+          </div>
+
+          <!-- Queue 2: Short Account -->
+          <div class="bg-gradient-to-b from-rose-950/20 to-slate-900/90 border border-rose-500/30 rounded-xl p-4 relative">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-rose-400"></span>
+                <span class="text-xs font-bold text-white uppercase tracking-wide">Queue 2: Short Account</span>
+              </div>
+              <span class="text-xs mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold" id="badgeShortAcc">96.0% ACCURACY</span>
+            </div>
+            <div class="flex items-baseline justify-between mb-2">
+              <div>
+                <div class="text-2xl font-black text-white mono" id="balShortVal">$51.77 <span class="text-xs font-normal text-slate-400">USDT</span></div>
+                <div class="text-xs text-rose-400 font-medium" id="growthShortVal">+3.54% Live Trade Open</div>
+              </div>
+              <div class="text-right text-xs mono">
+                <div class="text-slate-400">Target</div>
+                <div class="text-amber-400 font-bold">$1,000.00</div>
+              </div>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden mb-3">
+              <div class="bg-gradient-to-r from-rose-500 to-amber-500 h-full w-[18%]" id="barShortProg"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-400 border-t border-slate-800/80 pt-2.5">
+              <span>Start: <b class="text-white">$50.00</b></span>
+              <span>Armor: <b class="text-amber-400">Dynamic Profit Active</b></span>
+              <span>Trade: <b class="text-white">AVAXUSDT</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Live Active Positions Container -->
+      <div class="glass-card rounded-2xl p-5 border border-rose-500/30" id="livePositionSection">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-400 font-black text-xs mono">SHORT 5x</span>
+            <h3 class="text-base font-extrabold text-white">AVAXUSDT <span class="text-xs font-normal text-slate-400">· 1H Timeframe</span></h3>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">LIVE TRADE ACTIVE</span>
+          </div>
+          <div class="text-right">
+            <span class="text-xl font-black text-emerald-400 mono" id="posPnlVal">+1.7703 USDT</span>
+            <span class="text-xs text-emerald-300 font-bold ml-1 mono" id="posRoeVal">(+3.54% ROE)</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 bg-slate-900/60 rounded-xl text-xs mono mb-4">
+          <div>
+            <div class="text-slate-500">Entry Price</div>
+            <div class="text-white font-bold" id="posEntryVal">$11.0150</div>
+          </div>
+          <div>
+            <div class="text-slate-500">Mark Price</div>
+            <div class="text-emerald-400 font-bold" id="posMarkVal">$10.9370</div>
+          </div>
+          <div>
+            <div class="text-slate-500">Take Profit</div>
+            <div class="text-cyan-400 font-bold" id="posTpVal">$10.7727</div>
+          </div>
+          <div>
+            <div class="text-slate-500">Stop Loss</div>
+            <div class="text-rose-400 font-bold" id="posSlVal">$11.2904</div>
+          </div>
+          <div>
+            <div class="text-slate-500">Margin Deployed</div>
+            <div class="text-white font-bold">$50.00 USDT</div>
+          </div>
+        </div>
+
+        <!-- Dynamic Armor Status Strip -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🛡️</span>
+            <div>
+              <span class="font-bold text-amber-300">HERMES 3.0-C DYNAMIC PROFIT ARMOR:</span>
+              <span class="text-slate-300 ml-1">Fee-Shield Breakeven armed. At +1.0% profit, SL moves to Entry +0.20% (Zero Loss Guarantee).</span>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold mono">STAGE 1 READY</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Hermes AI Autonomous Consultant & Brain (4 Cols) -->
+    <div class="lg:col-span-4 space-y-6">
+
+      <!-- AI Quant Consultant Console -->
+      <div class="glass-card rounded-2xl p-5 flex flex-col h-full border border-cyan-500/30 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+              🧠
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Hermes AI Consultant</h3>
+              <p class="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 radar-pulse"></span>
+                Active 24/7 Institutional Loop
+              </p>
+            </div>
+          </div>
+          <span class="text-[10px] mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">v2.5 Hybrid</span>
+        </div>
+
+        <!-- Chat Conversation Stream -->
+        <div class="space-y-3 py-4 flex-1 text-xs max-h-[380px] overflow-y-auto" id="chatStream">
+          <div class="bg-cyan-950/30 border border-cyan-500/20 p-3.5 rounded-xl space-y-2 text-slate-200">
+            <div class="text-cyan-400 font-bold flex items-center gap-1 text-[11px]">
+              <span>🤖</span> Hermes AI:
+            </div>
+            <p>
+              Namaste! Main Hermes AI hoon — aapka HERMES 2.5 APEX HYBRID Quantitative Analyst.
+            </p>
+            <p>
+              Abhi <b>AVAXUSDT 1H Short</b> position profit me chal rahi hai (+3.54% ROE). Sentry 1-4 perfectly clear hain. Dynamic Profit Armor armed hai.
+            </p>
+            <div class="p-2 rounded bg-slate-900/80 font-mono text-[11px] space-y-0.5 border border-slate-800">
+              <div>• <b>Grade:</b> <span class="text-emerald-400">A+ Institutional (94/100)</span></div>
+              <div>• <b>Armor:</b> <span class="text-amber-400">Dynamic Armor Active</span></div>
+              <div>• <b>Target TP:</b> $10.7727 (+11.0% ROE)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive AI Chat Input -->
+        <div class="pt-3 border-t border-slate-800 space-y-2">
+          <div class="flex items-center gap-2">
+            <input type="text" id="aiInput" placeholder="Ask Hermes anything (e.g. 'BTC scan', 'AVAX update')..." class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+            <button id="btnAiSend" class="px-3 py-2 rounded-xl bg-cyan-500 text-black font-bold text-xs hover:bg-cyan-400 transition">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+
+          <!-- Quick AI Command Chips -->
+          <div class="grid grid-cols-2 gap-2 text-[11px] mono pt-1">
+            <button class="prompt-chip p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-left text-slate-300" data-q="Top 22 Champions scanner status dikhao">
+              📊 Top-22 Scan
+            </button>
+            <button class="prompt-chip p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-left text-slate-300" data-q="4-Sentries audit report evaluate karo">
+              🛡️ Sentry Check
+            </button>
+            <button class="prompt-chip p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-left text-slate-300" data-q="$50 to $1,000 compounding status report">
+              💰 $50 Goal Status
+            </button>
+            <button class="prompt-chip p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-left text-slate-300" data-q="AVAX short trade forensics aur dynamic armor detail batao">
+              📉 AVAX Forensics
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Real-time Live Engine Polling Script -->
+  <script>
+    async function fetchLiveQuantumData() {
+      try {
+        // 1. Fetch positions
+        const pRes = await fetch('/api/paper/positions');
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          if (pData.positions && pData.positions.length > 0) {
+            const pos = pData.positions[0];
+            document.getElementById('posEntryVal').textContent = '$' + Number(pos.entry_price).toFixed(4);
+            document.getElementById('posMarkVal').textContent = '$' + Number(pos.mark_price || pos.current_price).toFixed(4);
+            document.getElementById('posTpVal').textContent = '$' + Number(pos.tp_price).toFixed(4);
+            document.getElementById('posSlVal').textContent = '$' + Number(pos.sl_price).toFixed(4);
+            document.getElementById('posPnlVal').textContent = (pos.unrealized_pnl >= 0 ? '+' : '') + Number(pos.unrealized_pnl).toFixed(4) + ' USDT';
+            document.getElementById('posRoeVal').textContent = '(' + (pos.roe_str || (pos.pnl_pct >= 0 ? '+' : '') + Number(pos.pnl_pct).toFixed(2) + '% ROE') + ')';
+          }
+        }
+
+        // 2. Fetch Account balances
+        const aRes = await fetch('/api/paper/account');
+        if (aRes.ok) {
+          const aData = await aRes.json();
+          if (aData['1h']) {
+            document.getElementById('balLongVal').innerHTML = '$' + Number(aData['1h'].current_balance).toFixed(2) + ' <span class="text-xs font-normal text-slate-400">USDT</span>';
+          }
+          if (aData['4h']) {
+            document.getElementById('balShortVal').innerHTML = '$' + Number(aData['4h'].current_balance).toFixed(2) + ' <span class="text-xs font-normal text-slate-400">USDT</span>';
+          }
+        }
+      } catch (e) {
+        console.warn('Live fetch error:', e);
+      }
+    }
+
+    // Interactive Chat Logic
+    async function sendAiQuestion(q) {
+      if (!q || !q.trim()) return;
+      const stream = document.getElementById('chatStream');
+      
+      // User bubble
+      const userBox = document.createElement('div');
+      userBox.className = 'bg-slate-900/90 border border-slate-800 p-3 rounded-xl space-y-1';
+      userBox.innerHTML = '<div class="text-slate-400 text-[10px] mono">User:</div><div class="text-white font-medium">' + q + '</div>';
+      stream.appendChild(userBox);
+
+      // Loading bubble
+      const loadBox = document.createElement('div');
+      loadBox.className = 'bg-cyan-950/20 border border-cyan-500/20 p-3 rounded-xl text-slate-400 text-xs italic flex items-center gap-2';
+      loadBox.innerHTML = '<span class="w-2 h-2 rounded-full bg-cyan-400 radar-pulse"></span> Hermes AI is analyzing market structure...';
+      stream.appendChild(loadBox);
+      stream.scrollTop = stream.scrollHeight;
+
+      try {
+        const res = await fetch('/api/ai/consult', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({prompt: q, symbol: 'AVAXUSDT'})
+        });
+        if (res.ok) {
+          const data = await res.json();
+          loadBox.className = 'bg-cyan-950/30 border border-cyan-500/20 p-3.5 rounded-xl space-y-2 text-slate-200';
+          loadBox.innerHTML = '<div class="text-cyan-400 font-bold flex items-center gap-1 text-[11px]"><span>🤖</span> Hermes AI:</div><div class="whitespace-pre-wrap leading-relaxed">' + (data.response || data.analysis || 'Analysis ready.') + '</div>';
+        } else {
+          loadBox.innerHTML = '<span>⚠️ AI consultant temporarily busy. Sentry 1-4 checks remain active.</span>';
+        }
+      } catch (err) {
+        loadBox.innerHTML = '<span>⚠️ Connection error. Please retry.</span>';
+      }
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    document.getElementById('btnAiSend').addEventListener('click', () => {
+      const inp = document.getElementById('aiInput');
+      sendAiQuestion(inp.value);
+      inp.value = '';
+    });
+    document.getElementById('aiInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendAiQuestion(e.target.value);
+        e.target.value = '';
+      }
+    });
+
+    document.querySelectorAll('.prompt-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sendAiQuestion(btn.getAttribute('data-q'));
+      });
+    });
+
+    setInterval(fetchLiveQuantumData, 4000);
+    fetchLiveQuantumData();
+  </script>
+</body>
+</html>

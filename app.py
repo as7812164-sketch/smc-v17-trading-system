@@ -236,6 +236,18 @@ async def serve_trade_forensics():
         }
     )
 
+@app.get("/quantum", response_class=HTMLResponse)
+async def serve_quantum():
+    file_path = STATIC_DIR / "quantum.html"
+    return FileResponse(
+        file_path,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
 
 @app.get("/api/pinescript")
 async def get_pinescript_code():
