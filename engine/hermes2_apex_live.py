@@ -564,6 +564,33 @@ class Hermes2ApexLiveEngine:
         }
         self.active_position = trade_obj
 
+        # Real Binance Futures Auto-Trading Execution (4H SHORT ONLY - 5x ISOLATED)
+        if tf == "4h":
+            from engine.binance_trader import binance_trader
+            if binance_trader.is_auto_trade_enabled():
+                if side.upper() in ("SHORT", "SELL"):
+                    logger.info(f"🚀 [BINANCE 4H AUTO-TRADE] Initiating 5x ISOLATED Short on {sym}...")
+                    try:
+                        binance_res = await binance_trader.execute_4h_short_trade(setup)
+                        logger.info(f"Binance 4H Execution: {binance_res}")
+                        if not binance_res.get("success") and not binance_res.get("skipped"):
+                            err_detail = binance_res.get("error", "Unknown error")
+                            logger.error(f"Binance 4H Order Error: {err_detail}")
+                            try:
+                                await telegram_service.send_text_alert(
+                                    f"⚠️ <b>BINANCE AUTO-TRADE ALERT</b>\n\n"
+                                    f"Attempted 4H SHORT on <b>{sym}</b>\n"
+                                    f"Status: ❌ <b>Execution Blocked</b>\n"
+                                    f"Reason: <i>{err_detail}</i>\n\n"
+                                    f"💡 <i>Tip: Check Binance API Management -> 'Enable Futures' permission.</i>"
+                                )
+                            except Exception:
+                                pass
+                    except Exception as be:
+                        logger.error(f"Binance 4H Auto-Trade Exception: {be}")
+                else:
+                    logger.info(f"🛡️ [BINANCE 4H POLICY] Skipping {side} on {sym}: Strictly SHORT ONLY per user mandate.")
+
         # Check if paper trading alerts are muted
         mute_paper = get_setting("mute_paper_trading_alerts", "false").lower() == "true"
         if mute_paper:
@@ -889,6 +916,16 @@ class Hermes2ApexLiveEngine:
 
         self.active_position = None
         self.trade_cooldowns[sym] = time.time() + 1800  # 30-minute cooldown on this symbol to prevent rapid loop
+
+        # Close real Binance futures position if auto-trade was active
+        if tf == "4h":
+            from engine.binance_trader import binance_trader
+            if binance_trader.is_auto_trade_enabled():
+                try:
+                    await binance_trader.close_position_market(sym, side)
+                except Exception as ce:
+                    logger.warning(f"Binance real market close exception: {ce}")
+
         completed = win_count + loss_count
         win_rate = round(win_count / completed * 100, 1) if completed > 0 else 0.0
 

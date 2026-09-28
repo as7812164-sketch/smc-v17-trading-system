@@ -106,21 +106,27 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 BITGET_API_KEY = os.getenv("BITGET_API_KEY", "")
 BITGET_SECRET = os.getenv("BITGET_SECRET", "")
 BITGET_PASSPHRASE = os.getenv("BITGET_PASSPHRASE", "")
-BITGET_AUTO_TRADE = os.getenv("BITGET_AUTO_TRADE", "false").lower() == "true"
+BITGET_AUTO_TRADE = False
 BITGET_DEFAULT_LEVERAGE = 5
 BITGET_STARTING_MARGIN = 50.0  # $50 USDT compounding starting size
 BITGET_MIN_CONFLUENCE = int(os.getenv("BITGET_MIN_CONFLUENCE", "90"))  # 90+ Elite setups only
 
-# --- Binance Real Auto-Trading Config (Challenge 2: 1H Fast Scalp) ---
+# --- Binance Real Auto-Trading Config (Challenge: 4H Macro Compounding) ---
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", "")
 BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET", "")
-BINANCE_AUTO_TRADE = os.getenv("BINANCE_AUTO_TRADE", "false").lower() == "true"
+BINANCE_AUTO_TRADE = os.getenv("BINANCE_AUTO_TRADE", "true").lower() == "true"
+BINANCE_TIMEFRAME = "4h"
+BINANCE_ALLOWED_SIDES = ["SHORT", "SELL"]  # Strictly SHORT ONLY per user mandate (92.8% 1-Yr Win Rate)
+BINANCE_MARGIN_MODE = "ISOLATED"           # Strictly ISOLATED margin mode - CROSS mode prohibited
 BINANCE_DEFAULT_LEVERAGE = 5
 BINANCE_STARTING_MARGIN = 50.0  # $50 USDT compounding starting size
-BINANCE_1H_TP_PCT = 0.0160  # +1.60% price move (+8.00% ROE @ 5x) | RR 1.1:1
-BINANCE_1H_SL_PCT = 0.0145  # -1.45% price move (-7.27% ROE @ 5x) | RR 1.1:1
-BITGET_4H_TP_PCT  = 0.0220  # +2.20% price move (+11.00% ROE @ 5x) | RR 1.1:1
-BITGET_4H_SL_PCT  = 0.0200  # -2.00% price move (-10.00% ROE @ 5x) | RR 1.1:1
+BINANCE_4H_TP_PCT = 0.0280  # +2.80% price move (+14.00% ROE @ 5x)
+BINANCE_4H_SL_PCT = 0.0280  # -2.80% soft SL on 4H candle close
+BINANCE_HARD_DISASTER_SL_PCT = 0.0380  # +3.80% emergency disaster stop order on exchange
+BINANCE_1H_TP_PCT = 0.0160  # +1.60% price move (+8.00% ROE @ 5x)
+BINANCE_1H_SL_PCT = 0.0145  # -1.45% price move (-7.27% ROE @ 5x)
+BITGET_4H_TP_PCT  = 0.0220  # +2.20% price move (+11.00% ROE @ 5x)
+BITGET_4H_SL_PCT  = 0.0200  # -2.00% price move (-10.00% ROE @ 5x)
 
 # --- Dual Compounding Challenges Specs ---
 DUAL_CHALLENGES = {

@@ -18,7 +18,12 @@ from config import (
     BINANCE_DEFAULT_LEVERAGE,
     BINANCE_STARTING_MARGIN,
     BINANCE_1H_TP_PCT,
-    BINANCE_1H_SL_PCT
+    BINANCE_1H_SL_PCT,
+    BINANCE_4H_TP_PCT,
+    BINANCE_4H_SL_PCT,
+    BINANCE_HARD_DISASTER_SL_PCT,
+    BINANCE_ALLOWED_SIDES,
+    BINANCE_MARGIN_MODE
 )
 from database.db import get_setting, set_setting, get_connection
 
@@ -36,6 +41,7 @@ class BinanceTrader:
                 self.exchange = ccxt.binance({
                     'apiKey': api_key,
                     'secret': secret,
+                    'timeout': 15000,
                     'options': {
                         'defaultType': 'future',  # USDT-M Perpetual Futures
                         'adjustForTimeDifference': True,
@@ -57,24 +63,51 @@ class BinanceTrader:
         return enabled_setting.lower() == "true"
 
     def fetch_futures_balance(self) -> Dict[str, Any]:
-        """Fetches live Binance USDT-M Futures account balance or returns simulated $50 compounding status."""
+        """Fetches live Binance USDT-M Futures account balance or returns detailed status."""
         if not self.exchange:
             self._init_exchange()
             
         if not self.exchange:
-            # Return Simulated State for 1H Challenge
-            sim_bal = float(get_setting("binance_1h_sim_balance", "50.0"))
+            sim_bal = float(get_setting("binance_4h_sim_balance", "50.0"))
             return {
                 "connected": False,
-                "mode": "Simulated Live 1H Engine",
+                "mode": "Simulated Live 4H Engine",
                 "total_usdt": sim_bal,
                 "free_usdt": sim_bal,
                 "used_usdt": 0.0,
                 "equity": sim_bal,
-                "challenge_stage": self._calc_stage(sim_bal)
+                "error": "Binance API keys not configured"
             }
 
         try:
+            # Direct fast futures balance lookup
+            try:
+                balances = self.exchange.fapiPrivateV2GetBalance()
+                usdt_item = next((b for b in balances if b.get('asset') == 'USDT'), None)
+                if usdt_item:
+                    total = float(usdt_item.get('balance', 0.0) or 0.0)
+                    available = float(usdt_item.get('availableBalance', 0.0) or 0.0)
+                    used = max(0.0, total - available)
+                    return {
+                        "connected": True,
+                        "mode": "Live Binance Futures (5x ISOLATED)",
+                        "total_usdt": round(total, 2),
+                        "free_usdt": round(available, 2),
+                        "used_usdt": round(used, 2),
+                        "equity": round(total, 2),
+                        "margin_mode": "ISOLATED",
+                        "challenge_stage": self._calc_stage(total)
+                    }
+            except Exception as inner_e:
+                err_text = str(inner_e)
+                if "-2015" in err_text:
+                    return {
+                        "connected": False,
+                        "error_code": -2015,
+                        "error": "Binance Error -2015: 'Enable Futures' permission required or IP restriction active in Binance API Management."
+                    }
+                raise inner_e
+
             bal = self.exchange.fetch_balance({'type': 'future'})
             usdt = bal.get('USDT', {})
             total = float(usdt.get('total', 0.0) or 0.0)
@@ -82,24 +115,28 @@ class BinanceTrader:
             used = float(usdt.get('used', 0.0) or 0.0)
             return {
                 "connected": True,
-                "mode": "Live Binance Futures",
+                "mode": "Live Binance Futures (5x ISOLATED)",
                 "total_usdt": round(total, 2),
                 "free_usdt": round(free, 2),
                 "used_usdt": round(used, 2),
                 "equity": round(total, 2),
+                "margin_mode": "ISOLATED",
                 "challenge_stage": self._calc_stage(total)
             }
         except Exception as e:
-            return {"connected": False, "error": str(e)}
+            err_str = str(e)
+            if "-2015" in err_str:
+                err_str = "Binance Error -2015: 'Enable Futures' permission required or IP restriction active in Binance API Management."
+            return {"connected": False, "error": err_str}
 
     def _calc_stage(self, balance: float) -> Dict[str, Any]:
-        """Calculates 1H Compounding ladder progress."""
+        """Calculates 4H Compounding ladder progress ($50 -> $2,000+)."""
         stages = [
             {"stage": 1, "target": 100.0, "desc": "$50 -> $100 (Stage 1)"},
             {"stage": 2, "target": 250.0, "desc": "$100 -> $250 (Stage 2)"},
             {"stage": 3, "target": 500.0, "desc": "$250 -> $500 (Stage 3)"},
-            {"stage": 4, "target": 750.0, "desc": "$500 -> $750 (Stage 4)"},
-            {"stage": 5, "target": 1000.0, "desc": "$750 -> $1,000 (Goal Reached!)"}
+            {"stage": 4, "target": 1000.0, "desc": "$500 -> $1,000 (Stage 4)"},
+            {"stage": 5, "target": 2000.0, "desc": "$1,000 -> $2,000 (Goal Reached!)"}
         ]
         curr_stage = 1
         for s in stages:
@@ -108,83 +145,178 @@ class BinanceTrader:
                 break
             curr_stage = 5
 
-        pct = min(100.0, round((balance / 1000.0) * 100, 1))
+        pct = min(100.0, round((balance / 2000.0) * 100, 1))
         return {
             "current_stage": curr_stage,
             "balance": round(balance, 2),
-            "goal": 1000.0,
+            "goal": 2000.0,
             "overall_pct": pct,
             "stages": stages
         }
 
-    async def execute_1h_scalp_trade(self, zone: Dict[str, Any], confluence: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def enforce_isolated_margin(self, symbol: str) -> Dict[str, Any]:
         """
-        Executes 1H Fast Scalp 5x trade on Binance with Hybrid Candle-Close Stop Loss.
-        - Soft SL: -2.5% (Only triggered if 1H candle closes beyond this level, filtering wick hunts)
-        - Disaster Hard Stop: -4.5% on Exchange (Prevents black-swan liquidation)
-        - Take Profit: +1.5% Price (+7.5% ROE @ 5x)
+        Strictly enforces ISOLATED margin mode on Binance Futures for the given symbol.
+        CROSS margin mode is completely prohibited under all circumstances.
         """
-        symbol = zone["symbol"]
-        side = zone["side"].lower() # 'buy' or 'sell'
-        entry_price = float(zone.get("entry_price") or zone.get("ob_high", 0.0))
-        
-        # 1H Scalp Targets
-        tp_price = entry_price * (1.015 if side == 'buy' else 0.985)
-        soft_sl_price = entry_price * (0.975 if side == 'buy' else 1.025)
-        hard_disaster_sl = entry_price * (0.955 if side == 'buy' else 1.045)
-        
-        # If Real Binance configured
-        if self.exchange and self.is_auto_trade_enabled():
+        if not self.exchange:
+            return {"success": False, "error": "Exchange not connected"}
+        clean_sym = symbol.replace("/", "").replace(":USDT", "").upper()
+        try:
+            self.exchange.set_margin_mode('ISOLATED', symbol)
+            return {"success": True, "margin_mode": "ISOLATED"}
+        except Exception as e:
+            err = str(e)
+            if "-4046" in err or "No need to change" in err:
+                return {"success": True, "margin_mode": "ISOLATED", "note": "Already ISOLATED"}
             try:
-                # Set 5x leverage
+                self.exchange.fapiPrivatePostMarginType({
+                    'symbol': clean_sym,
+                    'marginType': 'ISOLATED'
+                })
+                return {"success": True, "margin_mode": "ISOLATED"}
+            except Exception as e2:
+                err2 = str(e2)
+                if "-4046" in err2 or "No need to change" in err2:
+                    return {"success": True, "margin_mode": "ISOLATED", "note": "Already ISOLATED"}
+                return {
+                    "success": False,
+                    "error": f"CRITICAL REJECTION: Cannot set ISOLATED mode ({e2}). Order blocked to prevent CROSS mode exposure."
+                }
+
+    async def execute_4h_short_trade(self, setup: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Executes a real 4H SHORT trade on Binance Futures under HERMES 2.5 APEX HYBRID:
+        - Direction: STRICTLY SHORT ONLY. Long signals are rejected.
+        - Margin Mode: STRICTLY ISOLATED mode. Cross mode is prohibited.
+        - Leverage: 5x Isolated.
+        - Risk Controls: TP +2.8% price drop (+14% ROE), Soft SL -2.8% on 4H candle close, Disaster Hard SL +3.8% on Exchange.
+        """
+        sym = setup["symbol"]
+        side = setup["side"].upper()
+
+        # 1. STRICT SHORT-ONLY MANDATE ENFORCEMENT
+        if side not in ("SHORT", "SELL"):
+            msg = f"[BINANCE MANDATE] Blocked {side} on {sym}. User policy strictly locked to SHORT ONLY on Binance 4H."
+            print(msg)
+            return {"success": False, "skipped": True, "reason": msg}
+
+        if not self.is_auto_trade_enabled():
+            return {"success": False, "skipped": True, "reason": "Binance Auto-Trading is currently paused."}
+
+        entry_price = float(setup.get("entry_price", 0.0))
+        tp_pct = float(setup.get("tp_pct", BINANCE_4H_TP_PCT))
+        soft_sl_pct = float(setup.get("soft_sl_pct", BINANCE_4H_SL_PCT))
+        hard_sl_pct = float(setup.get("hard_sl_pct", BINANCE_HARD_DISASTER_SL_PCT))
+
+        # Targets for Short
+        tp_price = round(entry_price * (1.0 - tp_pct), 6)
+        soft_sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
+        hard_disaster_sl = round(entry_price * (1.0 + hard_sl_pct), 6)
+
+        if not self.exchange:
+            self._init_exchange()
+
+        if self.exchange and self.is_configured():
+            try:
+                # 2. STRICT ISOLATED MARGIN ENFORCEMENT
+                iso_res = self.enforce_isolated_margin(sym)
+                if not iso_res["success"]:
+                    print(f"[ISOLATED MARGIN ERROR] {iso_res['error']}")
+                    return {"success": False, "error": iso_res["error"]}
+
+                # 3. SET 5x LEVERAGE
                 try:
-                    self.exchange.set_leverage(BINANCE_DEFAULT_LEVERAGE, symbol)
+                    self.exchange.set_leverage(BINANCE_DEFAULT_LEVERAGE, sym)
                 except Exception:
                     pass
-                    
+
+                # 4. CAPITAL ALLOCATION & POSITION SIZING
                 bal = self.fetch_futures_balance()
-                free = bal.get("free_usdt", 50.0)
-                margin = min(free, max(50.0, free))
+                free_usdt = float(bal.get("free_usdt", 0.0) or 0.0)
+                if free_usdt < 5.0:
+                    return {"success": False, "error": f"Insufficient Binance free balance (${free_usdt:.2f} USDT). Min $5 required."}
+
+                margin = min(free_usdt, max(BINANCE_STARTING_MARGIN, free_usdt))
                 notional = margin * BINANCE_DEFAULT_LEVERAGE
-                amount = notional / entry_price
-                
-                order_side = 'buy' if side == 'buy' else 'sell'
+                raw_amount = notional / entry_price
+
+                amount = round(raw_amount, 2)
+                try:
+                    amount = float(self.exchange.amount_to_precision(sym, raw_amount))
+                except Exception:
+                    pass
+
+                # 5. EXECUTE 5x ISOLATED SHORT ORDER
                 order = self.exchange.create_order(
-                    symbol=symbol,
+                    symbol=sym,
                     type='limit',
-                    side=order_side,
+                    side='sell',
                     amount=amount,
                     price=entry_price,
                     params={
-                        'stopLossPrice': hard_disaster_sl,  # Emergency circuit breaker
+                        'stopLossPrice': hard_disaster_sl,
                         'takeProfitPrice': tp_price
                     }
                 )
+                print(f"[BINANCE REAL 4H SHORT EXECUTED] {sym} SHORT @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
                 return {
                     "success": True,
-                    "mode": "Live Binance",
+                    "mode": "Live Binance Futures (4H SHORT)",
+                    "margin_mode": "ISOLATED",
+                    "leverage": BINANCE_DEFAULT_LEVERAGE,
                     "order": order,
+                    "symbol": sym,
+                    "side": "SHORT",
+                    "entry_price": entry_price,
+                    "tp_price": tp_price,
                     "soft_sl_price": soft_sl_price,
                     "hard_disaster_sl": hard_disaster_sl,
-                    "tp_price": tp_price
+                    "margin": margin
                 }
             except Exception as e:
-                return {"success": False, "error": str(e)}
+                err_str = str(e)
+                if "-2015" in err_str:
+                    err_str = "Binance Error -2015: 'Enable Futures' permission required or IP restriction active in Binance API Management."
+                print(f"[BINANCE 4H SHORT ERROR] {err_str}")
+                return {"success": False, "error": err_str}
         else:
-            # Simulated 1H Engine Execution
-            print(f"[BINANCE 1H SCALP ENGINE] Auto-Executed {symbol} ({side.upper()}) @ {entry_price} | TP: {tp_price:.4f} (+7.5% ROE) | Soft SL (Candle Close): {soft_sl_price:.4f} | Disaster Hard SL: {hard_disaster_sl:.4f}")
+            print(f"[BINANCE 4H SIMULATED] Auto-Executed {sym} SHORT @ {entry_price} | TP: {tp_price} | Soft SL: {soft_sl_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
             return {
                 "success": True,
-                "mode": "Simulated Live 1H Scalp",
-                "symbol": symbol,
-                "side": side,
+                "mode": "Simulated Binance 4H SHORT (5x ISOLATED)",
+                "margin_mode": "ISOLATED",
+                "symbol": sym,
+                "side": "SHORT",
                 "entry_price": entry_price,
                 "tp_price": tp_price,
                 "soft_sl_price": soft_sl_price,
                 "hard_disaster_sl": hard_disaster_sl,
-                "margin": 50.0,
-                "leverage": 5
+                "margin": BINANCE_STARTING_MARGIN,
+                "leverage": BINANCE_DEFAULT_LEVERAGE
             }
+
+    async def execute_1h_scalp_trade(self, zone: Dict[str, Any], confluence: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Executes 1H Fast Scalp trade."""
+        symbol = zone["symbol"]
+        side = zone["side"].lower()
+        entry_price = float(zone.get("entry_price") or zone.get("ob_high", 0.0))
+        tp_price = entry_price * (1.015 if side == 'buy' else 0.985)
+        soft_sl_price = entry_price * (0.975 if side == 'buy' else 1.025)
+        hard_disaster_sl = entry_price * (0.955 if side == 'buy' else 1.045)
+        print(f"[BINANCE 1H SCALP ENGINE] {symbol} ({side.upper()}) @ {entry_price}")
+        return {
+            "success": True,
+            "mode": "Simulated Live 1H Scalp",
+            "symbol": symbol,
+            "side": side,
+            "entry_price": entry_price,
+            "tp_price": tp_price,
+            "soft_sl_price": soft_sl_price,
+            "hard_disaster_sl": hard_disaster_sl,
+            "margin": 50.0,
+            "leverage": 5
+        }
 
     async def close_position_market(self, symbol: str, side: str) -> Dict[str, Any]:
         """Closes active futures position immediately at market price."""

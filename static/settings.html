@@ -1174,6 +1174,81 @@
             <div class="settings-tab-pane" id="pane-trading-risk">
                 <div class="settings-grid-2col">
                     
+                    <!-- CARD: BINANCE 4H AUTO-TRADE (REAL CAPITAL - SHORT ONLY) -->
+                    <div class="settings-card highlight-gold" style="border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(20, 24, 38, 0.95) 0%, rgba(13, 20, 34, 0.9) 100%);">
+                        <div class="settings-card-header">
+                            <div>
+                                <div class="settings-card-title">
+                                    <i class="fa-brands fa-bitcoin text-gold" style="color: #F59E0B;"></i>
+                                    <span>Binance 4H Auto-Trade (Real Capital)</span>
+                                </div>
+                                <div class="settings-card-subtitle">HERMES 2.5 APEX HYBRID • 5x ISOLATED • STRICTLY SHORT ONLY (92.8% WR)</div>
+                            </div>
+                            <span class="badge" id="binanceConnStatus" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.35);">
+                                REAL BINANCE 4H
+                            </span>
+                        </div>
+
+                        <!-- Auto-Trade Switch -->
+                        <div class="toggle-switch-row" style="background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.3);">
+                            <div class="toggle-text-block">
+                                <span class="toggle-title" style="color: #F59E0B;">
+                                    <i class="fa-solid fa-power-off"></i>
+                                    <span>Binance Auto-Trade Master Switch</span>
+                                </span>
+                                <span class="toggle-desc">Executes real 5x Isolated SHORT orders directly on Binance USDT-M Futures</span>
+                            </div>
+                            <label class="custom-switch">
+                                <input type="checkbox" id="inputBinanceAutoTrade" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Live Binance Info Strip -->
+                        <div class="info-pill-strip" style="background: rgba(245, 158, 11, 0.04); border-color: rgba(245, 158, 11, 0.2);">
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Binance Balance</span>
+                                <span class="info-pill-val text-gold" id="binanceLiveBalBadge" style="color: #F59E0B;">Checking...</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Allowed Side</span>
+                                <span class="info-pill-val" style="color: #EF4444; font-weight: 800;">SHORT ONLY (Locked)</span>
+                            </div>
+                            <div class="info-pill">
+                                <span class="info-pill-lbl">Margin Mode</span>
+                                <span class="info-pill-val" style="color: #00F59B; font-weight: 800;">ISOLATED (Cross Forbidden)</span>
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Binance API Key -->
+                        <div class="form-row">
+                            <label for="inputBinanceKey">
+                                <i class="fa-solid fa-key"></i>
+                                <span>Binance API Key</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="text" id="inputBinanceKey" placeholder="Binance API Key" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Form Field: Binance Secret -->
+                        <div class="form-row">
+                            <label for="inputBinanceSecret">
+                                <i class="fa-solid fa-lock"></i>
+                                <span>Binance API Secret</span>
+                            </label>
+                            <div class="form-input-wrap">
+                                <input type="password" id="inputBinanceSecret" placeholder="••••••••" autocomplete="new-password">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" class="btn-action-ghost" id="btnTestBinance" onclick="testBinanceConnection(this)" style="flex: 1; border-color: rgba(245, 158, 11, 0.4); color: #F59E0B;">
+                                <i class="fa-solid fa-plug"></i> Test Binance Futures Connection
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- CARD: BITGET 5X AUTO-TRADE TOGGLES -->
                     <div class="settings-card highlight-green">
                         <div class="settings-card-header">
@@ -1732,6 +1807,37 @@
                     inputMutePaperAlerts.checked = !!data.mute_paper_trading_alerts;
                 }
 
+                // 5. Binance Auto-Trade & Balance
+                if (data.binance_auto_trade !== undefined) {
+                    const binAutoEl = document.getElementById("inputBinanceAutoTrade");
+                    if (binAutoEl) binAutoEl.checked = data.binance_auto_trade;
+                }
+                if (data.binance_api_key) {
+                    const binKeyEl = document.getElementById("inputBinanceKey");
+                    if (binKeyEl) binKeyEl.value = data.binance_api_key;
+                }
+                if (data.binance_secret) {
+                    const binSecEl = document.getElementById("inputBinanceSecret");
+                    if (binSecEl) binSecEl.placeholder = data.binance_secret;
+                }
+                if (data.binance_balance) {
+                    const binBalBadge = document.getElementById("binanceLiveBalBadge");
+                    const binStatus = document.getElementById("binanceConnStatus");
+                    if (data.binance_balance.connected) {
+                        if (binBalBadge) binBalBadge.innerText = `$${parseFloat(data.binance_balance.total_usdt).toFixed(2)} USDT`;
+                        if (binStatus) {
+                            binStatus.innerText = "CONNECTED (5x ISOLATED)";
+                            binStatus.style.color = "#00F59B";
+                        }
+                    } else {
+                        if (binBalBadge) binBalBadge.innerText = "Setup Required";
+                        if (binStatus) {
+                            binStatus.innerText = data.binance_balance.error_code === -2015 ? "API PERMISSION NEEDED" : "OFFLINE";
+                            binStatus.style.color = "#F59E0B";
+                        }
+                    }
+                }
+
                 // 6. Update Paper and Bitget status badges if present
                 if (data.paper_current_balance) {
                     const curBalEl = document.getElementById("paperDisplayCurrentBal");
@@ -1767,6 +1873,11 @@
                 telegram_chat_id: document.getElementById("inputTgChatId")?.value || "",
                 gemini_api_key: document.getElementById("inputGeminiKey")?.value || "",
                 gemini_model: document.getElementById("inputGeminiModel")?.value || "gemini-2.5-flash-lite",
+                binance_auto_trade: document.getElementById("inputBinanceAutoTrade")?.checked || false,
+                binance_api_key: document.getElementById("inputBinanceKey")?.value || "",
+                binance_secret: document.getElementById("inputBinanceSecret")?.value || "",
+                binance_allowed_sides: "SHORT",
+                binance_margin_mode: "ISOLATED",
                 bitget_auto_trade: document.getElementById("inputBitgetAutoTrade")?.checked || false,
                 bitget_api_key: document.getElementById("inputBitgetKey")?.value || "",
                 bitget_secret: document.getElementById("inputBitgetSecret")?.value || "",
@@ -1839,6 +1950,49 @@
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
                 }, 2500);
+            }
+        }
+
+        // Test Binance Connection (/api/binance/status)
+        async function testBinanceConnection(btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking Binance...';
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch('/api/binance/status');
+                const data = await resp.json();
+                const bal = data.binance_balance;
+
+                if (bal && bal.connected) {
+                    showNotification('success', 'Binance Futures Connected', `Balance: $${bal.total_usdt} USDT | Mode: 5x ISOLATED SHORT ONLY`);
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Connected!';
+                    const balBadge = document.getElementById("binanceLiveBalBadge");
+                    if (balBadge) balBadge.innerText = `$${bal.total_usdt} USDT`;
+                    const connBadge = document.getElementById("binanceConnStatus");
+                    if (connBadge) {
+                        connBadge.innerText = "CONNECTED (5x ISOLATED)";
+                        connBadge.style.color = "#00F59B";
+                    }
+                } else {
+                    const errMsg = bal?.error || 'Failed to authenticate Binance Futures API.';
+                    showNotification('error', 'Binance API Permission Notice', errMsg);
+                    btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Permission Notice';
+                    const connBadge = document.getElementById("binanceConnStatus");
+                    if (connBadge) {
+                        connBadge.innerText = bal?.error_code === -2015 ? "FUTURES PERMISSION NEEDED" : "OFFLINE";
+                        connBadge.style.color = "#F59E0B";
+                    }
+                }
+            } catch (err) {
+                console.error("Binance test error:", err);
+                showNotification('error', 'Connection Error', 'Failed to reach backend Binance service.');
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+            } finally {
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }, 3000);
             }
         }
 

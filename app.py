@@ -1677,11 +1677,19 @@ async def fetch_settings():
     bg_min_conf = get_setting("bitget_min_confluence", "90")
     mute_paper = get_setting("mute_paper_trading_alerts", str(MUTE_PAPER_TRADING_ALERTS))
 
+    bin_key = get_setting("binance_api_key", BINANCE_API_KEY)
+    bin_sec = get_setting("binance_secret", BINANCE_API_SECRET)
+    bin_auto = get_setting("binance_auto_trade", str(BINANCE_AUTO_TRADE))
+    bin_sides = get_setting("binance_allowed_sides", "SHORT")
+    bin_margin_mode = get_setting("binance_margin_mode", "ISOLATED")
+    bin_tf = get_setting("binance_timeframe", "4h")
+
     paper_acc = get_paper_account()
     paper_bal = float(paper_acc.get("current_balance", 50.0) or 50.0)
     paper_init = float(paper_acc.get("initial_balance", 50.0) or 50.0)
 
     bitget_status = bitget_trader.fetch_futures_balance()
+    binance_status = binance_trader.fetch_futures_balance()
 
     return {
         "telegram_bot_token": f"{tg_token[:6]}...{tg_token[-4:]}" if len(tg_token) > 10 else ("Configured" if tg_token else ""),
@@ -1694,6 +1702,13 @@ async def fetch_settings():
         "bitget_auto_trade": bg_auto.lower() == "true",
         "bitget_max_margin": float(bg_max_margin) if bg_max_margin else 50.0,
         "bitget_min_confluence": int(bg_min_conf) if bg_min_conf else 90,
+        "binance_api_key": f"{bin_key[:6]}...{bin_key[-4:]}" if len(bin_key) > 10 else ("Configured" if bin_key else ""),
+        "binance_secret": "Configured" if bin_sec else "",
+        "binance_auto_trade": bin_auto.lower() == "true",
+        "binance_allowed_sides": bin_sides,
+        "binance_margin_mode": bin_margin_mode,
+        "binance_timeframe": bin_tf,
+        "binance_balance": binance_status,
         "mute_paper_trading_alerts": mute_paper.lower() == "true",
         "paper_starting_balance": paper_init,
         "paper_current_balance": paper_bal,
@@ -1703,6 +1718,7 @@ async def fetch_settings():
 @app.post("/api/settings")
 async def update_settings(body: Dict[str, Any] = Body(...)):
     from engine.bitget_trader import bitget_trader
+    from engine.binance_trader import binance_trader
     if "telegram_bot_token" in body and body["telegram_bot_token"] and not str(body["telegram_bot_token"]).startswith("..."):
         set_setting("telegram_bot_token", str(body["telegram_bot_token"]).strip())
     if "telegram_chat_id" in body and body["telegram_chat_id"]:
@@ -1723,13 +1739,38 @@ async def update_settings(body: Dict[str, Any] = Body(...)):
         set_setting("bitget_min_confluence", str(body["bitget_min_confluence"]).strip())
     if "bitget_max_margin" in body and body["bitget_max_margin"] is not None:
         set_setting("bitget_max_margin", str(body["bitget_max_margin"]).strip())
+    if "binance_api_key" in body and body["binance_api_key"] and not str(body["binance_api_key"]).startswith("..."):
+        set_setting("binance_api_key", str(body["binance_api_key"]).strip())
+    if "binance_secret" in body and body["binance_secret"] and body["binance_secret"] != "Configured":
+        set_setting("binance_secret", str(body["binance_secret"]).strip())
+    if "binance_auto_trade" in body:
+        set_setting("binance_auto_trade", str(body["binance_auto_trade"]).lower())
+    if "binance_allowed_sides" in body:
+        set_setting("binance_allowed_sides", str(body["binance_allowed_sides"]).upper())
+    if "binance_margin_mode" in body:
+        set_setting("binance_margin_mode", str(body["binance_margin_mode"]).upper())
     if "paper_starting_balance" in body and body["paper_starting_balance"] is not None:
         set_setting("paper_starting_balance", str(body["paper_starting_balance"]).strip())
     if "mute_paper_trading_alerts" in body:
         set_setting("mute_paper_trading_alerts", str(body["mute_paper_trading_alerts"]).lower())
 
     bitget_trader._init_exchange()
+    binance_trader._init_exchange()
     return {"success": True, "message": "Settings saved successfully!"}
+
+@app.get("/api/binance/status")
+async def get_binance_account_status():
+    from engine.binance_trader import binance_trader
+    bal = await asyncio.to_thread(binance_trader.fetch_futures_balance)
+    return {
+        "status": "ok",
+        "binance_balance": bal,
+        "auto_trade_enabled": binance_trader.is_auto_trade_enabled(),
+        "allowed_sides": "SHORT",
+        "margin_mode": "ISOLATED",
+        "timeframe": "4h",
+        "strategy": "HERMES 2.5 APEX HYBRID"
+    }
 
 @app.get("/api/bitget/status")
 async def get_bitget_account_status():
