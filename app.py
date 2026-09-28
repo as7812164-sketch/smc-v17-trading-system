@@ -425,6 +425,11 @@ async def get_journal_endpoint():
     trades = get_all_journal_trades()
     return {"status": "ok", "trades": trades, "count": len(trades)}
 
+@app.get("/api/paper/agent")
+async def get_paper_agent_status_endpoint():
+    from engine.trade_master_agent import trade_master
+    return trade_master.get_status_overview()
+
 @app.get("/api/journal/export-csv")
 async def export_journal_csv_endpoint():
     if JOURNAL_CSV_PATH.exists():

@@ -854,6 +854,32 @@ class Hermes2ApexLiveEngine:
             """, (new_balance, vault_balance, new_total_pnl, win_count, loss_count, win_streak, acc_id))
             conn.commit()
 
+            # Record into trade_journal for permanent auditing
+            try:
+                t_count = conn.execute("SELECT COUNT(*) as c FROM trade_journal").fetchone()["c"]
+                trade_num = t_count + 1
+                now_ist = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
+                dur_h = round(max(0.1, duration_ms / 3600000.0), 2)
+                conn.execute("""
+                INSERT INTO trade_journal (
+                    trade_num, timestamp_ist, exchange, timeframe, symbol, side,
+                    entry_price, exit_price, tp_price, soft_sl_price, hard_sl_price,
+                    status, margin_usdt, leverage, pnl_usdt, roe_pct,
+                    account_balance, duration_hours, mike_score, notes, created_at, updated_at
+                ) VALUES (?, ?, 'Binance', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5, ?, ?, ?, ?, 95, ?, ?, ?)
+                """, (
+                    trade_num, now_ist, tf, sym, side,
+                    entry_price, exit_price, float(trade.get("tp_price") or exit_price),
+                    float(trade.get("sl_price") or entry_price), float(trade.get("hard_sl_price") or entry_price),
+                    outcome, float(trade.get("margin_usdt") or (pos_size/5.0)), round(net_pnl_usdt, 2), round(gross_pnl_pct * 5.0, 2),
+                    new_balance, dur_h, f"Hermes TradeMaster AI Closed ({outcome})", entry_time, now_ms
+                ))
+                conn.commit()
+                from engine.trade_journal import _sync_db_to_csv
+                _sync_db_to_csv()
+            except Exception as e:
+                logger.warning(f"Trade journal sync error in hermes live: {e}")
+
         # Real-time Cloud Vault synchronization
         try:
             from database.cloud_vault import push_vault_state

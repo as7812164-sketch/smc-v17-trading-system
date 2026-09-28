@@ -45,6 +45,7 @@ FILES_TO_SYNC = [
     "database/mongo_client.py",
     "database/cloud_vault.py",
     "engine/hermes2_apex_live.py",
+    "engine/trade_master_agent.py",
     "ai/hermes_agent.py",
     "ai/hermes_knowledge_base.json",
     "engine/dual_timeframe_sniper.py",
