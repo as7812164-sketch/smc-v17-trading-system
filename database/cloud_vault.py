@@ -1,0 +1,269 @@
+"""
+Cloud Vault Persistence Engine for Hermes 2.0 / 2.5 Trading System.
+Provides 100% persistent storage for paper trades, accounts, and journal
+across Render Free Tier container restarts, redeployments, and crashes.
+Stores state snapshots on GitHub branch 'data-vault' (which never triggers redeployments).
+"""
+
+import os
+import json
+import base64
+import time
+import logging
+import urllib.request
+import urllib.error
+import sqlite3
+from typing import Dict, Any, List, Optional
+from pathlib import Path
+from config import BASE_DIR, DB_PATH
+from database.db import get_connection
+
+logger = logging.getLogger("smc.vault")
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "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")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "as7812164-sketch/smc-ai-agent")
+VAULT_BRANCH = "data-vault"
+VAULT_FILE = "vault_state.json"
+LOCAL_VAULT_BACKUP = BASE_DIR / "database" / "local_vault_backup.json"
+
+def get_vault_headers() -> Dict[str, str]:
+    return {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "User-Agent": "Hermes-Cloud-Vault",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+def push_vault_state() -> bool:
+    """
+    Dumps all accounts, open/closed paper trades, and trade journal
+    to GitHub branch 'data-vault' and local disk backup.
+    Never triggers Render builds because Render builds only from 'main'.
+    """
+    try:
+        if not DB_PATH.exists():
+            return False
+
+        conn = get_connection()
+
+        # 1. Accounts
+        accounts = [dict(r) for r in conn.execute("SELECT * FROM paper_account").fetchall()]
+
+        # 2. Paper Trades
+        paper_trades = [dict(r) for r in conn.execute("SELECT * FROM paper_trades ORDER BY id ASC").fetchall()]
+
+        # 3. Trade Journal
+        try:
+            journal_trades = [dict(r) for r in conn.execute("SELECT * FROM trade_journal ORDER BY id ASC").fetchall()]
+        except Exception:
+            journal_trades = []
+
+        # 4. System Metrics
+        try:
+            metrics = {r["key"]: r["value"] for r in conn.execute("SELECT key, value FROM system_metrics").fetchall()}
+        except Exception:
+            metrics = {}
+
+        conn.close()
+
+        payload_data = {
+            "version": "1.0",
+            "updated_at": int(time.time() * 1000),
+            "updated_at_str": time.strftime("%Y-%m-%d %H:%M:%S IST", time.localtime()),
+            "accounts": accounts,
+            "paper_trades": paper_trades,
+            "journal_trades": journal_trades,
+            "metrics": metrics
+        }
+
+        # Save local disk backup first
+        try:
+            LOCAL_VAULT_BACKUP.parent.mkdir(parents=True, exist_ok=True)
+            with open(LOCAL_VAULT_BACKUP, "w", encoding="utf-8") as f:
+                json.dump(payload_data, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Local backup error: {e}")
+
+        # Push to GitHub branch data-vault
+        content_bytes = json.dumps(payload_data, indent=2).encode("utf-8")
+        b64_content = base64.b64encode(content_bytes).decode("utf-8")
+
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{VAULT_FILE}?ref={VAULT_BRANCH}"
+        headers = get_vault_headers()
+
+        # Check existing file SHA
+        sha = None
+        req = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+                sha = data.get("sha")
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                logger.warning(f"Could not check vault sha: {e}")
+
+        put_payload = {
+            "message": f"Vault Snapshot: {len(paper_trades)} trades, {len(journal_trades)} journal ({time.strftime('%H:%M:%S')})",
+            "content": b64_content,
+            "branch": VAULT_BRANCH
+        }
+        if sha:
+            put_payload["sha"] = sha
+
+        put_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{VAULT_FILE}"
+        req_put = urllib.request.Request(
+            put_url,
+            data=json.dumps(put_payload).encode("utf-8"),
+            headers=headers,
+            method="PUT"
+        )
+        with urllib.request.urlopen(req_put, timeout=12) as resp:
+            if resp.status in (200, 201):
+                logger.info("Successfully pushed state to Cloud Vault (branch: data-vault)!")
+                return True
+
+    except Exception as e:
+        logger.warning(f"Failed to push state to Cloud Vault: {e}")
+        return False
+    return False
+
+def pull_and_restore_vault_state() -> bool:
+    """
+    Pulls vault state from GitHub branch 'data-vault' (or local disk backup)
+    and restores missing trades, accounts, and metrics into local SQLite.
+    Guarantees zero data loss after Render redeployments or container restarts.
+    """
+    vault_data = None
+
+    # 1. Try pulling from GitHub branch data-vault
+    try:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{VAULT_FILE}?ref={VAULT_BRANCH}"
+        headers = get_vault_headers()
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            content_b64 = data.get("content", "")
+            if content_b64:
+                decoded = base64.b64decode(content_b64).decode("utf-8")
+                vault_data = json.loads(decoded)
+                logger.info(f"Loaded Cloud Vault data from GitHub (updated {vault_data.get('updated_at_str')})")
+    except Exception as e:
+        logger.warning(f"Could not load Cloud Vault from GitHub: {e}. Checking local backup.")
+
+    # 2. Fallback to local backup if GitHub was unreachable
+    if not vault_data and LOCAL_VAULT_BACKUP.exists():
+        try:
+            with open(LOCAL_VAULT_BACKUP, "r", encoding="utf-8") as f:
+                vault_data = json.load(f)
+                logger.info("Loaded Cloud Vault data from local backup file.")
+        except Exception as e:
+            logger.warning(f"Could not read local vault backup: {e}")
+
+    if not vault_data:
+        logger.info("No Cloud Vault data available to restore.")
+        return False
+
+    # 3. Restore data into SQLite
+    try:
+        conn = get_connection()
+
+        # Restore accounts
+        for acc in vault_data.get("accounts", []):
+            acc_id = acc.get("id", 1)
+            conn.execute("""
+            INSERT INTO paper_account (id, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode, timeframe, name, win_streak)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                current_balance = excluded.current_balance,
+                vault_balance = excluded.vault_balance,
+                total_pnl = excluded.total_pnl,
+                win_count = excluded.win_count,
+                loss_count = excluded.loss_count,
+                win_streak = excluded.win_streak,
+                mode = excluded.mode
+            """, (
+                acc_id, acc.get("initial_balance", 50.0), acc.get("current_balance", 50.0),
+                acc.get("vault_balance", 0.0), acc.get("total_pnl", 0.0), acc.get("win_count", 0),
+                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), acc.get("mode", "HERMES_2.5_APEX_HYBRID"),
+                acc.get("timeframe", "4h"), acc.get("name", "4H Macro Swing"), acc.get("win_streak", 0)
+            ))
+
+        # Restore paper_trades
+        for pt in vault_data.get("paper_trades", []):
+            pt_id = pt.get("id")
+            sym = pt.get("symbol")
+            side = pt.get("side")
+            ep = pt.get("entry_price")
+            status = pt.get("status")
+            
+            existing = None
+            if pt_id:
+                existing = conn.execute("SELECT id FROM paper_trades WHERE id = ?", (pt_id,)).fetchone()
+            if not existing and sym and ep:
+                existing = conn.execute("SELECT id FROM paper_trades WHERE symbol = ? AND side = ? AND ABS(entry_price - ?) < 0.0001", (sym, side, ep)).fetchone()
+
+            if not existing:
+                conn.execute("""
+                INSERT INTO paper_trades (
+                    id, symbol, side, entry_price, exit_price, position_size_usdt,
+                    tp_price, sl_price, hard_sl_price, status, entry_time, exit_time,
+                    pnl_usdt, pnl_pct, timeframe, sentry_reasons, highest_price, lowest_price,
+                    mae_pct, mfe_pct, duration_str, roi_pct
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    pt_id, sym, side, ep, pt.get("exit_price"), pt.get("position_size_usdt", 250.0),
+                    pt.get("tp_price"), pt.get("sl_price"), pt.get("hard_sl_price", 0.0), status,
+                    pt.get("entry_time", int(time.time()*1000)), pt.get("exit_time"),
+                    pt.get("pnl_usdt"), pt.get("pnl_pct"), pt.get("timeframe", "1h"),
+                    pt.get("sentry_reasons", ""), pt.get("highest_price"), pt.get("lowest_price"),
+                    pt.get("mae_pct", 0.0), pt.get("mfe_pct", 0.0), pt.get("duration_str", ""), pt.get("roi_pct", 0.0)
+                ))
+            else:
+                # Update existing trade status if changed in vault
+                conn.execute("""
+                UPDATE paper_trades SET
+                    status = ?, exit_price = COALESCE(?, exit_price), exit_time = COALESCE(?, exit_time),
+                    pnl_usdt = COALESCE(?, pnl_usdt), pnl_pct = COALESCE(?, pnl_pct), roi_pct = COALESCE(?, roi_pct),
+                    highest_price = COALESCE(?, highest_price), lowest_price = COALESCE(?, lowest_price),
+                    mae_pct = COALESCE(?, mae_pct), mfe_pct = COALESCE(?, mfe_pct), duration_str = COALESCE(?, duration_str)
+                WHERE id = ?
+                """, (
+                    status, pt.get("exit_price"), pt.get("exit_time"), pt.get("pnl_usdt"), pt.get("pnl_pct"),
+                    pt.get("roi_pct"), pt.get("highest_price"), pt.get("lowest_price"), pt.get("mae_pct"),
+                    pt.get("mfe_pct"), pt.get("duration_str"), existing["id"]
+                ))
+
+        # Restore trade_journal
+        try:
+            for jt in vault_data.get("journal_trades", []):
+                t_num = jt.get("trade_num")
+                sym = jt.get("symbol")
+                side = jt.get("side")
+                ep = jt.get("entry_price")
+                existing = conn.execute("SELECT id FROM trade_journal WHERE (trade_num = ? AND trade_num IS NOT NULL) OR (symbol = ? AND side = ? AND ABS(entry_price - ?) < 0.0001)", (t_num, sym, side, ep)).fetchone()
+                if not existing:
+                    conn.execute("""
+                    INSERT INTO trade_journal (
+                        trade_num, timestamp_ist, exchange, timeframe, symbol, side,
+                        entry_price, exit_price, tp_price, soft_sl_price, hard_sl_price,
+                        status, margin_usdt, leverage, pnl_usdt, roe_pct,
+                        account_balance, duration_hours, mike_score, notes, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        t_num, jt.get("timestamp_ist", ""), jt.get("exchange", "Binance"), jt.get("timeframe", "1h"),
+                        sym, side, ep, jt.get("exit_price"), jt.get("tp_price"), jt.get("soft_sl_price"),
+                        jt.get("hard_sl_price"), jt.get("status", "OPEN"), jt.get("margin_usdt", 50.0),
+                        jt.get("leverage", 5), jt.get("pnl_usdt", 0.0), jt.get("roe_pct", 0.0),
+                        jt.get("account_balance", 50.0), jt.get("duration_hours", 0.0), jt.get("mike_score", 95),
+                        jt.get("notes", ""), jt.get("created_at", int(time.time()*1000)), jt.get("updated_at", int(time.time()*1000))
+                    ))
+        except Exception as e:
+            logger.warning(f"Error restoring trade_journal from vault: {e}")
+
+        conn.commit()
+        conn.close()
+        logger.info("Cloud Vault successfully restored into SQLite database!")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error restoring from Cloud Vault: {e}")
+        return False

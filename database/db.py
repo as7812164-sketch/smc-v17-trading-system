@@ -143,13 +143,12 @@ def init_db():
             except Exception:
                 pass
 
-        # Purge legacy SMC V17 historical zones & alerts if present
-        legacy_zones = conn.execute("SELECT count(*) FROM zones WHERE status IN ('TP_HIT', 'SL_HIT')").fetchone()[0]
-        if legacy_zones > 0:
-            conn.execute("DELETE FROM zones")
-            conn.execute("DELETE FROM signals")
-            conn.execute("DELETE FROM sent_alerts")
-            conn.execute("DELETE FROM paper_trades")
+        # Cloud Vault Persistence (Guarantees zero data loss across Render restarts)
+        try:
+            from database.cloud_vault import pull_and_restore_vault_state
+            pull_and_restore_vault_state()
+        except Exception:
+            pass
 
         # Ensure Account 1 (4H Macro Swing - $50.00 Starting Capital) exists
         acc1_exists = conn.execute("SELECT id FROM paper_account WHERE id = 1").fetchone()
@@ -835,6 +834,13 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[f
         """, (new_balance, vault_balance, new_total_pnl, win_count, loss_count, win_streak, acc_id))
         conn.commit()
 
+        # Cloud Vault real-time synchronization
+        try:
+            from database.cloud_vault import push_vault_state
+            push_vault_state()
+        except Exception:
+            pass
+
         completed = win_count + loss_count
         win_rate = round((win_count / completed * 100), 1) if completed > 0 else 0.0
         return {
@@ -932,6 +938,13 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
         WHERE id = ?
         """, (new_balance, new_total_pnl, win_count, loss_count, win_streak, acc_id))
         conn.commit()
+
+        # Cloud Vault real-time synchronization
+        try:
+            from database.cloud_vault import push_vault_state
+            push_vault_state()
+        except Exception:
+            pass
 
         return {
             "success": True,

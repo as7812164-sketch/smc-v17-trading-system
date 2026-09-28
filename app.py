@@ -106,13 +106,32 @@ async def ticker_cache_loop():
         except Exception:
             pass
 
+async def cloud_vault_periodic_sync_loop():
+    """Background task: periodically syncs state to Cloud Vault (branch: data-vault) every 60s."""
+    await asyncio.sleep(30)
+    while True:
+        try:
+            from database.cloud_vault import push_vault_state
+            push_vault_state()
+        except Exception:
+            pass
+        await asyncio.sleep(60)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Hermes 2.0 Apex robot, keepalive, and telegram polling in background
+    # Startup: Restore state from Cloud Vault first
+    try:
+        from database.cloud_vault import pull_and_restore_vault_state
+        pull_and_restore_vault_state()
+    except Exception as e:
+        pass
+
+    # Hermes 2.0 Apex robot, keepalive, and telegram polling in background
     hermes2_task = asyncio.create_task(hermes2_apex_engine.start())
     tg_polling_task = asyncio.create_task(telegram_service.start_polling())
     keepalive_task = asyncio.create_task(keepalive_loop())
     ticker_task = asyncio.create_task(ticker_cache_loop())
+    vault_sync_task = asyncio.create_task(cloud_vault_periodic_sync_loop())
     yield
     # Shutdown
     hermes2_apex_engine.stop()
@@ -120,6 +139,7 @@ async def lifespan(app: FastAPI):
     tg_polling_task.cancel()
     keepalive_task.cancel()
     ticker_task.cancel()
+    vault_sync_task.cancel()
     await binance_feed.close()
 
 app = FastAPI(title="HERMES 2.0 APEX Autonomous Terminal & Quant Engine", lifespan=lifespan)

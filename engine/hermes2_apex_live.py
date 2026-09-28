@@ -540,6 +540,13 @@ class Hermes2ApexLiveEngine:
             conn.commit()
             trade_id = cursor.lastrowid
 
+        # Real-time Cloud Vault synchronization
+        try:
+            from database.cloud_vault import push_vault_state
+            push_vault_state()
+        except Exception:
+            pass
+
         trade_obj = {
             "id": trade_id,
             "symbol": sym,
@@ -846,6 +853,13 @@ class Hermes2ApexLiveEngine:
             WHERE id = ?
             """, (new_balance, vault_balance, new_total_pnl, win_count, loss_count, win_streak, acc_id))
             conn.commit()
+
+        # Real-time Cloud Vault synchronization
+        try:
+            from database.cloud_vault import push_vault_state
+            push_vault_state()
+        except Exception:
+            pass
 
         self.active_position = None
         self.trade_cooldowns[sym] = time.time() + 1800  # 30-minute cooldown on this symbol to prevent rapid loop

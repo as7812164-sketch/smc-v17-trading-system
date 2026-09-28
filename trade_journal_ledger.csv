@@ -1,0 +1,5 @@
+Trade #,Timestamp (IST),Exchange,Timeframe,Symbol,Side,Entry Price,Exit Price,Take Profit,Soft Stop Loss,Hard Stop Loss,Status / Outcome,Margin (USDT),Leverage,PnL (USDT),ROE (%),Account Balance (USDT),Duration (Hours),Mike AI Score,Notes
+1,2026-09-26 11:45:00 IST,Binance,1h,DOGEUSDT,BUY,0.094500,0.096580,0.096580,0.092130,0.091000,TP_HIT,$50.00,5x,$+12.74,+25.48%,$62.74,1.4h,96/100,Hermes 2.0 Apex 1H Institutional Order Block • Sentry 3 IDM Sweep Validated
+2,2026-09-26 16:30:00 IST,Binance,4h,NEARUSDT,SELL,4.821000,4.686000,4.686000,4.956000,5.000000,TP_HIT,$60.83,5x,$+14.85,+24.41%,$77.59,3.8h,98/100,Hermes 2.0 Apex 4H Extreme Order Block • Sentry 2 Displacement 6.4%
+3,2026-09-28 07:43:00 IST,Binance,1h,AVAXUSDT,SELL,10.903000,10.663100,10.663100,11.175600,11.175600,TP_HIT,$55.21,5x,$+6.08,+11.01%,$83.67,1.3h,97/100,Hermes 2.5 Apex 1H Extreme Order Block • Sentry 3 IDM Sweep Rejection Wick 45.2%
+4,2026-09-28 08:28:00 IST,Binance,1h,OPUSDT,BUY,0.145300,0.141700,0.148500,0.141700,0.140000,SL_HIT,$50.00,5x,$-6.19,-12.38%,$77.48,1.0h,91/100,Hermes 2.5 Apex 1H IDM Pullback Sweep • Soft SL Triggered at 0.1417

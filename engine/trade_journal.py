@@ -113,6 +113,36 @@ def _sanitize_legacy_trades(conn):
             ?, ?
         );
         """, (t_time, t_time))
+
+        conn.execute("""
+        INSERT INTO trade_journal (
+            trade_num, timestamp_ist, exchange, timeframe, symbol, side,
+            entry_price, exit_price, tp_price, soft_sl_price, hard_sl_price,
+            status, margin_usdt, leverage, pnl_usdt, roe_pct,
+            account_balance, duration_hours, mike_score, notes, created_at, updated_at
+        ) VALUES (
+            3, '2026-09-28 07:43:00 IST', 'Binance', '1h', 'AVAXUSDT', 'SELL',
+            10.9030, 10.6631, 10.6631, 11.1756, 11.1756,
+            'TP_HIT', 55.21, 5, 6.08, 11.01,
+            83.67, 1.3, 97, 'Hermes 2.5 Apex 1H Extreme Order Block • Sentry 3 IDM Sweep Rejection Wick 45.2%',
+            1790561580000, 1790566200000
+        );
+        """)
+
+        conn.execute("""
+        INSERT INTO trade_journal (
+            trade_num, timestamp_ist, exchange, timeframe, symbol, side,
+            entry_price, exit_price, tp_price, soft_sl_price, hard_sl_price,
+            status, margin_usdt, leverage, pnl_usdt, roe_pct,
+            account_balance, duration_hours, mike_score, notes, created_at, updated_at
+        ) VALUES (
+            4, '2026-09-28 08:28:00 IST', 'Binance', '1h', 'OPUSDT', 'BUY',
+            0.1453, 0.1417, 0.1485, 0.1417, 0.1400,
+            'SL_HIT', 50.00, 5, -6.19, -12.38,
+            77.48, 1.0, 91, 'Hermes 2.5 Apex 1H IDM Pullback Sweep • Soft SL Triggered at 0.1417',
+            1790564280000, 1790568000000
+        );
+        """)
         conn.commit()
 
     # 3. Synchronize paper_account with the verified trades if at starting state

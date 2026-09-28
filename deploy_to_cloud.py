@@ -43,6 +43,7 @@ FILES_TO_SYNC = [
     "trade_journal_ledger.csv",
     "database/smc_v17.db",
     "database/mongo_client.py",
+    "database/cloud_vault.py",
     "engine/hermes2_apex_live.py",
     "ai/hermes_agent.py",
     "ai/hermes_knowledge_base.json",
