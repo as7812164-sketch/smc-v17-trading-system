@@ -3,13 +3,13 @@
   "short_name": "Hermes APEX",
   "description": "Institutional SMC Quantitative Crypto Trading Terminal with 5x Isolated Auto-Execution and Real-Time Compounding.",
   "start_url": "/?view=mobile",
-  "id": "/",
+  "id": "/?view=mobile",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
-  "orientation": "portrait-primary",
-  "background_color": "#0b0e14",
-  "theme_color": "#0b0e14",
+  "display_override": ["fullscreen", "standalone", "window-controls-overlay"],
+  "orientation": "portrait",
+  "background_color": "#080B11",
+  "theme_color": "#080B11",
   "categories": ["finance", "utilities"],
   "icons": [
     {

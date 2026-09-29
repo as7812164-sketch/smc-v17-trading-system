@@ -149,6 +149,33 @@
             gap: 8px;
         }
 
+        .refresh-btn {
+            background: var(--bg-card-subtle);
+            border: 1px solid var(--border);
+            color: var(--cyan);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            transition: transform 0.25s ease;
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.9);
+        }
+
+        .spin-fast {
+            animation: spinOnce 0.6s linear;
+        }
+
+        @keyframes spinOnce {
+            100% { transform: rotate(360deg); }
+        }
+
         .account-toggle-btn {
             background: var(--bg-card-subtle);
             border: 1px solid var(--border);
@@ -582,6 +609,16 @@
             font-family: var(--font-mono);
         }
 
+        .bpc-tag-long {
+            background: rgba(0, 245, 155, 0.15);
+            color: var(--green);
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: var(--font-mono);
+        }
+
         .bpc-tag-isolated {
             background: var(--bg-elevated);
             color: var(--text-secondary);
@@ -802,6 +839,9 @@
             </div>
         </div>
         <div class="header-actions">
+            <button class="refresh-btn" id="btnHeaderRefresh" onclick="refreshAllDataManual(this)" title="Refresh Live Data">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
             <button class="account-toggle-btn binance" id="btnToggleAccount" onclick="toggleAccountMode()">
                 <i class="fa-brands fa-bitcoin"></i> <span id="hdrModeLabel">Binance Live</span>
             </button>
@@ -1081,6 +1121,7 @@
     <script>
         let allCoinsData = [];
         let isLiveBinanceMode = true;
+        let currentCategory = 'all';
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1149,33 +1190,72 @@
                     allCoinsData = data.coins;
                     renderMarkets(allCoinsData);
                     renderHomeQueue(allCoinsData);
+                    renderTickerChips(allCoinsData);
                 }
             } catch (e) {
                 console.error("Markets fetch error:", e);
             }
         }
 
+        function renderTickerChips(coins) {
+            const container = document.getElementById('homeTickerChips');
+            if (!container || !coins || coins.length === 0) return;
+
+            // Prioritize BTC, ETH, SOL, DOGE, BNB, XRP
+            const keySyms = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'DOGEUSDT', 'BNBUSDT', 'XRPUSDT'];
+            const featured = coins.filter(c => keySyms.includes(c.symbol));
+            const list = featured.length >= 4 ? featured : coins.slice(0, 6);
+
+            container.innerHTML = list.map(c => {
+                const chg = Number(c.change_24h || 0);
+                const isPos = chg >= 0;
+                const badgeClass = isPos ? 'badge-green' : 'badge-red';
+                const sign = isPos ? '+' : '';
+                const price = Number(c.price || c.last_price || 0);
+                const pStr = price >= 1000 ? price.toFixed(1) : (price >= 1 ? price.toFixed(2) : price.toFixed(4));
+                const coinName = (c.base_asset || c.symbol.replace('USDT', ''));
+                return `
+                    <div class="ticker-chip" onclick="openCoinTrade('${c.symbol}')">
+                        <span class="tc-coin">${coinName}</span>
+                        <span class="tc-price">$${pStr}</span>
+                        <span class="tc-badge ${badgeClass}">${sign}${chg.toFixed(2)}%</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function renderMarkets(coins) {
             const container = document.getElementById('marketsCoinList');
             if (!container) return;
+
+            if (!coins || coins.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:12px;">
+                        No matching champions found.
+                    </div>
+                `;
+                return;
+            }
 
             container.innerHTML = coins.map(c => {
                 const chg = Number(c.change_24h || 0);
                 const isPos = chg >= 0;
                 const badgeClass = isPos ? 'badge-green' : 'badge-red';
                 const sign = isPos ? '+' : '';
-                const shortSym = c.symbol.replace('USDT', '');
+                const shortSym = (c.base_asset || c.symbol.replace('USDT', ''));
+                const price = Number(c.price || c.last_price || 0);
+                const pStr = price >= 100 ? price.toFixed(2) : (price >= 1 ? price.toFixed(4) : price.toFixed(4));
                 return `
                     <div class="coin-list-item" onclick="openCoinTrade('${c.symbol}')">
                         <div class="cli-left">
                             <div class="cli-coin-badge">${shortSym.slice(0, 3)}</div>
                             <div class="cli-name-group">
                                 <span class="cli-symbol">${c.symbol}</span>
-                                <span class="cli-vol">Vol $${(Number(c.volume_24h || 0) / 1e6).toFixed(1)}M</span>
+                                <span class="cli-vol">Vol $${(Number(c.volume_24h || 0) / 1e6).toFixed(1)}M &bull; ${c.sentry_badge || '4H SMC'}</span>
                             </div>
                         </div>
                         <div class="cli-right">
-                            <span class="cli-price">$${Number(c.last_price || 0).toFixed(4)}</span>
+                            <span class="cli-price">$${pStr}</span>
                             <span class="cli-change-pill ${badgeClass}">${sign}${chg.toFixed(2)}%</span>
                         </div>
                     </div>
@@ -1193,17 +1273,19 @@
                 const isPos = chg >= 0;
                 const badgeClass = isPos ? 'badge-green' : 'badge-red';
                 const sign = isPos ? '+' : '';
+                const price = Number(c.price || c.last_price || 0);
+                const pStr = price >= 100 ? price.toFixed(2) : (price >= 1 ? price.toFixed(4) : price.toFixed(4));
                 return `
                     <div class="coin-list-item" onclick="openCoinTrade('${c.symbol}')">
                         <div class="cli-left">
-                            <div class="cli-coin-badge">${c.symbol.replace('USDT','').slice(0,3)}</div>
+                            <div class="cli-coin-badge">${(c.base_asset || c.symbol.replace('USDT','')).slice(0,3)}</div>
                             <div class="cli-name-group">
                                 <span class="cli-symbol">${c.symbol}</span>
                                 <span class="cli-vol">4H Sentry Active</span>
                             </div>
                         </div>
                         <div class="cli-right">
-                            <span class="cli-price">$${Number(c.last_price || 0).toFixed(4)}</span>
+                            <span class="cli-price">$${pStr}</span>
                             <span class="cli-change-pill ${badgeClass}">${sign}${chg.toFixed(2)}%</span>
                         </div>
                     </div>
@@ -1211,8 +1293,47 @@
             }).join('');
         }
 
+        function filterMarkets(query) {
+            const q = (query || '').toLowerCase().trim();
+            if (!q) {
+                renderMarkets(allCoinsData);
+                return;
+            }
+            const filtered = allCoinsData.filter(c => 
+                c.symbol.toLowerCase().includes(q) || 
+                (c.base_asset && c.base_asset.toLowerCase().includes(q))
+            );
+            renderMarkets(filtered);
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            const buttons = document.querySelectorAll('#tab-markets .account-toggle-btn');
+            buttons.forEach(btn => btn.classList.remove('binance'));
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('binance');
+            }
+
+            let filtered = [...allCoinsData];
+            if (cat === 'gainers') {
+                filtered.sort((a, b) => Number(b.change_24h || 0) - Number(a.change_24h || 0));
+            } else if (cat === 'losers') {
+                filtered.sort((a, b) => Number(a.change_24h || 0) - Number(b.change_24h || 0));
+            } else if (cat === 'setups') {
+                filtered = filtered.filter(c => c.sentry_status === 'ACTIVE' || Number(c.change_24h || 0) < -0.5);
+            }
+            renderMarkets(filtered);
+        }
+
         function openCoinTrade(symbol) {
             document.getElementById('tradeSymbol').innerText = symbol;
+            const matched = allCoinsData.find(c => c.symbol === symbol);
+            if (matched) {
+                const price = Number(matched.price || matched.last_price || 0);
+                const pStr = price >= 100 ? price.toFixed(2) : (price >= 1 ? price.toFixed(4) : price.toFixed(4));
+                const priceEl = document.getElementById('tradeMarkPrice');
+                if (priceEl) priceEl.innerText = `$${pStr}`;
+            }
             const iframe = document.getElementById('tvIframe');
             if (iframe) {
                 iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=BINANCE%3A${symbol}&interval=240&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=080B11&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=en`;
@@ -1241,12 +1362,13 @@
                         const isPos = pnl >= 0;
                         const pnlColor = isPos ? 'var(--green)' : 'var(--red)';
                         const sign = isPos ? '+' : '';
+                        const sideClass = (p.side === 'BUY' || p.side === 'LONG') ? 'bpc-tag-long' : 'bpc-tag-short';
                         return `
                             <div class="bitget-pos-card">
                                 <div class="bpc-header">
                                     <div class="bpc-symbol-group">
                                         <span class="bpc-symbol">${p.symbol} &gt;</span>
-                                        <span class="bpc-tag-short">${p.side}</span>
+                                        <span class="${sideClass}">${p.side}</span>
                                         <span class="bpc-tag-isolated">${p.leverage || '5x'} Isolated</span>
                                     </div>
                                 </div>
@@ -1291,24 +1413,116 @@
             }
         }
 
+        async function fetchTradesHistory() {
+            try {
+                const res = await fetch('/api/paper/trades');
+                const data = await res.json();
+                const container = document.getElementById('tradesHistoryContainer');
+                if (!container) return;
+
+                if (!data || !data.trades || data.trades.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:18px; color:var(--text-muted); font-size:12px;">
+                            No closed trades recorded yet.
+                        </div>
+                    `;
+                    return;
+                }
+
+                const recent = data.trades.slice(0, 15);
+                container.innerHTML = recent.map(t => {
+                    const pnl = Number(t.pnl_usdt || t.realized_pnl || 0);
+                    const isPos = pnl >= 0;
+                    const sign = isPos ? '+' : '';
+                    const color = isPos ? 'var(--green)' : 'var(--red)';
+                    const badge = isPos ? 'badge-green' : 'badge-red';
+                    const shortSym = (t.symbol || 'USDT').replace('USDT','');
+                    const exitP = Number(t.exit_price || 0).toFixed(4);
+                    const entryP = Number(t.entry_price || 0).toFixed(4);
+                    return `
+                        <div class="coin-list-item" style="border-left: 3px solid ${color};">
+                            <div class="cli-left">
+                                <div class="cli-coin-badge" style="color:${color}">${shortSym.slice(0,3)}</div>
+                                <div class="cli-name-group">
+                                    <span class="cli-symbol">${t.symbol} &bull; ${t.side || 'SHORT'}</span>
+                                    <span class="cli-vol">${t.result || 'TP Hit'} &bull; In: $${entryP} Out: $${exitP}</span>
+                                </div>
+                            </div>
+                            <div class="cli-right">
+                                <span class="cli-price" style="color:${color}; font-weight:800;">${sign}$${pnl.toFixed(2)}</span>
+                                <span class="cli-change-pill ${badge}">${sign}${Number(t.roi_pct || t.pnl_pct || 0).toFixed(2)}%</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error("Trades history fetch error:", e);
+            }
+        }
+
         async function closePosDirect(symbol) {
             if (!confirm(`Confirm close ${symbol}?`)) return;
             try {
                 await fetch(`/api/paper/close?symbol=${symbol}`, { method: 'POST' });
                 fetchPositions();
+                fetchTradesHistory();
             } catch (e) {
                 console.error("Close error:", e);
             }
         }
 
-        // Live Periodic Loops
+        async function refreshAllDataManual(btn) {
+            if (btn) {
+                const icon = btn.querySelector('i');
+                if (icon) icon.classList.add('spin-fast');
+            }
+            try {
+                await Promise.all([
+                    fetchAccountData(),
+                    fetchMarketsData(),
+                    fetchPositions(),
+                    fetchTradesHistory()
+                ]);
+            } finally {
+                if (btn) {
+                    const icon = btn.querySelector('i');
+                    if (icon) setTimeout(() => icon.classList.remove('spin-fast'), 600);
+                }
+            }
+        }
+
+        // Pull-to-refresh on mobile touch
+        let touchStartY = 0;
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        window.addEventListener('touchend', (e) => {
+            const touchEndY = e.changedTouches[0].clientY;
+            if (window.scrollY === 0 && (touchEndY - touchStartY > 120)) {
+                const btn = document.getElementById('btnHeaderRefresh');
+                refreshAllDataManual(btn);
+            }
+        }, { passive: true });
+
+        // Service Worker registration for PWA native offline capability
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('ServiceWorker registered with scope:', reg.scope))
+                    .catch(err => console.log('ServiceWorker registration failed:', err));
+            });
+        }
+
+        // Initialize and Start Live Polling
         fetchAccountData();
         fetchMarketsData();
         fetchPositions();
+        fetchTradesHistory();
 
         setInterval(fetchAccountData, 4000);
         setInterval(fetchMarketsData, 5000);
         setInterval(fetchPositions, 3000);
+        setInterval(fetchTradesHistory, 6000);
     </script>
 </body>
 </html>

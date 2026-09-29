@@ -3,6 +3,9 @@
       "target": {
         "namespace": "android_app",
         "package_name": "com.hermes.trading.terminal",
-        "sha256_cert_fingerprints": ["0B:80:B5:28:EF:B1:5A:CE:9C:05:E4:CE:70:B2:66:EB:DC:85:53:61:45:FD:A8:2D:BF:E7:C4:9D:37:EB:BF:B5"]
+        "sha256_cert_fingerprints": [
+          "0B:80:B5:28:EF:B1:5A:CE:9C:05:E4:CE:70:B2:66:EB:DC:85:53:61:45:FD:A8:2D:BF:E7:C4:9D:37:EB:BF:B5",
+          "CB:E2:08:C6:22:68:94:2D:70:23:39:EC:75:8C:E1:91:89:AD:56:5F:9D:C4:43:35:7C:9A:56:4E:7D:2B:8B:52"
+        ]
       }
     }]

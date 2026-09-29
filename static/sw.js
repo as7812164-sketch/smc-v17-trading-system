@@ -1,7 +1,9 @@
 // Hermes 2.5 APEX Service Worker
-const CACHE_NAME = 'hermes-apex-v1';
+const CACHE_NAME = 'hermes-apex-v2';
 const STATIC_ASSETS = [
   '/',
+  '/mobile',
+  '/static/mobile.html',
   '/static/manifest.json',
   '/static/style.css',
   '/static/icon-192.png',
