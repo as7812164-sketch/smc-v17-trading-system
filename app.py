@@ -1841,6 +1841,37 @@ async def update_settings(body: Dict[str, Any] = Body(...)):
     binance_trader._init_exchange()
     return {"success": True, "message": "Settings saved successfully!"}
 
+# --- Security PIN Authentication Endpoints ---
+@app.get("/api/auth/pin-status")
+async def get_pin_status():
+    stored_pin = get_setting("security_pin", "1234")
+    return {
+        "status": "ok",
+        "pin_required": True,
+        "is_default": (stored_pin == "1234"),
+        "digits": 4
+    }
+
+@app.post("/api/auth/verify-pin")
+async def verify_pin(body: Dict[str, Any] = Body(...)):
+    stored_pin = get_setting("security_pin", "1234").strip()
+    entered_pin = str(body.get("pin", "")).strip()
+    if entered_pin == stored_pin:
+        return {"success": True, "message": "PIN verified successfully"}
+    return {"success": False, "message": "Incorrect PIN"}
+
+@app.post("/api/auth/change-pin")
+async def change_pin(body: Dict[str, Any] = Body(...)):
+    stored_pin = get_setting("security_pin", "1234").strip()
+    old_pin = str(body.get("old_pin", "")).strip()
+    new_pin = str(body.get("new_pin", "")).strip()
+    if old_pin != stored_pin:
+        return {"success": False, "message": "Current PIN is incorrect"}
+    if not new_pin or len(new_pin) != 4 or not new_pin.isdigit():
+        return {"success": False, "message": "New PIN must be exactly 4 digits"}
+    set_setting("security_pin", new_pin)
+    return {"success": True, "message": "Security PIN updated successfully"}
+
 @app.get("/api/binance/status")
 async def get_binance_account_status():
     from engine.binance_trader import binance_trader
