@@ -16,6 +16,7 @@ database/*.db-wal
 .DS_Store
 *.zip
 *.png
+!static/*.png
 database/*.backup_*
 smc_v17.db
 scratch/

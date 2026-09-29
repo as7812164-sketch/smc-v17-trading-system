@@ -117,6 +117,47 @@ async def cloud_vault_periodic_sync_loop():
             pass
         await asyncio.sleep(60)
 
+async def binance_ip_heartbeat_loop():
+    """Checks Binance API connectivity every 5 minutes.
+    If IP changes or Error -2015 is returned, immediately alerts user via Telegram with exact current IP!"""
+    last_alerted_ip = None
+    await asyncio.sleep(60)  # Initial wait
+    while True:
+        try:
+            from engine.binance_trader import binance_trader
+            if binance_trader.is_configured() and binance_trader.is_auto_trade_enabled():
+                bal = binance_trader.fetch_futures_balance()
+                if not bal.get("connected"):
+                    err = str(bal.get("error", ""))
+                    err_code = bal.get("error_code")
+                    if err_code == -2015 or "-2015" in err:
+                        import urllib.request
+                        curr_ip = "Unknown"
+                        try:
+                            req = urllib.request.Request("https://api.ipify.org", headers={"User-Agent": "curl/7.68.0"})
+                            with urllib.request.urlopen(req, timeout=5) as resp:
+                                curr_ip = resp.read().decode().strip()
+                        except Exception:
+                            pass
+
+                        if curr_ip != last_alerted_ip and curr_ip != "Unknown":
+                            last_alerted_ip = curr_ip
+                            tg_text = (
+                                f"🚨 <b>BINANCE IP RESTRICTION ALERT</b>\n\n"
+                                f"Aapka Wi-Fi Public IP change ho gaya hai!\n"
+                                f"📍 <b>Naya IP:</b> <code>{curr_ip}</code>\n\n"
+                                f"⚠️ <b>Status:</b> Binance API Error -2015 (IP Restriction)\n\n"
+                                f"👉 <b>Action Needed:</b>\n"
+                                f"1. Binance App/Web me <b>API Management</b> kholein\n"
+                                f"2. IP list me <code>{curr_ip}</code> add karein\n"
+                                f"3. 'Save' par click karein\n\n"
+                                f"Save karte hi live execution resume ho jayegi."
+                            )
+                            await telegram_service.send_text_alert(tg_text)
+        except Exception:
+            pass
+        await asyncio.sleep(300)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Restore state from Cloud Vault first
@@ -132,6 +173,7 @@ async def lifespan(app: FastAPI):
     keepalive_task = asyncio.create_task(keepalive_loop())
     ticker_task = asyncio.create_task(ticker_cache_loop())
     vault_sync_task = asyncio.create_task(cloud_vault_periodic_sync_loop())
+    binance_heartbeat_task = asyncio.create_task(binance_ip_heartbeat_loop())
     yield
     # Shutdown
     hermes2_apex_engine.stop()
@@ -140,10 +182,23 @@ async def lifespan(app: FastAPI):
     keepalive_task.cancel()
     ticker_task.cancel()
     vault_sync_task.cancel()
+    binance_heartbeat_task.cancel()
     await binance_feed.close()
 
 app = FastAPI(title="HERMES 2.0 APEX Autonomous Terminal & Quant Engine", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+@app.get("/manifest.json")
+async def serve_manifest():
+    return FileResponse(STATIC_DIR / "manifest.json", media_type="application/manifest+json")
+
+@app.get("/sw.js")
+async def serve_sw():
+    return FileResponse(STATIC_DIR / "sw.js", media_type="application/javascript")
+
+@app.get("/favicon.ico")
+async def serve_favicon():
+    return FileResponse(STATIC_DIR / "favicon.ico", media_type="image/x-icon")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():

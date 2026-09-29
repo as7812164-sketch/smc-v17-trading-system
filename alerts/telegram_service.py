@@ -349,6 +349,13 @@ class TelegramService:
             cleaned += "USDT"
         return cleaned
 
+    async def send_text_alert(
+        self,
+        text: str,
+        parse_mode: str = "HTML"
+    ) -> Optional[Dict[str, Any]]:
+        return await self.send_raw_message(text, parse_mode=parse_mode)
+
     async def send_raw_message(
         self,
         text: str,
