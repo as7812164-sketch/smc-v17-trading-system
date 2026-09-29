@@ -848,6 +848,18 @@
         </div>
     </header>
 
+    <!-- NATIVE INSTALL APP PROMPT BANNER -->
+    <div id="pwaInstallBanner" style="display:none; background: linear-gradient(90deg, #0284C7, #00F59B); color: #080B11; padding: 10px 14px; align-items: center; justify-content: space-between; font-weight: 800; font-size: 11.5px; border-bottom: 1px solid rgba(255,255,255,0.2); position: sticky; top: 52px; z-index: 99;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-mobile-screen-button" style="font-size:16px;"></i>
+            <span>Install Fullscreen App (No URL Bar)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+            <button id="btnPwaInstall" style="background:#080B11; color:#00F59B; border:none; padding:5px 12px; border-radius:6px; font-weight:900; font-size:11px; cursor:pointer;">INSTALL</button>
+            <button onclick="document.getElementById('pwaInstallBanner').style.display='none'" style="background:none; border:none; color:#080B11; font-size:16px; font-weight:900; cursor:pointer; padding:0 4px;">&times;</button>
+        </div>
+    </div>
+
     <!-- ==========================================
          TAB 1: HOME (DASHBOARD & SENTRIES)
          ========================================== -->
@@ -1503,6 +1515,38 @@
                 refreshAllDataManual(btn);
             }
         }, { passive: true });
+
+        // PWA Native App Install Prompt Controller
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) banner.style.display = 'flex';
+        });
+
+        const btnPwa = document.getElementById('btnPwaInstall');
+        if (btnPwa) {
+            btnPwa.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        const banner = document.getElementById('pwaInstallBanner');
+                        if (banner) banner.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                } else {
+                    alert('To install as full native app: Tap Chrome menu (3 dots at top right) and tap "Install app" or "Add to Home screen"!');
+                }
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) banner.style.display = 'none';
+            deferredPrompt = null;
+        });
 
         // Service Worker registration for PWA native offline capability
         if ('serviceWorker' in navigator) {
