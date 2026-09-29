@@ -200,6 +200,13 @@ async def serve_sw():
 async def serve_favicon():
     return FileResponse(STATIC_DIR / "favicon.ico", media_type="image/x-icon")
 
+@app.get("/.well-known/assetlinks.json")
+async def serve_assetlinks():
+    file_path = STATIC_DIR / ".well-known" / "assetlinks.json"
+    if file_path.exists():
+        return FileResponse(file_path, media_type="application/json")
+    return HTMLResponse("[]", media_type="application/json")
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
     index_file = STATIC_DIR / "index.html"

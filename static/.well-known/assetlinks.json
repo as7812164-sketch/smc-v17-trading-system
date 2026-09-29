@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.hermes.trading.terminal",
+        "sha256_cert_fingerprints": ["0B:80:B5:28:EF:B1:5A:CE:9C:05:E4:CE:70:B2:66:EB:DC:85:53:61:45:FD:A8:2D:BF:E7:C4:9D:37:EB:BF:B5"]
+      }
+    }]
