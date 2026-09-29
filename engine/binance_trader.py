@@ -30,7 +30,33 @@ from database.db import get_setting, set_setting, get_connection
 class BinanceTrader:
     def __init__(self):
         self.exchange = None
+        self._is_hedge_mode = None
         self._init_exchange()
+
+    def get_position_mode(self) -> bool:
+        """
+        Returns True if Binance Futures account is in Hedge Mode (dualSidePosition=True),
+        False if One-Way Mode (dualSidePosition=False).
+        Caches the result to avoid redundant network calls.
+        """
+        if self._is_hedge_mode is not None:
+            return self._is_hedge_mode
+
+        if not self.exchange:
+            self._init_exchange()
+
+        if not self.exchange:
+            return True  # Default to True (Hedge Mode) as confirmed on user's live account
+
+        try:
+            res = self.exchange.fapiPrivateGetPositionSideDual()
+            self._is_hedge_mode = bool(res.get('dualSidePosition', True))
+            print(f"[BINANCE POSITION MODE] Account is in {'HEDGE (Dual-Side)' if self._is_hedge_mode else 'ONE-WAY'} Mode.")
+            return self._is_hedge_mode
+        except Exception as e:
+            print(f"[BINANCE POSITION MODE] Could not query positionSide dual mode: {e}. Defaulting to Hedge Mode (True).")
+            self._is_hedge_mode = True
+            return True
 
     def _init_exchange(self):
         api_key = get_setting("binance_api_key", BINANCE_API_KEY)
@@ -263,18 +289,44 @@ class BinanceTrader:
                     pass
 
                 # 5. EXECUTE 5x ISOLATED SHORT ORDER
-                order = self.exchange.create_order(
-                    symbol=sym,
-                    type='limit',
-                    side='sell',
-                    amount=amount,
-                    price=entry_price,
-                    params={
-                        'stopLossPrice': hard_disaster_sl,
-                        'takeProfitPrice': tp_price
-                    }
-                )
-                print(f"[BINANCE REAL 4H SHORT EXECUTED] {sym} SHORT @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
+                is_hedge = self.get_position_mode()
+                pos_side = 'SHORT' if is_hedge else 'BOTH'
+
+                order_params = {
+                    'positionSide': pos_side,
+                    'stopLossPrice': hard_disaster_sl,
+                    'takeProfitPrice': tp_price
+                }
+
+                try:
+                    order = self.exchange.create_order(
+                        symbol=sym,
+                        type='limit',
+                        side='sell',
+                        amount=amount,
+                        price=entry_price,
+                        params=order_params
+                    )
+                except Exception as oe:
+                    err_msg = str(oe)
+                    # Dynamic Auto-Recovery on -4061 (Position side does not match user's setting)
+                    if "-4061" in err_msg:
+                        alt_pos_side = 'BOTH' if pos_side == 'SHORT' else 'SHORT'
+                        print(f"[BINANCE RETRY] Position side mismatch (-4061). Retrying with positionSide='{alt_pos_side}'...")
+                        order_params['positionSide'] = alt_pos_side
+                        self._is_hedge_mode = (alt_pos_side == 'SHORT')
+                        order = self.exchange.create_order(
+                            symbol=sym,
+                            type='limit',
+                            side='sell',
+                            amount=amount,
+                            price=entry_price,
+                            params=order_params
+                        )
+                    else:
+                        raise oe
+
+                print(f"[BINANCE REAL 4H SHORT EXECUTED] {sym} SHORT @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED - {order_params.get('positionSide')})")
                 return {
                     "success": True,
                     "mode": "Live Binance Futures (4H SHORT)",
@@ -283,6 +335,7 @@ class BinanceTrader:
                     "order": order,
                     "symbol": sym,
                     "side": "SHORT",
+                    "position_side": order_params.get('positionSide'),
                     "entry_price": entry_price,
                     "tp_price": tp_price,
                     "soft_sl_price": soft_sl_price,
@@ -338,14 +391,42 @@ class BinanceTrader:
         if not self.exchange:
             return {"success": False, "error": "Exchange not connected"}
         try:
-            close_side = 'sell' if side.lower() == 'buy' else 'buy'
-            order = self.exchange.create_order(
-                symbol=symbol,
-                type='market',
-                side=close_side,
-                amount=None,
-                params={'reduceOnly': True}
-            )
+            close_side = 'sell' if side.lower() in ('buy', 'long') else 'buy'
+            is_hedge = self.get_position_mode()
+
+            order_params = {}
+            if is_hedge:
+                order_params['positionSide'] = 'LONG' if side.lower() in ('buy', 'long') else 'SHORT'
+            else:
+                order_params['positionSide'] = 'BOTH'
+                order_params['reduceOnly'] = True
+
+            try:
+                order = self.exchange.create_order(
+                    symbol=symbol,
+                    type='market',
+                    side=close_side,
+                    amount=None,
+                    params=order_params
+                )
+            except Exception as ce:
+                err_msg = str(ce)
+                if "-4061" in err_msg:
+                    alt_pos = 'BOTH' if order_params.get('positionSide') in ('SHORT', 'LONG') else ('LONG' if side.lower() in ('buy', 'long') else 'SHORT')
+                    order_params['positionSide'] = alt_pos
+                    if alt_pos == 'BOTH':
+                        order_params['reduceOnly'] = True
+                    else:
+                        order_params.pop('reduceOnly', None)
+                    order = self.exchange.create_order(
+                        symbol=symbol,
+                        type='market',
+                        side=close_side,
+                        amount=None,
+                        params=order_params
+                    )
+                else:
+                    raise ce
             return {"success": True, "order": order}
         except Exception as e:
             return {"success": False, "error": str(e)}
