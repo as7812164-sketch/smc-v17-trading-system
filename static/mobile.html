@@ -39,26 +39,40 @@
             --gold-glow: rgba(255, 215, 0, 0.15);
             --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
-            --bottom-nav-height: 72px;
+            --bottom-nav-height: 64px;
         }
 
-        * {
+        *, *:before, *:after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
         }
 
+        html {
+            width: 100%;
+            height: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+            box-sizing: border-box;
+            background-color: var(--bg-base);
+        }
+
         body {
             background-color: var(--bg-base);
             color: var(--text-primary);
             font-family: var(--font-sans);
-            font-size: 13.5px;
-            line-height: 1.45;
+            font-size: 13px;
+            line-height: 1.4;
+            width: 100%;
+            max-width: 100vw;
             overflow-x: hidden;
-            padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 20px) + 16px);
+            position: relative;
+            padding-bottom: 84px;
             user-select: none;
             -webkit-user-select: none;
+            box-sizing: border-box;
         }
 
         /* NATIVE TOP APP BAR */
@@ -66,76 +80,90 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(11, 15, 23, 0.96);
+            background: rgba(11, 15, 23, 0.98);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: calc(env(safe-area-inset-top, 8px) + 10px) 16px 12px 16px;
+            padding: calc(env(safe-area-inset-top, 6px) + 8px) 12px 10px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
         }
 
         .header-brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
         }
 
         .header-avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            border-radius: 9px;
             background: linear-gradient(135deg, #0284C7, #00F59B);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #080B11;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 900;
-            box-shadow: 0 0 14px rgba(0, 245, 155, 0.4);
+            box-shadow: 0 0 12px rgba(0, 245, 155, 0.4);
+            flex-shrink: 0;
         }
 
         .header-info {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .header-title {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 900;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
+            white-space: nowrap;
         }
 
         .header-tag {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 900;
             background: rgba(0, 245, 155, 0.18);
             color: var(--green);
-            padding: 2px 6px;
+            padding: 1px 5px;
             border-radius: 4px;
             font-family: var(--font-mono);
         }
 
         .header-status {
-            font-size: 10.5px;
+            font-size: 10px;
             color: var(--text-muted);
             font-family: var(--font-mono);
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .status-dot {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
+            min-width: 6px;
             border-radius: 50%;
             background: var(--green);
-            box-shadow: 0 0 8px var(--green);
+            box-shadow: 0 0 6px var(--green);
             animation: pulseDot 2s infinite;
+            flex-shrink: 0;
         }
 
         @keyframes pulseDot {
@@ -146,22 +174,24 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
+            flex-shrink: 0;
         }
 
         .refresh-btn {
             background: var(--bg-card-subtle);
             border: 1px solid var(--border);
             color: var(--cyan);
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 13px;
             transition: transform 0.25s ease;
+            flex-shrink: 0;
         }
 
         .refresh-btn:active {
@@ -180,15 +210,17 @@
             background: var(--bg-card-subtle);
             border: 1px solid var(--border);
             color: var(--text-primary);
-            padding: 7px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 5px 9px;
+            border-radius: 16px;
+            font-size: 11px;
             font-weight: 800;
             font-family: var(--font-mono);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             cursor: pointer;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .account-toggle-btn.binance {
@@ -200,7 +232,11 @@
         /* TAB PANELS */
         .tab-panel {
             display: none;
-            padding: 14px;
+            padding: 10px 12px;
+            width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
+            overflow-x: hidden;
             animation: fadeIn 0.2s ease-out;
         }
 
@@ -217,12 +253,14 @@
         .hero-wallet-card {
             background: linear-gradient(145deg, #131A29, #0D121D);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 14px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            margin-bottom: 14px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .hero-wallet-card::before {
@@ -241,26 +279,26 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .hw-label {
-            font-size: 11px;
+            font-size: 10.5px;
             color: var(--text-muted);
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .hw-badge {
             background: rgba(56, 189, 248, 0.15);
             color: var(--cyan);
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 700;
-            padding: 2px 7px;
+            padding: 2px 6px;
             border-radius: 4px;
             font-family: var(--font-mono);
         }
@@ -269,11 +307,11 @@
             display: flex;
             align-items: baseline;
             gap: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .hw-balance {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 900;
             letter-spacing: -0.5px;
             font-family: var(--font-mono);
@@ -281,10 +319,10 @@
         }
 
         .hw-pnl-pill {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 800;
             font-family: var(--font-mono);
-            padding: 2px 7px;
+            padding: 2px 6px;
             border-radius: 4px;
             background: rgba(0, 245, 155, 0.15);
             color: var(--green);
@@ -292,47 +330,58 @@
 
         .hw-metrics-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            padding-top: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            padding-top: 8px;
             border-top: 1px solid rgba(255, 255, 255, 0.06);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            width: 100%;
         }
 
         .hw-metric-item {
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .hw-m-label {
-            font-size: 9.5px;
+            font-size: 9px;
             color: var(--text-muted);
             font-weight: 600;
             margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .hw-m-val {
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 800;
             font-family: var(--font-mono);
             color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* CHALLENGE PROGRESS BAR */
         .challenge-box {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
-            padding: 9px 11px;
+            padding: 8px 10px;
             border: 1px solid rgba(255, 215, 0, 0.15);
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .cb-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 10.5px;
+            font-size: 10px;
             font-weight: 700;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
 
         .cb-title {
@@ -340,15 +389,20 @@
             display: flex;
             align-items: center;
             gap: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .cb-target {
             color: var(--text-muted);
             font-family: var(--font-mono);
+            font-size: 9.5px;
+            white-space: nowrap;
         }
 
         .cb-progress-bar-bg {
-            height: 6px;
+            height: 5px;
             border-radius: 3px;
             background: rgba(255, 255, 255, 0.08);
             overflow: hidden;
@@ -368,9 +422,13 @@
             display: flex;
             gap: 8px;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             padding-bottom: 4px;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
             scrollbar-width: none;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .chips-scroll::-webkit-scrollbar {
@@ -381,32 +439,33 @@
             flex: 0 0 auto;
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 8px 12px;
+            border-radius: 9px;
+            padding: 6px 10px;
             display: flex;
             align-items: center;
-            gap: 9px;
+            gap: 6px;
             cursor: pointer;
+            box-sizing: border-box;
         }
 
         .tc-coin {
             font-weight: 800;
-            font-size: 11px;
+            font-size: 10.5px;
         }
 
         .tc-price {
             font-family: var(--font-mono);
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
             color: var(--text-secondary);
         }
 
         .tc-badge {
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 800;
             font-family: var(--font-mono);
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 1px 5px;
+            border-radius: 3px;
         }
 
         .badge-green { background: var(--green-glow); color: var(--green); }
@@ -417,54 +476,66 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 14px;
+            padding: 12px;
+            margin-bottom: 10px;
             position: relative;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .rc-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .rc-title {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 800;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             color: #FFFFFF;
         }
 
         .rc-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            width: 100%;
         }
 
         .rc-item {
             background: var(--bg-card-subtle);
             border-radius: 8px;
-            padding: 9px;
+            padding: 7px 9px;
             border: 1px solid rgba(255, 255, 255, 0.04);
+            min-width: 0;
+            overflow: hidden;
         }
 
         .rc-item-name {
-            font-size: 9.5px;
+            font-size: 9px;
             color: var(--text-muted);
             font-weight: 700;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .rc-item-val {
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 800;
             font-family: var(--font-mono);
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* SECTION HEADER */
@@ -472,18 +543,19 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
-            margin-top: 6px;
+            margin-bottom: 8px;
+            margin-top: 4px;
+            width: 100%;
         }
 
         .sh-title {
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 800;
             color: #FFFFFF;
         }
 
         .sh-link {
-            font-size: 11px;
+            font-size: 10.5px;
             color: var(--cyan);
             font-weight: 700;
             text-decoration: none;
@@ -494,13 +566,17 @@
         .coin-list-item {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px 14px;
+            border-radius: 10px;
+            padding: 9px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             cursor: pointer;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
             transition: transform 0.1s ease, border-color 0.1s ease;
         }
 
@@ -512,13 +588,17 @@
         .cli-left {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .cli-coin-badge {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 7px;
             background: var(--bg-elevated);
             border: 1px solid var(--border);
             display: flex;
@@ -528,47 +608,61 @@
             font-weight: 900;
             font-family: var(--font-mono);
             color: var(--cyan);
+            flex-shrink: 0;
         }
 
         .cli-name-group {
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            flex: 1;
+            overflow: hidden;
         }
 
         .cli-symbol {
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 800;
             color: #FFFFFF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .cli-vol {
-            font-size: 10px;
+            font-size: 9.5px;
             color: var(--text-muted);
             font-family: var(--font-mono);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .cli-right {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 3px;
+            gap: 2px;
+            flex-shrink: 0;
+            margin-left: 8px;
         }
 
         .cli-price {
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 800;
             font-family: var(--font-mono);
             color: #FFFFFF;
+            white-space: nowrap;
         }
 
         .cli-change-pill {
             font-size: 10.5px;
             font-weight: 800;
             font-family: var(--font-mono);
-            padding: 3px 8px;
-            border-radius: 5px;
-            min-width: 62px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            min-width: 58px;
             text-align: center;
+            white-space: nowrap;
         }
 
         /* BITGET EXACT POSITION CARD (MATCHING USER SCREENSHOT) */
@@ -576,15 +670,19 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .bpc-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .bpc-symbol-group {
@@ -594,7 +692,7 @@
         }
 
         .bpc-symbol {
-            font-size: 15px;
+            font-size: 14.5px;
             font-weight: 900;
             letter-spacing: 0.2px;
         }
@@ -602,9 +700,9 @@
         .bpc-tag-short {
             background: rgba(255, 77, 106, 0.15);
             color: var(--red);
-            font-size: 9.5px;
+            font-size: 9px;
             font-weight: 800;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 3px;
             font-family: var(--font-mono);
         }
@@ -612,9 +710,9 @@
         .bpc-tag-long {
             background: rgba(0, 245, 155, 0.15);
             color: var(--green);
-            font-size: 9.5px;
+            font-size: 9px;
             font-weight: 800;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 3px;
             font-family: var(--font-mono);
         }
@@ -622,9 +720,9 @@
         .bpc-tag-isolated {
             background: var(--bg-elevated);
             color: var(--text-secondary);
-            font-size: 9.5px;
+            font-size: 9px;
             font-weight: 800;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 3px;
             font-family: var(--font-mono);
         }
@@ -633,8 +731,8 @@
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
@@ -644,14 +742,14 @@
         }
 
         .bpc-sublabel {
-            font-size: 9.5px;
+            font-size: 9px;
             color: var(--text-muted);
             text-transform: uppercase;
             font-weight: 700;
         }
 
         .bpc-pnl-val {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 900;
             font-family: var(--font-mono);
         }
@@ -663,41 +761,51 @@
         }
 
         .bpc-roe-val {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 900;
             font-family: var(--font-mono);
         }
 
         .bpc-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            row-gap: 8px;
-            column-gap: 12px;
-            margin-bottom: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            row-gap: 6px;
+            column-gap: 8px;
+            margin-bottom: 10px;
+            width: 100%;
         }
 
         .bpc-cell {
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .bpc-cell-label {
-            font-size: 9px;
+            font-size: 8.5px;
             color: var(--text-muted);
             font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .bpc-cell-val {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 800;
             font-family: var(--font-mono);
             color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .bpc-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
+            width: 100%;
         }
 
         .bpc-btn {
@@ -706,10 +814,13 @@
             color: var(--text-primary);
             padding: 9px;
             border-radius: 8px;
-            font-size: 11px;
+            font-size: 11.5px;
             font-weight: 800;
             cursor: pointer;
             text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            white-space: nowrap;
         }
 
         .bpc-btn.danger {
@@ -718,23 +829,28 @@
             color: var(--red);
         }
 
-        /* NATIVE BOTTOM NAVIGATION BAR */
+        /* NATIVE BOTTOM NAVIGATION BAR (FIXED TO SCREEN) */
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 20px));
-            padding-bottom: env(safe-area-inset-bottom, 20px);
-            background: rgba(11, 15, 23, 0.98);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border-top: 1px solid rgba(255, 255, 255, 0.12);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 1000;
-            box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.65);
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            height: 64px !important;
+            background: #0B0F17 !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+            display: flex !important;
+            justify-content: space-around !important;
+            align-items: center !important;
+            z-index: 999999 !important;
+            box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.8) !important;
+            transform: translateZ(0) !important;
+            -webkit-transform: translateZ(0) !important;
+            box-sizing: border-box !important;
+            padding-bottom: env(safe-area-inset-bottom, 0px) !important;
         }
 
         .nav-item {
@@ -743,42 +859,45 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 3px;
             background: none;
             border: none;
             color: #94A3B8;
-            font-size: 11.5px;
-            font-weight: 800;
-            letter-spacing: 0.2px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.1px;
             cursor: pointer;
-            padding: 8px 0 6px 0;
+            padding: 5px 0;
             position: relative;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .nav-item i {
-            font-size: 24px;
-            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s ease;
+            font-size: 20px;
+            transition: transform 0.15s ease, color 0.15s ease;
         }
 
         .nav-item.active {
             color: var(--green);
+            font-weight: 800;
         }
 
         .nav-item.active i {
             color: var(--green);
-            transform: scale(1.18);
-            filter: drop-shadow(0 0 10px rgba(0, 245, 155, 0.5));
+            transform: scale(1.12);
+            filter: drop-shadow(0 0 8px rgba(0, 245, 155, 0.6));
         }
 
         .nav-item.active::after {
             content: '';
             position: absolute;
             top: 2px;
-            width: 5px;
-            height: 5px;
+            width: 4px;
+            height: 4px;
             border-radius: 50%;
             background: var(--green);
-            box-shadow: 0 0 8px var(--green);
+            box-shadow: 0 0 6px var(--green);
         }
 
         /* SEARCH BAR */
@@ -1292,15 +1411,15 @@
                 return `
                     <div class="coin-list-item" onclick="openCoinTrade('${c.symbol}')">
                         <div class="cli-left">
-                            <div class="cli-coin-badge" style="width:36px; height:36px; font-size:12px;">${shortSym.slice(0, 3)}</div>
+                            <div class="cli-coin-badge">${shortSym.slice(0, 3)}</div>
                             <div class="cli-name-group">
-                                <span class="cli-symbol" style="font-size:14px;">${c.symbol}</span>
-                                <span class="cli-vol" style="font-size:11px;">Vol $${(Number(c.volume_24h || 0) / 1e6).toFixed(1)}M &bull; ${c.sentry_badge || '4H SMC'}</span>
+                                <span class="cli-symbol">${c.symbol}</span>
+                                <span class="cli-vol">Vol $${(Number(c.volume_24h || 0) / 1e6).toFixed(1)}M &bull; ${c.sentry_badge || '4H SMC'}</span>
                             </div>
                         </div>
                         <div class="cli-right">
-                            <span class="cli-price" style="font-size:14px;">$${pStr}</span>
-                            <span class="cli-change-pill ${badgeClass}" style="font-size:11.5px; padding:3px 8px;">${sign}${chg.toFixed(2)}%</span>
+                            <span class="cli-price">$${pStr}</span>
+                            <span class="cli-change-pill ${badgeClass}">${sign}${chg.toFixed(2)}%</span>
                         </div>
                     </div>
                 `;
@@ -1322,15 +1441,15 @@
                 return `
                     <div class="coin-list-item" onclick="openCoinTrade('${c.symbol}')">
                         <div class="cli-left">
-                            <div class="cli-coin-badge" style="width:36px; height:36px; font-size:12px;">${(c.base_asset || c.symbol.replace('USDT','')).slice(0,3)}</div>
+                            <div class="cli-coin-badge">${(c.base_asset || c.symbol.replace('USDT','')).slice(0,3)}</div>
                             <div class="cli-name-group">
-                                <span class="cli-symbol" style="font-size:14px;">${c.symbol}</span>
-                                <span class="cli-vol" style="font-size:11px;">4H Sentry Active</span>
+                                <span class="cli-symbol">${c.symbol}</span>
+                                <span class="cli-vol">4H Sentry Active</span>
                             </div>
                         </div>
                         <div class="cli-right">
-                            <span class="cli-price" style="font-size:14px;">$${pStr}</span>
-                            <span class="cli-change-pill ${badgeClass}" style="font-size:11.5px; padding:3px 8px;">${sign}${chg.toFixed(2)}%</span>
+                            <span class="cli-price">$${pStr}</span>
+                            <span class="cli-change-pill ${badgeClass}">${sign}${chg.toFixed(2)}%</span>
                         </div>
                     </div>
                 `;
@@ -1449,36 +1568,36 @@
                                         <span class="bpc-roe-val" style="color:${pnlColor}; font-size:18px;">${sign}${Number(p.pnl_pct || 0).toFixed(2)}%</span>
                                     </div>
                                 </div>
-                                <div class="bpc-grid" style="row-gap: 10px;">
+                                <div class="bpc-grid">
                                     <div class="bpc-cell">
-                                        <span class="bpc-cell-label" style="font-size:10px;">Size</span>
-                                        <span class="bpc-cell-val" style="font-size:13px;">${Number(p.size_usdt || 250).toFixed(1)} USDT</span>
+                                        <span class="bpc-cell-label">Size</span>
+                                        <span class="bpc-cell-val">${Number(p.size_usdt || 250).toFixed(1)} USDT</span>
                                     </div>
                                     <div class="bpc-cell">
-                                        <span class="bpc-cell-label" style="font-size:10px;">Margin</span>
-                                        <span class="bpc-cell-val" style="font-size:13px;">$${Number(p.margin_usdt || 50).toFixed(2)}</span>
+                                        <span class="bpc-cell-label">Margin</span>
+                                        <span class="bpc-cell-val">$${Number(p.margin_usdt || 50).toFixed(2)}</span>
                                     </div>
                                     <div class="bpc-cell">
-                                        <span class="bpc-cell-label" style="font-size:10px;">Entry Price</span>
-                                        <span class="bpc-cell-val" style="font-size:13px;">$${Number(p.entry_price || 0).toFixed(4)}</span>
+                                        <span class="bpc-cell-label">Entry Price</span>
+                                        <span class="bpc-cell-val">$${Number(p.entry_price || 0).toFixed(4)}</span>
                                     </div>
                                     <div class="bpc-cell">
-                                        <span class="bpc-cell-label" style="font-size:10px;">Mark Price</span>
-                                        <span class="bpc-cell-val" style="font-size:13px;">$${Number(p.mark_price || 0).toFixed(4)}</span>
+                                        <span class="bpc-cell-label">Mark Price</span>
+                                        <span class="bpc-cell-val">$${Number(p.mark_price || 0).toFixed(4)}</span>
                                     </div>
                                     <!-- MAE & MFE Live Data Injection -->
-                                    <div class="bpc-cell" style="background:rgba(255, 77, 106, 0.08); padding:6px 8px; border-radius:6px; border:1px solid rgba(255, 77, 106, 0.2);">
-                                        <span class="bpc-cell-label" style="color:var(--red); font-weight:800; font-size:9.5px;">MAE (Max Drawdown)</span>
-                                        <span class="bpc-cell-val" style="color:var(--red); font-weight:900; font-size:13px;">-${Number(p.mae_pct || 0).toFixed(2)}%</span>
+                                    <div class="bpc-cell" style="background:rgba(255, 77, 106, 0.08); padding:5px 7px; border-radius:6px; border:1px solid rgba(255, 77, 106, 0.2);">
+                                        <span class="bpc-cell-label" style="color:var(--red); font-weight:800;">MAE (Drawdown)</span>
+                                        <span class="bpc-cell-val" style="color:var(--red); font-weight:900;">-${Number(p.mae_pct || 0).toFixed(2)}%</span>
                                     </div>
-                                    <div class="bpc-cell" style="background:rgba(0, 245, 155, 0.08); padding:6px 8px; border-radius:6px; border:1px solid rgba(0, 245, 155, 0.2);">
-                                        <span class="bpc-cell-label" style="color:var(--green); font-weight:800; font-size:9.5px;">MFE (Peak Profit)</span>
-                                        <span class="bpc-cell-val" style="color:var(--green); font-weight:900; font-size:13px;">+${Number(p.mfe_pct || 0).toFixed(2)}%</span>
+                                    <div class="bpc-cell" style="background:rgba(0, 245, 155, 0.08); padding:5px 7px; border-radius:6px; border:1px solid rgba(0, 245, 155, 0.2);">
+                                        <span class="bpc-cell-label" style="color:var(--green); font-weight:800;">MFE (Peak Profit)</span>
+                                        <span class="bpc-cell-val" style="color:var(--green); font-weight:900;">+${Number(p.mfe_pct || 0).toFixed(2)}%</span>
                                     </div>
                                 </div>
-                                <div class="bpc-actions" style="margin-top:4px;">
-                                    <button class="bpc-btn" style="padding:11px; font-size:12.5px;" onclick="openCoinTrade('${p.symbol}')">View Chart</button>
-                                    <button class="bpc-btn danger" style="padding:11px; font-size:12.5px;" onclick="closePosDirect('${p.symbol}')">Close Position</button>
+                                <div class="bpc-actions">
+                                    <button class="bpc-btn" onclick="openCoinTrade('${p.symbol}')">View Chart</button>
+                                    <button class="bpc-btn danger" onclick="closePosDirect('${p.symbol}')">Close Position</button>
                                 </div>
                             </div>
                         `;
@@ -1516,22 +1635,22 @@
                     const exitP = Number(t.exit_price || 0).toFixed(4);
                     const entryP = Number(t.entry_price || 0).toFixed(4);
                     return `
-                        <div class="coin-list-item" style="border-left: 4px solid ${color}; padding: 12px 14px;">
+                        <div class="coin-list-item" style="border-left: 4px solid ${color};">
                             <div class="cli-left">
-                                <div class="cli-coin-badge" style="color:${color}; width:38px; height:38px; font-size:12px;">${shortSym.slice(0,3)}</div>
+                                <div class="cli-coin-badge" style="color:${color};">${shortSym.slice(0,3)}</div>
                                 <div class="cli-name-group">
-                                    <span class="cli-symbol" style="font-size:14px;">${t.symbol} &bull; <b style="color:${color}">${t.side || 'SHORT'}</b></span>
-                                    <span class="cli-vol" style="font-size:11px;">${t.result || 'TP Hit'} &bull; In: $${entryP} Out: $${exitP}</span>
+                                    <span class="cli-symbol">${t.symbol} &bull; <b style="color:${color}">${t.side || 'SHORT'}</b></span>
+                                    <span class="cli-vol">${t.result || 'TP Hit'} &bull; In: $${entryP} Out: $${exitP}</span>
                                     <!-- MAE & MFE Forensics Display -->
-                                    <div style="display:flex; gap:8px; margin-top:4px; font-size:10px; font-family:var(--font-mono);">
-                                        <span style="background:rgba(255,77,106,0.12); color:var(--red); padding:1px 6px; border-radius:3px; font-weight:800;">MAE: -${Number(t.mae_pct || 0).toFixed(2)}%</span>
-                                        <span style="background:rgba(0,245,155,0.12); color:var(--green); padding:1px 6px; border-radius:3px; font-weight:800;">MFE: +${Number(t.mfe_pct || 0).toFixed(2)}%</span>
+                                    <div style="display:flex; gap:6px; margin-top:3px; font-size:9px; font-family:var(--font-mono); flex-wrap:wrap;">
+                                        <span style="background:rgba(255,77,106,0.12); color:var(--red); padding:1px 5px; border-radius:3px; font-weight:800;">MAE: -${Number(t.mae_pct || 0).toFixed(2)}%</span>
+                                        <span style="background:rgba(0,245,155,0.12); color:var(--green); padding:1px 5px; border-radius:3px; font-weight:800;">MFE: +${Number(t.mfe_pct || 0).toFixed(2)}%</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="cli-right">
-                                <span class="cli-price" style="color:${color}; font-weight:900; font-size:15px;">${sign}$${pnl.toFixed(2)}</span>
-                                <span class="cli-change-pill ${badge}" style="font-size:11.5px; padding:3px 8px;">${sign}${Number(t.roi_pct || t.pnl_pct || 0).toFixed(2)}%</span>
+                                <span class="cli-price" style="color:${color}; font-weight:900;">${sign}$${pnl.toFixed(2)}</span>
+                                <span class="cli-change-pill ${badge}">${sign}${Number(t.roi_pct || t.pnl_pct || 0).toFixed(2)}%</span>
                             </div>
                         </div>
                     `;
