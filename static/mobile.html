@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HERMES 2.5 APEX Pro Mobile</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- PWA & Mobile App Support -->
+    <meta name="theme-color" content="#080b11">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hermes APEX">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+
+    <style>
+        :root {
+            --bg-base: #080B11;
+            --bg-card: #0F1420;
+            --bg-card-subtle: #141B2B;
+            --bg-elevated: #1A2236;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(0, 245, 155, 0.25);
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --green: #00F59B;
+            --green-glow: rgba(0, 245, 155, 0.15);
+            --red: #FF4D6A;
+            --red-glow: rgba(255, 77, 106, 0.15);
+            --cyan: #38BDF8;
+            --gold: #FFD700;
+            --gold-glow: rgba(255, 215, 0, 0.15);
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --bottom-nav-height: 60px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            line-height: 1.4;
+            overflow-x: hidden;
+            padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 20px) + 12px);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* NATIVE TOP APP BAR */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(8, 11, 17, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: calc(env(safe-area-inset-top, 8px) + 8px) 14px 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0284C7, #00F59B);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #080B11;
+            font-size: 15px;
+            font-weight: 900;
+            box-shadow: 0 0 12px rgba(0, 245, 155, 0.35);
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-tag {
+            font-size: 9px;
+            font-weight: 800;
+            background: rgba(0, 245, 155, 0.15);
+            color: var(--green);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+        }
+
+        .header-status {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .account-toggle-btn {
+            background: var(--bg-card-subtle);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .account-toggle-btn.binance {
+            border-color: rgba(255, 215, 0, 0.4);
+            color: var(--gold);
+            background: rgba(255, 215, 0, 0.08);
+        }
+
+        /* TAB PANELS */
+        .tab-panel {
+            display: none;
+            padding: 14px;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* BITGET HERO WALLET CARD */
+        .hero-wallet-card {
+            background: linear-gradient(145deg, #131A29, #0D121D);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            margin-bottom: 14px;
+        }
+
+        .hero-wallet-card::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(0, 245, 155, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hw-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .hw-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hw-badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--cyan);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+        }
+
+        .hw-balance-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .hw-balance {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            font-family: var(--font-mono);
+            color: #FFFFFF;
+        }
+
+        .hw-pnl-pill {
+            font-size: 11px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: rgba(0, 245, 155, 0.15);
+            color: var(--green);
+        }
+
+        .hw-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 12px;
+        }
+
+        .hw-metric-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hw-m-label {
+            font-size: 9.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .hw-m-val {
+            font-size: 12.5px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+        }
+
+        /* CHALLENGE PROGRESS BAR */
+        .challenge-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 9px 11px;
+            border: 1px solid rgba(255, 215, 0, 0.15);
+        }
+
+        .cb-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10.5px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .cb-title {
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cb-target {
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .cb-progress-bar-bg {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .cb-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #00F59B);
+            border-radius: 3px;
+            width: 20.5%;
+            transition: width 0.5s ease;
+        }
+
+        /* QUICK STATS CHIPS CAROUSEL */
+        .chips-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            margin-bottom: 14px;
+            scrollbar-width: none;
+        }
+
+        .chips-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ticker-chip {
+            flex: 0 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            cursor: pointer;
+        }
+
+        .tc-coin {
+            font-weight: 800;
+            font-size: 11px;
+        }
+
+        .tc-price {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .tc-badge {
+            font-size: 10px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .badge-green { background: var(--green-glow); color: var(--green); }
+        .badge-red { background: var(--red-glow); color: var(--red); }
+
+        /* SENTRY STATUS RADAR CARD */
+        .radar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+            position: relative;
+        }
+
+        .rc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .rc-title {
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #FFFFFF;
+        }
+
+        .rc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .rc-item {
+            background: var(--bg-card-subtle);
+            border-radius: 8px;
+            padding: 9px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .rc-item-name {
+            font-size: 9.5px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .rc-item-val {
+            font-size: 11.5px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* SECTION HEADER */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: 6px;
+        }
+
+        .sh-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        .sh-link {
+            font-size: 11px;
+            color: var(--cyan);
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* NATIVE COIN LIST ITEM (BITGET STYLE) */
+        .coin-list-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: transform 0.1s ease, border-color 0.1s ease;
+        }
+
+        .coin-list-item:active {
+            transform: scale(0.985);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        .cli-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cli-coin-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 900;
+            font-family: var(--font-mono);
+            color: var(--cyan);
+        }
+
+        .cli-name-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cli-symbol {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        .cli-vol {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .cli-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+        }
+
+        .cli-price {
+            font-size: 13.5px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: #FFFFFF;
+        }
+
+        .cli-change-pill {
+            font-size: 10.5px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            padding: 3px 8px;
+            border-radius: 5px;
+            min-width: 62px;
+            text-align: center;
+        }
+
+        /* BITGET EXACT POSITION CARD (MATCHING USER SCREENSHOT) */
+        .bitget-pos-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .bpc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .bpc-symbol-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bpc-symbol {
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 0.2px;
+        }
+
+        .bpc-tag-short {
+            background: rgba(255, 77, 106, 0.15);
+            color: var(--red);
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: var(--font-mono);
+        }
+
+        .bpc-tag-isolated {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: var(--font-mono);
+        }
+
+        .bpc-pnl-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .bpc-pnl-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bpc-sublabel {
+            font-size: 9.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .bpc-pnl-val {
+            font-size: 20px;
+            font-weight: 900;
+            font-family: var(--font-mono);
+        }
+
+        .bpc-roe-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .bpc-roe-val {
+            font-size: 16px;
+            font-weight: 900;
+            font-family: var(--font-mono);
+        }
+
+        .bpc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            row-gap: 8px;
+            column-gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .bpc-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bpc-cell-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .bpc-cell-val {
+            font-size: 12px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+
+        .bpc-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .bpc-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 9px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .bpc-btn.danger {
+            background: rgba(255, 77, 106, 0.15);
+            border-color: rgba(255, 77, 106, 0.3);
+            color: var(--red);
+        }
+
+        /* NATIVE BOTTOM NAVIGATION BAR */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 20px));
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            background: rgba(8, 11, 17, 0.96);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 8px 0;
+            position: relative;
+        }
+
+        .nav-item i {
+            font-size: 18px;
+            transition: transform 0.15s ease, color 0.15s ease;
+        }
+
+        .nav-item.active {
+            color: var(--green);
+        }
+
+        .nav-item.active i {
+            color: var(--green);
+            transform: scale(1.15);
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        /* SEARCH BAR */
+        .search-box {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px 10px 36px;
+            color: #FFFFFF;
+            font-size: 12px;
+            outline: none;
+            font-family: var(--font-sans);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* EMPTY STATE RADAR */
+        .empty-radar {
+            text-align: center;
+            padding: 36px 16px;
+            color: var(--text-muted);
+        }
+
+        .empty-radar i {
+            font-size: 32px;
+            color: var(--cyan);
+            margin-bottom: 12px;
+            animation: pulseDot 2s infinite;
+        }
+
+        .empty-radar h4 {
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="app-header">
+        <div class="header-brand">
+            <div class="header-avatar"><i class="fa-solid fa-feather-pointed"></i></div>
+            <div class="header-info">
+                <span class="header-title">HERMES 2.5 <span class="header-tag">5x APEX</span></span>
+                <span class="header-status"><span class="status-dot"></span> 4H SHORT SENTRIES LIVE</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="account-toggle-btn binance" id="btnToggleAccount" onclick="toggleAccountMode()">
+                <i class="fa-brands fa-bitcoin"></i> <span id="hdrModeLabel">Binance Live</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ==========================================
+         TAB 1: HOME (DASHBOARD & SENTRIES)
+         ========================================== -->
+    <main class="tab-panel active" id="tab-home">
+        <!-- Hero Wallet Card -->
+        <div class="hero-wallet-card">
+            <div class="hw-top-row">
+                <span class="hw-label"><i class="fa-solid fa-wallet"></i> Total Equity</span>
+                <span class="hw-badge" id="hwMarginBadge">5x ISOLATED</span>
+            </div>
+            <div class="hw-balance-row">
+                <span class="hw-balance" id="hwTotalBalance">$410.29</span>
+                <span class="hw-pnl-pill" id="hwPnlPill">+100.0% WR</span>
+            </div>
+            <div class="hw-metrics-grid">
+                <div class="hw-metric-item">
+                    <span class="hw-m-label">Free Margin</span>
+                    <span class="hw-m-val" id="hwFreeMargin">$77.29</span>
+                </div>
+                <div class="hw-metric-item">
+                    <span class="hw-m-label">Used Margin</span>
+                    <span class="hw-m-val" id="hwUsedMargin">$333.00</span>
+                </div>
+                <div class="hw-metric-item">
+                    <span class="hw-m-label">Active Mode</span>
+                    <span class="hw-m-val" style="color:var(--gold);">4H SHORT</span>
+                </div>
+            </div>
+            <!-- Challenge Progress -->
+            <div class="challenge-box">
+                <div class="cb-header">
+                    <span class="cb-title"><i class="fa-solid fa-trophy"></i> Stage 3 ($250 ➔ $500)</span>
+                    <span class="cb-target" id="cbProgressPct">20.5% of $2,000</span>
+                </div>
+                <div class="cb-progress-bar-bg">
+                    <div class="cb-progress-fill" id="cbProgressFill" style="width: 20.5%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horizontal Ticker Chips Carousel -->
+        <div class="chips-scroll" id="homeTickerChips">
+            <div class="ticker-chip"><span class="tc-coin">BTC</span><span class="tc-price">$87,400</span><span class="tc-badge badge-green">+2.4%</span></div>
+            <div class="ticker-chip"><span class="tc-coin">ETH</span><span class="tc-price">$2,540</span><span class="tc-badge badge-green">+1.8%</span></div>
+            <div class="ticker-chip"><span class="tc-coin">SOL</span><span class="tc-price">$178.5</span><span class="tc-badge badge-green">+4.1%</span></div>
+            <div class="ticker-chip"><span class="tc-coin">DOGE</span><span class="tc-price">$0.214</span><span class="tc-badge badge-red">-1.2%</span></div>
+        </div>
+
+        <!-- 4-Sentries Diagnostic Matrix -->
+        <div class="radar-card">
+            <div class="rc-header">
+                <span class="rc-title"><i class="fa-solid fa-shield-halved" style="color:var(--green);"></i> 4-Sentries Diagnostic Matrix</span>
+                <span style="font-size:10px; color:var(--green); font-family:var(--font-mono); font-weight:700;">ARMED</span>
+            </div>
+            <div class="rc-grid">
+                <div class="rc-item">
+                    <div class="rc-item-name">Sentry 1: BTC Veto</div>
+                    <div class="rc-item-val" style="color:var(--green);"><i class="fa-solid fa-check"></i> NEUTRAL (Safe)</div>
+                </div>
+                <div class="rc-item">
+                    <div class="rc-item-name">Sentry 2: Displacement</div>
+                    <div class="rc-item-val" style="color:var(--cyan);"><i class="fa-solid fa-wave-square"></i> &ge; 5.0% FVG</div>
+                </div>
+                <div class="rc-item">
+                    <div class="rc-item-name">Sentry 3: IDM Sweep</div>
+                    <div class="rc-item-val" style="color:var(--gold);"><i class="fa-solid fa-arrows-split-up-and-left"></i> &ge; 18% Wick</div>
+                </div>
+                <div class="rc-item">
+                    <div class="rc-item-name">Sentry 4: Freshness</div>
+                    <div class="rc-item-val" style="color:var(--green);"><i class="fa-solid fa-hourglass-half"></i> &le; 28 Bars</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Setup Alert Card -->
+        <div class="section-header">
+            <span class="sh-title">Live 4H Scanner Queue</span>
+            <span class="sh-link" onclick="switchTab('markets')">View All (22) &rarr;</span>
+        </div>
+        <div id="homeActiveQueue">
+            <!-- Dynamically populated -->
+        </div>
+    </main>
+
+    <!-- ==========================================
+         TAB 2: MARKETS (BITGET PRO STYLE)
+         ========================================== -->
+    <main class="tab-panel" id="tab-markets">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="marketsSearchInput" placeholder="Search 22 Institutional Champions..." oninput="filterMarkets(this.value)">
+        </div>
+
+        <div class="chips-scroll" style="margin-bottom:12px;">
+            <button class="account-toggle-btn binance" onclick="filterCategory('all')">All Champions (22)</button>
+            <button class="account-toggle-btn" onclick="filterCategory('gainers')">Top Gainers</button>
+            <button class="account-toggle-btn" onclick="filterCategory('losers')">Top Losers</button>
+            <button class="account-toggle-btn" onclick="filterCategory('setups')">SMC Qualified</button>
+        </div>
+
+        <div id="marketsCoinList">
+            <!-- Dynamic Coin Cards -->
+        </div>
+    </main>
+
+    <!-- ==========================================
+         TAB 3: FUTURES / CHART TERMINAL
+         ========================================== -->
+    <main class="tab-panel" id="tab-trade">
+        <div class="hero-wallet-card" style="padding: 12px 14px; margin-bottom: 10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:16px; font-weight:900;" id="tradeSymbol">DOGEUSDT</span>
+                    <span class="bpc-tag-short">SHORT ONLY</span>
+                    <span class="bpc-tag-isolated">5x ISOLATED</span>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:15px; font-weight:900; font-family:var(--font-mono);" id="tradeMarkPrice">$0.2145</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Embedded Native TradingView Chart -->
+        <div style="height: 340px; border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom:14px; background:#0B0E14;" id="tvChartContainer">
+            <iframe id="tvIframe" style="width:100%; height:100%; border:none;" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=BINANCE%3ADOGEUSDT&interval=240&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=080B11&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=localhost"></iframe>
+        </div>
+
+        <!-- Execution Desk & Rules -->
+        <div class="radar-card">
+            <div class="rc-header">
+                <span class="rc-title"><i class="fa-solid fa-crosshairs" style="color:var(--cyan);"></i> 4H SMC Setup Blueprint</span>
+                <span class="hw-badge" style="background:var(--gold-glow); color:var(--gold);">100% Compounding</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-family:var(--font-mono); font-size:11px;">
+                <div class="rc-item">
+                    <span class="rc-item-name">Take Profit (+2.80%)</span>
+                    <span style="color:var(--green); font-weight:800;">+14.00% ROE</span>
+                </div>
+                <div class="rc-item">
+                    <span class="rc-item-name">Stop Loss (-2.80%)</span>
+                    <span style="color:var(--red); font-weight:800;">-14.00% ROE</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         TAB 4: COMPOUNDING ($50 -> $2,000 LADDER)
+         ========================================== -->
+    <main class="tab-panel" id="tab-compounding">
+        <div class="hero-wallet-card" style="border-color: rgba(255, 215, 0, 0.3);">
+            <div class="hw-top-row">
+                <span class="hw-label" style="color:var(--gold);"><i class="fa-solid fa-trophy"></i> 100% Snowball Compounding</span>
+                <span class="hw-badge" style="background:var(--gold-glow); color:var(--gold);">Target: $2,000</span>
+            </div>
+            <div class="hw-balance-row">
+                <span class="hw-balance" style="color:var(--gold);">$410.29</span>
+                <span class="hw-pnl-pill">+720.5% Growth</span>
+            </div>
+            <p style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">
+                Har winning trade ka pura profit ($50 ➔ $54 ➔ $61) automatically next trade me 100% deploy hota hai.
+            </p>
+        </div>
+
+        <div class="section-header">
+            <span class="sh-title">5-Stage Milestone Ladder</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;" id="ladderList">
+            <div class="coin-list-item" style="border-left: 4px solid var(--green);">
+                <div class="cli-left">
+                    <div class="cli-coin-badge" style="color:var(--green);">1</div>
+                    <div class="cli-name-group">
+                        <span class="cli-symbol">Stage 1: $50 ➔ $100</span>
+                        <span class="cli-vol">2 Winning Trades</span>
+                    </div>
+                </div>
+                <span class="cli-change-pill badge-green">COMPLETED &check;</span>
+            </div>
+
+            <div class="coin-list-item" style="border-left: 4px solid var(--green);">
+                <div class="cli-left">
+                    <div class="cli-coin-badge" style="color:var(--green);">2</div>
+                    <div class="cli-name-group">
+                        <span class="cli-symbol">Stage 2: $100 ➔ $250</span>
+                        <span class="cli-vol">4 Winning Trades</span>
+                    </div>
+                </div>
+                <span class="cli-change-pill badge-green">COMPLETED &check;</span>
+            </div>
+
+            <div class="coin-list-item" style="border-left: 4px solid var(--gold); background:rgba(255, 215, 0, 0.05);">
+                <div class="cli-left">
+                    <div class="cli-coin-badge" style="color:var(--gold);">3</div>
+                    <div class="cli-name-group">
+                        <span class="cli-symbol" style="color:var(--gold);">Stage 3: $250 ➔ $500</span>
+                        <span class="cli-vol">Current Balance: $410.29</span>
+                    </div>
+                </div>
+                <span class="cli-change-pill" style="background:var(--gold-glow); color:var(--gold);">IN PROGRESS</span>
+            </div>
+
+            <div class="coin-list-item" style="opacity: 0.6;">
+                <div class="cli-left">
+                    <div class="cli-coin-badge">4</div>
+                    <div class="cli-name-group">
+                        <span class="cli-symbol">Stage 4: $500 ➔ $1,000</span>
+                        <span class="cli-vol">Next Milestone</span>
+                    </div>
+                </div>
+                <span class="cli-change-pill" style="background:rgba(255,255,255,0.08); color:var(--text-muted);">LOCKED &lock;</span>
+            </div>
+
+            <div class="coin-list-item" style="opacity: 0.6;">
+                <div class="cli-left">
+                    <div class="cli-coin-badge">5</div>
+                    <div class="cli-name-group">
+                        <span class="cli-symbol">Stage 5: $1,000 ➔ $2,000</span>
+                        <span class="cli-vol">Final Challenge Target</span>
+                    </div>
+                </div>
+                <span class="cli-change-pill" style="background:rgba(255,255,255,0.08); color:var(--text-muted);">GOAL &star;</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         TAB 5: POSITIONS (BITGET PRO EXACT CARDS)
+         ========================================== -->
+    <main class="tab-panel" id="tab-positions">
+        <div class="sh-title" style="margin-bottom:12px; font-size:15px;">Active Positions</div>
+        <div id="positionsContainer">
+            <!-- Dynamically injected -->
+        </div>
+
+        <div class="section-header" style="margin-top:20px;">
+            <span class="sh-title">Executed Trade History</span>
+        </div>
+        <div id="tradesHistoryContainer">
+            <!-- Dynamically injected -->
+        </div>
+    </main>
+
+    <!-- ==========================================
+         NATIVE BOTTOM NAVIGATION BAR (5 TABS)
+         ========================================== -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('home')">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('markets')">
+            <i class="fa-solid fa-chart-simple"></i>
+            <span>Markets</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('trade')">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Futures</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('compounding')">
+            <i class="fa-solid fa-trophy"></i>
+            <span>Compounding</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('positions')">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Positions</span>
+        </button>
+    </nav>
+
+    <!-- JAVASCRIPT APP CONTROLLER -->
+    <script>
+        let allCoinsData = [];
+        let isLiveBinanceMode = true;
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+
+            const targetPanel = document.getElementById(`tab-${tabId}`);
+            if (targetPanel) targetPanel.classList.add('active');
+
+            const navIndex = ['home', 'markets', 'trade', 'compounding', 'positions'].indexOf(tabId);
+            if (navIndex !== -1) {
+                document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleAccountMode() {
+            isLiveBinanceMode = !isLiveBinanceMode;
+            const btn = document.getElementById('btnToggleAccount');
+            const lbl = document.getElementById('hdrModeLabel');
+            if (isLiveBinanceMode) {
+                btn.className = 'account-toggle-btn binance';
+                lbl.innerText = 'Binance Live';
+            } else {
+                btn.className = 'account-toggle-btn';
+                lbl.innerText = 'Paper Trading';
+            }
+            fetchAccountData();
+        }
+
+        async function fetchAccountData() {
+            try {
+                if (isLiveBinanceMode) {
+                    const res = await fetch('/api/binance/status');
+                    const data = await res.json();
+                    if (data && data.binance_balance) {
+                        const b = data.binance_balance;
+                        document.getElementById('hwTotalBalance').innerText = `$${Number(b.total_usdt || 0).toFixed(2)}`;
+                        document.getElementById('hwFreeMargin').innerText = `$${Number(b.free_usdt || 0).toFixed(2)}`;
+                        document.getElementById('hwUsedMargin').innerText = `$${Number(b.used_usdt || 0).toFixed(2)}`;
+                        if (b.challenge_stage) {
+                            const pct = Math.min(100, b.challenge_stage.overall_pct || 20.5);
+                            document.getElementById('cbProgressPct').innerText = `${pct.toFixed(1)}% of $2,000`;
+                            document.getElementById('cbProgressFill').style.width = `${pct}%`;
+                        }
+                    }
+                } else {
+                    const res = await fetch('/api/paper/account');
+                    const data = await res.json();
+                    if (data && data.account_4h) {
+                        const a = data.account_4h;
+                        document.getElementById('hwTotalBalance').innerText = `$${Number(a.current_balance || 50).toFixed(2)}`;
+                        document.getElementById('hwFreeMargin').innerText = `$${Number(a.current_balance || 50).toFixed(2)}`;
+                        document.getElementById('hwUsedMargin').innerText = `$0.00`;
+                    }
+                }
+            } catch (e) {
+                console.error("Account fetch error:", e);
+            }
+        }
+
+        async function fetchMarketsData() {
+            try {
+                const res = await fetch('/api/markets/overview');
+                const data = await res.json();
+                if (data && data.coins) {
+                    allCoinsData = data.coins;
+                    renderMarkets(allCoinsData);
+                    renderHomeQueue(allCoinsData);
+                }
+            } catch (e) {
+                console.error("Markets fetch error:", e);
+            }
+        }
+
+        function renderMarkets(coins) {
+            const container = document.getElementById('marketsCoinList');
+            if (!container) return;
+
+            container.innerHTML = coins.map(c => {
+                const chg = Number(c.change_24h || 0);
+                const isPos = chg >= 0;
+                const badgeClass = isPos ? 'badge-green' : 'badge-red';
+                const sign = isPos ? '+' : '';
+                const shortSym = c.symbol.replace('USDT', '');
+                return `
+                    <div class="coin-list-item" onclick="openCoinTrade('${c.symbol}')">
+                        <div class="cli-left">
+                            <div class="cli-coin-badge">${shortSym.slice(0, 3)}</div>
+                            <div class="cli-name-group">
+                                <span class="cli-symbol">${c.symbol}</span>
+                                <span class="cli-vol">Vol $${(Number(c.volume_24h || 0) / 1e6).toFixed(1)}M</span>
+                            </div>
+                        </div>
+                        <div class="cli-right">
+                            <span class="cli-price">$${Number(c.last_price || 0).toFixed(4)}</span>
+                            <span class="cli-change-pill ${badgeClass}">${sign}${chg.toFixed(2)}%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderHomeQueue(coins) {
+            const container = document.getElementById('homeActiveQueue');
+            if (!container) return;
+
+            const top5 = coins.slice(0, 5);
+            container.innerHTML = top5.map(c => {
+                const chg = Number(c.change_24h || 0);
+                const isPos = chg >= 0;
+                const badgeClass = isPos ? 'badge-green' : 'badge-red';
+                const sign = isPos ? '+' : '';
+                return `
+                    <div class="coin-list-item" onclick="openCoinTrade('${c.symbol}')">
+                        <div class="cli-left">
+                            <div class="cli-coin-badge">${c.symbol.replace('USDT','').slice(0,3)}</div>
+                            <div class="cli-name-group">
+                                <span class="cli-symbol">${c.symbol}</span>
+                                <span class="cli-vol">4H Sentry Active</span>
+                            </div>
+                        </div>
+                        <div class="cli-right">
+                            <span class="cli-price">$${Number(c.last_price || 0).toFixed(4)}</span>
+                            <span class="cli-change-pill ${badgeClass}">${sign}${chg.toFixed(2)}%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openCoinTrade(symbol) {
+            document.getElementById('tradeSymbol').innerText = symbol;
+            const iframe = document.getElementById('tvIframe');
+            if (iframe) {
+                iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=BINANCE%3A${symbol}&interval=240&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=080B11&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=en`;
+            }
+            switchTab('trade');
+        }
+
+        async function fetchPositions() {
+            try {
+                const res = await fetch('/api/paper/positions');
+                const data = await res.json();
+                const container = document.getElementById('positionsContainer');
+                if (!container) return;
+
+                if (!data || !data.positions || data.positions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-radar">
+                            <i class="fa-solid fa-radar"></i>
+                            <h4>No Open Positions</h4>
+                            <p>Scanning Top-22 Champions for qualified 4H Short entry...</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = data.positions.map(p => {
+                        const pnl = Number(p.unrealized_pnl || 0);
+                        const isPos = pnl >= 0;
+                        const pnlColor = isPos ? 'var(--green)' : 'var(--red)';
+                        const sign = isPos ? '+' : '';
+                        return `
+                            <div class="bitget-pos-card">
+                                <div class="bpc-header">
+                                    <div class="bpc-symbol-group">
+                                        <span class="bpc-symbol">${p.symbol} &gt;</span>
+                                        <span class="bpc-tag-short">${p.side}</span>
+                                        <span class="bpc-tag-isolated">${p.leverage || '5x'} Isolated</span>
+                                    </div>
+                                </div>
+                                <div class="bpc-pnl-row">
+                                    <div class="bpc-pnl-group">
+                                        <span class="bpc-sublabel">Unrealized PnL (USDT)</span>
+                                        <span class="bpc-pnl-val" style="color:${pnlColor};">${sign}${pnl.toFixed(2)}</span>
+                                    </div>
+                                    <div class="bpc-roe-group">
+                                        <span class="bpc-sublabel">ROE</span>
+                                        <span class="bpc-roe-val" style="color:${pnlColor};">${sign}${Number(p.pnl_pct || 0).toFixed(2)}%</span>
+                                    </div>
+                                </div>
+                                <div class="bpc-grid">
+                                    <div class="bpc-cell">
+                                        <span class="bpc-cell-label">Size</span>
+                                        <span class="bpc-cell-val">${Number(p.size_usdt || 250).toFixed(1)} USDT</span>
+                                    </div>
+                                    <div class="bpc-cell">
+                                        <span class="bpc-cell-label">Margin</span>
+                                        <span class="bpc-cell-val">$${Number(p.margin_usdt || 50).toFixed(2)}</span>
+                                    </div>
+                                    <div class="bpc-cell">
+                                        <span class="bpc-cell-label">Entry Price</span>
+                                        <span class="bpc-cell-val">$${Number(p.entry_price || 0).toFixed(4)}</span>
+                                    </div>
+                                    <div class="bpc-cell">
+                                        <span class="bpc-cell-label">Mark Price</span>
+                                        <span class="bpc-cell-val">$${Number(p.mark_price || 0).toFixed(4)}</span>
+                                    </div>
+                                </div>
+                                <div class="bpc-actions">
+                                    <button class="bpc-btn" onclick="openCoinTrade('${p.symbol}')">View Chart</button>
+                                    <button class="bpc-btn danger" onclick="closePosDirect('${p.symbol}')">Close Position</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (e) {
+                console.error("Positions fetch error:", e);
+            }
+        }
+
+        async function closePosDirect(symbol) {
+            if (!confirm(`Confirm close ${symbol}?`)) return;
+            try {
+                await fetch(`/api/paper/close?symbol=${symbol}`, { method: 'POST' });
+                fetchPositions();
+            } catch (e) {
+                console.error("Close error:", e);
+            }
+        }
+
+        // Live Periodic Loops
+        fetchAccountData();
+        fetchMarketsData();
+        fetchPositions();
+
+        setInterval(fetchAccountData, 4000);
+        setInterval(fetchMarketsData, 5000);
+        setInterval(fetchPositions, 3000);
+    </script>
+</body>
+</html>

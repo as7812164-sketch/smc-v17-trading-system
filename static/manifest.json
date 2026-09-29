@@ -2,7 +2,7 @@
   "name": "HERMES 2.5 APEX Trading Terminal",
   "short_name": "Hermes APEX",
   "description": "Institutional SMC Quantitative Crypto Trading Terminal with 5x Isolated Auto-Execution and Real-Time Compounding.",
-  "start_url": "/",
+  "start_url": "/?view=mobile",
   "id": "/",
   "scope": "/",
   "display": "standalone",

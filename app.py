@@ -207,11 +207,32 @@ async def serve_assetlinks():
         return FileResponse(file_path, media_type="application/json")
     return HTMLResponse("[]", media_type="application/json")
 
-@app.get("/", response_class=HTMLResponse)
-async def serve_index():
-    index_file = STATIC_DIR / "index.html"
+@app.get("/mobile", response_class=HTMLResponse)
+async def serve_mobile():
+    file_path = STATIC_DIR / "mobile.html"
     return FileResponse(
-        index_file,
+        file_path,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_index(request: Request, view: Optional[str] = Query(None)):
+    user_agent = request.headers.get("user-agent", "").lower()
+    is_mobile = any(k in user_agent for k in ["mobile", "android", "iphone", "ipad", "phone", "wv"])
+    
+    if view == "desktop":
+        target_file = STATIC_DIR / "index.html"
+    elif view == "mobile" or is_mobile:
+        target_file = STATIC_DIR / "mobile.html"
+    else:
+        target_file = STATIC_DIR / "index.html"
+
+    return FileResponse(
+        target_file,
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
