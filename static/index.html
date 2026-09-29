@@ -313,7 +313,7 @@
                 <button class="pin-footer-btn" type="button" onclick="openChangePinModal()">
                     <i class="fa-solid fa-key"></i> Change PIN
                 </button>
-                <span style="font-size: 10px; color: #64748B;">&bull; Default: 1234</span>
+                <span style="font-size: 10px; color: #64748B;">&bull; Security PIN: 9999</span>
             </div>
         </div>
     </div>
@@ -328,12 +328,12 @@
                 <button onclick="closeChangePinModal()" style="background:none; border:none; color:#64748B; font-size:18px; cursor:pointer;">&times;</button>
             </div>
             <p style="font-size:11.5px; color:#94A3B8; line-height:1.4;">
-                Apne trading terminal ka naya 4-digit PIN set karein. (Default PIN: 1234).
+                Apne trading terminal ka naya 4-digit PIN set karein. (Current PIN: 9999).
             </p>
             <div style="display:flex; flex-direction:column; gap:10px;">
                 <div>
                     <label style="font-size:10.5px; color:#64748B; font-weight:700; text-transform:uppercase; margin-bottom:4px; display:block;">Current PIN</label>
-                    <input type="password" maxlength="4" pattern="[0-9]*" inputmode="numeric" id="inputCurrentPin" placeholder="e.g. 1234" style="width:100%; background:#1A2236; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px 12px; color:#fff; font-size:14px; font-family:'JetBrains Mono', monospace; outline:none;">
+                    <input type="password" maxlength="4" pattern="[0-9]*" inputmode="numeric" id="inputCurrentPin" placeholder="e.g. 9999" style="width:100%; background:#1A2236; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px 12px; color:#fff; font-size:14px; font-family:'JetBrains Mono', monospace; outline:none;">
                 </div>
                 <div>
                     <label style="font-size:10.5px; color:#64748B; font-weight:700; text-transform:uppercase; margin-bottom:4px; display:block;">New 4-Digit PIN</label>
@@ -3280,8 +3280,8 @@
                     onPinFailure(data ? data.message : "Incorrect PIN");
                 }
             } catch (err) {
-                // Offline fallback: check against default PIN "1234"
-                if (enteredPin === "1234") {
+                // Offline fallback: check against default PIN "9999"
+                if (enteredPin === "9999") {
                     onPinSuccess();
                 } else {
                     onPinFailure("Incorrect PIN (Offline check)");

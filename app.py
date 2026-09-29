@@ -1844,17 +1844,17 @@ async def update_settings(body: Dict[str, Any] = Body(...)):
 # --- Security PIN Authentication Endpoints ---
 @app.get("/api/auth/pin-status")
 async def get_pin_status():
-    stored_pin = get_setting("security_pin", "1234")
+    stored_pin = get_setting("security_pin", "9999")
     return {
         "status": "ok",
         "pin_required": True,
-        "is_default": (stored_pin == "1234"),
+        "is_default": (stored_pin == "9999"),
         "digits": 4
     }
 
 @app.post("/api/auth/verify-pin")
 async def verify_pin(body: Dict[str, Any] = Body(...)):
-    stored_pin = get_setting("security_pin", "1234").strip()
+    stored_pin = get_setting("security_pin", "9999").strip()
     entered_pin = str(body.get("pin", "")).strip()
     if entered_pin == stored_pin:
         return {"success": True, "message": "PIN verified successfully"}
@@ -1862,7 +1862,7 @@ async def verify_pin(body: Dict[str, Any] = Body(...)):
 
 @app.post("/api/auth/change-pin")
 async def change_pin(body: Dict[str, Any] = Body(...)):
-    stored_pin = get_setting("security_pin", "1234").strip()
+    stored_pin = get_setting("security_pin", "9999").strip()
     old_pin = str(body.get("old_pin", "")).strip()
     new_pin = str(body.get("new_pin", "")).strip()
     if old_pin != stored_pin:
