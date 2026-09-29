@@ -1844,11 +1844,9 @@ async def update_settings(body: Dict[str, Any] = Body(...)):
 # --- Security PIN Authentication Endpoints ---
 @app.get("/api/auth/pin-status")
 async def get_pin_status():
-    stored_pin = get_setting("security_pin", "9999")
     return {
         "status": "ok",
-        "pin_required": True,
-        "is_default": (stored_pin == "9999"),
+        "pin_required": False,
         "digits": 4
     }
 
