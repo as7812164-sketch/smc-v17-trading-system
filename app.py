@@ -208,6 +208,21 @@ async def serve_assetlinks():
         return FileResponse(file_path, media_type="application/json")
     return HTMLResponse("[]", media_type="application/json")
 
+@app.get("/apk")
+@app.get("/download-apk")
+@app.get("/download/apk")
+async def serve_apk():
+    apk_file = STATIC_DIR / "Hermes_Apex_Trading_Terminal.apk"
+    if not apk_file.exists():
+        apk_file = BASE_DIR / "HERMES 2.5 APEX Trading Terminal.apk"
+    if apk_file.exists():
+        return FileResponse(
+            path=str(apk_file),
+            filename="HERMES_2.5_APEX_Trading_Terminal.apk",
+            media_type="application/vnd.android.package-archive"
+        )
+    raise HTTPException(status_code=404, detail="APK file not found")
+
 @app.get("/mobile", response_class=HTMLResponse)
 async def serve_mobile():
     file_path = STATIC_DIR / "mobile.html"
