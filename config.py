@@ -133,31 +133,66 @@ BINANCE_HARD_DISASTER_SL_PCT = 0.0380  # +3.80% emergency disaster stop order on
 BINANCE_1H_TP_PCT = 0.0160  # +1.60% price move (+8.00% ROE @ 5x)
 BINANCE_1H_SL_PCT = 0.0145  # -1.45% price move (-7.27% ROE @ 5x)
 
-# --- Master Compounding Challenge Specifications ---
-DUAL_CHALLENGES = {
+BITGET_1H_TP_PCT = 0.0160  # +1.60% price move (+8.00% ROE @ 5x)
+BITGET_1H_SL_PCT = 0.0145  # -1.45% soft SL on 1H candle close
+BITGET_1H_HARD_SL_PCT = 0.0300  # 3.00% emergency disaster stop on exchange
+
+# --- Quad-Compounding Fortress Challenge Specifications ($50 x 4 Tracks) ---
+QUAD_CHALLENGES = {
     "binance_4h": {
-        "name": "Binance 4H Compounding Challenge",
+        "name": "Binance 4H Macro Compounding",
         "exchange": "Binance",
         "timeframe": "4h",
         "start_balance": 50.0,
         "target_balance": 2000.0,
         "leverage": 5,
+        "margin_mode": "ISOLATED",
         "tp_pct": 0.0280,  # +2.80% price move (+14.00% ROE @ 5x)
         "sl_pct": 0.0280,  # -2.80% soft SL on 4H candle close
-        "description": "HERMES 2.5 APEX HYBRID • 5x ISOLATED • SHORT ONLY ($50 -> $2,000)"
+        "disaster_sl_pct": 0.0380,
+        "description": "Binance 4H Macro Swing • 5x ISOLATED ($50 -> $2,000)"
+    },
+    "binance_1h": {
+        "name": "Binance 1H Intraday Compounding",
+        "exchange": "Binance",
+        "timeframe": "1h",
+        "start_balance": 50.0,
+        "target_balance": 2000.0,
+        "leverage": 5,
+        "margin_mode": "ISOLATED",
+        "tp_pct": 0.0160,  # +1.60% price move (+8.00% ROE @ 5x)
+        "sl_pct": 0.0145,  # -1.45% soft SL on 1H candle close
+        "disaster_sl_pct": 0.0300,
+        "description": "Binance 1H Intraday Scalp • 5x ISOLATED ($50 -> $2,000)"
     },
     "bitget_4h": {
-        "name": "Bitget 4H Macro Compounding Challenge",
+        "name": "Bitget 4H Macro Compounding",
         "exchange": "Bitget",
         "timeframe": "4h",
         "start_balance": 50.0,
         "target_balance": 2000.0,
         "leverage": 5,
+        "margin_mode": "ISOLATED",
         "tp_pct": 0.0280,  # +2.80% price move (+14.00% ROE @ 5x)
         "sl_pct": 0.0280,  # -2.80% soft SL on 4H candle close
-        "description": "HERMES 2.5 APEX HYBRID • 5x ISOLATED • 4H Compounding ($50 -> $2,000)"
+        "disaster_sl_pct": 0.0380,
+        "description": "Bitget 4H Macro Swing • 5x ISOLATED ($50 -> $2,000)"
+    },
+    "bitget_1h": {
+        "name": "Bitget 1H Intraday Compounding",
+        "exchange": "Bitget",
+        "timeframe": "1h",
+        "start_balance": 50.0,
+        "target_balance": 2000.0,
+        "leverage": 5,
+        "margin_mode": "ISOLATED",
+        "tp_pct": 0.0160,  # +1.60% price move (+8.00% ROE @ 5x)
+        "sl_pct": 0.0145,  # -1.45% soft SL on 1H candle close
+        "disaster_sl_pct": 0.0300,
+        "description": "Bitget 1H Intraday Scalp • 5x ISOLATED ($50 -> $2,000)"
     }
 }
+DUAL_CHALLENGES = QUAD_CHALLENGES  # Backward compatibility
 
 # --- Advanced Hybrid Stop-Loss (Candle-Close Confirmation + Disaster Hard Stop) ---
 CANDLE_CLOSE_SL_ENABLED = True

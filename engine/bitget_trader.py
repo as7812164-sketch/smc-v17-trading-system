@@ -287,8 +287,8 @@ class BitgetTrader:
                         conn.execute("""
                         INSERT INTO paper_trades (
                             zone_id, symbol, side, entry_price, position_size_usdt,
-                            tp_price, sl_price, hard_sl_price, timeframe, status, entry_time
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '4h', 'BITGET_LIVE', ?)
+                            tp_price, sl_price, hard_sl_price, timeframe, channel, exchange, account_id, status, entry_time
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '4h', 'bitget_4h', 'BITGET', 3, 'BITGET_LIVE', ?)
                         """, (
                             setup.get("id"), sym, side, entry_price,
                             margin, tp_price, soft_sl_price, hard_disaster_sl, now_ms
@@ -300,6 +300,7 @@ class BitgetTrader:
                 res = {
                     "success": True,
                     "exchange": "Bitget",
+                    "channel": "bitget_4h",
                     "mode": "Bitget Real 4H Compounding (5x ISOLATED)",
                     "order_id": order_id,
                     "symbol": sym,
@@ -331,6 +332,143 @@ class BitgetTrader:
             return {
                 "success": True,
                 "mode": "Simulated Bitget 4H (5x ISOLATED)",
+                "symbol": sym,
+                "side": side,
+                "entry_price": entry_price,
+                "tp_price": tp_price,
+                "soft_sl_price": soft_sl_price,
+                "hard_disaster_sl": hard_disaster_sl,
+                "margin": BITGET_STARTING_MARGIN,
+                "leverage": f"{BITGET_DEFAULT_LEVERAGE}x"
+            }
+
+    async def execute_1h_trade(self, setup: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Executes a real 1H Trade on Bitget Futures (Bitget 1H Compounding Track):
+        - Sizing: $50 USDT Compounding starting capital.
+        - Leverage: 5x ISOLATED.
+        - TP: +1.60% price move (+8.00% ROE @ 5x).
+        - Soft SL: -1.45% price move (-7.25% ROE).
+        - Hard Disaster SL: 3.00% on Exchange.
+        """
+        sym = setup["symbol"]
+        side_raw = setup.get("side", "BUY").upper()
+        is_long = side_raw in ("BUY", "LONG")
+        side = "LONG" if is_long else "SHORT"
+
+        if not self.is_auto_trade_enabled():
+            return {"success": False, "skipped": True, "reason": "Bitget Auto-Trading is currently paused."}
+
+        entry_price = float(setup.get("entry_price", 0.0))
+        tp_pct = float(setup.get("tp_pct", 0.0160))
+        soft_sl_pct = float(setup.get("soft_sl_pct", 0.0145))
+        hard_sl_pct = 0.0300
+
+        if is_long:
+            trade_side = 'buy'
+            hold_side = 'long'
+            tp_price = round(entry_price * (1.0 + tp_pct), 6)
+            soft_sl_price = round(entry_price * (1.0 - soft_sl_pct), 6)
+            hard_disaster_sl = round(entry_price * (1.0 - hard_sl_pct), 6)
+        else:
+            trade_side = 'sell'
+            hold_side = 'short'
+            tp_price = round(entry_price * (1.0 - tp_pct), 6)
+            soft_sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
+            hard_disaster_sl = round(entry_price * (1.0 + hard_sl_pct), 6)
+
+        if not self.exchange:
+            self._init_exchange()
+
+        ccxt_sym = self.format_symbol_for_bitget(sym)
+
+        if self.exchange and self.is_configured():
+            try:
+                self.enforce_isolated_margin(sym)
+                self.set_leverage_isolated(BITGET_DEFAULT_LEVERAGE, sym, hold_side)
+
+                bal = self.fetch_futures_balance()
+                free_usdt = float(bal.get("free_usdt", 0.0) or 0.0)
+                if free_usdt < 5.0:
+                    return {"success": False, "error": f"Insufficient Bitget free balance (${free_usdt:.2f} USDT). Min $5 required."}
+
+                comp_bal = float(get_setting("bitget_1h_compounding_balance", str(BITGET_STARTING_MARGIN)))
+                margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))
+                notional = margin * BITGET_DEFAULT_LEVERAGE
+                raw_amount = notional / entry_price
+
+                try:
+                    amount = float(self.exchange.amount_to_precision(ccxt_sym, raw_amount))
+                except Exception:
+                    amount = round(raw_amount, 4)
+
+                order_params = {
+                    'marginMode': 'isolated',
+                    'hedged': True,
+                    'presetTakeProfitPrice': str(round(tp_price, 4)),
+                    'presetStopLossPrice': str(round(hard_disaster_sl, 4))
+                }
+
+                print(f"[BITGET 1H ORDER] Placing {trade_side.upper()} on {ccxt_sym} | Amount: {amount} | Price: {entry_price} | TP: {tp_price} | SL: {hard_disaster_sl} (5x ISOLATED)")
+
+                order = self.exchange.create_order(
+                    symbol=ccxt_sym,
+                    type='limit',
+                    side=trade_side,
+                    amount=amount,
+                    price=entry_price,
+                    params=order_params
+                )
+                order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
+
+                now_ms = int(time.time() * 1000)
+                try:
+                    with get_connection() as conn:
+                        conn.execute("""
+                        INSERT INTO paper_trades (
+                            zone_id, symbol, side, entry_price, position_size_usdt,
+                            tp_price, sl_price, hard_sl_price, timeframe, channel, exchange, account_id, status, entry_time
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '1h', 'bitget_1h', 'BITGET', 4, 'BITGET_LIVE', ?)
+                        """, (
+                            setup.get("id"), sym, side, entry_price,
+                            margin, tp_price, soft_sl_price, hard_disaster_sl, now_ms
+                        ))
+                        conn.commit()
+                except Exception as dbe:
+                    print(f"[BITGET DB ERROR] {dbe}")
+
+                res = {
+                    "success": True,
+                    "exchange": "Bitget",
+                    "channel": "bitget_1h",
+                    "mode": "Bitget Real 1H Compounding (5x ISOLATED)",
+                    "order_id": order_id,
+                    "symbol": sym,
+                    "side": side,
+                    "entry_price": entry_price,
+                    "tp_price": tp_price,
+                    "soft_sl_price": soft_sl_price,
+                    "hard_disaster_sl": hard_disaster_sl,
+                    "margin": margin,
+                    "leverage": f"{BITGET_DEFAULT_LEVERAGE}x",
+                    "raw_order": order
+                }
+
+                try:
+                    from alerts.telegram_service import telegram_service
+                    asyncio.create_task(telegram_service.alert_bitget_execution(res))
+                except Exception:
+                    pass
+
+                return res
+            except Exception as e:
+                err_str = str(e)
+                print(f"[BITGET 1H ORDER ERROR] {err_str}")
+                return {"success": False, "error": err_str}
+        else:
+            return {
+                "success": True,
+                "mode": "Simulated Bitget 1H (5x ISOLATED)",
                 "symbol": sym,
                 "side": side,
                 "entry_price": entry_price,

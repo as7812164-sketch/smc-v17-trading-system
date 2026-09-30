@@ -364,27 +364,145 @@ class BinanceTrader:
                 "leverage": BINANCE_DEFAULT_LEVERAGE
             }
 
+    async def execute_1h_trade(self, setup: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Executes a real 1H Trade on Binance Futures (Binance 1H Compounding Track):
+        - Sizing: $50 USDT Compounding starting capital.
+        - Leverage: 5x ISOLATED.
+        - TP: +1.60% price move (+8.00% ROE @ 5x).
+        - Soft SL: -1.45% price move (-7.25% ROE).
+        - Hard Disaster SL: 3.00% on Exchange.
+        """
+        sym = setup["symbol"]
+        side_raw = setup.get("side", "SHORT").upper()
+        is_long = side_raw in ("BUY", "LONG")
+        side = "LONG" if is_long else "SHORT"
+
+        if not self.is_auto_trade_enabled():
+            return {"success": False, "skipped": True, "reason": "Binance Auto-Trading is currently paused."}
+
+        entry_price = float(setup.get("entry_price", 0.0))
+        tp_pct = float(setup.get("tp_pct", BINANCE_1H_TP_PCT))
+        soft_sl_pct = float(setup.get("soft_sl_pct", BINANCE_1H_SL_PCT))
+        hard_sl_pct = 0.030  # 3.0% emergency disaster stop
+
+        if is_long:
+            order_side = 'buy'
+            tp_price = round(entry_price * (1.0 + tp_pct), 6)
+            soft_sl_price = round(entry_price * (1.0 - soft_sl_pct), 6)
+            hard_disaster_sl = round(entry_price * (1.0 - hard_sl_pct), 6)
+        else:
+            order_side = 'sell'
+            tp_price = round(entry_price * (1.0 - tp_pct), 6)
+            soft_sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
+            hard_disaster_sl = round(entry_price * (1.0 + hard_sl_pct), 6)
+
+        if not self.exchange:
+            self._init_exchange()
+
+        if self.exchange and self.is_configured():
+            try:
+                # 1. Enforce ISOLATED margin mode
+                iso_res = self.enforce_isolated_margin(sym)
+                if not iso_res["success"]:
+                    return {"success": False, "error": iso_res["error"]}
+
+                # 2. Set 5x Leverage
+                try:
+                    self.exchange.set_leverage(BINANCE_DEFAULT_LEVERAGE, sym)
+                except Exception:
+                    pass
+
+                # 3. Capital Allocation ($50 Compounding)
+                bal = self.fetch_futures_balance()
+                free_usdt = float(bal.get("free_usdt", 0.0) or 0.0)
+                if free_usdt < 5.0:
+                    return {"success": False, "error": f"Insufficient Binance free balance (${free_usdt:.2f} USDT). Min $5 required."}
+
+                comp_bal = float(get_setting("binance_1h_compounding_balance", str(BINANCE_STARTING_MARGIN)))
+                margin = min(free_usdt, max(BINANCE_STARTING_MARGIN, comp_bal))
+                notional = margin * BINANCE_DEFAULT_LEVERAGE
+                raw_amount = notional / entry_price
+
+                amount = round(raw_amount, 2)
+                try:
+                    amount = float(self.exchange.amount_to_precision(sym, raw_amount))
+                except Exception:
+                    pass
+
+                # 4. Execute 5x Isolated Order with TP & Hard SL
+                is_hedge = self.get_position_mode()
+                pos_side = ('LONG' if is_long else 'SHORT') if is_hedge else 'BOTH'
+
+                order_params = {
+                    'positionSide': pos_side,
+                    'stopLossPrice': hard_disaster_sl,
+                    'takeProfitPrice': tp_price
+                }
+
+                try:
+                    order = self.exchange.create_order(
+                        symbol=sym,
+                        type='limit',
+                        side=order_side,
+                        amount=amount,
+                        price=entry_price,
+                        params=order_params
+                    )
+                except Exception as oe:
+                    err_msg = str(oe)
+                    if "-4061" in err_msg:
+                        alt_pos_side = 'BOTH' if pos_side in ('LONG', 'SHORT') else ('LONG' if is_long else 'SHORT')
+                        order_params['positionSide'] = alt_pos_side
+                        order = self.exchange.create_order(
+                            symbol=sym,
+                            type='limit',
+                            side=order_side,
+                            amount=amount,
+                            price=entry_price,
+                            params=order_params
+                        )
+                    else:
+                        raise oe
+
+                print(f"[BINANCE REAL 1H ORDER] {sym} {side} @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
+                return {
+                    "success": True,
+                    "order_id": order.get("id"),
+                    "mode": "Binance Real 1H Compounding (5x ISOLATED)",
+                    "symbol": sym,
+                    "side": side,
+                    "entry_price": entry_price,
+                    "tp_price": tp_price,
+                    "soft_sl_price": soft_sl_price,
+                    "hard_disaster_sl": hard_disaster_sl,
+                    "margin": margin,
+                    "leverage": BINANCE_DEFAULT_LEVERAGE
+                }
+            except Exception as e:
+                err_str = str(e)
+                print(f"[BINANCE 1H ORDER ERROR] {err_str}")
+                return {"success": False, "error": err_str}
+        else:
+            return {
+                "success": True,
+                "mode": "Simulated Binance 1H (5x ISOLATED)",
+                "symbol": sym,
+                "side": side,
+                "entry_price": entry_price,
+                "tp_price": tp_price,
+                "soft_sl_price": soft_sl_price,
+                "hard_disaster_sl": hard_disaster_sl,
+                "margin": BINANCE_STARTING_MARGIN,
+                "leverage": BINANCE_DEFAULT_LEVERAGE
+            }
+
     async def execute_1h_scalp_trade(self, zone: Dict[str, Any], confluence: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Executes 1H Fast Scalp trade."""
-        symbol = zone["symbol"]
-        side = zone["side"].lower()
-        entry_price = float(zone.get("entry_price") or zone.get("ob_high", 0.0))
-        tp_price = entry_price * (1.015 if side == 'buy' else 0.985)
-        soft_sl_price = entry_price * (0.975 if side == 'buy' else 1.025)
-        hard_disaster_sl = entry_price * (0.955 if side == 'buy' else 1.045)
-        print(f"[BINANCE 1H SCALP ENGINE] {symbol} ({side.upper()}) @ {entry_price}")
-        return {
-            "success": True,
-            "mode": "Simulated Live 1H Scalp",
-            "symbol": symbol,
-            "side": side,
-            "entry_price": entry_price,
-            "tp_price": tp_price,
-            "soft_sl_price": soft_sl_price,
-            "hard_disaster_sl": hard_disaster_sl,
-            "margin": 50.0,
-            "leverage": 5
-        }
+        """Backward compatibility alias for execute_1h_trade."""
+        setup = dict(zone)
+        if confluence:
+            setup["confluence"] = confluence
+        return await self.execute_1h_trade(setup)
 
     async def close_position_market(self, symbol: str, side: str) -> Dict[str, Any]:
         """Closes active futures position immediately at market price."""

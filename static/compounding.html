@@ -98,11 +98,13 @@
             <!-- Account Selector Dropdown Pill: [S] Paper Trading ▼ -->
             <div class="top-account-selector" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 6px;" title="Switch Account">
                 <span style="width: 18px; height: 18px; border-radius: 50%; background: #2563eb; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; font-family: var(--font-mono);">S</span>
-                <select id="topAccountSelector" aria-label="Select Trading Account" style="background: transparent; border: none; color: #F8FAFC; font-size: 11px; font-family: var(--font-mono); outline: none; cursor: pointer;">
-                    <option value="paper_trading" selected>Paper Trading ($50)</option>
-                    <option value="1h_paper">1H Paper ($50)</option>
-                    <option value="4h_paper">4H Paper ($50)</option>
-                    <option value="bitget_live">Live Bitget 5x</option>
+                <select id="topAccountSelector" aria-label="Select Trading Account" onchange="if (this.value in {'binance_4h':1,'binance_1h':1,'bitget_4h':1,'bitget_1h':1}) selectCompoundingStream(this.value);" style="background: transparent; border: none; color: #F8FAFC; font-size: 11px; font-family: var(--font-mono); outline: none; cursor: pointer;">
+                    <option value="paper_trading" selected>Quad Portfolio ($200)</option>
+                    <option value="binance_4h">Binance 4H Macro ($50)</option>
+                    <option value="binance_1h">Binance 1H Scalp ($50)</option>
+                    <option value="bitget_4h">Bitget 4H Macro ($50)</option>
+                    <option value="bitget_1h">Bitget 1H Scalp ($50)</option>
+                    <option value="bitget_live">Live Accounts (Binance/Bitget)</option>
                 </select>
             </div>
 
@@ -277,6 +279,164 @@
                         <span>85% Reinvest / 15% Vault</span>
                         <span style="color: #475569;">•</span>
                         <span id="compoundingLastSync">Auto-Synced</span>
+                    </div>
+                </div>
+
+                <!-- QUAD-COMPOUNDING STREAMS MATRIX (4x $50 USDT ➔ $2,000 GOALS) -->
+                <div class="quad-compounding-container" style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px; backdrop-filter: blur(12px);">
+                    <!-- Header with Anti-Collision Status -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #f59e0b, #eab308); display: flex; align-items: center; justify-content: center; color: #000; font-size: 16px; font-weight: 900; box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 15px; font-weight: 800; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+                                    <span>QUAD-COMPOUNDING ARCHITECTURE</span>
+                                    <span class="sidebar-badge badge-gold">4x $50 STREAMS</span>
+                                </div>
+                                <div style="font-size: 11px; color: #94A3B8; font-family: var(--font-mono);">
+                                    Binance (1H & 4H) + Bitget (1H & 4H) • Dedicated Capital $50 Each ➔ $2,000 Target
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Anti-Collision & Portfolio Banner -->
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span class="sidebar-badge badge-green" style="padding: 5px 10px; font-size: 11px;" title="Strict Asset Exclusivity: Zero concurrent trade collision across channels">
+                                <i class="fa-solid fa-shield-check"></i> ANTI-COLLISION: ACTIVE
+                            </span>
+                            <span class="sidebar-badge badge-cyan" style="padding: 5px 10px; font-size: 11px;" id="quadCombinedPnlBadge">
+                                COMBINED: $200.00 ➔ $234.80 (+17.4%)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 4 Compounding Stream Cards Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;" id="quadStreamsGrid">
+                        <!-- Stream 1: Binance 4H Macro Swing -->
+                        <div class="quad-stream-card active-stream-border" id="cardBinance4h" onclick="selectCompoundingStream('binance_4h')" style="background: rgba(30, 41, 59, 0.6); border: 2px solid #F3BA2F; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="width: 24px; height: 24px; border-radius: 6px; background: #F3BA2F; color: #000; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px;">B</span>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13px; color: #FFFFFF;">Binance 4H</div>
+                                        <div style="font-size: 10px; color: #F3BA2F; font-family: var(--font-mono);">Macro Swing • 5x Iso</div>
+                                    </div>
+                                </div>
+                                <span class="sidebar-badge badge-gold" id="badgeB4hStage">STAGE 1</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                <div>
+                                    <div style="font-size: 10px; color: #94A3B8;">Compounding Balance</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: #00F59B; font-family: var(--font-mono);" id="valB4hBal">$73.45</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 10px; color: #94A3B8;">Wallet: <span id="valB4hWallet">$102.00</span></div>
+                                    <div style="font-size: 11px; font-weight: 700; color: #38BDF8;" id="valB4hGain">+46.90%</div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.06); height: 5px; border-radius: 3px; overflow: hidden;">
+                                <div id="fillB4hProgress" style="background: #F3BA2F; height: 100%; width: 3.67%; border-radius: 3px;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748B; font-family: var(--font-mono);">
+                                <span>Goal: $2,000</span>
+                                <span style="color: #00F59B;" id="statusB4hTrade">1 Open Position</span>
+                            </div>
+                        </div>
+
+                        <!-- Stream 2: Binance 1H Fast Scalp -->
+                        <div class="quad-stream-card" id="cardBinance1h" onclick="selectCompoundingStream('binance_1h')" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="width: 24px; height: 24px; border-radius: 6px; background: #F3BA2F; color: #000; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px;">B</span>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13px; color: #FFFFFF;">Binance 1H</div>
+                                        <div style="font-size: 10px; color: #38BDF8; font-family: var(--font-mono);">Intraday Scalp • 5x Iso</div>
+                                    </div>
+                                </div>
+                                <span class="sidebar-badge badge-cyan" id="badgeB1hStage">STAGE 1</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                <div>
+                                    <div style="font-size: 10px; color: #94A3B8;">Compounding Balance</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: #00F59B; font-family: var(--font-mono);" id="valB1hBal">$50.00</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 10px; color: #94A3B8;">Wallet: <span id="valB1hWallet">$102.00</span></div>
+                                    <div style="font-size: 11px; font-weight: 700; color: #38BDF8;" id="valB1hGain">+0.00%</div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.06); height: 5px; border-radius: 3px; overflow: hidden;">
+                                <div id="fillB1hProgress" style="background: #38BDF8; height: 100%; width: 2.50%; border-radius: 3px;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748B; font-family: var(--font-mono);">
+                                <span>Goal: $2,000</span>
+                                <span style="color: #38BDF8;" id="statusB1hTrade">Armed 24/7</span>
+                            </div>
+                        </div>
+
+                        <!-- Stream 3: Bitget 4H Macro Swing -->
+                        <div class="quad-stream-card" id="cardBitget4h" onclick="selectCompoundingStream('bitget_4h')" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(0, 245, 155, 0.3); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="width: 24px; height: 24px; border-radius: 6px; background: #00F59B; color: #000; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px;">BG</span>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13px; color: #FFFFFF;">Bitget 4H</div>
+                                        <div style="font-size: 10px; color: #00F59B; font-family: var(--font-mono);">Macro Swing • 5x Iso</div>
+                                    </div>
+                                </div>
+                                <span class="sidebar-badge badge-green" id="badgeBg4hStage">STAGE 1</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                <div>
+                                    <div style="font-size: 10px; color: #94A3B8;">Compounding Balance</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: #00F59B; font-family: var(--font-mono);" id="valBg4hBal">$50.00</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 10px; color: #94A3B8;">Wallet: <span id="valBg4hWallet">$107.00</span></div>
+                                    <div style="font-size: 11px; font-weight: 700; color: #00F59B;" id="valBg4hGain">+0.00%</div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.06); height: 5px; border-radius: 3px; overflow: hidden;">
+                                <div id="fillBg4hProgress" style="background: #00F59B; height: 100%; width: 2.50%; border-radius: 3px;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748B; font-family: var(--font-mono);">
+                                <span>Goal: $2,000</span>
+                                <span style="color: #00F59B;" id="statusBg4hTrade">Armed 24/7</span>
+                            </div>
+                        </div>
+
+                        <!-- Stream 4: Bitget 1H Fast Scalp -->
+                        <div class="quad-stream-card" id="cardBitget1h" onclick="selectCompoundingStream('bitget_1h')" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="width: 24px; height: 24px; border-radius: 6px; background: #00F59B; color: #000; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px;">BG</span>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13px; color: #FFFFFF;">Bitget 1H</div>
+                                        <div style="font-size: 10px; color: #A855F7; font-family: var(--font-mono);">Intraday Scalp • 5x Iso</div>
+                                    </div>
+                                </div>
+                                <span class="sidebar-badge" style="background: rgba(168, 85, 247, 0.15); color: #A855F7;" id="badgeBg1hStage">STAGE 1</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                <div>
+                                    <div style="font-size: 10px; color: #94A3B8;">Compounding Balance</div>
+                                    <div style="font-size: 18px; font-weight: 800; color: #00F59B; font-family: var(--font-mono);" id="valBg1hBal">$50.00</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 10px; color: #94A3B8;">Wallet: <span id="valBg1hWallet">$107.00</span></div>
+                                    <div style="font-size: 11px; font-weight: 700; color: #A855F7;" id="valBg1hGain">+0.00%</div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.06); height: 5px; border-radius: 3px; overflow: hidden;">
+                                <div id="fillBg1hProgress" style="background: #A855F7; height: 100%; width: 2.50%; border-radius: 3px;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748B; font-family: var(--font-mono);">
+                                <span>Goal: $2,000</span>
+                                <span style="color: #A855F7;" id="statusBg1hTrade">Armed 24/7</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1284,6 +1444,129 @@
             }
         }
 
+        let activeSelectedStream = 'binance_4h';
+        let quadChallengesData = null;
+
+        async function fetchQuadChallenges() {
+            try {
+                const res = await fetch('/api/challenge/quad-status');
+                if (!res.ok) return;
+                const data = await res.json();
+                quadChallengesData = data;
+                const ch = data.challenges || {};
+                const pf = data.portfolio || {};
+
+                // Update Combined Badge
+                if (pf.total_current_capital !== undefined) {
+                    const sign = pf.total_profit_usdt >= 0 ? '+' : '';
+                    setText('quadCombinedPnlBadge', `COMBINED: $${pf.total_initial_capital.toFixed(2)} ➔ $${pf.total_current_capital.toFixed(2)} (${sign}${pf.total_return_pct.toFixed(1)}%)`);
+                }
+
+                // 1. Binance 4H
+                const b4h = ch.binance_4h || {};
+                const b4hBal = floatVal(b4h.current_compounding_balance, 50.0);
+                const b4hInit = floatVal(b4h.start_balance, 50.0);
+                const b4hGain = ((b4hBal - b4hInit) / b4hInit * 100);
+                setText('valB4hBal', `$${b4hBal.toFixed(2)}`);
+                setText('valB4hWallet', `$${floatVal(b4h.wallet_total_usdt, 102.0).toFixed(2)}`);
+                setText('valB4hGain', `${b4hGain >= 0 ? '+' : ''}${b4hGain.toFixed(2)}%`);
+                setText('badgeB4hStage', `STAGE ${b4h.current_stage || 1}`);
+                const b4hFill = document.getElementById('fillB4hProgress');
+                if (b4hFill) b4hFill.style.width = `${Math.max(2, Math.min(100, (b4hBal / 2000.0) * 100)).toFixed(1)}%`;
+                const b4hOpen = b4h.open_trades_count || 0;
+                setText('statusB4hTrade', b4hOpen > 0 ? `${b4hOpen} Active Position` : 'Armed (Macro)');
+
+                // 2. Binance 1H
+                const b1h = ch.binance_1h || {};
+                const b1hBal = floatVal(b1h.current_compounding_balance, 50.0);
+                const b1hInit = floatVal(b1h.start_balance, 50.0);
+                const b1hGain = ((b1hBal - b1hInit) / b1hInit * 100);
+                setText('valB1hBal', `$${b1hBal.toFixed(2)}`);
+                setText('valB1hWallet', `$${floatVal(b1h.wallet_total_usdt, 102.0).toFixed(2)}`);
+                setText('valB1hGain', `${b1hGain >= 0 ? '+' : ''}${b1hGain.toFixed(2)}%`);
+                setText('badgeB1hStage', `STAGE ${b1h.current_stage || 1}`);
+                const b1hFill = document.getElementById('fillB1hProgress');
+                if (b1hFill) b1hFill.style.width = `${Math.max(2, Math.min(100, (b1hBal / 2000.0) * 100)).toFixed(1)}%`;
+                const b1hOpen = b1h.open_trades_count || 0;
+                setText('statusB1hTrade', b1hOpen > 0 ? `${b1hOpen} Active Position` : 'Armed (Scalp)');
+
+                // 3. Bitget 4H
+                const bg4h = ch.bitget_4h || {};
+                const bg4hBal = floatVal(bg4h.current_compounding_balance, 50.0);
+                const bg4hInit = floatVal(bg4h.start_balance, 50.0);
+                const bg4hGain = ((bg4hBal - bg4hInit) / bg4hInit * 100);
+                setText('valBg4hBal', `$${bg4hBal.toFixed(2)}`);
+                setText('valBg4hWallet', `$${floatVal(bg4h.wallet_total_usdt, 107.0).toFixed(2)}`);
+                setText('valBg4hGain', `${bg4hGain >= 0 ? '+' : ''}${bg4hGain.toFixed(2)}%`);
+                setText('badgeBg4hStage', `STAGE ${bg4h.current_stage || 1}`);
+                const bg4hFill = document.getElementById('fillBg4hProgress');
+                if (bg4hFill) bg4hFill.style.width = `${Math.max(2, Math.min(100, (bg4hBal / 2000.0) * 100)).toFixed(1)}%`;
+                const bg4hOpen = bg4h.open_trades_count || 0;
+                setText('statusBg4hTrade', bg4hOpen > 0 ? `${bg4hOpen} Active Position` : 'Armed (Macro)');
+
+                // 4. Bitget 1H
+                const bg1h = ch.bitget_1h || {};
+                const bg1hBal = floatVal(bg1h.current_compounding_balance, 50.0);
+                const bg1hInit = floatVal(bg1h.start_balance, 50.0);
+                const bg1hGain = ((bg1hBal - bg1hInit) / bg1hInit * 100);
+                setText('valBg1hBal', `$${bg1hBal.toFixed(2)}`);
+                setText('valBg1hWallet', `$${floatVal(bg1h.wallet_total_usdt, 107.0).toFixed(2)}`);
+                setText('valBg1hGain', `${bg1hGain >= 0 ? '+' : ''}${bg1hGain.toFixed(2)}%`);
+                setText('badgeBg1hStage', `STAGE ${bg1h.current_stage || 1}`);
+                const bg1hFill = document.getElementById('fillBg1hProgress');
+                if (bg1hFill) bg1hFill.style.width = `${Math.max(2, Math.min(100, (bg1hBal / 2000.0) * 100)).toFixed(1)}%`;
+                const bg1hOpen = bg1h.open_trades_count || 0;
+                setText('statusBg1hTrade', bg1hOpen > 0 ? `${bg1hOpen} Active Position` : 'Armed (Scalp)');
+
+                // If user selected a specific stream, reflect its balance in main view
+                if (activeSelectedStream && ch[activeSelectedStream]) {
+                    const selBal = floatVal(ch[activeSelectedStream].current_compounding_balance, 50.0);
+                    renderLadderTable(selBal);
+                    drawGrowthChart(selBal);
+                }
+            } catch (e) {
+                console.warn('fetchQuadChallenges error:', e);
+            }
+        }
+
+        function selectCompoundingStream(streamKey) {
+            activeSelectedStream = streamKey;
+            const cardIds = {
+                'binance_4h': 'cardBinance4h',
+                'binance_1h': 'cardBinance1h',
+                'bitget_4h': 'cardBitget4h',
+                'bitget_1h': 'cardBitget1h'
+            };
+
+            const colors = {
+                'binance_4h': '#F3BA2F',
+                'binance_1h': '#38BDF8',
+                'bitget_4h': '#00F59B',
+                'bitget_1h': '#A855F7'
+            };
+
+            Object.entries(cardIds).forEach(([key, id]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (key === streamKey) {
+                        el.style.border = `2px solid ${colors[key]}`;
+                        el.style.boxShadow = `0 0 16px ${colors[key]}40`;
+                    } else {
+                        el.style.border = '1px solid rgba(255,255,255,0.08)';
+                        el.style.boxShadow = 'none';
+                    }
+                }
+            });
+
+            if (quadChallengesData && quadChallengesData.challenges && quadChallengesData.challenges[streamKey]) {
+                const sel = quadChallengesData.challenges[streamKey];
+                const bal = floatVal(sel.current_compounding_balance, 50.0);
+                showNotificationToast(`Viewing ${sel.name} ($${bal.toFixed(2)} / $2,000 Target)`);
+                renderLadderTable(bal);
+                drawGrowthChart(bal);
+            }
+        }
+
         // Helper utilities
         function floatVal(val, defaultVal = 0.0) {
             const parsed = parseFloat(val);
@@ -1296,6 +1579,7 @@
         }
 
         function refreshAllData() {
+            fetchQuadChallenges();
             fetchPaperAccount();
             fetchPerformance();
             fetchPaperTrades();
@@ -1315,6 +1599,7 @@
             refreshAllData();
 
             // Refresh periodically
+            setInterval(fetchQuadChallenges, 3500);
             setInterval(fetchPaperAccount, 4000);
             setInterval(fetchPerformance, 5000);
             setInterval(fetchPaperTrades, 5000);
