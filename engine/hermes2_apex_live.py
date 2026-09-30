@@ -615,32 +615,42 @@ class Hermes2ApexLiveEngine:
 
         # Dispatch real live execution to matching exchange & channel
         logger.info(f"🚀 [QUAD-COMPOUNDING] Routing {sym} {side} to {target_exchange} ({target_channel.upper()}) | $50 Margin @ 5x Isolated")
+        execution_order_id = None
+        setup_with_flag = {**setup, "managed_by_hermes": True}
         if target_channel == "binance_4h":
             from engine.binance_trader import binance_trader
             if binance_trader.is_auto_trade_enabled():
                 try:
-                    await binance_trader.execute_4h_short_trade(setup)
+                    res = await binance_trader.execute_4h_short_trade(setup_with_flag)
+                    if res and res.get("order"):
+                        execution_order_id = res["order"].get("id") or res["order"].get("info", {}).get("orderId")
                 except Exception as be:
                     logger.error(f"Binance 4H Auto-Trade Exception: {be}")
         elif target_channel == "binance_1h":
             from engine.binance_trader import binance_trader
             if binance_trader.is_auto_trade_enabled():
                 try:
-                    await binance_trader.execute_1h_trade(setup)
+                    res = await binance_trader.execute_1h_trade(setup_with_flag)
+                    if res and res.get("order"):
+                        execution_order_id = res["order"].get("id") or res["order"].get("info", {}).get("orderId")
                 except Exception as be:
                     logger.error(f"Binance 1H Auto-Trade Exception: {be}")
         elif target_channel == "bitget_4h":
             from engine.bitget_trader import bitget_trader
             if bitget_trader.is_auto_trade_enabled():
                 try:
-                    await bitget_trader.execute_4h_trade(setup)
+                    res = await bitget_trader.execute_4h_trade(setup_with_flag)
+                    if res and res.get("order_id"):
+                        execution_order_id = res["order_id"]
                 except Exception as bge:
                     logger.error(f"Bitget 4H Auto-Trade Exception: {bge}")
         elif target_channel == "bitget_1h":
             from engine.bitget_trader import bitget_trader
             if bitget_trader.is_auto_trade_enabled():
                 try:
-                    await bitget_trader.execute_1h_trade(setup)
+                    res = await bitget_trader.execute_1h_trade(setup_with_flag)
+                    if res and res.get("order_id"):
+                        execution_order_id = res["order_id"]
                 except Exception as bge:
                     logger.error(f"Bitget 1H Auto-Trade Exception: {bge}")
 
@@ -674,7 +684,10 @@ class Hermes2ApexLiveEngine:
                 quantity=quantity,
                 tp_dist_pct=tp_dist_pct,
                 sl_dist_pct=sl_dist_pct,
-                date_time_str=date_time_str
+                date_time_str=date_time_str,
+                exchange=target_exchange,
+                channel=target_channel,
+                order_id=str(execution_order_id) if execution_order_id else None
             )
 
             # Generate chart with Entry, TP, and SL lines
@@ -692,7 +705,7 @@ class Hermes2ApexLiveEngine:
                         "ob_low": setup.get("ob_low", entry_price)
                     }
                     chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
-                    keyboard = telegram_service.get_alert_inline_keyboard(sym)
+                    keyboard = telegram_service.get_alert_inline_keyboard(sym, exchange=target_exchange)
                     resp = await telegram_service.send_photo(chart_bytes, tg_msg, parse_mode="HTML", reply_markup=keyboard)
                     if resp and resp.get("ok"):
                         chart_sent = True
@@ -700,7 +713,7 @@ class Hermes2ApexLiveEngine:
                 logger.warning(f"Failed to render/send chart image: {ce}")
 
             if not chart_sent:
-                keyboard = telegram_service.get_alert_inline_keyboard(sym)
+                keyboard = telegram_service.get_alert_inline_keyboard(sym, exchange=target_exchange)
                 await telegram_service.send_raw_message(tg_msg, parse_mode="HTML", reply_markup=keyboard)
         except Exception as e:
             logger.warning(f"Telegram alert error on entry: {e}")

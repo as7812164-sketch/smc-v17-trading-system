@@ -280,23 +280,6 @@ class BitgetTrader:
 
                 order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
 
-                # Record in live database
-                now_ms = int(time.time() * 1000)
-                try:
-                    with get_connection() as conn:
-                        conn.execute("""
-                        INSERT INTO paper_trades (
-                            zone_id, symbol, side, entry_price, position_size_usdt,
-                            tp_price, sl_price, hard_sl_price, timeframe, channel, exchange, account_id, status, entry_time
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '4h', 'bitget_4h', 'BITGET', 3, 'BITGET_LIVE', ?)
-                        """, (
-                            setup.get("id"), sym, side, entry_price,
-                            margin, tp_price, soft_sl_price, hard_disaster_sl, now_ms
-                        ))
-                        conn.commit()
-                except Exception as dbe:
-                    print(f"[BITGET DB ERROR] {dbe}")
-
                 res = {
                     "success": True,
                     "exchange": "Bitget",
@@ -314,12 +297,13 @@ class BitgetTrader:
                     "raw_order": order
                 }
 
-                # Send Telegram alert
-                try:
-                    from alerts.telegram_service import telegram_service
-                    asyncio.create_task(telegram_service.alert_bitget_execution(res))
-                except Exception as tge:
-                    print(f"[BITGET TG ERROR] {tge}")
+                # Send Telegram alert only if not managed by hermes engine (which sends unified alert)
+                if not setup.get("managed_by_hermes"):
+                    try:
+                        from alerts.telegram_service import telegram_service
+                        asyncio.create_task(telegram_service.alert_bitget_execution(res))
+                    except Exception as tge:
+                        print(f"[BITGET TG ERROR] {tge}")
 
                 return res
 
@@ -421,22 +405,6 @@ class BitgetTrader:
                 )
                 order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
 
-                now_ms = int(time.time() * 1000)
-                try:
-                    with get_connection() as conn:
-                        conn.execute("""
-                        INSERT INTO paper_trades (
-                            zone_id, symbol, side, entry_price, position_size_usdt,
-                            tp_price, sl_price, hard_sl_price, timeframe, channel, exchange, account_id, status, entry_time
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '1h', 'bitget_1h', 'BITGET', 4, 'BITGET_LIVE', ?)
-                        """, (
-                            setup.get("id"), sym, side, entry_price,
-                            margin, tp_price, soft_sl_price, hard_disaster_sl, now_ms
-                        ))
-                        conn.commit()
-                except Exception as dbe:
-                    print(f"[BITGET DB ERROR] {dbe}")
-
                 res = {
                     "success": True,
                     "exchange": "Bitget",
@@ -454,11 +422,12 @@ class BitgetTrader:
                     "raw_order": order
                 }
 
-                try:
-                    from alerts.telegram_service import telegram_service
-                    asyncio.create_task(telegram_service.alert_bitget_execution(res))
-                except Exception:
-                    pass
+                if not setup.get("managed_by_hermes"):
+                    try:
+                        from alerts.telegram_service import telegram_service
+                        asyncio.create_task(telegram_service.alert_bitget_execution(res))
+                    except Exception:
+                        pass
 
                 return res
             except Exception as e:

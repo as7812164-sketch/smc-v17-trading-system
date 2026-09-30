@@ -80,23 +80,31 @@ def get_main_menu_keyboard() -> Dict[str, Any]:
         "is_persistent": True
     }
 
-def get_alert_inline_keyboard(symbol: str) -> Dict[str, Any]:
+def get_alert_inline_keyboard(symbol: str, exchange: Optional[str] = None) -> Dict[str, Any]:
     """Inline action buttons attached under alerts."""
     clean_sym = symbol.upper()
-    return {
-        "inline_keyboard": [
-            [
-                {"text": "🖼️ Fresh Chart", "callback_data": f"chart_{clean_sym}"},
-                {"text": "🧠 Hermes AI Suggestion", "callback_data": f"ai_{clean_sym}"}
-            ],
-            [
-                {"text": "🎯 $50 ➔ $1K Goal (Positions & Orders)", "callback_data": f"goal_{clean_sym}"}
-            ],
-            [
-                {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com"}}
-            ]
+    coin = clean_sym.replace("USDT", "")
+    kb = [
+        [
+            {"text": "🖼️ Fresh Chart", "callback_data": f"chart_{clean_sym}"},
+            {"text": "🧠 Hermes AI Suggestion", "callback_data": f"ai_{clean_sym}"}
         ]
-    }
+    ]
+    if exchange and exchange.upper() == "BITGET":
+        kb.append([
+            {"text": "📱 Open Bitget App", "url": f"https://www.bitget.com/futures/usdt/{coin}USDT"}
+        ])
+    elif exchange and exchange.upper() == "BINANCE":
+        kb.append([
+            {"text": "📱 Open Binance App", "url": f"https://www.binance.com/en/futures/{clean_sym}"}
+        ])
+    kb.append([
+        {"text": "🎯 $50 ➔ $1K Goal (Quad Streams)", "callback_data": f"goal_{clean_sym}"}
+    ])
+    kb.append([
+        {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com"}}
+    ])
+    return {"inline_keyboard": kb}
 
 def format_tg_ist_timestamp(ts_ms: Optional[int] = None) -> str:
     """Formats millisecond timestamp to IST string matching '26 SEP 2026 • 16:30 IST'."""
@@ -124,7 +132,10 @@ def format_trade_open_alert(
     tp_dist_pct: float,
     sl_dist_pct: float,
     date_time_str: str,
-    coin: Optional[str] = None
+    coin: Optional[str] = None,
+    exchange: Optional[str] = None,
+    channel: Optional[str] = None,
+    order_id: Optional[str] = None
 ) -> str:
     """ALERT 1 — TRADE OPEN: Exact compact fixed-width monospace <pre> format."""
     side_raw = side.upper()
@@ -148,6 +159,15 @@ def format_trade_open_alert(
         "",
         "──────── POSITION ────────",
         "",
+    ]
+
+    if exchange:
+        exch_label = f"{exchange.upper()} ({channel or '5x ISOLATED'})"
+        lines.append(f"{'EXCHANGE':<25}{exch_label}")
+    if order_id and order_id != "BITGET_FILLED":
+        lines.append(f"{'ORDER ID':<25}{str(order_id)[:18]}")
+
+    lines.extend([
         f"{'BALANCE':<25}{balance:.2f} USDT",
         f"{'DEPLOYED':<25}{deployed:.2f} USDT",
         f"{'POSITION SIZE':<24}{position_size:.2f} USDT",
@@ -159,7 +179,7 @@ def format_trade_open_alert(
         "🟢 POSITION LIVE",
         "",
         date_time_str + "</pre>"
-    ]
+    ])
 
     armor_name = "HERMES 3.0-C DYNAMIC PROFIT ARMOR" if side_raw not in ("BUY", "LONG") else "HERMES 2.0 APEX ENGINE"
     armor_desc = "Breakeven @ +1.0% | Trailing SL @ +1.8%" if side_raw not in ("BUY", "LONG") else "Macro BTC Filter | FVG Imbalance"
