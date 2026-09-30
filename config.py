@@ -13,8 +13,8 @@ def get_ist_now() -> datetime:
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-# --- HERMES 2.0 APEX Quantitative Parameters ---
-STRATEGY_VERSION = "HERMES_2.0_APEX"
+# --- HERMES 2.5 APEX HYBRID Quantitative Parameters ---
+STRATEGY_VERSION = "HERMES_2.5_APEX_HYBRID"
 TIMEFRAME = "4h"
 KLINES_LIMIT = 200
 

@@ -1134,8 +1134,9 @@ class Hermes2ApexLiveEngine:
     async def start(self):
         """Autonomous 24/7 background loop running on the cloud server."""
         self.is_running = True
-        logger.info("👑 HERMES 2.0 APEX Live Streaming Simulated Engine Started 24/7.")
+        logger.info("👑 HERMES 2.5 APEX HYBRID Live Streaming Simulated Engine Started 24/7.")
         set_metric("hermes_status", "ACTIVE_24_7")
+        set_metric("hermes_mode", "HERMES_2.5_APEX_HYBRID")
 
         # Enforce 1-Trade Sequential Queue PER QUAD-COMPOUNDING ACCOUNT (1 to 4) & Restore Active Position
         try:
