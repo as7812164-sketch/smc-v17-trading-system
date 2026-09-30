@@ -20,6 +20,7 @@ Integrates the Unified Master Strategy Blueprint into the live cloud platform.
 """
 
 import asyncio
+import os
 import time
 import json
 import logging
@@ -1145,25 +1146,27 @@ class Hermes2ApexLiveEngine:
         logger.info("👑 HERMES 2.0 APEX Live Streaming Simulated Engine Started 24/7.")
         set_metric("hermes_status", "ACTIVE_24_7")
 
-        # Enforce 1-Trade Sequential Queue PER TIMEFRAME & Restore Active Position
+        # Enforce 1-Trade Sequential Queue PER QUAD-COMPOUNDING ACCOUNT (1 to 4) & Restore Active Position
         try:
             with get_connection() as conn:
-                for tf_check in ("4h", "1h"):
-                    tf_open = conn.execute(
-                        "SELECT * FROM paper_trades WHERE status = 'OPEN' AND LOWER(timeframe) = ? ORDER BY id DESC",
-                        (tf_check,)
+                for acc_id in (1, 2, 3, 4):
+                    acc_open = conn.execute(
+                        "SELECT * FROM paper_trades WHERE status = 'OPEN' AND account_id = ? ORDER BY id DESC",
+                        (acc_id,)
                     ).fetchall()
-                    if tf_open:
+                    if acc_open:
                         if not self.active_position:
-                            self.active_position = dict(tf_open[0])
-                        logger.info(f"👑 Restored active {tf_check.upper()} Hermes position: {tf_open[0]['symbol']} {tf_open[0]['side']}")
-                        if len(tf_open) > 1:
+                            self.active_position = dict(acc_open[0])
+                        logger.info(f"👑 Restored active Account #{acc_id} Hermes position: {acc_open[0]['symbol']} {acc_open[0]['side']} ({acc_open[0].get('channel', 'quad')})")
+                        if len(acc_open) > 1:
                             now_ms = int(time.time() * 1000)
-                            for extra in tf_open[1:]:
-                                conn.execute("UPDATE paper_trades SET status = 'CLOSED_LEGACY', exit_time = ?, exit_price = ? WHERE id = ?",
-                                             (now_ms, extra['entry_price'], extra['id']))
+                            for extra in acc_open[1:]:
+                                conn.execute(
+                                    "UPDATE paper_trades SET status = 'CLOSED_LEGACY', exit_time = ?, exit_price = ?, pnl_usdt = 0.0, pnl_pct = 0.0, roi_pct = 0.0 WHERE id = ?",
+                                    (now_ms, extra['entry_price'], extra['id'])
+                                )
                             conn.commit()
-                            logger.info(f"🧹 Cleaned up {len(tf_open)-1} extra legacy open trades in {tf_check.upper()} queue.")
+                            logger.info(f"🧹 Cleaned up {len(acc_open)-1} extra legacy open trades in Account #{acc_id} queue.")
         except Exception as e:
             logger.warning(f"Error restoring active position on boot: {e}")
 

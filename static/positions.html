@@ -1428,14 +1428,20 @@
                 const sideBadge = isBuy ? '<span class="bitget-badge long">LONG</span>' : '<span class="bitget-badge short">SHORT</span>';
 
                 const pnl = Number(t.realized_pnl !== undefined ? t.realized_pnl : (t.pnl_usdt || 0));
-                const isPnlPos = pnl >= 0;
-                const pnlClass = isPnlPos ? 'val-pnl-pos' : 'val-pnl-neg';
-                const pnlFormatted = `${isPnlPos ? '+' : ''}$${Math.abs(pnl).toFixed(2)}`;
+                const entryPriceNum = Number(t.entry_price || 0);
+                const exitPriceNum = Number(t.exit_price || entryPriceNum);
+                const isBreakeven = (t.status && t.status.includes('LEGACY')) || 
+                                    (t.result && t.result.includes('Break-Even')) || 
+                                    (Math.abs(pnl) < 0.001 && Math.abs(entryPriceNum - exitPriceNum) < 0.0001);
 
-                const roe = Number(t.roi_pct || t.pnl_pct || 0);
+                const isPnlPos = pnl >= 0;
+                const pnlClass = isBreakeven ? '' : (isPnlPos ? 'val-pnl-pos' : 'val-pnl-neg');
+                const pnlFormatted = isBreakeven ? '$0.00' : `${isPnlPos ? '+' : ''}$${Math.abs(pnl).toFixed(2)}`;
+
+                let roe = isBreakeven ? 0.0 : Number(t.roi_pct || t.pnl_pct || 0);
                 const isRoePos = roe >= 0;
-                const roeClass = isRoePos ? 'val-pnl-pos' : 'val-pnl-neg';
-                const roeFormatted = `${isRoePos ? '+' : ''}${roe.toFixed(2)}%`;
+                const roeClass = isBreakeven ? '' : (isRoePos ? 'val-pnl-pos' : 'val-pnl-neg');
+                const roeFormatted = isBreakeven ? '0.00%' : `${isRoePos ? '+' : ''}${roe.toFixed(2)}%`;
 
                 const entryPrice = formatPrice(t.entry_price);
                 const exitPrice = formatPrice(t.exit_price);
@@ -1448,7 +1454,10 @@
 
                 let resultClass = 'pill-result-tp';
                 let resultText = t.result || 'TP Hit';
-                if ((t.result && t.result.includes('SL')) || (t.status && t.status.includes('SL'))) {
+                if (isBreakeven) {
+                    resultClass = 'pill-result-manual';
+                    resultText = 'Break-Even';
+                } else if ((t.result && t.result.includes('SL')) || (t.status && t.status.includes('SL'))) {
                     resultClass = 'pill-result-sl';
                     resultText = 'SL Hit';
                 } else if ((t.result && t.result.includes('Manual')) || (t.status && t.status.includes('MANUAL'))) {

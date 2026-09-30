@@ -754,8 +754,14 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
         pos_size = float(td.get("position_size_usdt") or 250.0)
         margin = float(td.get("margin_usdt") or round(pos_size / 5.0, 2))
 
-        is_win = pnl > 0 or "TP" in status
-        if is_win:
+        # Handle Break-Even / Legacy Server Reboot archived trades
+        is_breakeven = "LEGACY" in status or "BREAKEVEN" in status or (abs(pnl) < 0.001 and abs(entry_p - exit_p) < 0.0001)
+        if is_breakeven:
+            pnl = 0.0
+            pnl_pct = 0.0
+            roi_pct = 0.0
+            result = "Break-Even"
+        elif pnl > 0 or "TP" in status:
             result = "TP Hit"
             wins += 1
             if is_buy:
