@@ -1146,9 +1146,10 @@ class Hermes2ApexLiveEngine:
                         (acc_id,)
                     ).fetchall()
                     if acc_open:
+                        trade_dict = dict(acc_open[0])
                         if not self.active_position:
-                            self.active_position = dict(acc_open[0])
-                        logger.info(f"👑 Restored active Account #{acc_id} Hermes position: {acc_open[0]['symbol']} {acc_open[0]['side']} ({acc_open[0].get('channel', 'quad')})")
+                            self.active_position = trade_dict
+                        logger.info(f"👑 Restored active Account #{acc_id} Hermes position: {trade_dict['symbol']} {trade_dict['side']} ({trade_dict.get('channel', 'quad')})")
                         if len(acc_open) > 1:
                             now_ms = int(time.time() * 1000)
                             for extra in acc_open[1:]:
