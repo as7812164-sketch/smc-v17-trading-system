@@ -315,7 +315,7 @@ def sync_quad_accounts_to_ledger():
             existing = conn.execute("SELECT id FROM trade_journal WHERE paper_trade_id = ? OR (symbol = ? AND side = ? AND abs(entry_price - ?) < 0.0001 AND timestamp_ist LIKE ?)",
                                     (pt_id, sym, side, entry_p, f"{ts_ist[:10]}%")).fetchone()
 
-            notes = f"Hermes 2.5 Apex [{channel.upper()}] - {pt.get('sentry_reasons', '')}"
+            notes = f"Hermes 3.0 Quantum [{channel.upper()}] - {pt.get('sentry_reasons', '')}"
 
             if not existing:
                 count = conn.execute("SELECT COUNT(*) as c FROM trade_journal").fetchone()["c"]

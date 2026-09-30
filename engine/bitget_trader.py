@@ -8,6 +8,7 @@ Manages:
 5. $50 -> $2,000 USDT Compounding Challenge Progression.
 """
 
+import os
 import ccxt
 import time
 import asyncio

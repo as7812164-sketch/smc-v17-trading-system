@@ -2317,7 +2317,7 @@ function updateTelegramPreview(data) {
         const m = data.metrics || {};
         const nowStr = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        const txt = `🟢 HERMES 2.0 APEX LIVE
+        const txt = `🟢 HERMES 3.0 QUANTUM LIVE
 
 📡 CONNECTION
 🌌 Binance Live: ${m.binance_status || 'CONNECTED'}
@@ -2954,10 +2954,10 @@ async function updateBitgetGoalHeader() {
         if (drawerPct) drawerPct.textContent = `${Math.min(100, (activeCap / 2000.0) * 100).toFixed(1)}% Target`;
 
         if (subCard) {
-            subCard.innerHTML = `<span style="color:#00f59b; font-weight:700;">$50 → $2,000</span> • 🟢 HERMES 2.0 APEX`;
+            subCard.innerHTML = `<span style="color:#00f59b; font-weight:700;">$50 → $2,000</span> • 🟢 HERMES 3.0 QUANTUM`;
         }
         if (bgStatus) {
-            bgStatus.innerText = '🟢 HERMES 2.0 LIVE';
+            bgStatus.innerText = '🟢 HERMES 3.0 QUANTUM LIVE';
             bgStatus.style.color = '#00f59b';
         }
 
@@ -3840,10 +3840,21 @@ function initWebSocket() {
                     loadRecentSignals();
                     loadSystemStatus();
                     loadPaperTrading();
-                } else if (msg.type === "SCAN_COMPLETE") {
+                } else if (msg.type === "SCAN_COMPLETE" || msg.type === "HERMES_SCAN_COMPLETE") {
                     loadCoinsList();
                     loadSystemStatus();
                     loadPaperTrading();
+                } else if (msg.type === "HERMES_POSITION_OPENED" || msg.type === "HERMES_POSITION_CLOSED") {
+                    showToast(`👑 ${msg.type === "HERMES_POSITION_OPENED" ? "HERMES 3.0 ENTRY" : "HERMES 3.0 EXIT"}: ${msg.data?.symbol || ''} ${msg.data?.outcome || ''}`);
+                    loadRecentSignals();
+                    loadSystemStatus();
+                    loadPaperTrading();
+                    if (typeof loadQuadAccounts === "function") loadQuadAccounts();
+                } else if (msg.type === "STRATEGY_MODE_CHANGED" || msg.type === "INIT_STRATEGY") {
+                    const activeMode = msg.data?.mode || msg.data?.version || "HERMES_3.0_QUANTUM";
+                    const badge = document.getElementById("activeStrategyBadge");
+                    if (badge) badge.innerText = activeMode;
+                    loadSystemStatus();
                 } else if (msg.type === "TICKER_UPDATE") {
                     const tickers = msg.data && msg.data.tickers ? msg.data.tickers : {};
                     let updated = false;

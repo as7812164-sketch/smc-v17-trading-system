@@ -190,7 +190,7 @@ async def lifespan(app: FastAPI):
     binance_heartbeat_task.cancel()
     await binance_feed.close()
 
-app = FastAPI(title="HERMES 2.0 APEX Autonomous Terminal & Quant Engine", lifespan=lifespan)
+app = FastAPI(title="HERMES 3.0 QUANTUM Autonomous Terminal & Quant Engine", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/manifest.json")
@@ -496,7 +496,7 @@ async def get_trade_forensics_endpoint():
             "cold_vault": cold_vault,
             "total_equity": round(capital + cold_vault, 2),
             "sentries": sentries,
-            "notes": t.get("notes") or "Hermes 2.0 Apex High-Probability Order Block"
+            "notes": t.get("notes") or "Hermes 3.0 Quantum High-Probability Order Block"
         })
 
     forensic_trades.reverse()
@@ -604,7 +604,7 @@ async def get_system_status():
     return {
         "status": "online",
         "version": active_version,
-        "strategy_options": ["HERMES_2.5_APEX_HYBRID", "HERMES_3.0_QUANTUM"],
+        "strategy_options": ["HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"],
         "timeframe": TIMEFRAME,
         "performance": stats,
         "metrics": metrics,
@@ -616,7 +616,7 @@ async def get_strategy_mode():
     active_version = get_setting("strategy_version", STRATEGY_VERSION)
     return {
         "active_mode": active_version,
-        "options": ["HERMES_2.5_APEX_HYBRID", "HERMES_3.0_QUANTUM"],
+        "options": ["HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"],
         "features": {
             "mean_threshold_entry": active_version.startswith("HERMES_3"),
             "multi_stage_profit_armor": True,
@@ -628,7 +628,7 @@ async def get_strategy_mode():
 @app.post("/api/strategy/switch")
 async def switch_strategy_mode(payload: Dict[str, Any] = Body(...)):
     target_mode = payload.get("mode")
-    if target_mode not in ["HERMES_2.5_APEX_HYBRID", "HERMES_3.0_QUANTUM"]:
+    if target_mode not in ["HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"]:
         return JSONResponse({"status": "error", "message": f"Invalid mode: {target_mode}"}, status_code=400)
     set_setting("strategy_version", target_mode)
     with get_connection() as conn:
@@ -636,6 +636,10 @@ async def switch_strategy_mode(payload: Dict[str, Any] = Body(...)):
         conn.commit()
     set_metric("hermes_mode", target_mode)
     logger.info(f"🔄 Strategy Mode switched to: {target_mode}")
+    try:
+        await ws_broadcast({"type": "STRATEGY_MODE_CHANGED", "data": {"mode": target_mode}})
+    except Exception:
+        pass
     return {"status": "success", "mode": target_mode, "message": f"Active engine successfully set to {target_mode}"}
 
 async def get_live_tickers() -> Dict[str, float]:
@@ -873,6 +877,7 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
         td["timestamp_ist"] = ts_ist or ts_str
         td["timestamp_utc"] = ts_str
         td["raw_timestamp"] = exit_time or entry_time
+        td["mode"] = td.get("mode") or "HERMES_3.0_QUANTUM"
         trades.append(td)
 
     # Sort trades with newest first
@@ -1095,7 +1100,7 @@ async def get_futures_positions(timeframe: Optional[str] = None):
             "tp_price": tp_price,
             "sl_price": sl_price,
             "entry_time": entry_time,
-            "sentry_reasons": ot.get("sentry_reasons", "Hermes 2.0 Apex 4 Sentries Armed")
+            "sentry_reasons": ot.get("sentry_reasons", "Hermes 3.0 Quantum 4 Sentries Armed")
         })
 
     return {
@@ -1947,7 +1952,7 @@ async def get_binance_account_status():
         "allowed_sides": "SHORT",
         "margin_mode": "ISOLATED",
         "timeframe": "4h",
-        "strategy": "HERMES 2.5 APEX HYBRID"
+        "strategy": "HERMES 3.0 QUANTUM"
     }
 
 @app.get("/api/bitget/status")
@@ -2036,7 +2041,7 @@ async def get_bitget_account_status():
     return {
         "enabled": enabled,
         "balance": bal,
-        "strategy": "HERMES 2.0 APEX",
+        "strategy": "HERMES 3.0 QUANTUM",
         "min_confluence": min_conf,
         "leverage": "5x Isolated",
         "target": "+2.8% Real (+14.0% ROE)",
@@ -2369,7 +2374,7 @@ async def get_hermes_apex_status():
     acc = hermes2_apex_engine.get_hermes_account()
     return {
         "status": "ONLINE_24_7",
-        "engine": "HERMES 2.0 APEX Master Unified",
+        "engine": "HERMES 3.0 QUANTUM Master Unified",
         "account": acc,
         "active_position": hermes2_apex_engine.active_position,
         "btc_macro_sentry": hermes2_apex_engine.last_btc_bias,
@@ -2394,7 +2399,7 @@ async def trigger_hermes_apex_scan():
 async def reset_hermes_apex_run():
     res = reset_paper_account()
     hermes2_apex_engine.active_position = None
-    return {"status": "ok", "message": "Hermes 2.0 Apex compounding run reset to $50.00", "account": res}
+    return {"status": "ok", "message": "Hermes 3.0 Quantum compounding run reset to $50.00", "account": res}
 
 @app.get("/api/pinescript")
 async def get_pinescript_endpoint():
@@ -2411,9 +2416,11 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     connected_clients.append(websocket)
     try:
-        # Send initial status
+        # Send initial status & strategy info
         stats = get_performance_stats()
+        active_version = get_setting("strategy_version", STRATEGY_VERSION)
         await websocket.send_json({"type": "INIT_STATS", "data": stats})
+        await websocket.send_json({"type": "INIT_STRATEGY", "data": {"mode": active_version, "version": active_version}})
 
         while True:
             # Keep connection alive

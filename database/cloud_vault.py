@@ -63,7 +63,22 @@ def push_vault_state() -> bool:
         except Exception:
             metrics = {}
 
+        # 5. Settings
+        try:
+            settings = {r["key"]: r["value"] for r in conn.execute("SELECT key, value FROM settings").fetchall()}
+        except Exception:
+            settings = {}
+
         conn.close()
+
+        # Enforce HERMES_3.0_QUANTUM mode across all accounts and trades in vault snapshot
+        for acc in accounts:
+            acc["mode"] = "HERMES_3.0_QUANTUM"
+        for pt in paper_trades:
+            pt["mode"] = "HERMES_3.0_QUANTUM"
+
+        metrics["hermes_mode"] = "HERMES_3.0_QUANTUM"
+        settings["strategy_version"] = "HERMES_3.0_QUANTUM"
 
         payload_data = {
             "version": "1.0",
@@ -72,7 +87,8 @@ def push_vault_state() -> bool:
             "accounts": accounts,
             "paper_trades": paper_trades,
             "journal_trades": journal_trades,
-            "metrics": metrics
+            "metrics": metrics,
+            "settings": settings
         }
 
         # Save local disk backup first
@@ -169,9 +185,15 @@ def pull_and_restore_vault_state() -> bool:
         # Restore accounts
         for acc in vault_data.get("accounts", []):
             acc_id = acc.get("id", 1)
+            exch = acc.get("exchange") or ("BINANCE" if acc_id in (1, 2) else "BITGET")
+            ch = acc.get("channel") or ("binance_4h" if acc_id == 1 else "binance_1h" if acc_id == 2 else "bitget_4h" if acc_id == 3 else "bitget_1h")
+            acc_name = acc.get("name") or ("Binance 4H Macro Compounding" if acc_id == 1 else "Binance 1H Intraday Compounding" if acc_id == 2 else "Bitget 4H Macro Compounding" if acc_id == 3 else "Bitget 1H Intraday Compounding")
             conn.execute("""
-            INSERT INTO paper_account (id, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode, timeframe, name, win_streak)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO paper_account (
+                id, initial_balance, current_balance, vault_balance, total_pnl, win_count,
+                loss_count, milestone_target, mode, timeframe, name, win_streak, exchange, channel
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 current_balance = excluded.current_balance,
                 vault_balance = excluded.vault_balance,
@@ -179,12 +201,17 @@ def pull_and_restore_vault_state() -> bool:
                 win_count = excluded.win_count,
                 loss_count = excluded.loss_count,
                 win_streak = excluded.win_streak,
+                exchange = excluded.exchange,
+                channel = excluded.channel,
+                name = excluded.name,
+                timeframe = excluded.timeframe,
                 mode = 'HERMES_3.0_QUANTUM'
             """, (
                 acc_id, acc.get("initial_balance", 50.0), acc.get("current_balance", 50.0),
                 acc.get("vault_balance", 0.0), acc.get("total_pnl", 0.0), acc.get("win_count", 0),
                 acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), "HERMES_3.0_QUANTUM",
-                acc.get("timeframe", "4h"), acc.get("name", "4H Macro Swing"), acc.get("win_streak", 0)
+                acc.get("timeframe", "4h" if acc_id in (1, 3) else "1h"), acc_name, acc.get("win_streak", 0),
+                exch, ch
             ))
 
         # Restore paper_trades
@@ -207,15 +234,16 @@ def pull_and_restore_vault_state() -> bool:
                     id, symbol, side, entry_price, exit_price, position_size_usdt,
                     tp_price, sl_price, hard_sl_price, status, entry_time, exit_time,
                     pnl_usdt, pnl_pct, timeframe, sentry_reasons, highest_price, lowest_price,
-                    mae_pct, mfe_pct, duration_str, roi_pct
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    mae_pct, mfe_pct, duration_str, roi_pct, exchange, channel, account_id, mode
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'HERMES_3.0_QUANTUM')
                 """, (
                     pt_id, sym, side, ep, pt.get("exit_price"), pt.get("position_size_usdt", 250.0),
                     pt.get("tp_price"), pt.get("sl_price"), pt.get("hard_sl_price", 0.0), status,
                     pt.get("entry_time", int(time.time()*1000)), pt.get("exit_time"),
                     pt.get("pnl_usdt"), pt.get("pnl_pct"), pt.get("timeframe", "1h"),
                     pt.get("sentry_reasons", ""), pt.get("highest_price"), pt.get("lowest_price"),
-                    pt.get("mae_pct", 0.0), pt.get("mfe_pct", 0.0), pt.get("duration_str", ""), pt.get("roi_pct", 0.0)
+                    pt.get("mae_pct", 0.0), pt.get("mfe_pct", 0.0), pt.get("duration_str", ""), pt.get("roi_pct", 0.0),
+                    pt.get("exchange", "BINANCE"), pt.get("channel", "binance_4h"), pt.get("account_id", 1)
                 ))
             else:
                 # Update existing trade status if changed in vault
@@ -224,7 +252,8 @@ def pull_and_restore_vault_state() -> bool:
                     status = ?, exit_price = COALESCE(?, exit_price), exit_time = COALESCE(?, exit_time),
                     pnl_usdt = COALESCE(?, pnl_usdt), pnl_pct = COALESCE(?, pnl_pct), roi_pct = COALESCE(?, roi_pct),
                     highest_price = COALESCE(?, highest_price), lowest_price = COALESCE(?, lowest_price),
-                    mae_pct = COALESCE(?, mae_pct), mfe_pct = COALESCE(?, mfe_pct), duration_str = COALESCE(?, duration_str)
+                    mae_pct = COALESCE(?, mae_pct), mfe_pct = COALESCE(?, mfe_pct), duration_str = COALESCE(?, duration_str),
+                    mode = 'HERMES_3.0_QUANTUM'
                 WHERE id = ?
                 """, (
                     status, pt.get("exit_price"), pt.get("exit_time"), pt.get("pnl_usdt"), pt.get("pnl_pct"),
@@ -259,9 +288,15 @@ def pull_and_restore_vault_state() -> bool:
         except Exception as e:
             logger.warning(f"Error restoring trade_journal from vault: {e}")
 
+        # CRITICAL GUARANTEE: Never downgrade to Hermes 2.5 on container restart or vault re-pull
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM'")
+        conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.0_QUANTUM' WHERE mode IS NULL OR mode = '' OR mode LIKE '%2.5%'")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_QUANTUM')")
+        conn.execute("INSERT OR REPLACE INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.0_QUANTUM')")
+
         conn.commit()
         conn.close()
-        logger.info("Cloud Vault successfully restored into SQLite database!")
+        logger.info("Cloud Vault successfully restored into SQLite database (HERMES_3.0_QUANTUM active)!")
         return True
 
     except Exception as e:

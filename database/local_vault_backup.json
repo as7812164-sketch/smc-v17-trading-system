@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "updated_at": 1790795912164,
-  "updated_at_str": "2026-10-01 00:48:32 IST",
+  "updated_at": 1790800212848,
+  "updated_at_str": "2026-10-01 02:00:12 IST",
   "accounts": [
     {
       "id": 1,
@@ -27,7 +27,7 @@
       "win_count": 0,
       "loss_count": 0,
       "vault_balance": 0.0,
-      "milestone_target": 10000.0,
+      "milestone_target": 2000.0,
       "mode": "HERMES_3.0_QUANTUM",
       "timeframe": "1h",
       "name": "Binance 1H Intraday Compounding",
@@ -96,7 +96,8 @@
       "roi_pct": 0.0,
       "exchange": "BINANCE",
       "channel": "binance_4h",
-      "account_id": 1
+      "account_id": 1,
+      "mode": "HERMES_3.0_QUANTUM"
     },
     {
       "id": 290,
@@ -125,7 +126,8 @@
       "roi_pct": 0.0,
       "exchange": "BINANCE",
       "channel": "binance_4h",
-      "account_id": 1
+      "account_id": 1,
+      "mode": "HERMES_3.0_QUANTUM"
     },
     {
       "id": 293,
@@ -154,7 +156,8 @@
       "roi_pct": -18.0,
       "exchange": "BITGET",
       "channel": "bitget_1h",
-      "account_id": 4
+      "account_id": 4,
+      "mode": "HERMES_3.0_QUANTUM"
     }
   ],
   "journal_trades": [
@@ -203,8 +206,33 @@
     "coins_subscribed": "50/50",
     "last_scan_duration": "6s",
     "hermes_status": "ACTIVE_24_7",
-    "hermes_last_scan": "01 Oct 2026 \u2022 12:35:28 AM IST",
-    "hermes_setups_detected": "42",
+    "hermes_last_scan": "01 Oct 2026 \u2022 01:57:35 AM IST",
+    "hermes_setups_detected": "41",
     "hermes_mode": "HERMES_3.0_QUANTUM"
+  },
+  "settings": {
+    "telegram_chat_id": "752247227",
+    "telegram_bot_token": "8593127726:AAGdudgSBU_krN-g42Cq_5ovc5DW2c6A-yY",
+    "telegram_status_msg_id": "614",
+    "binance_api_key": "nqPxXxJppvluEa2lvoqRQnj8LBredwe9wUSOdpBpgn9a9Yrn8sLQaGYd9CU9ifYn",
+    "binance_secret": "jZXOzFUyoZNlL2fF3Tg9VQpF9tQL1OA26CQjh67CU9egqh4aRrWJbaqCN77i4A2n",
+    "gemini_model": "gemini-2.5-flash-lite",
+    "bitget_max_margin": "50.0",
+    "paper_starting_balance": "50.00",
+    "binance_auto_trade": "true",
+    "bitget_auto_trade": "true",
+    "binance_4h_only_short": "false",
+    "binance_margin_mode": "ISOLATED",
+    "binance_timeframe": "4h",
+    "binance_compounding_balance": "50.0",
+    "binance_compounding_target": "2000.0",
+    "security_pin": "9999",
+    "bitget_compounding_balance": "50.0",
+    "bitget_api_key": "bg_c5a13dc855f2cccdf5889864baefee4a",
+    "bitget_secret": "efed486f52b2fb0f3fbf6a1c17ff8b861bb65fed5716f6a0791748f72e410f16",
+    "bitget_passphrase": "Jaishriram",
+    "binance_1h_compounding_balance": "50.0",
+    "bitget_1h_compounding_balance": "40.60",
+    "strategy_version": "HERMES_3.0_QUANTUM"
   }
 }

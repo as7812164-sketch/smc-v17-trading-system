@@ -90,7 +90,7 @@ class Hermes2ApexLiveEngine:
             if "milestone_target" not in cols:
                 conn.execute("ALTER TABLE paper_account ADD COLUMN milestone_target REAL DEFAULT 2000.0")
             if "mode" not in cols:
-                conn.execute("ALTER TABLE paper_account ADD COLUMN mode TEXT DEFAULT 'HERMES_2.5_APEX_HYBRID'")
+                conn.execute("ALTER TABLE paper_account ADD COLUMN mode TEXT DEFAULT 'HERMES_3.0_QUANTUM'")
 
             # Check paper_trades columns
             trade_cols = [r[1] for r in conn.execute("PRAGMA table_info(paper_trades)").fetchall()]
@@ -109,7 +109,7 @@ class Hermes2ApexLiveEngine:
                 conn.execute("""
                 INSERT OR IGNORE INTO paper_account 
                 (id, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-                VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.5_APEX_HYBRID');
+                VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
                 """)
             elif acc["current_balance"] <= 0.0 and acc["win_count"] == 0 and acc["loss_count"] == 0:
                 conn.execute("""
@@ -121,13 +121,13 @@ class Hermes2ApexLiveEngine:
                     win_count = 0,
                     loss_count = 0,
                     milestone_target = 2000.0,
-                    mode = 'HERMES_2.5_APEX_HYBRID'
+                    mode = 'HERMES_3.0_QUANTUM'
                 WHERE id = 1
                 """)
             conn.commit()
 
     def get_hermes_account(self) -> Dict[str, Any]:
-        """Retrieves live Hermes 2.5 Apex Hybrid account state with compounding metrics."""
+        """Retrieves live Hermes account state with compounding metrics."""
         with get_connection() as conn:
             row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
             if not row:
@@ -148,7 +148,7 @@ class Hermes2ApexLiveEngine:
             acc["equity"] = round(equity, 2)
             acc["return_pct"] = round(((equity - init_b) / init_b * 100), 2)
             acc["milestone_progress_pct"] = round(min(100.0, (equity / target) * 100.0), 2)
-            acc["mode"] = "HERMES_2.5_APEX_HYBRID"
+            acc["mode"] = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
             return acc
 
     async def evaluate_btc_macro_sentry(self) -> Dict[str, Any]:
@@ -257,14 +257,17 @@ class Hermes2ApexLiveEngine:
                                             w_ratio = (l_wick / c_range) if c_range > 0 else 0
                                             mt = (dec_top + dec_bot) / 2.0
 
+                                            strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                                            is_hermes3 = strat_mode.startswith("HERMES_3")
+                                            is_valid_tap = (tap_c["low"] <= mt and tap_c["close"] >= mt) if is_hermes3 else (tap_c["close"] >= mt)
+
                                             # Sentry 3: IDM Sweep + >=18% Wick Absorption + 50% MT
-                                            if swept and w_ratio >= 0.18 and tap_c["close"] >= mt:
+                                            if swept and w_ratio >= 0.18 and is_valid_tap:
                                                 age = n - 1 - t
                                                 is_fresh_trigger = (age <= 1)
-                                                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
-                                                if strat_mode.startswith("HERMES_3"):
-                                                    eff_entry = mt if tap_c["low"] <= mt else (dec_top + mt) / 2.0
-                                                    sentry_lbl = f"HERMES 3.0 QUANTUM (Mean Threshold 50% EQ) | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
+                                                if is_hermes3:
+                                                    eff_entry = mt
+                                                    sentry_lbl = f"HERMES 3.0 QUANTUM (Mean Threshold 50% EQ) | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT 50% Rejection | Sentry 4 Fresh: Bar #{t - high_idx}"
                                                 else:
                                                     eff_entry = dec_top
                                                     sentry_lbl = f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
@@ -365,13 +368,16 @@ class Hermes2ApexLiveEngine:
                                             w_ratio = (u_wick / c_range) if c_range > 0 else 0
                                             mt = (dec_top + dec_bot) / 2.0
 
-                                            if swept and w_ratio >= 0.18 and tap_c["close"] <= mt:
+                                            strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                                            is_hermes3 = strat_mode.startswith("HERMES_3")
+                                            is_valid_tap = (tap_c["high"] >= mt and tap_c["close"] <= mt) if is_hermes3 else (tap_c["close"] <= mt)
+
+                                            if swept and w_ratio >= 0.18 and is_valid_tap:
                                                 age = n - 1 - t
                                                 is_fresh_trigger = (age <= 1)
-                                                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
-                                                if strat_mode.startswith("HERMES_3"):
-                                                    eff_entry = mt if tap_c["high"] >= mt else (dec_bot + mt) / 2.0
-                                                    sentry_lbl = f"HERMES 3.0 QUANTUM (Mean Threshold 50% EQ) | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
+                                                if is_hermes3:
+                                                    eff_entry = mt
+                                                    sentry_lbl = f"HERMES 3.0 QUANTUM (Mean Threshold 50% EQ) | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT 50% Rejection | Sentry 4 Fresh: Bar #{t - low_idx}"
                                                 else:
                                                     eff_entry = dec_bot
                                                     sentry_lbl = f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
@@ -468,13 +474,14 @@ class Hermes2ApexLiveEngine:
         set_metric("hermes_last_scan", now_str)
         set_metric("hermes_setups_detected", str(len(found_setups)))
 
-        # If no active position, check if any fresh setup should be entered
+        # Check if any Quad-Compounding slot has capacity for fresh setups
         open_trades = get_open_paper_trades()
-        if not open_trades and found_setups:
-            # Strictly enter ONLY fresh setups (tapped within latest candle, age <= 1)
+        if len(open_trades) < 4 and found_setups:
+            # Strictly enter fresh setups (tapped within latest candle, age <= 1)
             fresh = [s for s in found_setups if s.get("is_fresh_trigger")]
-            if fresh:
-                target_setup = fresh[0]
+            for target_setup in fresh:
+                if len(get_open_paper_trades()) >= 4:
+                    break
                 await self.execute_apex_entry(target_setup)
 
         await self.broadcast("HERMES_SCAN_COMPLETE", {
@@ -577,7 +584,11 @@ class Hermes2ApexLiveEngine:
         position_size = round(margin * 5.0, 2)
         now_ms = int(time.time() * 1000)
 
-        entry_price = cur_price
+        strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+        if strat_mode.startswith("HERMES_3"):
+            entry_price = float(setup.get("entry_price", cur_price))
+        else:
+            entry_price = cur_price
 
         tp_pct = float(setup.get("tp_pct", 0.028 if tf == "4h" else 0.016))
         soft_sl_pct = float(setup.get("soft_sl_pct", 0.028 if tf == "4h" else 0.0145))
@@ -655,9 +666,9 @@ class Hermes2ApexLiveEngine:
                 symbol, side, entry_price, position_size_usdt,
                 tp_price, sl_price, hard_sl_price, timeframe,
                 channel, exchange, account_id,
-                status, entry_time, sentry_reasons,
+                status, entry_time, sentry_reasons, mode,
                 highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 0.0, 0.0, '', 0.0)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, 'HERMES_3.0_QUANTUM', ?, ?, 0.0, 0.0, '', 0.0)
             """, (
                 sym, side, entry_price, position_size,
                 tp_price, sl_price, hard_sl_price, tf,
@@ -807,16 +818,27 @@ class Hermes2ApexLiveEngine:
 
                     # Evaluate Multi-Stage Dynamic Profit Armor for LONG
                     current_effective_sl = sl_price
+                    sl_updated = False
                     if gain_from_entry >= 0.022:
-                        stage2_sl = round(entry_price * (1.0 + 0.012), 6)
+                        stage2_sl = round(entry_price * (1.0 + 0.008), 6) # +0.80% Trailing Profit Lock
                         if stage2_sl > current_effective_sl:
                             current_effective_sl = stage2_sl
-                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 2 ACTIVE: {sym} LONG SL locked at {stage2_sl} (+1.20% profit)")
+                            sl_updated = True
+                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 2 ACTIVE: {sym} LONG SL locked at {stage2_sl} (+0.80% trailing profit lock)")
                     elif gain_from_entry >= 0.016:
-                        stage1_sl = round(entry_price * (1.0 + 0.002), 6)
+                        stage1_sl = round(entry_price * (1.0 + 0.001), 6) # +0.10% Breakeven Lock
                         if stage1_sl > current_effective_sl:
                             current_effective_sl = stage1_sl
-                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 1 ACTIVE: {sym} LONG SL locked at {stage1_sl} (BE +0.20% profit)")
+                            sl_updated = True
+                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 1 ACTIVE: {sym} LONG SL locked at {stage1_sl} (BE +0.10% profit)")
+
+                    if sl_updated:
+                        try:
+                            with get_connection() as conn:
+                                conn.execute("UPDATE paper_trades SET sl_price = ? WHERE id = ?", (current_effective_sl, trade_id))
+                                conn.commit()
+                        except Exception:
+                            pass
 
                     if cur_price >= tp_price:
                         exit_triggered = "TP_HIT"
@@ -829,22 +851,33 @@ class Hermes2ApexLiveEngine:
                     elif cur_price <= hard_sl_price:
                         exit_triggered = "SL_HIT"
                         exit_price = hard_sl_price
-                else: # SELL / SHORT (HERMES 3.0-C MULTI-STAGE DYNAMIC PROFIT ARMOR)
+                else: # SELL / SHORT (HERMES 3.0 MULTI-STAGE DYNAMIC PROFIT ARMOR)
                     lowest = min(float(trade.get("lowest_price") or entry_price), cur_price)
                     drop_from_entry = (entry_price - lowest) / entry_price if entry_price > 0 else 0.0
 
                     # Evaluate Multi-Stage Dynamic Profit Armor
                     current_effective_sl = sl_price
+                    sl_updated = False
                     if drop_from_entry >= 0.022:
-                        stage2_sl = round(entry_price * (1.0 - 0.012), 6)
+                        stage2_sl = round(entry_price * (1.0 - 0.008), 6) # +0.80% Trailing Profit Lock
                         if stage2_sl < current_effective_sl:
                             current_effective_sl = stage2_sl
-                            logger.info(f"🛡️ HERMES 3.0-C ARMOR STAGE 2 ACTIVE: {sym} SHORT SL locked at {stage2_sl} (+1.20% profit)")
+                            sl_updated = True
+                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 2 ACTIVE: {sym} SHORT SL locked at {stage2_sl} (+0.80% trailing profit lock)")
                     elif drop_from_entry >= 0.016:
-                        stage1_sl = round(entry_price * (1.0 - 0.002), 6)
+                        stage1_sl = round(entry_price * (1.0 - 0.001), 6) # +0.10% Breakeven Lock
                         if stage1_sl < current_effective_sl:
                             current_effective_sl = stage1_sl
-                            logger.info(f"🛡️ HERMES 3.0-C ARMOR STAGE 1 ACTIVE: {sym} SHORT SL locked at {stage1_sl} (BE +0.20% profit)")
+                            sl_updated = True
+                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 1 ACTIVE: {sym} SHORT SL locked at {stage1_sl} (BE +0.10% profit)")
+
+                    if sl_updated:
+                        try:
+                            with get_connection() as conn:
+                                conn.execute("UPDATE paper_trades SET sl_price = ? WHERE id = ?", (current_effective_sl, trade_id))
+                                conn.commit()
+                        except Exception:
+                            pass
 
                     if cur_price <= tp_price:
                         exit_triggered = "TP_HIT"
@@ -941,7 +974,9 @@ class Hermes2ApexLiveEngine:
                             tapped = True
 
                 diff_pct = abs(cur_price - entry_p) / entry_p * 100.0
-                if tapped or (is_fresh and diff_pct <= 0.40):
+                is_hermes3 = strat_mode.startswith("HERMES_3")
+                should_trigger = tapped if is_hermes3 else (tapped or (is_fresh and diff_pct <= 0.40))
+                if should_trigger:
                     tf_setup = (setup.get("interval") or "4h").lower()
                     # Check if this specific timeframe has capacity across its 2 slots
                     open_trades_current = get_open_paper_trades()
@@ -1196,9 +1231,10 @@ class Hermes2ApexLiveEngine:
     async def start(self):
         """Autonomous 24/7 background loop running on the cloud server."""
         self.is_running = True
-        logger.info("👑 HERMES 2.5 APEX HYBRID Live Streaming Simulated Engine Started 24/7.")
+        active_ver = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+        logger.info(f"👑 {active_ver} Live Streaming Simulated Engine Started 24/7.")
         set_metric("hermes_status", "ACTIVE_24_7")
-        set_metric("hermes_mode", "HERMES_2.5_APEX_HYBRID")
+        set_metric("hermes_mode", active_ver)
 
         # Enforce 1-Trade Sequential Queue PER QUAD-COMPOUNDING ACCOUNT (1 to 4) & Restore Active Position
         try:
@@ -1237,7 +1273,7 @@ class Hermes2ApexLiveEngine:
         try:
             acc = self.get_hermes_account()
             boot_msg = (
-                f"👑 <b>HERMES 2.0 APEX: 24/7 CLOUD ROBOT DEPLOYED & ONLINE!</b>\n"
+                f"👑 <b>HERMES 3.0 QUANTUM: 24/7 CLOUD ROBOT DEPLOYED & ONLINE!</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"🌐 <b>Host</b>: 100% Free Render Cloud Server (24/7 Autonomous)\n"
                 f"🎯 <b>Compounding Mission</b>: $50.00 ➔ $2,000.00 USDT Milestone\n"

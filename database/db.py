@@ -119,16 +119,17 @@ def init_db():
         VALUES (1, 50.0, 50.0, 0.0, 0, 0);
         """)
 
-        # Ensure Hermes 2.0 Apex & Dual-Account columns exist
+        # Ensure Hermes 3.0 Quantum & Quad-Account columns exist
         for col_def in [
             ("paper_account", "vault_balance", "REAL DEFAULT 0.0"),
             ("paper_account", "milestone_target", "REAL DEFAULT 2000.0"),
-            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_2.5_APEX_HYBRID'"),
+            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_3.0_QUANTUM'"),
             ("paper_account", "timeframe", "TEXT DEFAULT '4h'"),
             ("paper_account", "name", "TEXT DEFAULT 'Binance 4H Macro Compounding'"),
             ("paper_account", "exchange", "TEXT DEFAULT 'BINANCE'"),
             ("paper_account", "channel", "TEXT DEFAULT 'binance_4h'"),
             ("paper_account", "win_streak", "INTEGER DEFAULT 0"),
+            ("paper_trades", "mode", "TEXT DEFAULT 'HERMES_3.0_QUANTUM'"),
             ("paper_trades", "timeframe", "TEXT DEFAULT '4h'"),
             ("paper_trades", "exchange", "TEXT DEFAULT 'BINANCE'"),
             ("paper_trades", "channel", "TEXT DEFAULT 'binance_4h'"),
@@ -192,8 +193,9 @@ def init_db():
         else:
             conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday Compounding', exchange = 'BITGET', channel = 'bitget_1h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 4")
 
-        # Universal upgrade: Ensure all 4 accounts run HERMES_3.0_QUANTUM
+        # Universal upgrade: Ensure all 4 accounts and paper trades run HERMES_3.0_QUANTUM
         conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM'")
+        conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.0_QUANTUM' WHERE mode IS NULL OR mode = '' OR mode LIKE '%2.5%'")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_QUANTUM')")
 
         # Initialize default metrics if not present
@@ -383,20 +385,22 @@ def _sync_journal_to_paper_trades(conn):
                 tp_p = float(jd.get('tp_price') or exit_p)
                 sl_p = float(jd.get('soft_sl_price') or (ep * 0.972 if side == 'BUY' else ep * 1.028))
                 hard_sl_p = float(jd.get('hard_sl_price') or sl_p)
-                status = jd.get('status') or ('TP_HIT' if pnl > 0 else 'SL_HIT')
+                acc_id = jd.get('account_id') or (2 if '1h' in tf else 1)
+                ch = jd.get('channel') or ('binance_1h' if acc_id == 2 else 'bitget_4h' if acc_id == 3 else 'bitget_1h' if acc_id == 4 else 'binance_4h')
+                exch = (jd.get('exchange') or ('BITGET' if 'bitget' in ch else 'BINANCE')).upper()
 
                 conn.execute("""
                 INSERT INTO paper_trades (
                     symbol, side, entry_price, exit_price, position_size_usdt,
                     tp_price, sl_price, hard_sl_price, status, entry_time, exit_time,
                     pnl_usdt, pnl_pct, timeframe, duration_str, roi_pct, mae_pct, mfe_pct,
-                    highest_price, lowest_price
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    highest_price, lowest_price, exchange, channel, account_id, mode
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'HERMES_3.0_QUANTUM')
                 """, (
                     sym, side, ep, exit_p, pos_size,
                     tp_p, sl_p, hard_sl_p, status, created_t, updated_t,
                     pnl, roe, tf, dur_str, roe, 0.45, 2.80,
-                    max(ep, exit_p), min(ep, exit_p)
+                    max(ep, exit_p), min(ep, exit_p), exch, ch, acc_id
                 ))
                 conn.commit()
     except Exception:
@@ -484,16 +488,18 @@ def wipe_legacy_database_clean() -> Dict[str, Any]:
             win_count = 2,
             loss_count = 0,
             milestone_target = 2000.0,
-            mode = 'HERMES_2.5_APEX_HYBRID'
+            mode = 'HERMES_3.0_QUANTUM'
         WHERE id = 1;
         """)
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM';")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_QUANTUM');")
         conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_2.5_APEX_HYBRID')
-        ON CONFLICT(key) DO UPDATE SET value = 'HERMES_2.5_APEX_HYBRID';
+        INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.0_QUANTUM')
+        ON CONFLICT(key) DO UPDATE SET value = 'HERMES_3.0_QUANTUM';
         """)
         conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 2.5 Apex Hybrid Engine Armed')
-        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 2.5 Apex Hybrid Engine Armed';
+        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 3.0 Quantum Live Engine Armed')
+        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 3.0 Quantum Live Engine Armed';
         """)
         conn.commit()
 
@@ -563,7 +569,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
             conn.execute("""
             INSERT OR IGNORE INTO paper_account 
             (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.5_APEX_HYBRID')
+            VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM')
             """, (acc_id, tf_str, tf_name))
             conn.commit()
             row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
@@ -588,7 +594,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
         acc["milestone_target"] = target
         acc["milestone_progress_pct"] = round(min(100.0, (total_equity / target) * 100.0), 2)
         acc["return_pct"] = round(((total_equity - init_b) / init_b * 100), 2)
-        acc["mode"] = acc.get("mode", "HERMES_2.5_APEX_HYBRID")
+        acc["mode"] = acc.get("mode") or "HERMES_3.0_QUANTUM"
         acc["win_streak"] = int(row["win_streak"] if "win_streak" in row.keys() and row["win_streak"] is not None else (acc.get("win_count", 0) if acc.get("loss_count", 0) == 0 else 0))
         return acc
 
@@ -658,11 +664,25 @@ def format_duration_str(ms: int) -> str:
 
 def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Deploys compounding margin at 5x Isolated Perpetual leverage under HERMES 2.0 APEX rules.
-    Independent sequential queues for 1H ($50 account) and 4H ($50 account).
+    Deploys compounding margin at 5x Isolated Perpetual leverage under HERMES 3.0 QUANTUM rules.
+    Independent sequential queues across Quad-Compounding accounts (Binance 4H/1H, Bitget 4H/1H).
     """
     tf = str(zone.get("timeframe", "4h")).lower()
-    acc_id = 2 if "1h" in tf else 1
+    ch = str(zone.get("channel", "")).lower()
+    exch = str(zone.get("exchange", "BINANCE")).upper()
+    if ch:
+        if ch == "binance_4h": acc_id = 1
+        elif ch == "binance_1h": acc_id = 2
+        elif ch == "bitget_4h": acc_id = 3
+        elif ch == "bitget_1h": acc_id = 4
+        else: acc_id = 2 if "1h" in tf else 1
+    elif "BITGET" in exch:
+        acc_id = 4 if "1h" in tf else 3
+    else:
+        acc_id = 2 if "1h" in tf else 1
+
+    channel_name = ch or ("binance_1h" if acc_id == 2 else "bitget_4h" if acc_id == 3 else "bitget_1h" if acc_id == 4 else "binance_4h")
+    exchange_name = exch or ("BITGET" if "bitget" in channel_name else "BINANCE")
 
     with get_connection() as conn:
         row = conn.execute("SELECT current_balance FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
@@ -675,10 +695,10 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             tr["balance_at_entry"] = balance
             return tr
 
-        # Strict 1-Trade Sequential Queue PER TIMEFRAME (1H and 4H trade concurrently but each has 1 trade max)
-        open_count = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND timeframe = ?", (tf,)).fetchone()[0]
+        # Strict 1-Trade Sequential Queue PER TIMEFRAME & ACCOUNT
+        open_count = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND (account_id = ? OR (timeframe = ? AND exchange = ?))", (acc_id, tf, exchange_name)).fetchone()[0]
         if open_count > 0:
-            return {"error": f"Trade already open in {tf.upper()} sequential queue"}
+            return {"error": f"Trade already open in {channel_name.upper()} sequential queue"}
 
         # 100% of compounding margin @ 5x Isolated
         margin = balance
@@ -686,7 +706,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
         side = zone["side"].upper()
         entry_price = float(zone["entry_price"])
 
-        # HERMES 2.0 APEX Targets:
+        # HERMES 3.0 QUANTUM Targets:
         # 4H: TP +2.80% (+14.0% ROE) | SL -2.80% (-14.0% ROE) | Hard SL -3.80% (-19.0% ROE)
         # 1H: TP +2.20% (+11.0% ROE) | SL -2.50% (-12.5% ROE) | Hard SL -3.60% (-18.0% ROE)
         if "1h" in tf:
@@ -706,12 +726,15 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
         cursor = conn.execute("""
         INSERT INTO paper_trades (
             zone_id, symbol, side, entry_price, position_size_usdt,
-            tp_price, sl_price, hard_sl_price, timeframe, status, entry_time,
+            tp_price, sl_price, hard_sl_price, timeframe, channel, exchange, account_id,
+            status, entry_time, mode,
             highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, 0.0, 0.0, '', 0.0)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.0_QUANTUM', ?, ?, 0.0, 0.0, '', 0.0)
         """, (
             zone.get("id"), zone["symbol"], side, entry_price,
-            position_size, tp_price, sl_price, hard_sl_price, tf, now,
+            position_size, tp_price, sl_price, hard_sl_price, tf,
+            channel_name, exchange_name, acc_id,
+            now,
             entry_price, entry_price
         ))
         conn.commit()
@@ -722,6 +745,10 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             "symbol": zone["symbol"],
             "side": side,
             "timeframe": tf,
+            "channel": channel_name,
+            "exchange": exchange_name,
+            "account_id": acc_id,
+            "mode": "HERMES_3.0_QUANTUM",
             "entry_price": entry_price,
             "position_size_usdt": position_size,
             "margin_usdt": margin,
@@ -818,7 +845,7 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[f
         side = trade["side"].upper()
         entry_price = float(trade["entry_price"])
         tf = (trade["timeframe"] or "4h").lower()
-        acc_id = 2 if "1h" in tf else 1
+        acc_id = trade.get("account_id") or (2 if "1h" in tf else 1)
 
         if exit_price is None:
             if outcome == "TP_HIT":
@@ -936,7 +963,7 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
         entry_price = float(trade["entry_price"])
         side = trade["side"].upper()
         tf = (trade["timeframe"] or "4h").lower()
-        acc_id = 2 if "1h" in tf else 1
+        acc_id = trade.get("account_id") or (2 if "1h" in tf else 1)
         now = int(time.time() * 1000)
 
         if side in ("BUY", "LONG"):
@@ -1142,12 +1169,13 @@ def reset_paper_account(starting_balance: float = 50.0, timeframe: Optional[str]
                 vault_balance = 0.0,
                 total_pnl = 0.0,
                 win_count = 0,
-                loss_count = 0
-            WHERE id IN (1, 2)
+                loss_count = 0,
+                mode = 'HERMES_3.0_QUANTUM'
+            WHERE id IN (1, 2, 3, 4)
             """, (starting_balance, starting_balance))
         conn.commit()
 
-    return get_dual_paper_accounts()
+    return get_quad_paper_accounts()
 
 def get_paper_trade_sequence_num(timeframe: str, trade_id: Optional[int] = None) -> int:
     """Returns sequential trade number for this timeframe (e.g. 1, 2, 3) to render #001, #002."""

@@ -8,6 +8,7 @@ Manages:
 5. Compounding balance tracking ($50 -> $1,000 Goal on 1H).
 """
 
+import os
 import ccxt
 import time
 from typing import Dict, Any, Optional, List
@@ -338,15 +339,15 @@ class BinanceTrader:
                     else:
                         raise oe
 
-                print(f"[BINANCE REAL 4H SHORT EXECUTED] {sym} SHORT @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED - {order_params.get('positionSide')})")
+                print(f"[BINANCE REAL 4H {side} EXECUTED] {sym} {side} @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED - {order_params.get('positionSide')})")
                 return {
                     "success": True,
-                    "mode": "Live Binance Futures (4H SHORT)",
+                    "mode": f"Live Binance Futures (4H {side})",
                     "margin_mode": "ISOLATED",
                     "leverage": BINANCE_DEFAULT_LEVERAGE,
                     "order": order,
                     "symbol": sym,
-                    "side": "SHORT",
+                    "side": side,
                     "position_side": order_params.get('positionSide'),
                     "entry_price": entry_price,
                     "tp_price": tp_price,
@@ -358,16 +359,16 @@ class BinanceTrader:
                 err_str = str(e)
                 if "-2015" in err_str:
                     err_str = "Binance Error -2015: 'Enable Futures' permission required or IP restriction active in Binance API Management."
-                print(f"[BINANCE 4H SHORT ERROR] {err_str}")
+                print(f"[BINANCE 4H {side} ERROR] {err_str}")
                 return {"success": False, "error": err_str}
         else:
-            print(f"[BINANCE 4H SIMULATED] Auto-Executed {sym} SHORT @ {entry_price} | TP: {tp_price} | Soft SL: {soft_sl_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
+            print(f"[BINANCE 4H SIMULATED] Auto-Executed {sym} {side} @ {entry_price} | TP: {tp_price} | Soft SL: {soft_sl_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
             return {
                 "success": True,
-                "mode": "Simulated Binance 4H SHORT (5x ISOLATED)",
+                "mode": f"Simulated Binance 4H {side} (5x ISOLATED)",
                 "margin_mode": "ISOLATED",
                 "symbol": sym,
-                "side": "SHORT",
+                "side": side,
                 "entry_price": entry_price,
                 "tp_price": tp_price,
                 "soft_sl_price": soft_sl_price,
