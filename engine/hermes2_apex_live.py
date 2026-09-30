@@ -591,6 +591,28 @@ class Hermes2ApexLiveEngine:
                 else:
                     logger.info(f"🛡️ [BINANCE 4H POLICY] Skipping {side} on {sym}: Strictly SHORT ONLY per user mandate.")
 
+            # Real Bitget Futures Auto-Trading Execution (4H Compounding Challenge - 5x ISOLATED)
+            from engine.bitget_trader import bitget_trader
+            if bitget_trader.is_auto_trade_enabled():
+                logger.info(f"🚀 [BITGET 4H AUTO-TRADE] Initiating 5x ISOLATED {side} on {sym} ($50 Compounding)...")
+                try:
+                    bitget_res = await bitget_trader.execute_4h_trade(setup)
+                    logger.info(f"Bitget 4H Execution: {bitget_res}")
+                    if not bitget_res.get("success") and not bitget_res.get("skipped"):
+                        err_detail = bitget_res.get("error", "Unknown error")
+                        logger.error(f"Bitget 4H Order Error: {err_detail}")
+                        try:
+                            await telegram_service.send_text_alert(
+                                f"⚠️ <b>BITGET AUTO-TRADE ALERT</b>\n\n"
+                                f"Attempted 4H {side} on <b>{sym}</b>\n"
+                                f"Status: ❌ <b>Execution Blocked</b>\n"
+                                f"Reason: <i>{err_detail}</i>"
+                            )
+                        except Exception:
+                            pass
+                except Exception as bge:
+                    logger.error(f"Bitget 4H Auto-Trade Exception: {bge}")
+
         # Check if paper trading alerts are muted
         mute_paper = get_setting("mute_paper_trading_alerts", "false").lower() == "true"
         if mute_paper:
@@ -932,6 +954,14 @@ class Hermes2ApexLiveEngine:
                     await binance_trader.close_position_market(sym, side)
                 except Exception as ce:
                     logger.warning(f"Binance real market close exception: {ce}")
+
+            # Close real Bitget futures position if auto-trade was active
+            from engine.bitget_trader import bitget_trader
+            if bitget_trader.is_auto_trade_enabled():
+                try:
+                    await bitget_trader.close_position_market(sym, side)
+                except Exception as bge:
+                    logger.warning(f"Bitget real market close exception: {bge}")
 
         completed = win_count + loss_count
         win_rate = round(win_count / completed * 100, 1) if completed > 0 else 0.0

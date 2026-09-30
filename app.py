@@ -2109,8 +2109,9 @@ async def tradingview_webhook(request: Request):
 # --- Dual Compounding Challenges REST Endpoints ---
 @app.get("/api/challenge/dual-status")
 async def get_dual_challenge_status():
-    """Returns live metrics for Binance 4H Compounding ($50 -> $2,000) and legacy challenges."""
+    """Returns live metrics for Binance 4H and Bitget 4H Compounding ($50 -> $2,000)."""
     from engine.binance_trader import binance_trader
+    from engine.bitget_trader import bitget_trader
     from database.db import get_setting
 
     comp_bal = float(get_setting("binance_compounding_balance", "50.0"))
@@ -2133,6 +2134,18 @@ async def get_dual_challenge_status():
         curr_stage = 5
     pct = min(100.0, round((comp_bal / target_goal) * 100, 1))
 
+    # Bitget 4H Compounding Metrics
+    bg_comp_bal = float(get_setting("bitget_compounding_balance", "50.0"))
+    bitget_bal = bitget_trader.fetch_futures_balance() if bitget_trader else {}
+    bg_target = float(get_setting("bitget_compounding_target", "2000.0"))
+    bg_pct = min(100.0, round((bg_comp_bal / bg_target) * 100, 1))
+    bg_stage = 1
+    for s in stages:
+        if bg_comp_bal < s["target"]:
+            bg_stage = s["stage"]
+            break
+        bg_stage = 5
+
     return {
         "status": "success",
         "challenges": {
@@ -2154,12 +2167,21 @@ async def get_dual_challenge_status():
                 "mode": "Active Real Binance Futures (5x ISOLATED SHORT)" if binance_bal.get("connected") else "Simulated Live 4H"
             },
             "bitget_4h": {
-                "name": "Bitget 4H Swing Challenge (Paused)",
+                "name": "Bitget 4H Macro Compounding Challenge",
                 "exchange": "Bitget",
                 "timeframe": "4h",
                 "start_balance": 50.0,
-                "goal": 2000.0,
-                "mode": "Paused per user mandate"
+                "current_compounding_balance": round(bg_comp_bal, 2),
+                "wallet_total_usdt": bitget_bal.get("total_usdt", 77.52),
+                "wallet_free_usdt": bitget_bal.get("free_usdt", 77.52),
+                "goal": bg_target,
+                "current_stage": bg_stage,
+                "progress_pct": bg_pct,
+                "target_roe_per_trade": "+14.0% (+2.8% price move @ 5x)",
+                "hard_sl": "-19.0% (Disaster stop on exchange)",
+                "leverage": 5,
+                "margin_mode": "ISOLATED",
+                "mode": "Active Real Bitget Futures (5x ISOLATED)" if bitget_bal.get("connected") else "Simulated Bitget 4H"
             }
         }
     }

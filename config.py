@@ -102,14 +102,20 @@ AI_AGENT_NAME = "Mike"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
-# --- Bitget Real Auto-Trading Config (Challenge 1: 4H Swing) ---
+# --- Bitget Real Auto-Trading Config (Challenge: 4H Macro Compounding) ---
 BITGET_API_KEY = os.getenv("BITGET_API_KEY", "")
 BITGET_SECRET = os.getenv("BITGET_SECRET", "")
 BITGET_PASSPHRASE = os.getenv("BITGET_PASSPHRASE", "")
-BITGET_AUTO_TRADE = False
+BITGET_AUTO_TRADE = os.getenv("BITGET_AUTO_TRADE", "true").lower() == "true"
 BITGET_DEFAULT_LEVERAGE = 5
 BITGET_STARTING_MARGIN = 50.0  # $50 USDT compounding starting size
-BITGET_MIN_CONFLUENCE = int(os.getenv("BITGET_MIN_CONFLUENCE", "90"))  # 90+ Elite setups only
+BITGET_COMPOUNDING_TARGET = 2000.0  # $2,000 USDT Milestone Target Goal
+BITGET_ALLOWED_SIDES = ["BUY", "LONG", "SELL", "SHORT"]  # Both BUY & SHORT supported on Bitget
+BITGET_MARGIN_MODE = "ISOLATED"
+BITGET_4H_TP_PCT = 0.0280  # +2.80% price move (+14.00% ROE @ 5x)
+BITGET_4H_SL_PCT = 0.0280  # -2.80% soft SL on 4H candle close
+BITGET_HARD_DISASTER_SL_PCT = 0.0380  # 3.80% emergency disaster stop on exchange
+BITGET_MIN_CONFLUENCE = int(os.getenv("BITGET_MIN_CONFLUENCE", "80"))
 
 # --- Binance Real Auto-Trading Config (Challenge: 4H Macro Compounding) ---
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", "")
@@ -126,8 +132,6 @@ BINANCE_4H_SL_PCT = 0.0280  # -2.80% soft SL on 4H candle close
 BINANCE_HARD_DISASTER_SL_PCT = 0.0380  # +3.80% emergency disaster stop order on exchange
 BINANCE_1H_TP_PCT = 0.0160  # +1.60% price move (+8.00% ROE @ 5x)
 BINANCE_1H_SL_PCT = 0.0145  # -1.45% price move (-7.27% ROE @ 5x)
-BITGET_4H_TP_PCT  = 0.0220  # +2.20% price move (+11.00% ROE @ 5x)
-BITGET_4H_SL_PCT  = 0.0200  # -2.00% price move (-10.00% ROE @ 5x)
 
 # --- Master Compounding Challenge Specifications ---
 DUAL_CHALLENGES = {
@@ -143,15 +147,15 @@ DUAL_CHALLENGES = {
         "description": "HERMES 2.5 APEX HYBRID • 5x ISOLATED • SHORT ONLY ($50 -> $2,000)"
     },
     "bitget_4h": {
-        "name": "Bitget 4H Swing Challenge (Paused)",
+        "name": "Bitget 4H Macro Compounding Challenge",
         "exchange": "Bitget",
         "timeframe": "4h",
         "start_balance": 50.0,
         "target_balance": 2000.0,
         "leverage": 5,
-        "tp_pct": 0.0220,
-        "sl_pct": 0.0200,
-        "description": "Bitget Auto-Trading currently paused per user mandate"
+        "tp_pct": 0.0280,  # +2.80% price move (+14.00% ROE @ 5x)
+        "sl_pct": 0.0280,  # -2.80% soft SL on 4H candle close
+        "description": "HERMES 2.5 APEX HYBRID • 5x ISOLATED • 4H Compounding ($50 -> $2,000)"
     }
 }
 
