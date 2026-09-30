@@ -13,12 +13,10 @@ def get_ist_now() -> datetime:
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-# --- HERMES 3.0 QUANTUM / HERMES 2.5 APEX HYBRID Strategy Versions ---
+# --- HERMES 2.5 APEX HYBRID (ACTIVE LIVE ENGINE) & EXPERIMENTAL OPTIONS ---
 STRATEGY_OPTIONS = ["HERMES_2.5_APEX_HYBRID", "HERMES_3.0_QUANTUM"]
-STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM") # Default to Hermes 3.0 for experiment
-HERMES_3_MEAN_THRESHOLD_ENTRY = True
-HERMES_3_BTC_EMERGENCY_SHIELD = True
-HERMES_3_MULTI_STAGE_ARMOR = True
+STRATEGY_VERSION = "HERMES_2.5_APEX_HYBRID"  # Strictly LOCKED to Hermes 2.5 for Live Production
+EXPERIMENTAL_HERMES_3_ENABLED = False        # Hermes 3.0 kept strictly in sandbox/experimental bench
 TIMEFRAME = "4h"
 KLINES_LIMIT = 200
 
