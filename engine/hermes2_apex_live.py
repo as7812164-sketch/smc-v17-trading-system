@@ -615,8 +615,20 @@ class Hermes2ApexLiveEngine:
 
         # Dispatch real live execution to matching exchange & channel
         logger.info(f"🚀 [QUAD-COMPOUNDING] Routing {sym} {side} to {target_exchange} ({target_channel.upper()}) | $50 Margin @ 5x Isolated")
+        setup_with_flag = {
+            **setup,
+            "managed_by_hermes": True,
+            "entry_price": entry_price,
+            "tp_price": tp_price,
+            "sl_price": sl_price,
+            "hard_sl_price": hard_sl_price,
+            "tp_pct": tp_pct,
+            "soft_sl_pct": soft_sl_pct,
+            "hard_sl_pct": hard_sl_pct,
+            "margin": margin,
+            "trade_id": trade_id
+        }
         execution_order_id = None
-        setup_with_flag = {**setup, "managed_by_hermes": True}
         if target_channel == "binance_4h":
             from engine.binance_trader import binance_trader
             if binance_trader.is_auto_trade_enabled():

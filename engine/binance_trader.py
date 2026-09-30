@@ -253,6 +253,13 @@ class BinanceTrader:
         soft_sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
         hard_disaster_sl = round(entry_price * (1.0 + hard_sl_pct), 6)
 
+        if setup.get("tp_price"):
+            tp_price = float(setup["tp_price"])
+        if setup.get("sl_price"):
+            soft_sl_price = float(setup["sl_price"])
+        if setup.get("hard_sl_price"):
+            hard_disaster_sl = float(setup["hard_sl_price"])
+
         if not self.exchange:
             self._init_exchange()
 
@@ -396,6 +403,13 @@ class BinanceTrader:
             tp_price = round(entry_price * (1.0 - tp_pct), 6)
             soft_sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
             hard_disaster_sl = round(entry_price * (1.0 + hard_sl_pct), 6)
+
+        if setup.get("tp_price"):
+            tp_price = float(setup["tp_price"])
+        if setup.get("sl_price"):
+            soft_sl_price = float(setup["sl_price"])
+        if setup.get("hard_sl_price"):
+            hard_disaster_sl = float(setup["hard_sl_price"])
 
         if not self.exchange:
             self._init_exchange()
