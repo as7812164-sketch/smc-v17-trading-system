@@ -596,14 +596,43 @@ async def get_system_status():
     stats = get_performance_stats()
     metrics = get_all_metrics()
     paper = get_paper_account()
+    active_version = get_setting("strategy_version", STRATEGY_VERSION)
     return {
         "status": "online",
-        "version": STRATEGY_VERSION,
+        "version": active_version,
+        "strategy_options": ["HERMES_2.5_APEX_HYBRID", "HERMES_3.0_QUANTUM"],
         "timeframe": TIMEFRAME,
         "performance": stats,
         "metrics": metrics,
         "paper_trading": paper
     }
+
+@app.get("/api/strategy/mode")
+async def get_strategy_mode():
+    active_version = get_setting("strategy_version", STRATEGY_VERSION)
+    return {
+        "active_mode": active_version,
+        "options": ["HERMES_2.5_APEX_HYBRID", "HERMES_3.0_QUANTUM"],
+        "features": {
+            "mean_threshold_entry": active_version.startswith("HERMES_3"),
+            "multi_stage_profit_armor": True,
+            "btc_emergency_shield": True,
+            "dynamic_atr_buffer": active_version.startswith("HERMES_3")
+        }
+    }
+
+@app.post("/api/strategy/switch")
+async def switch_strategy_mode(payload: Dict[str, Any] = Body(...)):
+    target_mode = payload.get("mode")
+    if target_mode not in ["HERMES_2.5_APEX_HYBRID", "HERMES_3.0_QUANTUM"]:
+        return JSONResponse({"status": "error", "message": f"Invalid mode: {target_mode}"}, status_code=400)
+    set_setting("strategy_version", target_mode)
+    with get_connection() as conn:
+        conn.execute("UPDATE paper_account SET mode = ?", (target_mode,))
+        conn.commit()
+    set_metric("hermes_mode", target_mode)
+    logger.info(f"🔄 Strategy Mode switched to: {target_mode}")
+    return {"status": "success", "mode": target_mode, "message": f"Active engine successfully set to {target_mode}"}
 
 async def get_live_tickers() -> Dict[str, float]:
     """Returns fresh live tickers cached for max 2.5 seconds across Binance Futures & Spot."""

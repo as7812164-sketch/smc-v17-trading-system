@@ -261,16 +261,25 @@ class Hermes2ApexLiveEngine:
                                             if swept and w_ratio >= 0.18 and tap_c["close"] >= mt:
                                                 age = n - 1 - t
                                                 is_fresh_trigger = (age <= 1)
+                                                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                                                if strat_mode.startswith("HERMES_3"):
+                                                    eff_entry = mt if tap_c["low"] <= mt else (dec_top + mt) / 2.0
+                                                    sentry_lbl = f"HERMES 3.0 QUANTUM (Mean Threshold 50% EQ) | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
+                                                else:
+                                                    eff_entry = dec_top
+                                                    sentry_lbl = f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
+
                                                 setups.append({
                                                     "symbol": symbol,
                                                     "side": "LONG",
                                                     "interval": interval,
-                                                    "entry_price": dec_top,
+                                                    "entry_price": eff_entry,
                                                     "ob_high": dec_top,
                                                     "ob_low": dec_bot,
-                                                    "tp_price": dec_top * (1.0 + tp_pct),
-                                                    "soft_sl_price": dec_top * (1.0 - soft_sl_pct),
-                                                    "hard_sl_price": dec_top * (1.0 - hard_sl_pct),
+                                                    "mean_threshold": mt,
+                                                    "tp_price": eff_entry * (1.0 + tp_pct),
+                                                    "soft_sl_price": eff_entry * (1.0 - soft_sl_pct),
+                                                    "hard_sl_price": eff_entry * (1.0 - hard_sl_pct),
                                                     "tp_pct": tp_pct,
                                                     "soft_sl_pct": soft_sl_pct,
                                                     "hard_sl_pct": hard_sl_pct,
@@ -280,7 +289,7 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh_trigger,
                                                     "status": "FRESH_TRIGGERED" if is_fresh_trigger else "CONFIRMED_TAP",
-                                                    "sentry_reasons": f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
+                                                    "sentry_reasons": sentry_lbl
                                                 })
                                                 tapped_found = True
                                             break
@@ -291,16 +300,20 @@ class Hermes2ApexLiveEngine:
                                             recent_bars = candles[high_idx + 1:n]
                                             broken = any(b["close"] < dec_bot for b in recent_bars)
                                             if not broken:
+                                                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                                                eff_entry = mt if strat_mode.startswith("HERMES_3") else dec_top
+                                                sentry_lbl = f"HERMES 3.0 QUANTUM Armed MT | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Armed IDM | Sentry 4 Fresh: {bars_since_high}/28 Bars" if strat_mode.startswith("HERMES_3") else f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Armed IDM | Sentry 4 Fresh Window: {bars_since_high}/28 Bars"
                                                 setups.append({
                                                     "symbol": symbol,
                                                     "side": "LONG",
                                                     "interval": interval,
-                                                    "entry_price": dec_top,
+                                                    "entry_price": eff_entry,
                                                     "ob_high": dec_top,
                                                     "ob_low": dec_bot,
-                                                    "tp_price": dec_top * (1.0 + tp_pct),
-                                                    "soft_sl_price": dec_top * (1.0 - soft_sl_pct),
-                                                    "hard_sl_price": dec_top * (1.0 - hard_sl_pct),
+                                                    "mean_threshold": mt,
+                                                    "tp_price": eff_entry * (1.0 + tp_pct),
+                                                    "soft_sl_price": eff_entry * (1.0 - soft_sl_pct),
+                                                    "hard_sl_price": eff_entry * (1.0 - hard_sl_pct),
                                                     "tp_pct": tp_pct,
                                                     "soft_sl_pct": soft_sl_pct,
                                                     "hard_sl_pct": hard_sl_pct,
@@ -310,7 +323,7 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": candles[-1]["time"],
                                                     "is_fresh_trigger": False,
                                                     "status": "ARMED_WAITING_TAP",
-                                                    "sentry_reasons": f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Armed IDM | Sentry 4 Fresh Window: {bars_since_high}/28 Bars"
+                                                    "sentry_reasons": sentry_lbl
                                                 })
 
             # -------------------------------------------------------------
@@ -355,16 +368,25 @@ class Hermes2ApexLiveEngine:
                                             if swept and w_ratio >= 0.18 and tap_c["close"] <= mt:
                                                 age = n - 1 - t
                                                 is_fresh_trigger = (age <= 1)
+                                                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                                                if strat_mode.startswith("HERMES_3"):
+                                                    eff_entry = mt if tap_c["high"] >= mt else (dec_bot + mt) / 2.0
+                                                    sentry_lbl = f"HERMES 3.0 QUANTUM (Mean Threshold 50% EQ) | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
+                                                else:
+                                                    eff_entry = dec_bot
+                                                    sentry_lbl = f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
+
                                                 setups.append({
                                                     "symbol": symbol,
                                                     "side": "SHORT",
                                                     "interval": interval,
-                                                    "entry_price": dec_bot,
+                                                    "entry_price": eff_entry,
                                                     "ob_high": dec_top,
                                                     "ob_low": dec_bot,
-                                                    "tp_price": dec_bot * (1.0 - tp_pct),
-                                                    "soft_sl_price": dec_bot * (1.0 + soft_sl_pct),
-                                                    "hard_sl_price": dec_bot * (1.0 + hard_sl_pct),
+                                                    "mean_threshold": mt,
+                                                    "tp_price": eff_entry * (1.0 - tp_pct),
+                                                    "soft_sl_price": eff_entry * (1.0 + soft_sl_pct),
+                                                    "hard_sl_price": eff_entry * (1.0 + hard_sl_pct),
                                                     "tp_pct": tp_pct,
                                                     "soft_sl_pct": soft_sl_pct,
                                                     "hard_sl_pct": hard_sl_pct,
@@ -374,7 +396,7 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh_trigger,
                                                     "status": "FRESH_TRIGGERED" if is_fresh_trigger else "CONFIRMED_TAP",
-                                                    "sentry_reasons": f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
+                                                    "sentry_reasons": sentry_lbl
                                                 })
                                                 tapped_found = True
                                             break
@@ -385,16 +407,20 @@ class Hermes2ApexLiveEngine:
                                             recent_bars = candles[low_idx + 1:n]
                                             broken = any(b["close"] > dec_top for b in recent_bars)
                                             if not broken:
+                                                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                                                eff_entry = mt if strat_mode.startswith("HERMES_3") else dec_bot
+                                                sentry_lbl = f"HERMES 3.0 QUANTUM Armed MT | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Armed IDM | Sentry 4 Fresh: {bars_since_low}/28 Bars" if strat_mode.startswith("HERMES_3") else f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 IDM Level | Sentry 4 Armed Fresh ({bars_since_low}/28 Bars)"
                                                 setups.append({
                                                     "symbol": symbol,
                                                     "side": "SHORT",
                                                     "interval": interval,
-                                                    "entry_price": dec_bot,
+                                                    "entry_price": eff_entry,
                                                     "ob_high": dec_top,
                                                     "ob_low": dec_bot,
-                                                    "tp_price": dec_bot * (1.0 - tp_pct),
-                                                    "soft_sl_price": dec_bot * (1.0 + soft_sl_pct),
-                                                    "hard_sl_price": dec_bot * (1.0 + hard_sl_pct),
+                                                    "mean_threshold": mt,
+                                                    "tp_price": eff_entry * (1.0 - tp_pct),
+                                                    "soft_sl_price": eff_entry * (1.0 + soft_sl_pct),
+                                                    "hard_sl_price": eff_entry * (1.0 + hard_sl_pct),
                                                     "tp_pct": tp_pct,
                                                     "soft_sl_pct": soft_sl_pct,
                                                     "hard_sl_pct": hard_sl_pct,
@@ -404,7 +430,7 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": candles[-1]["time"],
                                                     "is_fresh_trigger": False,
                                                     "status": "ARMED_WAITING_TAP",
-                                                    "sentry_reasons": f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 IDM Level | Sentry 4 Armed Fresh ({bars_since_low}/28 Bars)"
+                                                    "sentry_reasons": sentry_lbl
                                                 })
 
         return setups
@@ -776,9 +802,30 @@ class Hermes2ApexLiveEngine:
                 exit_price = cur_price
 
                 if side in ("BUY", "LONG"):
+                    highest = max(float(trade.get("highest_price") or entry_price), cur_price)
+                    gain_from_entry = (highest - entry_price) / entry_price if entry_price > 0 else 0.0
+
+                    # Evaluate Multi-Stage Dynamic Profit Armor for LONG
+                    current_effective_sl = sl_price
+                    if gain_from_entry >= 0.022:
+                        stage2_sl = round(entry_price * (1.0 + 0.012), 6)
+                        if stage2_sl > current_effective_sl:
+                            current_effective_sl = stage2_sl
+                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 2 ACTIVE: {sym} LONG SL locked at {stage2_sl} (+1.20% profit)")
+                    elif gain_from_entry >= 0.016:
+                        stage1_sl = round(entry_price * (1.0 + 0.002), 6)
+                        if stage1_sl > current_effective_sl:
+                            current_effective_sl = stage1_sl
+                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 1 ACTIVE: {sym} LONG SL locked at {stage1_sl} (BE +0.20% profit)")
+
                     if cur_price >= tp_price:
                         exit_triggered = "TP_HIT"
                         exit_price = tp_price
+                    elif current_effective_sl > entry_price and cur_price <= current_effective_sl:
+                        # Price pulled back down and touched our tightened profitable SL -> Protected Profit Exit!
+                        exit_triggered = "TP_HIT"
+                        exit_price = current_effective_sl
+                        logger.info(f"🛡️ HERMES 3.0 ARMOR PROFIT LOCKED EXIT TRIGGERED: {sym} LONG at {exit_price}")
                     elif cur_price <= hard_sl_price:
                         exit_triggered = "SL_HIT"
                         exit_price = hard_sl_price
@@ -868,15 +915,30 @@ class Hermes2ApexLiveEngine:
                 ob_low = float(setup.get("ob_low", entry_p))
                 is_fresh = setup.get("is_fresh_trigger", False)
 
+                mt = float(setup.get("mean_threshold", (ob_high + ob_low) / 2.0))
+                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+
                 tapped = False
                 if side in ("BUY", "LONG"):
-                    # Price has touched or dipped into the top of the Order Block zone
-                    if (cur_price <= ob_high * 1.002) and (cur_price >= ob_low * 0.995):
-                        tapped = True
+                    if strat_mode.startswith("HERMES_3"):
+                        # In Hermes 3.0, enter at Mean Threshold 50% discount depth
+                        if (cur_price <= mt * 1.002) and (cur_price >= ob_low * 0.995):
+                            tapped = True
+                            setup["entry_price"] = mt
+                    else:
+                        # Price has touched or dipped into the top of the Order Block zone
+                        if (cur_price <= ob_high * 1.002) and (cur_price >= ob_low * 0.995):
+                            tapped = True
                 else: # SHORT / SELL
-                    # Price has touched or pushed up into the bottom of the Order Block zone
-                    if (cur_price >= ob_low * 0.998) and (cur_price <= ob_high * 1.005):
-                        tapped = True
+                    if strat_mode.startswith("HERMES_3"):
+                        # In Hermes 3.0, enter at Mean Threshold 50% premium depth
+                        if (cur_price >= mt * 0.998) and (cur_price <= ob_high * 1.005):
+                            tapped = True
+                            setup["entry_price"] = mt
+                    else:
+                        # Price has touched or pushed up into the bottom of the Order Block zone
+                        if (cur_price >= ob_low * 0.998) and (cur_price <= ob_high * 1.005):
+                            tapped = True
 
                 diff_pct = abs(cur_price - entry_p) / entry_p * 100.0
                 if tapped or (is_fresh and diff_pct <= 0.40):
