@@ -3,7 +3,10 @@ import json
 import time
 import os
 import aiohttp
+import logging
 from contextlib import asynccontextmanager
+
+logger = logging.getLogger("smc_v17")
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Body, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
