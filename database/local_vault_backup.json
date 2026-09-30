@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "updated_at": 1790783552931,
-  "updated_at_str": "2026-09-30 21:22:32 IST",
+  "updated_at": 1790795912164,
+  "updated_at_str": "2026-10-01 00:48:32 IST",
   "accounts": [
     {
       "id": 1,
@@ -12,7 +12,7 @@
       "loss_count": 0,
       "vault_balance": 0.0,
       "milestone_target": 2000.0,
-      "mode": "HERMES_2.5_APEX_HYBRID",
+      "mode": "HERMES_3.0_QUANTUM",
       "timeframe": "4h",
       "name": "Binance 4H Macro Compounding",
       "win_streak": 0,
@@ -28,7 +28,7 @@
       "loss_count": 0,
       "vault_balance": 0.0,
       "milestone_target": 10000.0,
-      "mode": "HERMES_2.5_APEX_HYBRID",
+      "mode": "HERMES_3.0_QUANTUM",
       "timeframe": "1h",
       "name": "Binance 1H Intraday Compounding",
       "win_streak": 0,
@@ -44,7 +44,7 @@
       "loss_count": 0,
       "vault_balance": 0.0,
       "milestone_target": 2000.0,
-      "mode": "HERMES_2.5_APEX_HYBRID",
+      "mode": "HERMES_3.0_QUANTUM",
       "timeframe": "4h",
       "name": "Bitget 4H Macro Compounding",
       "win_streak": 0,
@@ -60,7 +60,7 @@
       "loss_count": 1,
       "vault_balance": 0.0,
       "milestone_target": 2000.0,
-      "mode": "HERMES_2.5_APEX_HYBRID",
+      "mode": "HERMES_3.0_QUANTUM",
       "timeframe": "1h",
       "name": "Bitget 1H Intraday Compounding",
       "win_streak": 0,
@@ -203,8 +203,8 @@
     "coins_subscribed": "50/50",
     "last_scan_duration": "6s",
     "hermes_status": "ACTIVE_24_7",
-    "hermes_mode": "HERMES_2.5_APEX_HYBRID",
-    "hermes_last_scan": "30 Sep 2026 \u2022 09:19:32 PM IST",
-    "hermes_setups_detected": "0"
+    "hermes_last_scan": "01 Oct 2026 \u2022 12:35:28 AM IST",
+    "hermes_setups_detected": "42",
+    "hermes_mode": "HERMES_3.0_QUANTUM"
   }
 }

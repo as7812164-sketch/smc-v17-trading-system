@@ -6,7 +6,7 @@ import aiohttp
 from contextlib import asynccontextmanager
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Body, HTTPException, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from datetime import datetime, timezone
@@ -27,6 +27,7 @@ from config import (
     MUTE_PAPER_TRADING_ALERTS
 )
 from database.db import (
+    get_connection,
     get_performance_stats,
     get_all_metrics,
     get_active_zones,

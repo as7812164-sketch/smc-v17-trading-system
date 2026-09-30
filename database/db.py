@@ -148,23 +148,16 @@ def init_db():
             except Exception:
                 pass
 
-        # Cloud Vault Persistence (Guarantees zero data loss across Render restarts)
-        try:
-            from database.cloud_vault import pull_and_restore_vault_state
-            pull_and_restore_vault_state()
-        except Exception:
-            pass
-
         # Ensure Account 1: Binance 4H Macro Compounding ($50 -> $2,000)
         acc1_exists = conn.execute("SELECT id FROM paper_account WHERE id = 1").fetchone()
         if not acc1_exists:
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (1, '4h', 'Binance 4H Macro Compounding', 'BINANCE', 'binance_4h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.5_APEX_HYBRID');
+            VALUES (1, '4h', 'Binance 4H Macro Compounding', 'BINANCE', 'binance_4h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Binance 4H Macro Compounding', exchange = 'BINANCE', channel = 'binance_4h' WHERE id = 1")
+            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Binance 4H Macro Compounding', exchange = 'BINANCE', channel = 'binance_4h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 1")
 
         # Ensure Account 2: Binance 1H Intraday Compounding ($50 -> $2,000)
         acc2_exists = conn.execute("SELECT id FROM paper_account WHERE id = 2").fetchone()
@@ -172,10 +165,10 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (2, '1h', 'Binance 1H Intraday Compounding', 'BINANCE', 'binance_1h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.5_APEX_HYBRID');
+            VALUES (2, '1h', 'Binance 1H Intraday Compounding', 'BINANCE', 'binance_1h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Binance 1H Intraday Compounding', exchange = 'BINANCE', channel = 'binance_1h' WHERE id = 2")
+            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Binance 1H Intraday Compounding', exchange = 'BINANCE', channel = 'binance_1h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 2")
 
         # Ensure Account 3: Bitget 4H Macro Compounding ($50 -> $2,000)
         acc3_exists = conn.execute("SELECT id FROM paper_account WHERE id = 3").fetchone()
@@ -183,10 +176,10 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (3, '4h', 'Bitget 4H Macro Compounding', 'BITGET', 'bitget_4h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.5_APEX_HYBRID');
+            VALUES (3, '4h', 'Bitget 4H Macro Compounding', 'BITGET', 'bitget_4h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro Compounding', exchange = 'BITGET', channel = 'bitget_4h' WHERE id = 3")
+            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro Compounding', exchange = 'BITGET', channel = 'bitget_4h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 3")
 
         # Ensure Account 4: Bitget 1H Intraday Compounding ($50 -> $2,000)
         acc4_exists = conn.execute("SELECT id FROM paper_account WHERE id = 4").fetchone()
@@ -194,10 +187,14 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (4, '1h', 'Bitget 1H Intraday Compounding', 'BITGET', 'bitget_1h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_2.5_APEX_HYBRID');
+            VALUES (4, '1h', 'Bitget 1H Intraday Compounding', 'BITGET', 'bitget_1h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday Compounding', exchange = 'BITGET', channel = 'bitget_1h' WHERE id = 4")
+            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday Compounding', exchange = 'BITGET', channel = 'bitget_1h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 4")
+
+        # Universal upgrade: Ensure all 4 accounts run HERMES_3.0_QUANTUM
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM'")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_QUANTUM')")
 
         # Initialize default metrics if not present
         default_metrics = {
@@ -213,15 +210,23 @@ def init_db():
             "network_status": "STABLE",
             "coins_active_count": "50",
             "hermes_status": "ACTIVE_24_7",
-            "hermes_mode": "HERMES_2.5_APEX_HYBRID"
+            "hermes_mode": "HERMES_3.0_QUANTUM"
         }
         for k, v in default_metrics.items():
             conn.execute("INSERT OR IGNORE INTO system_metrics (key, value) VALUES (?, ?)", (k, v))
+        conn.execute("UPDATE system_metrics SET value = 'HERMES_3.0_QUANTUM' WHERE key = 'hermes_mode'")
         
         # Ensure default Telegram Chat ID is set to Akash's ID
         conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('telegram_chat_id', '752247227')")
         conn.execute("UPDATE settings SET value = '752247227' WHERE key = 'telegram_chat_id' AND value IN ('-100123456789', '123456789', '', 'None')")
         conn.commit()
+
+    # Cloud Vault Persistence (Guarantees zero data loss across Render restarts)
+    try:
+        from database.cloud_vault import pull_and_restore_vault_state
+        pull_and_restore_vault_state()
+    except Exception:
+        pass
 
 # --- Zone CRUD ---
 def save_or_update_zone(z: Dict[str, Any]) -> int:

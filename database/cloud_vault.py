@@ -179,11 +179,11 @@ def pull_and_restore_vault_state() -> bool:
                 win_count = excluded.win_count,
                 loss_count = excluded.loss_count,
                 win_streak = excluded.win_streak,
-                mode = excluded.mode
+                mode = 'HERMES_3.0_QUANTUM'
             """, (
                 acc_id, acc.get("initial_balance", 50.0), acc.get("current_balance", 50.0),
                 acc.get("vault_balance", 0.0), acc.get("total_pnl", 0.0), acc.get("win_count", 0),
-                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), acc.get("mode", "HERMES_2.5_APEX_HYBRID"),
+                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), "HERMES_3.0_QUANTUM",
                 acc.get("timeframe", "4h"), acc.get("name", "4H Macro Swing"), acc.get("win_streak", 0)
             ))
 
