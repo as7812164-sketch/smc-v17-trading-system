@@ -17,15 +17,470 @@
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="/static/style.css?v=110">
-    <!-- PWA & Mobile App Support -->
-    <meta name="theme-color" content="#0b0e14">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Hermes APEX">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <!-- Quad Compounding Strip & Forensic Modal Styles -->
+    <style id="quadCompoundingCustomStyles">
+        .quad-compounding-row {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 12px !important;
+            margin-bottom: 14px !important;
+        }
+        @media (max-width: 1024px) {
+            .quad-compounding-row {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+        @media (max-width: 640px) {
+            .quad-compounding-row {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        .quad-ticker-card {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(11, 15, 25, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.22s ease-in-out;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        }
+        .quad-ticker-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+        }
+        .quad-ticker-card.binance {
+            border-left: 3px solid #F0B90B;
+        }
+        .quad-ticker-card.binance:hover {
+            border-color: rgba(240, 185, 11, 0.5);
+            box-shadow: 0 8px 25px rgba(240, 185, 11, 0.15);
+        }
+        .quad-ticker-card.bitget {
+            border-left: 3px solid #00F0FF;
+        }
+        .quad-ticker-card.bitget:hover {
+            border-color: rgba(0, 240, 255, 0.5);
+            box-shadow: 0 8px 25px rgba(0, 240, 255, 0.15);
+        }
+        .qtc-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .qtc-brand-box {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .qtc-badge {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .qtc-badge.binance {
+            background: rgba(240, 185, 11, 0.15);
+            color: #F0B90B;
+            border: 1px solid rgba(240, 185, 11, 0.3);
+        }
+        .qtc-badge.bitget {
+            background: rgba(0, 240, 255, 0.15);
+            color: #00F0FF;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+        .qtc-tf-pill {
+            font-size: 10px;
+            font-weight: 700;
+            color: #94A3B8;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .qtc-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748B;
+        }
+        .qtc-status-dot.active {
+            background: #00F59B;
+            box-shadow: 0 0 8px #00F59B;
+            animation: pulseDot 1.5s infinite;
+        }
+        @keyframes pulseDot {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.8; }
+        }
+        .qtc-mid {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+        .qtc-bal-group {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .qtc-balance {
+            font-family: var(--font-mono);
+            font-size: 19px;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: -0.3px;
+        }
+        .qtc-roi-pill {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .qtc-roi-pill.up { background: rgba(0, 245, 155, 0.15); color: #00F59B; }
+        .qtc-roi-pill.down { background: rgba(255, 77, 106, 0.15); color: #FF4D6A; }
+        .qtc-roi-pill.neutral { background: rgba(148, 163, 184, 0.12); color: #94A3B8; }
+        .qtc-bot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .qtc-pos-status {
+            font-size: 11px;
+            font-weight: 600;
+            color: #94A3B8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 68%;
+        }
+        .qtc-pos-status.in-trade {
+            color: #00F59B;
+            font-weight: 700;
+        }
+        .qtc-wr-pill {
+            font-size: 10.5px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: #38BDF8;
+        }
+
+        /* MODAL STYLES */
+        .quad-forensic-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .qfm-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(4, 7, 14, 0.85);
+            backdrop-filter: blur(8px);
+        }
+        .qfm-container {
+            position: relative;
+            background: #0D131F;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.15);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 1040px;
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 24px;
+            color: #F8FAFC;
+            font-family: var(--font-ui);
+            animation: modalPop 0.25s ease-out;
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .qfm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .qfm-header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .qfm-acc-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(240, 185, 11, 0.15);
+            color: #F0B90B;
+            border: 1px solid rgba(240, 185, 11, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .qfm-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .qfm-title-row h2 {
+            font-size: 19px;
+            font-weight: 800;
+            margin: 0;
+            color: #FFFFFF;
+        }
+        .qfm-badge {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 5px;
+            background: rgba(56, 189, 248, 0.15);
+            color: #38BDF8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-family: var(--font-mono);
+        }
+        .qfm-live-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: rgba(0, 245, 155, 0.15);
+            color: #00F59B;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .qfm-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00F59B;
+            box-shadow: 0 0 6px #00F59B;
+        }
+        .qfm-subtitle {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: #94A3B8;
+        }
+        .qfm-close-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94A3B8;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.15s;
+        }
+        .qfm-close-btn:hover {
+            background: rgba(255, 77, 106, 0.2);
+            color: #FF4D6A;
+            border-color: rgba(255, 77, 106, 0.4);
+        }
+        .qfm-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        @media (max-width: 768px) {
+            .qfm-stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .qfm-stat-box {
+            background: rgba(18, 25, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .qfm-stat-label {
+            font-size: 11px;
+            color: #94A3B8;
+            font-weight: 600;
+        }
+        .qfm-stat-val {
+            font-family: var(--font-mono);
+            font-size: 19px;
+            font-weight: 800;
+        }
+        .qfm-stat-sub {
+            font-size: 11px;
+            color: #64748B;
+            font-weight: 600;
+        }
+        .qfm-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .qfm-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .qfm-section-header h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #F8FAFC;
+        }
+        .qfm-pos-count-badge, .qfm-table-count {
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.06);
+            color: #94A3B8;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .qfm-spotlight-card {
+            background: linear-gradient(135deg, rgba(16, 24, 40, 0.95), rgba(11, 15, 25, 0.95));
+            border: 1px solid rgba(0, 245, 155, 0.35);
+            box-shadow: 0 0 20px rgba(0, 245, 155, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .qfm-spotlight-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .qfm-spotlight-sym {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 17px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+        .qfm-side-tag {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+        .qfm-side-tag.buy { background: rgba(0, 245, 155, 0.2); color: #00F59B; }
+        .qfm-side-tag.sell { background: rgba(255, 77, 106, 0.2); color: #FF4D6A; }
+        .qfm-spotlight-pnl {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .qfm-metrics-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .qfm-metric-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .qmi-lbl {
+            font-size: 10.5px;
+            color: #64748B;
+            font-weight: 600;
+        }
+        .qmi-val {
+            font-family: var(--font-mono);
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #F1F5F9;
+        }
+        .qfm-empty-pos {
+            background: rgba(18, 25, 39, 0.4);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+            color: #64748B;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .qfm-table-wrap {
+            background: rgba(18, 25, 39, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            overflow-x: auto;
+            max-height: 320px;
+        }
+        .qfm-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+        }
+        .qfm-table th {
+            background: rgba(10, 14, 22, 0.9);
+            padding: 10px 12px;
+            font-weight: 700;
+            color: #94A3B8;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            white-space: nowrap;
+        }
+        .qfm-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #E2E8F0;
+            font-family: var(--font-mono);
+            white-space: nowrap;
+        }
+        .qfm-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .text-gold { color: #F0B90B !important; }
+        .text-buy { color: #00F59B !important; }
+        .text-sell { color: #FF4D6A !important; }
+        .text-accent { color: #38BDF8 !important; }
+        .text-purple { color: #A855F7 !important; }
+    </style>
 </head>
 <body class="dark-theme">
     <script>
@@ -282,91 +737,90 @@
         <main class="dashboard-main-content">
         <!-- PANEL 1: DASHBOARD MAIN OVERVIEW (EXACT SPECIFICATION FROM REFERENCE IMAGE) -->
         <div class="dashboard-overview-container">
-            <!-- ROW 1: MINI TICKER CARDS GRID (5 CHAMPIONS) -->
-            <div class="dashboard-tickers-row">
-                <!-- BTCUSDT -->
-                <div class="mini-ticker-card active" data-symbol="BTCUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('BTCUSDT');">
-                    <div class="mtc-left">
-                        <div class="mtc-coin-row">
-                            <span class="mtc-icon btc"><i class="fa-brands fa-bitcoin"></i></span>
-                            <span class="mtc-sym">BTCUSDT</span>
+            <!-- ROW 1: QUAD COMPOUNDING LIVE ACCOUNTS (BINANCE 4H, BINANCE 1H, BITGET 4H, BITGET 1H) -->
+            <div class="dashboard-tickers-row quad-compounding-row" id="quadCompoundingRow">
+                <!-- 1. BINANCE 4H MACRO -->
+                <div class="quad-ticker-card binance" id="cardBinance4h" onclick="openQuadAccountModal('binance_4h', 1)" title="Click to view full Account #1 trades & live forensic stats">
+                    <div class="qtc-top">
+                        <div class="qtc-brand-box">
+                            <span class="qtc-badge binance"><i class="fa-solid fa-coins"></i> BINANCE</span>
+                            <span class="qtc-tf-pill">4H MACRO</span>
                         </div>
-                        <div class="mtc-price-row">
-                            <span class="mtc-price" id="mtcPriceBTC">118,642.5</span>
-                            <span class="mtc-chg up" id="mtcChgBTC">+2.4%</span>
+                        <span class="qtc-status-dot idle" id="qtcDot_binance_4h" title="Queue Status"></span>
+                    </div>
+                    <div class="qtc-mid">
+                        <div class="qtc-bal-group">
+                            <span class="qtc-balance" id="qtcBal_binance_4h">$50.00</span>
+                            <span class="qtc-roi-pill neutral" id="qtcRoi_binance_4h">+0.00%</span>
                         </div>
                     </div>
-                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
-                        <polyline fill="none" stroke="#00F59B" stroke-width="1.8" points="0,20 12,17 24,19 36,12 48,15 60,6" />
-                    </svg>
+                    <div class="qtc-bot">
+                        <div class="qtc-pos-status" id="qtcPos_binance_4h"><i class="fa-solid fa-satellite-dish"></i> Waiting (0 Active)</div>
+                        <span class="qtc-wr-pill" id="qtcWr_binance_4h">WR: 0% | 0T</span>
+                    </div>
                 </div>
 
-                <!-- ETHUSDT -->
-                <div class="mini-ticker-card" data-symbol="ETHUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('ETHUSDT');">
-                    <div class="mtc-left">
-                        <div class="mtc-coin-row">
-                            <span class="mtc-icon eth"><i class="fa-brands fa-ethereum"></i></span>
-                            <span class="mtc-sym">ETHUSDT</span>
+                <!-- 2. BINANCE 1H INTRADAY -->
+                <div class="quad-ticker-card binance" id="cardBinance1h" onclick="openQuadAccountModal('binance_1h', 2)" title="Click to view full Account #2 trades & live forensic stats">
+                    <div class="qtc-top">
+                        <div class="qtc-brand-box">
+                            <span class="qtc-badge binance"><i class="fa-solid fa-bolt"></i> BINANCE</span>
+                            <span class="qtc-tf-pill">1H INTRADAY</span>
                         </div>
-                        <div class="mtc-price-row">
-                            <span class="mtc-price" id="mtcPriceETH">3,764.28</span>
-                            <span class="mtc-chg up" id="mtcChgETH">+1.21%</span>
+                        <span class="qtc-status-dot idle" id="qtcDot_binance_1h" title="Queue Status"></span>
+                    </div>
+                    <div class="qtc-mid">
+                        <div class="qtc-bal-group">
+                            <span class="qtc-balance" id="qtcBal_binance_1h">$50.00</span>
+                            <span class="qtc-roi-pill neutral" id="qtcRoi_binance_1h">+0.00%</span>
                         </div>
                     </div>
-                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
-                        <polyline fill="none" stroke="#00F59B" stroke-width="1.8" points="0,18 12,15 24,16 36,10 48,13 60,7" />
-                    </svg>
+                    <div class="qtc-bot">
+                        <div class="qtc-pos-status" id="qtcPos_binance_1h"><i class="fa-solid fa-satellite-dish"></i> Waiting (0 Active)</div>
+                        <span class="qtc-wr-pill" id="qtcWr_binance_1h">WR: 0% | 0T</span>
+                    </div>
                 </div>
 
-                <!-- SOLUSDT -->
-                <div class="mini-ticker-card" data-symbol="SOLUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('SOLUSDT');">
-                    <div class="mtc-left">
-                        <div class="mtc-coin-row">
-                            <span class="mtc-icon sol"><i class="fa-solid fa-bolt"></i></span>
-                            <span class="mtc-sym">SOLUSDT</span>
+                <!-- 3. BITGET 4H MACRO -->
+                <div class="quad-ticker-card bitget" id="cardBitget4h" onclick="openQuadAccountModal('bitget_4h', 3)" title="Click to view full Account #3 trades & live forensic stats">
+                    <div class="qtc-top">
+                        <div class="qtc-brand-box">
+                            <span class="qtc-badge bitget"><i class="fa-solid fa-gem"></i> BITGET</span>
+                            <span class="qtc-tf-pill">4H MACRO</span>
                         </div>
-                        <div class="mtc-price-row">
-                            <span class="mtc-price" id="mtcPriceSOL">172.21</span>
-                            <span class="mtc-chg down" id="mtcChgSOL">-0.45%</span>
+                        <span class="qtc-status-dot idle" id="qtcDot_bitget_4h" title="Queue Status"></span>
+                    </div>
+                    <div class="qtc-mid">
+                        <div class="qtc-bal-group">
+                            <span class="qtc-balance" id="qtcBal_bitget_4h">$50.00</span>
+                            <span class="qtc-roi-pill neutral" id="qtcRoi_bitget_4h">+0.00%</span>
                         </div>
                     </div>
-                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
-                        <polyline fill="none" stroke="#FF4D6A" stroke-width="1.8" points="0,8 14,11 28,9 42,16 56,18 60,20" />
-                    </svg>
+                    <div class="qtc-bot">
+                        <div class="qtc-pos-status" id="qtcPos_bitget_4h"><i class="fa-solid fa-satellite-dish"></i> Waiting (0 Active)</div>
+                        <span class="qtc-wr-pill" id="qtcWr_bitget_4h">WR: 0% | 0T</span>
+                    </div>
                 </div>
 
-                <!-- BNBUSDT -->
-                <div class="mini-ticker-card" data-symbol="BNBUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('BNBUSDT');">
-                    <div class="mtc-left">
-                        <div class="mtc-coin-row">
-                            <span class="mtc-icon bnb"><i class="fa-solid fa-coins"></i></span>
-                            <span class="mtc-sym">BNBUSDT</span>
+                <!-- 4. BITGET 1H INTRADAY -->
+                <div class="quad-ticker-card bitget" id="cardBitget1h" onclick="openQuadAccountModal('bitget_1h', 4)" title="Click to view full Account #4 trades & live forensic stats">
+                    <div class="qtc-top">
+                        <div class="qtc-brand-box">
+                            <span class="qtc-badge bitget"><i class="fa-solid fa-gem"></i> BITGET</span>
+                            <span class="qtc-tf-pill">1H INTRADAY</span>
                         </div>
-                        <div class="mtc-price-row">
-                            <span class="mtc-price" id="mtcPriceBNB">698.32</span>
-                            <span class="mtc-chg up" id="mtcChgBNB">+0.82%</span>
+                        <span class="qtc-status-dot idle" id="qtcDot_bitget_1h" title="Queue Status"></span>
+                    </div>
+                    <div class="qtc-mid">
+                        <div class="qtc-bal-group">
+                            <span class="qtc-balance" id="qtcBal_bitget_1h">$40.60</span>
+                            <span class="qtc-roi-pill down" id="qtcRoi_bitget_1h">-18.80%</span>
                         </div>
                     </div>
-                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
-                        <polyline fill="none" stroke="#00F59B" stroke-width="1.8" points="0,17 12,14 25,16 38,11 50,13 60,8" />
-                    </svg>
-                </div>
-
-                <!-- XAUUSDT -->
-                <div class="mini-ticker-card" data-symbol="XAUUSDT" onclick="if(typeof switchCoin === 'function') switchCoin('XAUUSDT');">
-                    <div class="mtc-left">
-                        <div class="mtc-coin-row">
-                            <span class="mtc-icon xau"><i class="fa-solid fa-gem"></i></span>
-                            <span class="mtc-sym">XAUUSDT</span>
-                        </div>
-                        <div class="mtc-price-row">
-                            <span class="mtc-price" id="mtcPriceXAU">2,392.14</span>
-                            <span class="mtc-chg up" id="mtcChgXAU">+0.16%</span>
-                        </div>
+                    <div class="qtc-bot">
+                        <div class="qtc-pos-status" id="qtcPos_bitget_1h"><i class="fa-solid fa-satellite-dish"></i> 0 Active (1 Closed)</div>
+                        <span class="qtc-wr-pill down" id="qtcWr_bitget_1h">WR: 0% | 1T</span>
                     </div>
-                    <svg class="mtc-sparkline" viewBox="0 0 60 25">
-                        <polyline fill="none" stroke="#00F59B" stroke-width="1.8" points="0,16 15,14 30,15 45,10 60,7" />
-                    </svg>
                 </div>
             </div>
 
@@ -2385,7 +2839,98 @@
             </div>
         </div>
     </div>
-    </div><!-- End legacyHiddenBridge -->
+    <!-- QUAD ACCOUNT FORENSIC DETAIL MODAL -->
+    <div id="quadAccountModal" class="quad-forensic-modal" style="display: none;">
+        <div class="qfm-backdrop" onclick="closeQuadAccountModal()"></div>
+        <div class="qfm-container">
+            <!-- MODAL HEADER -->
+            <div class="qfm-header">
+                <div class="qfm-header-left">
+                    <div class="qfm-acc-avatar" id="qfmAvatar"><i class="fa-solid fa-bolt"></i></div>
+                    <div>
+                        <div class="qfm-title-row">
+                            <h2 id="qfmTitle">Binance 4H Macro Compounding</h2>
+                            <span class="qfm-badge" id="qfmChannelBadge">BINANCE_4H</span>
+                            <span class="qfm-live-badge"><span class="qfm-dot"></span> LIVE 24/7</span>
+                        </div>
+                        <p class="qfm-subtitle" id="qfmSubtitle">5x Isolated Leverage Perpetual Futures • 1-Trade Sequential Queue (1:1 Real Parity)</p>
+                    </div>
+                </div>
+                <button class="qfm-close-btn" onclick="closeQuadAccountModal()" title="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- 4 METRICS CARDS -->
+            <div class="qfm-stats-grid">
+                <div class="qfm-stat-box">
+                    <span class="qfm-stat-label">Current Compounding Balance</span>
+                    <div class="qfm-stat-val text-gold" id="qfmBalance">$50.00</div>
+                    <span class="qfm-stat-sub" id="qfmGrowth">Growth: +0.00%</span>
+                </div>
+                <div class="qfm-stat-box">
+                    <span class="qfm-stat-label">Total Realized P&L</span>
+                    <div class="qfm-stat-val text-buy" id="qfmTotalPnl">+$0.00</div>
+                    <span class="qfm-stat-sub" id="qfmPnlPct">+0.00% Net Return</span>
+                </div>
+                <div class="qfm-stat-box">
+                    <span class="qfm-stat-label">Win Rate & Closed Trades</span>
+                    <div class="qfm-stat-val text-accent" id="qfmWinRate">0.0%</div>
+                    <span class="qfm-stat-sub" id="qfmTradeCount">0 Wins / 0 Losses (0 Total)</span>
+                </div>
+                <div class="qfm-stat-box">
+                    <span class="qfm-stat-label">Milestone Challenge Goal</span>
+                    <div class="qfm-stat-val text-purple" id="qfmMilestone">Target: $2,000</div>
+                    <span class="qfm-stat-sub" id="qfmProgress">2.5% Target Achieved</span>
+                </div>
+            </div>
+
+            <!-- SECTION 1: ACTIVE LIVE POSITION (SPOTLIGHT) -->
+            <div class="qfm-section">
+                <div class="qfm-section-header">
+                    <h3><i class="fa-solid fa-satellite-dish text-accent"></i> Active Live Position</h3>
+                    <span class="qfm-pos-count-badge" id="qfmPosCount">0 Active</span>
+                </div>
+                <div id="qfmActivePosContainer">
+                    <div class="qfm-empty-pos">
+                        <i class="fa-solid fa-radar" style="font-size:18px; color:#38BDF8;"></i>
+                        <span>Queue is 100% Free • Autonomous 24/7 Scanner is monitoring Top-22 Champions for First-Tap Order Block entries.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: AUDITED TRADE HISTORY TABLE (WITH MAE, MFE, DURATION, TIMESTAMPS) -->
+            <div class="qfm-section">
+                <div class="qfm-section-header">
+                    <h3><i class="fa-solid fa-clock-rotate-left text-gold"></i> Audited Trade Execution History</h3>
+                    <div class="qfm-filter-group">
+                        <span class="qfm-table-count" id="qfmHistoryCount">0 Trades Logged</span>
+                    </div>
+                </div>
+                <div class="qfm-table-wrap">
+                    <table class="qfm-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Symbol / Side</th>
+                                <th>Opened (IST)</th>
+                                <th>Closed (IST)</th>
+                                <th>Duration</th>
+                                <th>Entry / Exit</th>
+                                <th>PnL (USDT)</th>
+                                <th>ROE %</th>
+                                <th>Result</th>
+                                <th>MAE % <i class="fa-solid fa-circle-info" title="Max Adverse Excursion (Peak Drawdown)"></i></th>
+                                <th>MFE % <i class="fa-solid fa-circle-info" title="Max Favorable Excursion (Peak Profit)"></i></th>
+                                <th>Sentry Audit Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qfmTradesTbody">
+                            <tr><td colspan="12" style="text-align:center; padding:24px; color:#64748B;">No closed trades logged for this account yet. Next execution will be Trade #1!</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- SLIDE-OUT MOBILE NAVIGATION DRAWER OVERLAY -->
     <div class="drawer-overlay" id="drawerOverlay"></div>
@@ -2612,15 +3157,24 @@
                     fetch('/api/paper/trades')
                 ]);
 
-                if (accRes.ok) {
-                    const acc = await accRes.json();
+                let acc = null;
+                let perf = null;
+                let posData = null;
+                let tradesData = null;
+
+                if (accRes.ok) acc = await accRes.json();
+                if (perfRes.ok) perf = await perfRes.json();
+                if (posRes.ok) posData = await posRes.json();
+                if (tradesRes.ok) tradesData = await tradesRes.json();
+
+                if (acc) {
                     const bal = Number(acc.current_balance) || 50.0;
                     const eq = Number(acc.equity) || bal;
                     const unPnl = Number(acc.unrealized_pnl_usdt) || 0.0;
                     const totPnl = Number(acc.total_pnl) || 0.0;
                     const retPct = Number(acc.return_pct) || 0.0;
-                    const wr = Number(acc.win_rate !== undefined ? acc.win_rate : 100.0);
-                    const wins = Number(acc.win_count !== undefined ? acc.win_count : 2);
+                    const wr = Number(acc.win_rate !== undefined ? acc.win_rate : 0.0);
+                    const wins = Number(acc.win_count !== undefined ? acc.win_count : 0);
                     const losses = Number(acc.loss_count !== undefined ? acc.loss_count : 0);
                     const totalTrades = wins + losses;
 
@@ -2662,8 +3216,7 @@
                     if (tradesEl) tradesEl.textContent = totalTrades;
                 }
 
-                if (perfRes.ok) {
-                    const perf = await perfRes.json();
+                if (perf) {
                     const pfEl = document.getElementById("kpiProfitFactor");
                     if (pfEl && perf.profit_factor !== undefined) {
                         const pf = Number(perf.profit_factor) || 0.0;
@@ -2671,15 +3224,15 @@
                     }
 
                     const pStats = perf.stats || {};
-                    const wr = Number(pStats.win_rate !== undefined ? pStats.win_rate : (perf.win_rate || 100.0));
-                    const wins = Number(pStats.wins !== undefined ? pStats.wins : (perf.wins || 2));
+                    const wr = Number(pStats.win_rate !== undefined ? pStats.win_rate : (perf.win_rate || 0.0));
+                    const wins = Number(pStats.wins !== undefined ? pStats.wins : (perf.wins || 0));
                     const losses = Number(pStats.losses !== undefined ? pStats.losses : (perf.losses || 0));
-                    const buyWr = Number(pStats.buy_wr !== undefined ? pStats.buy_wr : 100.0);
-                    const buyWins = Number(pStats.buy_wins !== undefined ? pStats.buy_wins : 1);
-                    const buyCompleted = Number(pStats.buy_completed !== undefined ? pStats.buy_completed : 1);
-                    const sellWr = Number(pStats.sell_wr !== undefined ? pStats.sell_wr : 100.0);
-                    const sellWins = Number(pStats.sell_wins !== undefined ? pStats.sell_wins : 1);
-                    const sellCompleted = Number(pStats.sell_completed !== undefined ? pStats.sell_completed : 1);
+                    const buyWr = Number(pStats.buy_wr !== undefined ? pStats.buy_wr : 0.0);
+                    const buyWins = Number(pStats.buy_wins !== undefined ? pStats.buy_wins : 0);
+                    const buyCompleted = Number(pStats.buy_completed !== undefined ? pStats.buy_completed : 0);
+                    const sellWr = Number(pStats.sell_wr !== undefined ? pStats.sell_wr : 0.0);
+                    const sellWins = Number(pStats.sell_wins !== undefined ? pStats.sell_wins : 0);
+                    const sellCompleted = Number(pStats.sell_completed !== undefined ? pStats.sell_completed : 0);
 
                     const stripWr = document.getElementById("kpiStripWinRate");
                     const wrDetail = document.getElementById("kpiWinRateDetail");
@@ -2698,46 +3251,440 @@
                     if (tpHitsEl) tpHitsEl.textContent = wins;
                 }
 
-                if (posRes.ok) {
-                    const posData = await posRes.json();
-                    const positions = posData.positions || [];
-                    
-                    const sidePos = document.getElementById("sidebarPosBadge");
-                    const drawPos = document.getElementById("drawerPosBadge");
-                    const dockBadge = document.getElementById("proDockCountBadge");
-                    const fpos = document.getElementById("fposCount");
-                    if (sidePos) sidePos.textContent = positions.length;
-                    if (drawPos) drawPos.textContent = positions.length;
-                    if (dockBadge) dockBadge.textContent = `${positions.length} Active`;
-                    if (fpos) fpos.textContent = positions.length;
+                const positions = posData ? (Array.isArray(posData) ? posData : (posData.positions || [])) : [];
+                const sidePos = document.getElementById("sidebarPosBadge");
+                const drawPos = document.getElementById("drawerPosBadge");
+                const dockBadge = document.getElementById("proDockCountBadge");
+                const fpos = document.getElementById("fposCount");
+                if (sidePos) sidePos.textContent = positions.length;
+                if (drawPos) drawPos.textContent = positions.length;
+                if (dockBadge) dockBadge.textContent = `${positions.length} Active`;
+                if (fpos) fpos.textContent = positions.length;
 
-                    renderDashboardPositions(positions);
+                renderDashboardPositions(positions);
+
+                const allClosedTrades = tradesData ? (tradesData.trades || []) : [];
+                const hBadge = document.getElementById("historyBadgeTotal");
+                const fhistCount = document.getElementById("fhistoryCount");
+                const fhistWr = document.getElementById("fhistoryWinRate");
+                const fhistPnl = document.getElementById("fhistoryPnl");
+
+                if (hBadge) hBadge.textContent = `${allClosedTrades.length} Trades`;
+                if (fhistCount) fhistCount.textContent = allClosedTrades.length;
+
+                const summary = tradesData ? (tradesData.summary || {}) : {};
+                if (fhistWr && summary.win_rate !== undefined) {
+                    fhistWr.textContent = `${Number(summary.win_rate).toFixed(1)}%`;
+                }
+                if (fhistPnl && summary.total_realized_pnl !== undefined) {
+                    const rp = Number(summary.total_realized_pnl);
+                    fhistPnl.textContent = `${rp >= 0 ? '+' : ''}$${rp.toFixed(2)} USDT`;
                 }
 
-                if (tradesRes.ok) {
-                    const tradesData = await tradesRes.json();
-                    allClosedTrades = tradesData.trades || [];
-                    const hBadge = document.getElementById("historyBadgeTotal");
-                    const fhistCount = document.getElementById("fhistoryCount");
-                    const fhistWr = document.getElementById("fhistoryWinRate");
-                    const fhistPnl = document.getElementById("fhistoryPnl");
+                renderFuturesTradeHistory(allClosedTrades);
 
-                    if (hBadge) hBadge.textContent = `${allClosedTrades.length} Trades`;
-                    if (fhistCount) fhistCount.textContent = allClosedTrades.length;
+                // --- 3. QUAD COMPOUNDING STRIP REAL-TIME CARDS SYNC ---
+                const quadData = (acc && acc.quad) ? acc.quad : {};
+                const channels = [
+                    { key: 'binance_4h', accId: 1, name: 'Binance 4H Macro' },
+                    { key: 'binance_1h', accId: 2, name: 'Binance 1H Intraday' },
+                    { key: 'bitget_4h', accId: 3, name: 'Bitget 4H Macro' },
+                    { key: 'bitget_1h', accId: 4, name: 'Bitget 1H Intraday' }
+                ];
 
-                    const summary = tradesData.summary || {};
-                    if (fhistWr && summary.win_rate !== undefined) {
-                        fhistWr.textContent = `${Number(summary.win_rate).toFixed(1)}%`;
+                window.allLiveQuadAccounts = quadData;
+                window.allLiveOpenPositions = positions;
+                window.allClosedTrades = allClosedTrades;
+
+                channels.forEach(ch => {
+                    const qInfo = quadData[ch.key] || {};
+                    const bal = Number(qInfo.current_balance !== undefined ? qInfo.current_balance : 50.0);
+                    const retPct = Number(qInfo.return_pct !== undefined ? qInfo.return_pct : 0.0);
+                    const wr = Number(qInfo.win_rate !== undefined ? qInfo.win_rate : 0.0);
+                    const wins = Number(qInfo.win_count || 0);
+                    const losses = Number(qInfo.loss_count || 0);
+                    const totalT = wins + losses;
+
+                    // Balance & ROI
+                    const balEl = document.getElementById(`qtcBal_${ch.key}`);
+                    const roiEl = document.getElementById(`qtcRoi_${ch.key}`);
+                    if (balEl) balEl.textContent = `$${bal.toFixed(2)}`;
+                    if (roiEl) {
+                        roiEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
+                        roiEl.className = `qtc-roi-pill ${retPct > 0 ? 'up' : retPct < 0 ? 'down' : 'neutral'}`;
                     }
-                    if (fhistPnl && summary.total_realized_pnl !== undefined) {
-                        const rp = Number(summary.total_realized_pnl);
-                        fhistPnl.textContent = `${rp >= 0 ? '+' : ''}$${rp.toFixed(2)} USDT`;
+
+                    // Check if active position exists for this channel / account
+                    const activePos = positions.find(p => (p.channel && p.channel.toLowerCase() === ch.key.toLowerCase()) || (p.account_id && Number(p.account_id) === Number(ch.accId)));
+                    const posEl = document.getElementById(`qtcPos_${ch.key}`);
+                    const dotEl = document.getElementById(`qtcDot_${ch.key}`);
+                    const wrEl = document.getElementById(`qtcWr_${ch.key}`);
+
+                    if (activePos) {
+                        const pSide = (activePos.side || 'LONG').toUpperCase();
+                        const pRoe = Number(activePos.roi_pct !== undefined ? activePos.roi_pct : (activePos.pnl_pct || 0.0));
+                        if (posEl) {
+                            posEl.innerHTML = `<i class="fa-solid fa-circle-dot" style="color:#00F59B;"></i> ${activePos.symbol} ${pSide} (${pRoe >= 0 ? '+' : ''}${pRoe.toFixed(1)}%)`;
+                            posEl.className = "qtc-pos-status in-trade";
+                        }
+                        if (dotEl) dotEl.className = "qtc-status-dot active";
+                    } else {
+                        if (posEl) {
+                            posEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> ${totalT > 0 ? '0 Active (' + totalT + ' Done)' : 'Waiting (0 Active)'}`;
+                            posEl.className = "qtc-pos-status";
+                        }
+                        if (dotEl) dotEl.className = "qtc-status-dot idle";
                     }
 
-                    renderFuturesTradeHistory(allClosedTrades);
+                    if (wrEl) {
+                        wrEl.textContent = `WR: ${wr.toFixed(0)}% (${wins}/${totalT})`;
+                        wrEl.className = `qtc-wr-pill ${wr > 0 ? '' : totalT > 0 ? 'down' : ''}`;
+                    }
+                });
+
+                // If Forensic Modal is currently open, refresh its data in real time!
+                if (window.currentActiveQuadModal) {
+                    refreshQuadModalContent(window.currentActiveQuadModal.channel, window.currentActiveQuadModal.accId);
                 }
             } catch (err) {
                 console.warn("syncDashboardMetrics error:", err);
+            }
+        }
+
+        // --- QUAD COMPOUNDING FORENSIC DETAIL MODAL CONTROLLER ---
+        window.currentActiveQuadModal = null;
+
+        function openQuadAccountModal(channel, accId) {
+            window.currentActiveQuadModal = { channel, accId };
+            const modal = document.getElementById("quadAccountModal");
+            if (modal) {
+                modal.style.display = "flex";
+            }
+            refreshQuadModalContent(channel, accId);
+        }
+
+        function closeQuadAccountModal() {
+            window.currentActiveQuadModal = null;
+            const modal = document.getElementById("quadAccountModal");
+            if (modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Close on ESC key
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && window.currentActiveQuadModal) {
+                closeQuadAccountModal();
+            }
+        });
+
+        function formatQuadIstTime(val) {
+            if (!val) return "--";
+            if (typeof val === "string" && val.includes("IST")) return val;
+            const num = Number(val);
+            const d = !isNaN(num) && num > 0 ? new Date(num) : new Date(val);
+            if (isNaN(d.getTime())) return String(val);
+            return d.toLocaleString("en-IN", { 
+                timeZone: "Asia/Kolkata", 
+                month: "short", 
+                day: "2-digit", 
+                hour: "2-digit", 
+                minute: "2-digit", 
+                second: "2-digit", 
+                hour12: false 
+            }) + " IST";
+        }
+
+        function refreshQuadModalContent(channel, accId) {
+            if (!channel) return;
+            const qData = window.allLiveQuadAccounts || {};
+            const qInfo = qData[channel] || {};
+            const allPositions = window.allLiveOpenPositions || [];
+            const allTrades = window.allClosedTrades || [];
+
+            // Account metadata mapping
+            const channelMeta = {
+                'binance_4h': {
+                    title: 'Binance 4H Macro Compounding',
+                    badge: 'BINANCE_4H',
+                    exchange: 'BINANCE',
+                    icon: 'fa-solid fa-bolt',
+                    color: '#F0B90B',
+                    bg: 'rgba(240, 185, 11, 0.15)',
+                    border: 'rgba(240, 185, 11, 0.3)',
+                    target: 2000.0,
+                    sub: 'Account #1 • 5x Isolated Leverage Perpetual Futures • 1-Trade Sequential Queue (1:1 Real Parity)'
+                },
+                'binance_1h': {
+                    title: 'Binance 1H Intraday Compounding',
+                    badge: 'BINANCE_1H',
+                    exchange: 'BINANCE',
+                    icon: 'fa-solid fa-bolt',
+                    color: '#F0B90B',
+                    bg: 'rgba(240, 185, 11, 0.15)',
+                    border: 'rgba(240, 185, 11, 0.3)',
+                    target: 10000.0,
+                    sub: 'Account #2 • 5x Isolated Leverage Perpetual Futures • 1-Trade Sequential Queue (1:1 Real Parity)'
+                },
+                'bitget_4h': {
+                    title: 'Bitget 4H Macro Compounding',
+                    badge: 'BITGET_4H',
+                    exchange: 'BITGET',
+                    icon: 'fa-solid fa-gem',
+                    color: '#00F0FF',
+                    bg: 'rgba(0, 240, 255, 0.15)',
+                    border: 'rgba(0, 240, 255, 0.3)',
+                    target: 2000.0,
+                    sub: 'Account #3 • 5x Isolated Leverage Perpetual Futures • 1-Trade Sequential Queue (1:1 Real Parity)'
+                },
+                'bitget_1h': {
+                    title: 'Bitget 1H Intraday Compounding',
+                    badge: 'BITGET_1H',
+                    exchange: 'BITGET',
+                    icon: 'fa-solid fa-gem',
+                    color: '#00F0FF',
+                    bg: 'rgba(0, 240, 255, 0.15)',
+                    border: 'rgba(0, 240, 255, 0.3)',
+                    target: 2000.0,
+                    sub: 'Account #4 • 5x Isolated Leverage Perpetual Futures • 1-Trade Sequential Queue (1:1 Real Parity)'
+                }
+            };
+
+            const meta = channelMeta[channel] || {
+                title: `${channel.toUpperCase()} Compounding`,
+                badge: channel.toUpperCase(),
+                exchange: 'EXCHANGE',
+                icon: 'fa-solid fa-chart-line',
+                color: '#38BDF8',
+                bg: 'rgba(56, 189, 248, 0.15)',
+                border: 'rgba(56, 189, 248, 0.3)',
+                target: 2000.0,
+                sub: `Account #${accId} • 5x Isolated Leverage Perpetual Futures • 1-Trade Sequential Queue`
+            };
+
+            // 1. Header
+            const avatarEl = document.getElementById("qfmAvatar");
+            const titleEl = document.getElementById("qfmTitle");
+            const badgeEl = document.getElementById("qfmChannelBadge");
+            const subEl = document.getElementById("qfmSubtitle");
+
+            if (avatarEl) {
+                avatarEl.innerHTML = `<i class="${meta.icon}"></i>`;
+                avatarEl.style.color = meta.color;
+                avatarEl.style.background = meta.bg;
+                avatarEl.style.borderColor = meta.border;
+            }
+            if (titleEl) titleEl.textContent = meta.title;
+            if (badgeEl) {
+                badgeEl.textContent = meta.badge;
+                badgeEl.style.color = meta.color;
+                badgeEl.style.borderColor = meta.border;
+                badgeEl.style.background = meta.bg;
+            }
+            if (subEl) subEl.textContent = meta.sub;
+
+            // 2. Metrics Cards
+            const bal = Number(qInfo.current_balance !== undefined ? qInfo.current_balance : 50.0);
+            const totPnl = Number(qInfo.total_pnl !== undefined ? qInfo.total_pnl : (bal - 50.0));
+            const retPct = Number(qInfo.return_pct !== undefined ? qInfo.return_pct : ((totPnl / 50.0) * 100));
+            const wr = Number(qInfo.win_rate !== undefined ? qInfo.win_rate : 0.0);
+            const wins = Number(qInfo.win_count || 0);
+            const losses = Number(qInfo.loss_count || 0);
+            const totalT = wins + losses;
+            const target = Number(qInfo.milestone_target || meta.target);
+            const progPct = target > 0 ? (bal / target) * 100 : 0.0;
+
+            const balEl = document.getElementById("qfmBalance");
+            const growthEl = document.getElementById("qfmGrowth");
+            const pnlEl = document.getElementById("qfmTotalPnl");
+            const pnlPctEl = document.getElementById("qfmPnlPct");
+            const wrEl = document.getElementById("qfmWinRate");
+            const countEl = document.getElementById("qfmTradeCount");
+            const milestoneEl = document.getElementById("qfmMilestone");
+            const progressEl = document.getElementById("qfmProgress");
+
+            if (balEl) balEl.textContent = `$${bal.toFixed(2)}`;
+            if (growthEl) growthEl.textContent = `Growth: ${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
+            if (pnlEl) {
+                pnlEl.textContent = `${totPnl >= 0 ? '+' : ''}$${totPnl.toFixed(2)}`;
+                pnlEl.className = `qfm-stat-val ${totPnl >= 0 ? 'text-buy' : 'text-sell'}`;
+            }
+            if (pnlPctEl) pnlPctEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}% Net Return`;
+            if (wrEl) {
+                wrEl.textContent = `${wr.toFixed(1)}%`;
+                wrEl.className = `qfm-stat-val ${wr > 0 ? 'text-buy' : totalT > 0 ? 'text-sell' : 'text-accent'}`;
+            }
+            if (countEl) countEl.textContent = `${wins} Wins / ${losses} Losses (${totalT} Total)`;
+            if (milestoneEl) milestoneEl.textContent = `Target: $${target.toLocaleString()}`;
+            if (progressEl) progressEl.textContent = `${progPct.toFixed(2)}% Target Achieved`;
+
+            // 3. Active Position Spotlight
+            const activePos = allPositions.find(p => (p.channel && p.channel.toLowerCase() === channel.toLowerCase()) || (p.account_id && Number(p.account_id) === Number(accId)));
+            const posCountBadge = document.getElementById("qfmPosCount");
+            const activePosContainer = document.getElementById("qfmActivePosContainer");
+
+            if (posCountBadge) posCountBadge.textContent = activePos ? "1 Active Trade" : "0 Active";
+
+            if (activePosContainer) {
+                if (activePos) {
+                    const isBuy = (activePos.side || "BUY").toUpperCase() === "BUY" || (activePos.side_raw || "").toUpperCase() === "LONG";
+                    const sideClass = isBuy ? "buy" : "sell";
+                    const sideText = isBuy ? "LONG (BUY)" : "SHORT (SELL)";
+                    const pnl = Number(activePos.unrealized_pnl || activePos.unrealized_pnl_usdt || 0.0);
+                    const roe = Number(activePos.roi_pct !== undefined ? activePos.roi_pct : (activePos.pnl_pct || 0.0));
+                    const pnlClass = pnl >= 0 ? "text-buy" : "text-sell";
+                    const sign = pnl >= 0 ? "+" : "";
+
+                    const entryP = Number(activePos.entry_price || 0);
+                    const markP = Number(activePos.mark_price || activePos.current_price || entryP);
+                    const tpP = Number(activePos.tp_price || 0);
+                    const slP = Number(activePos.sl_price || 0);
+                    const hardSlP = Number(activePos.hard_sl_price || 0);
+                    const mae = Number(activePos.mae_pct || 0);
+                    const mfe = Number(activePos.mfe_pct || 0);
+                    const openTime = formatQuadIstTime(activePos.entry_time || activePos.timestamp_ist || activePos.timestamp);
+                    const duration = activePos.duration_str || activePos.duration || "Just Opened";
+                    const sentryNotes = activePos.sentry_reasons || "Sentry 1 Clean | Sentry 2 Disp & FVG Qualified | Sentry 3 IDM Rejection | Sentry 4 Fresh";
+
+                    activePosContainer.innerHTML = `
+                        <div class="qfm-spotlight-card">
+                            <div class="qfm-spotlight-top">
+                                <div class="qfm-spotlight-sym">
+                                    <span>${activePos.symbol}</span>
+                                    <span class="qfm-side-tag ${sideClass}">${sideText}</span>
+                                    <span class="qfm-badge" style="background:rgba(255,255,255,0.06); color:#CBD5E1; border:1px solid rgba(255,255,255,0.1);">${activePos.leverage || 5}x Isolated</span>
+                                </div>
+                                <div class="qfm-spotlight-pnl ${pnlClass}">
+                                    ${sign}$${pnl.toFixed(2)} (${sign}${roe.toFixed(2)}%)
+                                </div>
+                            </div>
+                            <div class="qfm-metrics-strip">
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Entry Price</span>
+                                    <span class="qmi-val">$${entryP.toFixed(4)}</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Mark Price</span>
+                                    <span class="qmi-val">$${markP.toFixed(4)}</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Take Profit (TP)</span>
+                                    <span class="qmi-val text-buy">$${tpP.toFixed(4)}</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Stop Loss (SL)</span>
+                                    <span class="qmi-val text-sell">$${slP.toFixed(4)}</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Hard SL (2.5% max)</span>
+                                    <span class="qmi-val text-sell">$${hardSlP.toFixed(4)}</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Margin / Size</span>
+                                    <span class="qmi-val">$${Number(activePos.margin_usdt || 50).toFixed(2)} ($${Number(activePos.position_size_usdt || (activePos.margin_usdt || 50) * (activePos.leverage || 5)).toFixed(2)})</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Max Drawdown (MAE)</span>
+                                    <span class="qmi-val text-sell">-${mae.toFixed(2)}%</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Peak Gain (MFE)</span>
+                                    <span class="qmi-val text-buy">+${mfe.toFixed(2)}%</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Opened (IST)</span>
+                                    <span class="qmi-val" style="font-size:11.5px;">${openTime}</span>
+                                </div>
+                                <div class="qfm-metric-item">
+                                    <span class="qmi-lbl">Holding Duration</span>
+                                    <span class="qmi-val"><i class="fa-solid fa-hourglass-half" style="font-size:10px; margin-right:3px;"></i>${duration}</span>
+                                </div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:10px 12px; font-size:11.5px; color:#94A3B8; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-shield-halved text-accent" style="font-size:13px;"></i>
+                                <span><b style="color:#CBD5E1;">Sentry Confluence Audit:</b> ${sentryNotes}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    activePosContainer.innerHTML = `
+                        <div class="qfm-empty-pos">
+                            <i class="fa-solid fa-radar" style="font-size:18px; color:#38BDF8;"></i>
+                            <span>Queue is 100% Free • Autonomous 24/7 Scanner is monitoring Top-22 Champions for First-Tap Order Block entries.</span>
+                        </div>
+                    `;
+                }
+            }
+
+            // 4. Closed Trade History
+            const channelTrades = allTrades.filter(t => (t.channel && t.channel.toLowerCase() === channel.toLowerCase()) || (t.account_id && Number(t.account_id) === Number(accId)));
+            const histCountEl = document.getElementById("qfmHistoryCount");
+            const tbody = document.getElementById("qfmTradesTbody");
+
+            if (histCountEl) histCountEl.textContent = `${channelTrades.length} Trade${channelTrades.length === 1 ? '' : 's'} Logged`;
+
+            if (tbody) {
+                if (channelTrades.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:28px 14px; color:#64748B;">No closed trades logged for this account yet. Next execution will be Trade #1!</td></tr>`;
+                } else {
+                    tbody.innerHTML = channelTrades.map((t, idx) => {
+                        const isBuy = (t.side || "").toUpperCase() === "BUY" || (t.side_raw || "").toUpperCase() === "LONG";
+                        const sideClass = isBuy ? "dsi-badge long" : "dsi-badge short";
+                        const sideText = isBuy ? "BUY" : "SELL";
+                        const pnl = Number(t.pnl_usdt !== undefined ? t.pnl_usdt : (t.realized_pnl || 0.0));
+                        const roi = Number(t.roi_pct !== undefined ? t.roi_pct : (t.pnl_pct || 0.0));
+                        const pnlClass = pnl >= 0 ? "text-buy" : "text-sell";
+                        const sign = pnl >= 0 ? "+" : "";
+
+                        const openTime = formatQuadIstTime(t.entry_time || t.timestamp_ist || t.timestamp);
+                        const closeTime = formatQuadIstTime(t.exit_time || t.timestamp_ist || t.timestamp);
+                        const duration = t.duration_str || t.duration || "1h";
+
+                        const isTp = (t.result || "").toLowerCase().includes("tp") || pnl > 0;
+                        const isBe = (t.result || "").toLowerCase().includes("break-even") || pnl === 0;
+                        const resBadge = isTp 
+                            ? `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px; background:rgba(0,245,155,0.15); color:#00F59B; border:1px solid rgba(0,245,155,0.3);"><i class="fa-solid fa-circle-check"></i> ${t.result || "TP Hit"}</span>`
+                            : isBe
+                            ? `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px; background:rgba(148,163,184,0.15); color:#94A3B8; border:1px solid rgba(148,163,184,0.3);"><i class="fa-solid fa-minus"></i> Break-Even</span>`
+                            : `<span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px; background:rgba(255,77,106,0.15); color:#FF4D6A; border:1px solid rgba(255,77,106,0.3);"><i class="fa-solid fa-circle-xmark"></i> ${t.result || "SL Hit"}</span>`;
+
+                        const maeVal = Number(t.mae_pct || 0);
+                        const mfeVal = Number(t.mfe_pct || 0);
+                        const sentryTxt = t.sentry_reasons || "Hermes 2.5 Apex Rules Checked";
+
+                        return `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); font-family: var(--font-mono); font-size: 11.5px;">
+                                <td style="padding: 10px 8px; color: #94A3B8;">#${t.trade_num || (channelTrades.length - idx)}</td>
+                                <td style="padding: 10px 8px;">
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <b style="color:#FFFFFF; font-size:12px;">${t.symbol}</b>
+                                        <span class="${sideClass}">${sideText}</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px 8px; color: #94A3B8; font-size:11px;">${openTime}</td>
+                                <td style="padding: 10px 8px; color: #94A3B8; font-size:11px;">${closeTime}</td>
+                                <td style="padding: 10px 8px; color: #94A3B8;"><i class="fa-solid fa-hourglass-half" style="font-size:9.5px; margin-right:4px;"></i>${duration}</td>
+                                <td style="padding: 10px 8px; color: #FFFFFF; font-size:11px;">$${Number(t.entry_price || 0).toFixed(4)} ➔ $${Number(t.exit_price || t.entry_price || 0).toFixed(4)}</td>
+                                <td style="padding: 10px 8px; font-weight:700;" class="${pnlClass}">${sign}$${pnl.toFixed(2)}</td>
+                                <td style="padding: 10px 8px; font-weight:700;" class="${pnlClass}">${sign}${roi.toFixed(2)}%</td>
+                                <td style="padding: 10px 8px;">${resBadge}</td>
+                                <td style="padding: 10px 8px;">
+                                    <span style="font-size:10px; font-weight:700; color:#EF4444; background:rgba(239,68,68,0.12); padding:2px 6px; border-radius:4px;">
+                                        -${maeVal.toFixed(2)}%
+                                    </span>
+                                </td>
+                                <td style="padding: 10px 8px;">
+                                    <span style="font-size:10px; font-weight:700; color:#00F59B; background:rgba(0,245,155,0.12); padding:2px 6px; border-radius:4px;">
+                                        +${mfeVal.toFixed(2)}%
+                                    </span>
+                                </td>
+                                <td style="padding: 10px 8px; color: #64748B; font-size:10px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${sentryTxt}">
+                                    ${sentryTxt}
+                                </td>
+                            </tr>
+                        `;
+                    }).join("");
+                }
             }
         }
 
