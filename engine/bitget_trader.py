@@ -60,6 +60,9 @@ class BitgetTrader:
         return self.exchange is not None
 
     def is_auto_trade_enabled(self) -> bool:
+        # Enforce Single Master Cloud Execution: Only Render cloud executes live orders to prevent dual execution
+        if not os.getenv("RENDER") and os.getenv("ALLOW_LOCAL_LIVE_TRADING", "false").lower() != "true":
+            return False
         enabled_setting = get_setting("bitget_auto_trade", str(BITGET_AUTO_TRADE))
         return enabled_setting.lower() == "true"
 
