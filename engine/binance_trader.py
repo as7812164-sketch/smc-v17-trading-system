@@ -226,22 +226,20 @@ class BinanceTrader:
                     "error": f"CRITICAL REJECTION: Cannot set ISOLATED mode ({e2}). Order blocked to prevent CROSS mode exposure."
                 }
 
-    async def execute_4h_short_trade(self, setup: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_4h_trade(self, setup: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Executes a real 4H SHORT trade on Binance Futures under HERMES 2.5 APEX HYBRID:
-        - Direction: STRICTLY SHORT ONLY. Long signals are rejected.
+        Executes a real 4H Trade on Binance Futures under HERMES 2.5 APEX HYBRID:
+        - Direction: Both LONG and SHORT allowed under Quad-Compounding.
         - Margin Mode: STRICTLY ISOLATED mode. Cross mode is prohibited.
         - Leverage: 5x Isolated.
-        - Risk Controls: TP +2.8% price drop (+14% ROE), Soft SL -2.8% on 4H candle close, Disaster Hard SL +3.8% on Exchange.
+        - Sizing: $50 USDT Compounding starting capital.
+        - Risk Controls: TP +2.8% price move (+14% ROE), Soft SL -2.8% on 4H candle close, Disaster Hard SL 3.8% on Exchange.
         """
         sym = setup["symbol"]
-        side = setup["side"].upper()
-
-        # 1. STRICT SHORT-ONLY MANDATE ENFORCEMENT
-        if side not in ("SHORT", "SELL"):
-            msg = f"[BINANCE MANDATE] Blocked {side} on {sym}. User policy strictly locked to SHORT ONLY on Binance 4H."
-            print(msg)
-            return {"success": False, "skipped": True, "reason": msg}
+        side_raw = setup.get("side", "BUY").upper()
+        is_long = side_raw in ("BUY", "LONG")
+        side = "LONG" if is_long else "SHORT"
+        order_side = 'buy' if is_long else 'sell'
 
         if not self.is_auto_trade_enabled():
             return {"success": False, "skipped": True, "reason": "Binance Auto-Trading is currently paused."}
@@ -251,10 +249,14 @@ class BinanceTrader:
         soft_sl_pct = float(setup.get("soft_sl_pct", BINANCE_4H_SL_PCT))
         hard_sl_pct = float(setup.get("hard_sl_pct", BINANCE_HARD_DISASTER_SL_PCT))
 
-        # Targets for Short
-        tp_price = round(entry_price * (1.0 - tp_pct), 6)
-        soft_sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
-        hard_disaster_sl = round(entry_price * (1.0 + hard_sl_pct), 6)
+        if is_long:
+            tp_price = round(entry_price * (1.0 + tp_pct), 6)
+            soft_sl_price = round(entry_price * (1.0 - soft_sl_pct), 6)
+            hard_disaster_sl = round(entry_price * (1.0 - hard_sl_pct), 6)
+        else:
+            tp_price = round(entry_price * (1.0 - tp_pct), 6)
+            soft_sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
+            hard_disaster_sl = round(entry_price * (1.0 + hard_sl_pct), 6)
 
         if setup.get("tp_price"):
             tp_price = float(setup["tp_price"])
@@ -298,9 +300,9 @@ class BinanceTrader:
                 except Exception:
                     pass
 
-                # 5. EXECUTE 5x ISOLATED SHORT ORDER
+                # 5. EXECUTE 5x ISOLATED ORDER
                 is_hedge = self.get_position_mode()
-                pos_side = 'SHORT' if is_hedge else 'BOTH'
+                pos_side = ('LONG' if is_long else 'SHORT') if is_hedge else 'BOTH'
 
                 order_params = {
                     'positionSide': pos_side,
@@ -312,7 +314,7 @@ class BinanceTrader:
                     order = self.exchange.create_order(
                         symbol=sym,
                         type='limit',
-                        side='sell',
+                        side=order_side,
                         amount=amount,
                         price=entry_price,
                         params=order_params
@@ -373,6 +375,9 @@ class BinanceTrader:
                 "margin": BINANCE_STARTING_MARGIN,
                 "leverage": BINANCE_DEFAULT_LEVERAGE
             }
+
+    # Backward compatibility alias
+    execute_4h_short_trade = execute_4h_trade
 
     async def execute_1h_trade(self, setup: Dict[str, Any]) -> Dict[str, Any]:
         """

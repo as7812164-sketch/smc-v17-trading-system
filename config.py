@@ -122,7 +122,7 @@ BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", "")
 BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET", "")
 BINANCE_AUTO_TRADE = os.getenv("BINANCE_AUTO_TRADE", "true").lower() == "true"
 BINANCE_TIMEFRAME = "4h"
-BINANCE_ALLOWED_SIDES = ["SHORT", "SELL"]  # Strictly SHORT ONLY per user mandate (92.8% 1-Yr Win Rate)
+BINANCE_ALLOWED_SIDES = ["BUY", "LONG", "SELL", "SHORT"]  # Both LONG & SHORT enabled for Quad-Compounding
 BINANCE_MARGIN_MODE = "ISOLATED"           # Strictly ISOLATED margin mode - CROSS mode prohibited
 BINANCE_DEFAULT_LEVERAGE = 5
 BINANCE_STARTING_MARGIN = 50.0  # $50 USDT compounding starting size

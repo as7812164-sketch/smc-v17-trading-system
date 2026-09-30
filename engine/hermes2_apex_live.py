@@ -641,7 +641,7 @@ class Hermes2ApexLiveEngine:
             from engine.binance_trader import binance_trader
             if binance_trader.is_auto_trade_enabled():
                 try:
-                    res = await binance_trader.execute_4h_short_trade(setup_with_flag)
+                    res = await binance_trader.execute_4h_trade(setup_with_flag)
                     if res and res.get("order"):
                         execution_order_id = res["order"].get("id") or res["order"].get("info", {}).get("orderId")
                 except Exception as be:
