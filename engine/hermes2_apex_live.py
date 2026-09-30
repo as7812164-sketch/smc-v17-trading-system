@@ -280,7 +280,7 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh_trigger,
                                                     "status": "FRESH_TRIGGERED" if is_fresh_trigger else "CONFIRMED_TAP",
-                                                    "sentry_reasons": f"Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
+                                                    "sentry_reasons": f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
                                                 })
                                                 tapped_found = True
                                             break
@@ -310,7 +310,7 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": candles[-1]["time"],
                                                     "is_fresh_trigger": False,
                                                     "status": "ARMED_WAITING_TAP",
-                                                    "sentry_reasons": f"Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Armed IDM | Sentry 4 Fresh Window: {bars_since_high}/28 Bars"
+                                                    "sentry_reasons": f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Armed IDM | Sentry 4 Fresh Window: {bars_since_high}/28 Bars"
                                                 })
 
             # -------------------------------------------------------------
@@ -374,7 +374,7 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh_trigger,
                                                     "status": "FRESH_TRIGGERED" if is_fresh_trigger else "CONFIRMED_TAP",
-                                                    "sentry_reasons": f"Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
+                                                    "sentry_reasons": f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
                                                 })
                                                 tapped_found = True
                                             break
@@ -404,7 +404,7 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": candles[-1]["time"],
                                                     "is_fresh_trigger": False,
                                                     "status": "ARMED_WAITING_TAP",
-                                                    "sentry_reasons": f"Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 IDM Level | Sentry 4 Armed Fresh ({bars_since_low}/28 Bars)"
+                                                    "sentry_reasons": f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 IDM Level | Sentry 4 Armed Fresh ({bars_since_low}/28 Bars)"
                                                 })
 
         return setups

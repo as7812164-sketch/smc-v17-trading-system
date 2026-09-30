@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "updated_at": 1790782296853,
-  "updated_at_str": "2026-09-30 21:01:36 IST",
+  "updated_at": 1790783552931,
+  "updated_at_str": "2026-09-30 21:22:32 IST",
   "accounts": [
     {
       "id": 1,
@@ -191,7 +191,7 @@
   "metrics": {
     "reconnects": "0",
     "watchdog_restarts": "0",
-    "errors": "2393",
+    "errors": "2438",
     "start_time": "1790357945.6204283",
     "last_scan_time": "",
     "last_ob_refresh": "26 Sep 2026 \u2022 01:30:43 PM IST",
@@ -204,7 +204,7 @@
     "last_scan_duration": "6s",
     "hermes_status": "ACTIVE_24_7",
     "hermes_mode": "HERMES_2.5_APEX_HYBRID",
-    "hermes_last_scan": "30 Sep 2026 \u2022 09:01:29 PM IST",
-    "hermes_setups_detected": "49"
+    "hermes_last_scan": "30 Sep 2026 \u2022 09:19:32 PM IST",
+    "hermes_setups_detected": "0"
   }
 }

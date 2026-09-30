@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Positions &amp; Trade History • HERMES 2.0 SMC AI AGENT</title>
+    <title>Positions &amp; Trade History • HERMES 2.5 APEX HYBRID</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -787,7 +787,7 @@
                     <div class="bitget-empty-state" id="posEmptyState">
                         <i class="fa-solid fa-satellite-dish"></i>
                         <h4>No Open Positions</h4>
-                        <p>Hermes 2.0 Apex 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
+                        <p>Hermes 2.5 Apex Hybrid 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
                     </div>
                 </div>
             </section>
@@ -909,7 +909,7 @@
                     <div style="width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, #1d4ed8, #38bdf8); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px;">
                         <i class="fa-solid fa-feather-pointed"></i>
                     </div>
-                    <span style="font-weight: 800; font-size: 14px; color: #fff;">HERMES 2.0 APEX</span>
+                    <span style="font-weight: 800; font-size: 14px; color: #fff;">HERMES 2.5 APEX HYBRID</span>
                 </div>
                 <button onclick="toggleDrawer(false)" style="background: transparent; border: none; color: #94A3B8; font-size: 18px; cursor: pointer;">
                     <i class="fa-solid fa-xmark"></i>
@@ -1125,7 +1125,7 @@
                     <div class="bitget-empty-state">
                         <i class="fa-solid fa-satellite-dish"></i>
                         <h4>No Open Positions ${currentTfFilter !== 'all' ? `(${currentTfFilter.toUpperCase()})` : ''}</h4>
-                        <p>Hermes 2.0 Apex 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
+                        <p>Hermes 2.5 Apex Hybrid 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
                     </div>
                 `;
                 return;
@@ -1355,7 +1355,7 @@
         }
 
         function sharePosition(sym, side, pnl, roe) {
-            const text = `🎯 HERMES 2.0 APEX Position: ${sym} (${side}) | PnL: ${pnl} USDT | ROE: ${roe}`;
+            const text = `🎯 HERMES 2.5 APEX HYBRID Position: ${sym} (${side}) | PnL: ${pnl} USDT | ROE: ${roe}`;
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(text);
                 showToast('Position summary copied to clipboard!');
