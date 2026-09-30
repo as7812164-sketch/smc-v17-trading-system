@@ -108,95 +108,12 @@ def init_journal_db_and_csv():
 
 def _sanitize_legacy_trades(conn):
     """
-    Purges any historical backtest trades (2025 dates, Super Sniper) so that
+    Purges any historical backtest trades (2025 dates, Super Sniper, Decisional) so that
     the live forward-test ledger strictly contains genuine forward-test trades.
-    If database contains legacy junk or is empty, initializes the verified 2 trades of today.
     """
     # 1. Purge legacy backtests
     conn.execute("DELETE FROM trade_journal WHERE timestamp_ist LIKE '%2025%' OR notes LIKE '%Super Sniper%' OR notes LIKE '%Decisional%'")
     conn.commit()
-
-    # 2. Check remaining trades count
-    count = conn.execute("SELECT COUNT(*) FROM trade_journal").fetchone()[0]
-    if count == 0:
-        t_time = 1790428089133
-        conn.execute("""
-        INSERT INTO trade_journal (
-            trade_num, timestamp_ist, exchange, timeframe, symbol, side,
-            entry_price, exit_price, tp_price, soft_sl_price, hard_sl_price,
-            status, margin_usdt, leverage, pnl_usdt, roe_pct,
-            account_balance, duration_hours, mike_score, notes, created_at, updated_at
-        ) VALUES (
-            1, '2026-09-26 11:45:00 IST', 'Binance', '1h', 'DOGEUSDT', 'BUY',
-            0.09450, 0.09658, 0.09658, 0.09213, 0.09100,
-            'TP_HIT', 50.00, 5, 12.74, 25.48,
-            62.74, 1.37, 96, 'Hermes 2.0 Apex 1H Institutional Order Block • Sentry 3 IDM Sweep Validated',
-            ?, ?
-        );
-        """, (t_time, t_time))
-
-        conn.execute("""
-        INSERT INTO trade_journal (
-            trade_num, timestamp_ist, exchange, timeframe, symbol, side,
-            entry_price, exit_price, tp_price, soft_sl_price, hard_sl_price,
-            status, margin_usdt, leverage, pnl_usdt, roe_pct,
-            account_balance, duration_hours, mike_score, notes, created_at, updated_at
-        ) VALUES (
-            2, '2026-09-26 16:30:00 IST', 'Binance', '4h', 'NEARUSDT', 'SELL',
-            4.8210, 4.6860, 4.6860, 4.9560, 5.0000,
-            'TP_HIT', 60.83, 5, 14.85, 24.41,
-            77.59, 3.8, 98, 'Hermes 2.0 Apex 4H Extreme Order Block • Sentry 2 Displacement 6.4%',
-            ?, ?
-        );
-        """, (t_time, t_time))
-
-        conn.execute("""
-        INSERT INTO trade_journal (
-            trade_num, timestamp_ist, exchange, timeframe, symbol, side,
-            entry_price, exit_price, tp_price, soft_sl_price, hard_sl_price,
-            status, margin_usdt, leverage, pnl_usdt, roe_pct,
-            account_balance, duration_hours, mike_score, notes, created_at, updated_at
-        ) VALUES (
-            3, '2026-09-28 07:43:00 IST', 'Binance', '1h', 'AVAXUSDT', 'SELL',
-            10.9030, 10.6631, 10.6631, 11.1756, 11.1756,
-            'TP_HIT', 55.21, 5, 6.08, 11.01,
-            83.67, 1.3, 97, 'Hermes 2.5 Apex 1H Extreme Order Block • Sentry 3 IDM Sweep Rejection Wick 45.2%',
-            1790561580000, 1790566200000
-        );
-        """)
-
-        conn.execute("""
-        INSERT INTO trade_journal (
-            trade_num, timestamp_ist, exchange, timeframe, symbol, side,
-            entry_price, exit_price, tp_price, soft_sl_price, hard_sl_price,
-            status, margin_usdt, leverage, pnl_usdt, roe_pct,
-            account_balance, duration_hours, mike_score, notes, created_at, updated_at
-        ) VALUES (
-            4, '2026-09-28 08:28:00 IST', 'Binance', '1h', 'OPUSDT', 'BUY',
-            0.1453, 0.1417, 0.1485, 0.1417, 0.1400,
-            'SL_HIT', 50.00, 5, -6.19, -12.38,
-            77.48, 1.0, 91, 'Hermes 2.5 Apex 1H IDM Pullback Sweep • Soft SL Triggered at 0.1417',
-            1790564280000, 1790568000000
-        );
-        """)
-        conn.commit()
-
-    # 3. Synchronize paper_account with the verified trades if at starting state
-    acc = conn.execute("SELECT current_balance, win_count FROM paper_account WHERE id = 1").fetchone()
-    if not acc or (acc[0] == 50.0 and acc[1] == 0):
-        conn.execute("""
-        UPDATE paper_account SET
-            initial_balance = 50.0,
-            current_balance = 73.45,
-            vault_balance = 4.14,
-            total_pnl = 27.59,
-            win_count = 2,
-            loss_count = 0,
-            milestone_target = 2000.0,
-            mode = 'HERMES_2.0_APEX'
-        WHERE id = 1;
-        """)
-        conn.commit()
 
 def record_trade_entry(
     exchange: str,
@@ -350,6 +267,15 @@ def sync_quad_accounts_to_ledger():
             SELECT * FROM paper_trades 
             ORDER BY id ASC
         """).fetchall()
+
+        # Delete orphan journal rows that no longer exist in paper_trades
+        valid_pt_ids = [r["id"] for r in pts if r["id"]]
+        if valid_pt_ids:
+            placeholders = ",".join("?" for _ in valid_pt_ids)
+            conn.execute(f"DELETE FROM trade_journal WHERE paper_trade_id > 0 AND paper_trade_id NOT IN ({placeholders})", valid_pt_ids)
+        else:
+            conn.execute("DELETE FROM trade_journal WHERE paper_trade_id > 0")
+        conn.commit()
 
         for pt_row in pts:
             pt = dict(pt_row)

@@ -568,6 +568,61 @@ class Hermes2ApexLiveEngine:
 
         sentry_reasons = setup.get("sentry_reasons", "")
 
+        # Check if real exchange auto-trading is active for this target exchange
+        exchange_auto_active = False
+        if target_exchange == "BINANCE":
+            from engine.binance_trader import binance_trader
+            exchange_auto_active = binance_trader.is_auto_trade_enabled()
+        elif target_exchange == "BITGET":
+            from engine.bitget_trader import bitget_trader
+            exchange_auto_active = bitget_trader.is_auto_trade_enabled()
+
+        execution_order_id = None
+
+        # 1:1 REAL EXECUTION MANDATE:
+        # If auto-trading is enabled for the exchange, execute on real exchange FIRST!
+        # A trade is ONLY opened if the exchange confirms the order. Zero phantom trades.
+        if exchange_auto_active:
+            setup_with_flag = {
+                **setup,
+                "managed_by_hermes": True,
+                "entry_price": entry_price,
+                "tp_price": tp_price,
+                "sl_price": sl_price,
+                "hard_sl_price": hard_sl_price,
+                "tp_pct": tp_pct,
+                "soft_sl_pct": soft_sl_pct,
+                "hard_sl_pct": hard_sl_pct,
+                "margin": margin
+            }
+            logger.info(f"🚀 [REAL EXCHANGE DISPATCH] Routing {sym} {side} to {target_exchange} ({target_channel.upper()}) | ${margin} Margin @ 5x Isolated")
+            res = None
+            try:
+                if target_channel == "binance_4h":
+                    res = await binance_trader.execute_4h_trade(setup_with_flag)
+                elif target_channel == "binance_1h":
+                    res = await binance_trader.execute_1h_trade(setup_with_flag)
+                elif target_channel == "bitget_4h":
+                    res = await bitget_trader.execute_4h_trade(setup_with_flag)
+                elif target_channel == "bitget_1h":
+                    res = await bitget_trader.execute_1h_trade(setup_with_flag)
+            except Exception as be:
+                logger.error(f"❌ Real order exception on {target_exchange} ({target_channel}): {be}")
+                return
+
+            if not res or not res.get("success"):
+                reason = res.get("reason") or res.get("error") if res else "Order placement failed"
+                logger.warning(f"🛡️ [REAL PARITY ENFORCED] Trade on {sym} was skipped/rejected on {target_exchange}: {reason}. Paper trade NOT opened to maintain 1:1 real parity!")
+                return
+
+            execution_order_id = res.get("order_id") or (res.get("order", {}).get("id") if isinstance(res.get("order"), dict) else None)
+            if res.get("entry_price"):
+                entry_price = float(res["entry_price"])
+            if res.get("margin"):
+                margin = float(res["margin"])
+                position_size = round(margin * 5.0, 2)
+            logger.info(f"✅ Real exchange order placed on {target_exchange}: Order ID {execution_order_id}")
+
         with get_connection() as conn:
             cursor = conn.execute("""
             INSERT INTO paper_trades (
@@ -617,62 +672,10 @@ class Hermes2ApexLiveEngine:
             "hard_sl_price": hard_sl_price,
             "status": "OPEN",
             "entry_time": now_ms,
-            "sentry_reasons": sentry_reasons
+            "sentry_reasons": sentry_reasons,
+            "order_id": execution_order_id
         }
         self.active_position = trade_obj
-
-        # Dispatch real live execution to matching exchange & channel
-        logger.info(f"🚀 [QUAD-COMPOUNDING] Routing {sym} {side} to {target_exchange} ({target_channel.upper()}) | $50 Margin @ 5x Isolated")
-        setup_with_flag = {
-            **setup,
-            "managed_by_hermes": True,
-            "entry_price": entry_price,
-            "tp_price": tp_price,
-            "sl_price": sl_price,
-            "hard_sl_price": hard_sl_price,
-            "tp_pct": tp_pct,
-            "soft_sl_pct": soft_sl_pct,
-            "hard_sl_pct": hard_sl_pct,
-            "margin": margin,
-            "trade_id": trade_id
-        }
-        execution_order_id = None
-        if target_channel == "binance_4h":
-            from engine.binance_trader import binance_trader
-            if binance_trader.is_auto_trade_enabled():
-                try:
-                    res = await binance_trader.execute_4h_trade(setup_with_flag)
-                    if res and res.get("order"):
-                        execution_order_id = res["order"].get("id") or res["order"].get("info", {}).get("orderId")
-                except Exception as be:
-                    logger.error(f"Binance 4H Auto-Trade Exception: {be}")
-        elif target_channel == "binance_1h":
-            from engine.binance_trader import binance_trader
-            if binance_trader.is_auto_trade_enabled():
-                try:
-                    res = await binance_trader.execute_1h_trade(setup_with_flag)
-                    if res and res.get("order"):
-                        execution_order_id = res["order"].get("id") or res["order"].get("info", {}).get("orderId")
-                except Exception as be:
-                    logger.error(f"Binance 1H Auto-Trade Exception: {be}")
-        elif target_channel == "bitget_4h":
-            from engine.bitget_trader import bitget_trader
-            if bitget_trader.is_auto_trade_enabled():
-                try:
-                    res = await bitget_trader.execute_4h_trade(setup_with_flag)
-                    if res and res.get("order_id"):
-                        execution_order_id = res["order_id"]
-                except Exception as bge:
-                    logger.error(f"Bitget 4H Auto-Trade Exception: {bge}")
-        elif target_channel == "bitget_1h":
-            from engine.bitget_trader import bitget_trader
-            if bitget_trader.is_auto_trade_enabled():
-                try:
-                    res = await bitget_trader.execute_1h_trade(setup_with_flag)
-                    if res and res.get("order_id"):
-                        execution_order_id = res["order_id"]
-                except Exception as bge:
-                    logger.error(f"Bitget 1H Auto-Trade Exception: {bge}")
 
         # Check if paper trading alerts are muted
         mute_paper = get_setting("mute_paper_trading_alerts", "false").lower() == "true"
