@@ -59,6 +59,22 @@ class BinanceTrader:
             self._is_hedge_mode = True
             return True
 
+    def is_symbol_active_on_exchange(self, symbol: str) -> bool:
+        """Returns True if the symbol has an active futures position on Binance."""
+        if not self.exchange:
+            self._init_exchange()
+        if not self.exchange:
+            return False
+        try:
+            clean_sym = symbol.replace('/', '').replace(':USDT', '').upper()
+            positions = self.exchange.fapiPrivateV2GetPositionRisk({'symbol': clean_sym})
+            for p in positions:
+                if abs(float(p.get('positionAmt', 0) or 0)) > 0:
+                    return True
+        except Exception:
+            pass
+        return False
+
     def _init_exchange(self):
         api_key = get_setting("binance_api_key", BINANCE_API_KEY)
         secret = get_setting("binance_secret", BINANCE_API_SECRET)
@@ -274,7 +290,17 @@ class BinanceTrader:
 
         if self.exchange and self.is_configured():
             try:
-                # 0. Anti-Duplicate Exchange Guard: Abort if position already exists for this symbol
+                # 0. Cross-Exchange Exclusivity Guard: Abort if symbol already has active position on Bitget
+                try:
+                    from engine.bitget_trader import bitget_trader
+                    if bitget_trader.is_symbol_active_on_exchange(sym):
+                        msg = f"[CROSS-EXCHANGE EXCLUSIVITY] Aborting: {sym} is already active on Bitget! Concurrent cross-exchange trades prohibited."
+                        print(msg)
+                        return {"success": False, "skipped": True, "reason": msg}
+                except Exception as bg_chk_err:
+                    pass
+
+                # Anti-Duplicate Guard: Abort if position already exists on Binance
                 try:
                     clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
                     bin_pos = self.exchange.fapiPrivateV2GetPositionRisk({'symbol': clean_sym})
@@ -299,11 +325,14 @@ class BinanceTrader:
                 except Exception:
                     pass
 
-                # 4. CAPITAL ALLOCATION & POSITION SIZING
+                # 4. CAPITAL ALLOCATION & POSITION SIZING (Strict $35.00 USDT Floor)
                 bal = self.fetch_futures_balance()
                 free_usdt = float(bal.get("free_usdt", 0.0) or 0.0)
-                if free_usdt < 5.0:
-                    return {"success": False, "error": f"Insufficient Binance free balance (${free_usdt:.2f} USDT). Min $5 required."}
+                MIN_COMPOUNDING_FLOOR = 35.0
+                if free_usdt < MIN_COMPOUNDING_FLOOR:
+                    msg = f"Insufficient Binance free balance (${free_usdt:.2f} USDT). Minimum ${MIN_COMPOUNDING_FLOOR:.2f} required for compounding trade."
+                    print(f"[COMPOUNDING BALANCE GUARD] {msg}")
+                    return {"success": False, "skipped": True, "reason": msg}
 
                 # Compounding Challenge Capital Allocation ($50.00 -> $2,000.00 Milestone)
                 comp_bal = float(get_setting("binance_compounding_balance", str(BINANCE_STARTING_MARGIN)))
@@ -375,9 +404,8 @@ class BinanceTrader:
                     except Exception as tpe:
                         print(f"[BINANCE 4H TP NOTE] {tpe}")
 
-                    # 2. Exchange-side Hard Disaster Stop Loss (Conditional STOP Order)
+                    # 2. Exchange-side Hard Disaster Stop Loss (Conditional STOP_MARKET Order)
                     try:
-                        sl_limit_p = round(hard_disaster_sl * (1.002 if not is_long else 0.998), 4)
                         sl_p = {
                             'stopPrice': round(hard_disaster_sl, 4),
                             'positionSide': pos_s
@@ -386,13 +414,12 @@ class BinanceTrader:
                             sl_p['reduceOnly'] = True
                         sl_order = self.exchange.create_order(
                             symbol=sym,
-                            type='STOP',
+                            type='STOP_MARKET',
                             side=close_side,
                             amount=amount,
-                            price=sl_limit_p,
                             params=sl_p
                         )
-                        print(f"[BINANCE 4H SL ARMED] STOP order placed @ {hard_disaster_sl} (Algo ID: {sl_order.get('id')})")
+                        print(f"[BINANCE 4H SL ARMED] STOP_MARKET order placed @ {hard_disaster_sl} (Algo ID: {sl_order.get('id')})")
                     except Exception as sle:
                         print(f"[BINANCE 4H SL NOTE] {sle}")
                 except Exception as ex_arm:
@@ -488,7 +515,17 @@ class BinanceTrader:
 
         if self.exchange and self.is_configured():
             try:
-                # 0. Anti-Duplicate Exchange Guard: Abort if position already exists for this symbol
+                # 0. Cross-Exchange Exclusivity Guard: Abort if symbol already has active position on Bitget
+                try:
+                    from engine.bitget_trader import bitget_trader
+                    if bitget_trader.is_symbol_active_on_exchange(sym):
+                        msg = f"[CROSS-EXCHANGE EXCLUSIVITY] Aborting: {sym} is already active on Bitget! Concurrent cross-exchange trades prohibited."
+                        print(msg)
+                        return {"success": False, "skipped": True, "reason": msg}
+                except Exception as bg_chk_err:
+                    pass
+
+                # Anti-Duplicate Guard: Abort if position already exists on Binance
                 try:
                     clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
                     bin_pos = self.exchange.fapiPrivateV2GetPositionRisk({'symbol': clean_sym})
@@ -512,11 +549,14 @@ class BinanceTrader:
                 except Exception:
                     pass
 
-                # 3. Capital Allocation ($50 Compounding)
+                # 3. Capital Allocation ($50 Compounding with Strict $35.00 USDT Floor)
                 bal = self.fetch_futures_balance()
                 free_usdt = float(bal.get("free_usdt", 0.0) or 0.0)
-                if free_usdt < 5.0:
-                    return {"success": False, "error": f"Insufficient Binance free balance (${free_usdt:.2f} USDT). Min $5 required."}
+                MIN_COMPOUNDING_FLOOR = 35.0
+                if free_usdt < MIN_COMPOUNDING_FLOOR:
+                    msg = f"Insufficient Binance free balance (${free_usdt:.2f} USDT). Minimum ${MIN_COMPOUNDING_FLOOR:.2f} required for compounding trade."
+                    print(f"[COMPOUNDING BALANCE GUARD] {msg}")
+                    return {"success": False, "skipped": True, "reason": msg}
 
                 comp_bal = float(get_setting("binance_1h_compounding_balance", str(BINANCE_STARTING_MARGIN)))
                 margin = min(free_usdt, max(BINANCE_STARTING_MARGIN, comp_bal))
@@ -584,9 +624,8 @@ class BinanceTrader:
                     except Exception as tpe:
                         print(f"[BINANCE 1H TP NOTE] {tpe}")
 
-                    # 2. Exchange-side Hard Disaster Stop Loss (Conditional STOP Order)
+                    # 2. Exchange-side Hard Disaster Stop Loss (Conditional STOP_MARKET Order)
                     try:
-                        sl_limit_p = round(hard_disaster_sl * (1.002 if not is_long else 0.998), 4)
                         sl_p = {
                             'stopPrice': round(hard_disaster_sl, 4),
                             'positionSide': pos_s
@@ -595,13 +634,12 @@ class BinanceTrader:
                             sl_p['reduceOnly'] = True
                         sl_order = self.exchange.create_order(
                             symbol=sym,
-                            type='STOP',
+                            type='STOP_MARKET',
                             side=close_side,
                             amount=amount,
-                            price=sl_limit_p,
                             params=sl_p
                         )
-                        print(f"[BINANCE 1H SL ARMED] STOP order placed @ {hard_disaster_sl} (Algo ID: {sl_order.get('id')})")
+                        print(f"[BINANCE 1H SL ARMED] STOP_MARKET order placed @ {hard_disaster_sl} (Algo ID: {sl_order.get('id')})")
                     except Exception as sle:
                         print(f"[BINANCE 1H SL NOTE] {sle}")
                 except Exception as ex_arm:
@@ -651,18 +689,52 @@ class BinanceTrader:
         return await self.execute_1h_trade(setup)
 
     async def close_position_market(self, symbol: str, side: str) -> Dict[str, Any]:
-        """Closes active futures position immediately at market price."""
+        """Closes active futures position immediately at market price with exact contract size and cancels open orders."""
         if not self.exchange:
             return {"success": False, "error": "Exchange not connected"}
         try:
+            clean_sym = symbol.replace('/', '').replace(':USDT', '').upper()
             close_side = 'sell' if side.lower() in ('buy', 'long') else 'buy'
             is_hedge = self.get_position_mode()
 
-            order_params = {}
-            if is_hedge:
-                order_params['positionSide'] = 'LONG' if side.lower() in ('buy', 'long') else 'SHORT'
-            else:
-                order_params['positionSide'] = 'BOTH'
+            # 1. Cancel all open orders and algo orders for this symbol first so no orphaned TP/SL remains
+            try:
+                self.exchange.fapiPrivateDeleteAllOpenOrders({'symbol': clean_sym})
+            except Exception:
+                pass
+            try:
+                self.exchange.fapiPrivateDeleteAlgoOpenOrders({'symbol': clean_sym})
+            except Exception:
+                pass
+
+            # 2. Query exact position quantity from exchange risk API
+            pos_amt = 0.0
+            pos_side = 'BOTH'
+            try:
+                risk_list = self.exchange.fapiPrivateV2GetPositionRisk({'symbol': clean_sym})
+                target_pos_side = 'LONG' if side.lower() in ('buy', 'long') else 'SHORT'
+                for p in risk_list:
+                    amt = float(p.get('positionAmt', 0) or 0)
+                    p_side = p.get('positionSide', 'BOTH')
+                    if is_hedge:
+                        if p_side == target_pos_side and abs(amt) > 0:
+                            pos_amt = abs(amt)
+                            pos_side = target_pos_side
+                            break
+                    else:
+                        if abs(amt) > 0:
+                            pos_amt = abs(amt)
+                            pos_side = 'BOTH'
+                            break
+            except Exception as fe:
+                print(f"[BINANCE CLOSE RISK QUERY NOTE] {fe}")
+
+            if pos_amt <= 0:
+                print(f"[BINANCE MARKET CLOSE] Position on {clean_sym} is already closed on exchange.")
+                return {"success": True, "already_closed": True, "symbol": symbol}
+
+            order_params = {'positionSide': pos_side}
+            if pos_side == 'BOTH':
                 order_params['reduceOnly'] = True
 
             try:
@@ -670,7 +742,7 @@ class BinanceTrader:
                     symbol=symbol,
                     type='market',
                     side=close_side,
-                    amount=None,
+                    amount=pos_amt,
                     params=order_params
                 )
             except Exception as ce:
@@ -686,14 +758,27 @@ class BinanceTrader:
                         symbol=symbol,
                         type='market',
                         side=close_side,
-                        amount=None,
+                        amount=pos_amt,
                         params=order_params
                     )
                 else:
                     raise ce
+
+            # Refresh Binance balance and update compounding tracker
+            try:
+                bal = self.fetch_futures_balance()
+                total = bal.get("total_usdt", 0.0)
+                if total > 0:
+                    set_setting("binance_compounding_balance", str(round(total, 2)))
+            except Exception:
+                pass
+
+            print(f"[BINANCE MARKET CLOSE SUCCESS] Successfully closed {pos_amt} {clean_sym} at market price.")
             return {"success": True, "order": order}
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            err_str = str(e)
+            print(f"[BINANCE MARKET CLOSE ERROR] Failed to close {symbol}: {err_str}")
+            return {"success": False, "error": err_str}
 
     def evaluate_candle_close_exit(self, side: str, entry_price: float, soft_sl_price: float, closed_candle: Dict[str, Any]) -> Dict[str, Any]:
         """

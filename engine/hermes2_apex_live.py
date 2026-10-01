@@ -1174,20 +1174,23 @@ class Hermes2ApexLiveEngine:
         self.trade_cooldowns[sym] = time.time() + 1800  # 30-minute cooldown on this symbol to prevent rapid loop
 
         # Close real exchange futures position if auto-trade was active
+        close_res = None
         if target_exchange == "BINANCE":
             from engine.binance_trader import binance_trader
             if binance_trader.is_auto_trade_enabled():
                 try:
-                    await binance_trader.close_position_market(sym, side)
+                    close_res = await binance_trader.close_position_market(sym, side)
+                    logger.info(f"Binance real market close result for {sym}: {close_res}")
                 except Exception as ce:
-                    logger.warning(f"Binance real market close exception: {ce}")
+                    logger.error(f"Binance real market close exception for {sym}: {ce}")
         elif target_exchange == "BITGET":
             from engine.bitget_trader import bitget_trader
             if bitget_trader.is_auto_trade_enabled():
                 try:
-                    await bitget_trader.close_position_market(sym, side)
+                    close_res = await bitget_trader.close_position_market(sym, side)
+                    logger.info(f"Bitget real market close result for {sym}: {close_res}")
                 except Exception as bge:
-                    logger.warning(f"Bitget real market close exception: {bge}")
+                    logger.error(f"Bitget real market close exception for {sym}: {bge}")
         else:
             from engine.binance_trader import binance_trader
             if binance_trader.is_auto_trade_enabled():

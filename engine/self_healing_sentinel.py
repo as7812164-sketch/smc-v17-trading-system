@@ -73,7 +73,12 @@ class HermesSelfHealingSentinel:
         if parity_repairs:
             repairs_applied.extend(parity_repairs)
 
-        # 4. AUTO-HEAL: Geo-Fence Detection (Binance Cloud Restrictions)
+        # 4. AUTO-HEAL: Exchange TP/SL Active Orders Guard
+        tpsl_repairs = await self.auto_heal_exchange_tp_sl_orders()
+        if tpsl_repairs:
+            repairs_applied.extend(tpsl_repairs)
+
+        # 5. AUTO-HEAL: Geo-Fence Detection (Binance Cloud Restrictions)
         await self.check_and_cache_exchange_health()
 
         if repairs_applied:
@@ -279,16 +284,15 @@ class HermesSelfHealingSentinel:
                 with get_connection() as conn:
                     existing = conn.execute("""
                         SELECT id FROM paper_trades 
-                        WHERE symbol = ? AND UPPER(side) = ? 
+                        WHERE symbol = ? AND UPPER(side) = ? AND status = 'OPEN'
                         ORDER BY id DESC LIMIT 1
                     """, (sym, side)).fetchone()
 
                     if existing:
                         conn.execute("""
                             UPDATE paper_trades
-                            SET status = 'OPEN', exchange = 'BITGET', channel = 'bitget_1h', account_id = 4,
-                                entry_price = ?, position_size_usdt = ?, exit_time = NULL, exit_price = NULL,
-                                duration_str = 'Live'
+                            SET exchange = 'BITGET', channel = 'bitget_1h', account_id = 4,
+                                entry_price = ?, position_size_usdt = ?, duration_str = 'Live'
                             WHERE id = ?
                         """, (entry_p, round(notional, 2), existing[0]))
                         fixes.append(f"Auto-synchronized live Bitget position {sym} #{existing[0]} into DB & UI")
@@ -322,16 +326,15 @@ class HermesSelfHealingSentinel:
                 with get_connection() as conn:
                     existing = conn.execute("""
                         SELECT id FROM paper_trades 
-                        WHERE symbol = ? AND UPPER(side) = ? 
+                        WHERE symbol = ? AND UPPER(side) = ? AND status = 'OPEN'
                         ORDER BY id DESC LIMIT 1
                     """, (sym, side)).fetchone()
 
                     if existing:
                         conn.execute("""
                             UPDATE paper_trades
-                            SET status = 'OPEN', exchange = 'BINANCE', channel = 'binance_1h', account_id = 2,
-                                entry_price = ?, position_size_usdt = ?, exit_time = NULL, exit_price = NULL,
-                                duration_str = 'Live'
+                            SET exchange = 'BINANCE', channel = 'binance_1h', account_id = 2,
+                                entry_price = ?, position_size_usdt = ?, duration_str = 'Live'
                             WHERE id = ?
                         """, (entry_p, round(notional, 2), existing[0]))
                         fixes.append(f"Auto-synchronized live Binance position {sym} #{existing[0]} into DB & UI")
@@ -352,6 +355,115 @@ class HermesSelfHealingSentinel:
                     push_vault_state()
                 except Exception:
                     pass
+
+        return fixes
+
+    async def auto_heal_exchange_tp_sl_orders(self) -> List[str]:
+        """
+        Ensures that every active position on Binance and Bitget has Take Profit
+        and Stop Loss orders actively armed on the live exchange. If missing, arms them immediately!
+        """
+        fixes = []
+        from engine.binance_trader import binance_trader
+        from engine.bitget_trader import bitget_trader
+
+        # 1. Binance Futures TP/SL Guard
+        if binance_trader.is_configured() and binance_trader.is_auto_trade_enabled():
+            try:
+                positions = binance_trader.exchange.fapiPrivateV2GetPositionRisk()
+                for p in positions:
+                    amt = float(p.get('positionAmt', 0) or 0)
+                    if amt != 0:
+                        sym = p['symbol']
+                        is_long = amt > 0
+                        close_side = 'sell' if is_long else 'buy'
+                        entry_p = float(p.get('entryPrice', 0) or 0)
+                        pos_s = p.get('positionSide', 'BOTH')
+                        is_hedge = binance_trader.get_position_mode()
+
+                        open_orders = binance_trader.exchange.fapiPrivateGetOpenOrders({'symbol': sym})
+                        has_tp = any(o.get('type') == 'LIMIT' and o.get('side').lower() == close_side for o in open_orders)
+                        has_sl = any(o.get('type') in ('STOP', 'STOP_MARKET') for o in open_orders)
+
+                        with get_connection() as conn:
+                            db_tr = conn.execute("SELECT tp_price, hard_sl_price, sl_price FROM paper_trades WHERE symbol = ? AND status = 'OPEN' ORDER BY id DESC LIMIT 1", (sym,)).fetchone()
+
+                        tp_price = float(db_tr[0]) if db_tr and db_tr[0] else round(entry_p * (1.028 if is_long else 0.972), 4)
+                        sl_price = float(db_tr[1]) if db_tr and db_tr[1] else round(entry_p * (0.962 if is_long else 1.038), 4)
+
+                        order_params = {'positionSide': pos_s}
+                        if pos_s == 'BOTH':
+                            order_params['reduceOnly'] = True
+
+                        if not has_tp and entry_p > 0:
+                            try:
+                                binance_trader.exchange.create_order(
+                                    symbol=sym,
+                                    type='limit',
+                                    side=close_side,
+                                    amount=abs(amt),
+                                    price=round(tp_price, 4),
+                                    params=order_params
+                                )
+                                fixes.append(f"Auto-armed missing Binance TP on {sym} @ {tp_price}")
+                            except Exception as tpe:
+                                logger.warning(f"Failed to auto-arm Binance TP on {sym}: {tpe}")
+
+                        if not has_sl and entry_p > 0:
+                            try:
+                                sl_params = {
+                                    'stopPrice': round(sl_price, 4),
+                                    'positionSide': pos_s
+                                }
+                                if pos_s == 'BOTH':
+                                    sl_params['reduceOnly'] = True
+                                binance_trader.exchange.create_order(
+                                    symbol=sym,
+                                    type='STOP_MARKET',
+                                    side=close_side,
+                                    amount=abs(amt),
+                                    params=sl_params
+                                )
+                                fixes.append(f"Auto-armed missing Binance SL on {sym} @ {sl_price}")
+                            except Exception as sle:
+                                logger.warning(f"Failed to auto-arm Binance SL on {sym}: {sle}")
+            except Exception as be:
+                logger.warning(f"Binance TP/SL check error: {be}")
+
+        # 2. Bitget Futures Pos TP/SL Guard
+        if bitget_trader.is_configured() and bitget_trader.is_auto_trade_enabled():
+            try:
+                res = bitget_trader.exchange.privateMixGetV2MixPositionAllPosition({'productType': 'USDT-FUTURES'})
+                if res and 'data' in res:
+                    for p in res['data']:
+                        total = float(p.get('total', 0) or 0)
+                        if total > 0:
+                            sym = p.get('symbol', '').replace('/', '').replace(':USDT', '').upper()
+                            hold_side = p.get('holdSide', '').lower()
+                            entry_p = float(p.get('openPriceAvg', 0) or 0)
+
+                            with get_connection() as conn:
+                                db_tr = conn.execute("SELECT tp_price, hard_sl_price, sl_price FROM paper_trades WHERE symbol = ? AND status = 'OPEN' ORDER BY id DESC LIMIT 1", (sym,)).fetchone()
+
+                            tp_price = float(db_tr[0]) if db_tr and db_tr[0] else round(entry_p * (1.028 if hold_side == 'long' else 0.972), 6)
+                            sl_price = float(db_tr[1]) if db_tr and db_tr[1] else round(entry_p * (0.962 if hold_side == 'long' else 1.038), 6)
+
+                            try:
+                                bitget_trader.exchange.privateMixPostV2MixOrderPlacePosTpsl({
+                                    'marginCoin': 'USDT',
+                                    'symbol': sym,
+                                    'productType': 'USDT-FUTURES',
+                                    'holdSide': hold_side,
+                                    'stopSurplusTriggerPrice': str(round(tp_price, 6)),
+                                    'stopSurplusTriggerType': 'fill_price',
+                                    'stopLossTriggerPrice': str(round(sl_price, 6)),
+                                    'stopLossTriggerType': 'fill_price'
+                                })
+                                fixes.append(f"Auto-armed Bitget Pos TP/SL on {sym} {hold_side}")
+                            except Exception:
+                                pass
+            except Exception as bge:
+                logger.warning(f"Bitget TP/SL check error: {bge}")
 
         return fixes
 

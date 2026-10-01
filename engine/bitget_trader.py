@@ -82,6 +82,23 @@ class BitgetTrader:
         base = clean.replace("USDT", "")
         return f"{base}/USDT:USDT"
 
+    def is_symbol_active_on_exchange(self, symbol: str) -> bool:
+        """Returns True if the symbol has an active futures position on Bitget."""
+        if not self.exchange:
+            self._init_exchange()
+        if not self.exchange:
+            return False
+        try:
+            clean_sym = symbol.replace('/', '').replace(':USDT', '').upper()
+            res = self.exchange.privateMixGetV2MixPositionAllPosition({'productType': 'USDT-FUTURES', 'symbol': clean_sym})
+            if res and 'data' in res:
+                for p in res['data']:
+                    if float(p.get('total', 0) or 0) > 0:
+                        return True
+        except Exception:
+            pass
+        return False
+
     def fetch_futures_balance(self) -> Dict[str, Any]:
         """Fetches live Bitget USDT-M Futures account balance and compounding progress."""
         if not self.exchange:
@@ -250,7 +267,17 @@ class BitgetTrader:
 
         if self.exchange and self.is_configured():
             try:
-                # 0. Anti-Duplicate Exchange Guard: Abort if position already exists for this symbol
+                # 0. Cross-Exchange Exclusivity Guard: Abort if symbol already has active position on Binance
+                try:
+                    from engine.binance_trader import binance_trader
+                    if binance_trader.is_symbol_active_on_exchange(sym):
+                        msg = f"[CROSS-EXCHANGE EXCLUSIVITY] Aborting: {sym} is already active on Binance! Concurrent cross-exchange trades prohibited."
+                        print(msg)
+                        return {"success": False, "skipped": True, "reason": msg}
+                except Exception as bin_chk_err:
+                    pass
+
+                # Anti-Duplicate Exchange Guard: Abort if position already exists on Bitget
                 try:
                     existing_positions = self.exchange.fetch_positions([ccxt_sym])
                     for p in existing_positions:
@@ -269,11 +296,14 @@ class BitgetTrader:
                 # 2. Set 5x Leverage
                 self.set_leverage_isolated(BITGET_DEFAULT_LEVERAGE, sym, hold_side)
 
-                # 3. Capital Allocation ($50 Compounding)
+                # 3. Capital Allocation ($50 Compounding with Strict $35.00 USDT Floor)
                 bal = self.fetch_futures_balance()
                 free_usdt = float(bal.get("free_usdt", 0.0) or 0.0)
-                if free_usdt < 5.0:
-                    return {"success": False, "error": f"Insufficient Bitget free balance (${free_usdt:.2f} USDT). Min $5 required."}
+                MIN_COMPOUNDING_FLOOR = 35.0
+                if free_usdt < MIN_COMPOUNDING_FLOOR:
+                    msg = f"Insufficient Bitget free balance (${free_usdt:.2f} USDT). Minimum ${MIN_COMPOUNDING_FLOOR:.2f} required for compounding trade."
+                    print(f"[COMPOUNDING BALANCE GUARD] {msg}")
+                    return {"success": False, "skipped": True, "reason": msg}
 
                 comp_bal = float(get_setting("bitget_compounding_balance", str(BITGET_STARTING_MARGIN)))
                 margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))
@@ -419,7 +449,17 @@ class BitgetTrader:
 
         if self.exchange and self.is_configured():
             try:
-                # 0. Anti-Duplicate Exchange Guard: Abort if position already exists for this symbol
+                # 0. Cross-Exchange Exclusivity Guard: Abort if symbol already has active position on Binance
+                try:
+                    from engine.binance_trader import binance_trader
+                    if binance_trader.is_symbol_active_on_exchange(sym):
+                        msg = f"[CROSS-EXCHANGE EXCLUSIVITY] Aborting: {sym} is already active on Binance! Concurrent cross-exchange trades prohibited."
+                        print(msg)
+                        return {"success": False, "skipped": True, "reason": msg}
+                except Exception as bin_chk_err:
+                    pass
+
+                # Anti-Duplicate Exchange Guard: Abort if position already exists on Bitget
                 try:
                     existing_positions = self.exchange.fetch_positions([ccxt_sym])
                     for p in existing_positions:
@@ -435,10 +475,14 @@ class BitgetTrader:
                 self.enforce_isolated_margin(sym)
                 self.set_leverage_isolated(BITGET_DEFAULT_LEVERAGE, sym, hold_side)
 
+                # Capital Allocation ($50 Compounding with Strict $35.00 USDT Floor)
                 bal = self.fetch_futures_balance()
                 free_usdt = float(bal.get("free_usdt", 0.0) or 0.0)
-                if free_usdt < 5.0:
-                    return {"success": False, "error": f"Insufficient Bitget free balance (${free_usdt:.2f} USDT). Min $5 required."}
+                MIN_COMPOUNDING_FLOOR = 35.0
+                if free_usdt < MIN_COMPOUNDING_FLOOR:
+                    msg = f"Insufficient Bitget free balance (${free_usdt:.2f} USDT). Minimum ${MIN_COMPOUNDING_FLOOR:.2f} required for compounding trade."
+                    print(f"[COMPOUNDING BALANCE GUARD] {msg}")
+                    return {"success": False, "skipped": True, "reason": msg}
 
                 comp_bal = float(get_setting("bitget_1h_compounding_balance", str(BITGET_STARTING_MARGIN)))
                 margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))
@@ -537,39 +581,65 @@ class BitgetTrader:
         return await self.execute_4h_trade(setup)
 
     async def close_position_market(self, symbol: str, side: str) -> Dict[str, Any]:
-        """Closes active Bitget futures position immediately at market price."""
+        """Closes active Bitget futures position immediately at market price with exact contracts and cancels open orders."""
         if not self.exchange:
             return {"success": False, "error": "Bitget exchange not connected"}
 
+        clean_sym = symbol.replace('/', '').replace(':USDT', '').upper()
         ccxt_sym = self.format_symbol_for_bitget(symbol)
         is_long = side.upper() in ('BUY', 'LONG')
         hold_side = 'long' if is_long else 'short'
         close_side = 'sell' if is_long else 'buy'
 
+        # 1. Cancel all pending regular & plan orders first so no orphaned orders remain
         try:
-            print(f"[BITGET MARKET CLOSE] Closing {hold_side.upper()} position for {ccxt_sym}...")
-            # 1. Try Bitget Flash Close Position
+            self.exchange.privateMixPostV2MixOrderCancelAllOrders({'productType': 'USDT-FUTURES', 'symbol': clean_sym, 'marginCoin': 'USDT'})
+        except Exception:
+            pass
+        try:
+            self.exchange.privateMixPostV2MixOrderCancelPlanOrder({'productType': 'USDT-FUTURES', 'symbol': clean_sym, 'marginCoin': 'USDT'})
+        except Exception:
+            pass
+
+        # 2. Query exact contracts open on Bitget
+        contracts = 0.0
+        try:
+            res = self.exchange.privateMixGetV2MixPositionAllPosition({'productType': 'USDT-FUTURES', 'symbol': clean_sym})
+            if res and 'data' in res:
+                for p in res['data']:
+                    if p.get('holdSide', '').lower() == hold_side:
+                        contracts = float(p.get('total', 0) or 0)
+                        if contracts > 0:
+                            break
+        except Exception as fe:
+            print(f"[BITGET CLOSE QUERY NOTE] {fe}")
+
+        if contracts <= 0:
+            print(f"[BITGET MARKET CLOSE] Position on {clean_sym} {hold_side} is already closed on exchange.")
+            return {"success": True, "already_closed": True, "symbol": symbol}
+
+        try:
+            print(f"[BITGET MARKET CLOSE] Closing {contracts} {hold_side.upper()} contracts for {ccxt_sym}...")
+            # Flash close attempt
+            order = None
             try:
                 order = self.exchange.close_position(ccxt_sym, side=hold_side)
                 print(f"[BITGET FLASH CLOSE SUCCESS] {order}")
-                return {"success": True, "action": "FLASH_CLOSE", "order": order}
             except Exception as fe:
                 print(f"[BITGET FLASH CLOSE NOTE] {fe}. Falling back to reduce-only market order...")
-
-            # 2. Fallback to Reduce-Only Market Order
-            order_params = {
-                'marginMode': 'isolated',
-                'hedged': True,
-                'reduceOnly': True
-            }
-            order = self.exchange.create_order(
-                symbol=ccxt_sym,
-                type='market',
-                side=close_side,
-                amount=None,
-                params=order_params
-            )
-            print(f"[BITGET MARKET CLOSE SUCCESS] {order}")
+                order_params = {
+                    'marginMode': 'isolated',
+                    'hedged': True,
+                    'reduceOnly': True
+                }
+                order = self.exchange.create_order(
+                    symbol=ccxt_sym,
+                    type='market',
+                    side=close_side,
+                    amount=contracts,
+                    params=order_params
+                )
+                print(f"[BITGET MARKET CLOSE SUCCESS] {order}")
 
             # Refresh Bitget balance and update compounding tracker
             try:
