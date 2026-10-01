@@ -353,21 +353,50 @@ class BinanceTrader:
                     else:
                         raise oe
 
-                # Arm exchange-side hard disaster stop (non-blocking safeguard)
+                # Arm exchange-side Take Profit & Hard Disaster Stop Loss
                 try:
-                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
-                    close_side = 'sell' if is_long else 'buy'
-                    self.exchange.fapiPrivatePostOrder({
-                        'symbol': clean_sym,
-                        'side': close_side.upper(),
-                        'positionSide': order_params.get('positionSide', pos_side),
-                        'type': 'STOP_MARKET',
-                        'stopPrice': str(round(hard_disaster_sl, 4)),
-                        'closePosition': 'true'
-                    })
-                    print(f"[BINANCE HARD SL ARMED] Placed STOP_MARKET @ {hard_disaster_sl}")
-                except Exception as sle:
-                    print(f"[BINANCE HARD SL NOTE] Exchange stop market note: {sle}. Dynamic Hermes Profit Armor & Watchdog active.")
+                    close_side = 'buy' if not is_long else 'sell'
+                    pos_s = order_params.get('positionSide', pos_side)
+
+                    # 1. Exchange-side Take Profit (Limit Order)
+                    try:
+                        tp_p = {'positionSide': pos_s}
+                        if pos_s == 'BOTH':
+                            tp_p['reduceOnly'] = True
+                        tp_order = self.exchange.create_order(
+                            symbol=sym,
+                            type='limit',
+                            side=close_side,
+                            amount=amount,
+                            price=round(tp_price, 4),
+                            params=tp_p
+                        )
+                        print(f"[BINANCE 4H TP ARMED] Limit TP placed @ {tp_price} (Order ID: {tp_order.get('id')})")
+                    except Exception as tpe:
+                        print(f"[BINANCE 4H TP NOTE] {tpe}")
+
+                    # 2. Exchange-side Hard Disaster Stop Loss (Conditional STOP Order)
+                    try:
+                        sl_limit_p = round(hard_disaster_sl * (1.002 if not is_long else 0.998), 4)
+                        sl_p = {
+                            'stopPrice': round(hard_disaster_sl, 4),
+                            'positionSide': pos_s
+                        }
+                        if pos_s == 'BOTH':
+                            sl_p['reduceOnly'] = True
+                        sl_order = self.exchange.create_order(
+                            symbol=sym,
+                            type='STOP',
+                            side=close_side,
+                            amount=amount,
+                            price=sl_limit_p,
+                            params=sl_p
+                        )
+                        print(f"[BINANCE 4H SL ARMED] STOP order placed @ {hard_disaster_sl} (Algo ID: {sl_order.get('id')})")
+                    except Exception as sle:
+                        print(f"[BINANCE 4H SL NOTE] {sle}")
+                except Exception as ex_arm:
+                    print(f"[BINANCE 4H ARM ERROR] {ex_arm}")
 
                 print(f"[BINANCE REAL 4H {side} EXECUTED] {sym} {side} @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED - {order_params.get('positionSide')})")
                 fill_price = float(order.get('average') or order.get('price') or entry_price)
@@ -533,21 +562,50 @@ class BinanceTrader:
                     else:
                         raise oe
 
-                # Arm exchange-side hard disaster stop (non-blocking safeguard)
+                # Arm exchange-side Take Profit & Hard Disaster Stop Loss
                 try:
-                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
-                    close_side = 'sell' if is_long else 'buy'
-                    self.exchange.fapiPrivatePostOrder({
-                        'symbol': clean_sym,
-                        'side': close_side.upper(),
-                        'positionSide': order_params.get('positionSide', pos_side),
-                        'type': 'STOP_MARKET',
-                        'stopPrice': str(round(hard_disaster_sl, 4)),
-                        'closePosition': 'true'
-                    })
-                    print(f"[BINANCE 1H HARD SL ARMED] Placed STOP_MARKET @ {hard_disaster_sl}")
-                except Exception as sle:
-                    print(f"[BINANCE 1H HARD SL NOTE] Exchange stop market note: {sle}. Dynamic Hermes Profit Armor & Watchdog active.")
+                    close_side = 'buy' if not is_long else 'sell'
+                    pos_s = order_params.get('positionSide', pos_side)
+
+                    # 1. Exchange-side Take Profit (Limit Order)
+                    try:
+                        tp_p = {'positionSide': pos_s}
+                        if pos_s == 'BOTH':
+                            tp_p['reduceOnly'] = True
+                        tp_order = self.exchange.create_order(
+                            symbol=sym,
+                            type='limit',
+                            side=close_side,
+                            amount=amount,
+                            price=round(tp_price, 4),
+                            params=tp_p
+                        )
+                        print(f"[BINANCE 1H TP ARMED] Limit TP placed @ {tp_price} (Order ID: {tp_order.get('id')})")
+                    except Exception as tpe:
+                        print(f"[BINANCE 1H TP NOTE] {tpe}")
+
+                    # 2. Exchange-side Hard Disaster Stop Loss (Conditional STOP Order)
+                    try:
+                        sl_limit_p = round(hard_disaster_sl * (1.002 if not is_long else 0.998), 4)
+                        sl_p = {
+                            'stopPrice': round(hard_disaster_sl, 4),
+                            'positionSide': pos_s
+                        }
+                        if pos_s == 'BOTH':
+                            sl_p['reduceOnly'] = True
+                        sl_order = self.exchange.create_order(
+                            symbol=sym,
+                            type='STOP',
+                            side=close_side,
+                            amount=amount,
+                            price=sl_limit_p,
+                            params=sl_p
+                        )
+                        print(f"[BINANCE 1H SL ARMED] STOP order placed @ {hard_disaster_sl} (Algo ID: {sl_order.get('id')})")
+                    except Exception as sle:
+                        print(f"[BINANCE 1H SL NOTE] {sle}")
+                except Exception as ex_arm:
+                    print(f"[BINANCE 1H ARM ERROR] {ex_arm}")
 
                 print(f"[BINANCE REAL 1H ORDER] {sym} {side} @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
                 fill_price = float(order.get('average') or order.get('price') or entry_price)

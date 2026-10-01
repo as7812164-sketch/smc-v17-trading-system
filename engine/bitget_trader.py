@@ -307,6 +307,23 @@ class BitgetTrader:
 
                 order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
 
+                # Place Exchange Position TP & SL via Bitget V2 PlacePosTpsl API
+                try:
+                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                    self.exchange.privateMixPostV2MixOrderPlacePosTpsl({
+                        'marginCoin': 'USDT',
+                        'symbol': clean_sym,
+                        'productType': 'USDT-FUTURES',
+                        'holdSide': hold_side,
+                        'stopSurplusTriggerPrice': str(round(tp_price, 6)),
+                        'stopSurplusTriggerType': 'fill_price',
+                        'stopLossTriggerPrice': str(round(hard_disaster_sl, 6)),
+                        'stopLossTriggerType': 'fill_price'
+                    })
+                    print(f"[BITGET POS TP/SL ARMED] TP: {tp_price} | SL: {hard_disaster_sl}")
+                except Exception as tpe:
+                    print(f"[BITGET POS TP/SL NOTE] {tpe}")
+
                 res = {
                     "success": True,
                     "exchange": "Bitget",
@@ -451,6 +468,23 @@ class BitgetTrader:
                     params=order_params
                 )
                 order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
+
+                # Place Exchange Position TP & SL via Bitget V2 PlacePosTpsl API
+                try:
+                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                    self.exchange.privateMixPostV2MixOrderPlacePosTpsl({
+                        'marginCoin': 'USDT',
+                        'symbol': clean_sym,
+                        'productType': 'USDT-FUTURES',
+                        'holdSide': hold_side,
+                        'stopSurplusTriggerPrice': str(round(tp_price, 6)),
+                        'stopSurplusTriggerType': 'fill_price',
+                        'stopLossTriggerPrice': str(round(hard_disaster_sl, 6)),
+                        'stopLossTriggerType': 'fill_price'
+                    })
+                    print(f"[BITGET POS TP/SL ARMED] TP: {tp_price} | SL: {hard_disaster_sl}")
+                except Exception as tpe:
+                    print(f"[BITGET POS TP/SL NOTE] {tpe}")
 
                 res = {
                     "success": True,
