@@ -61,11 +61,14 @@ class BitgetTrader:
         return self.exchange is not None
 
     def is_auto_trade_enabled(self) -> bool:
-        # Enforce Single Master Cloud Execution: Only Render cloud executes live orders to prevent dual execution
-        if not os.getenv("RENDER") and os.getenv("ALLOW_LOCAL_LIVE_TRADING", "false").lower() != "true":
-            return False
         enabled_setting = get_setting("bitget_auto_trade", str(BITGET_AUTO_TRADE))
-        return enabled_setting.lower() == "true"
+        if str(enabled_setting).lower() != "true":
+            return False
+        if not os.getenv("RENDER"):
+            allow_local = get_setting("allow_local_live_trading", os.getenv("ALLOW_LOCAL_LIVE_TRADING", "true"))
+            if str(allow_local).lower() != "true":
+                return False
+        return True
 
     def format_symbol_for_bitget(self, symbol: str) -> str:
         """Converts standard symbol e.g. BTCUSDT to CCXT swap format: BTC/USDT:USDT"""

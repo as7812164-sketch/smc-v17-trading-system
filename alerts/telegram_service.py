@@ -357,8 +357,8 @@ class TelegramService:
     def get_main_menu_keyboard(self) -> Dict[str, Any]:
         return get_main_menu_keyboard()
 
-    def get_alert_inline_keyboard(self, symbol: str) -> Dict[str, Any]:
-        return get_alert_inline_keyboard(symbol)
+    def get_alert_inline_keyboard(self, symbol: str, exchange: Optional[str] = None) -> Dict[str, Any]:
+        return get_alert_inline_keyboard(symbol, exchange=exchange)
 
     def normalize_symbol(self, raw: str) -> str:
         """Converts user input like 'btc', 'BTC', 'ethusdt', '#sol' to standard 'BTCUSDT'."""

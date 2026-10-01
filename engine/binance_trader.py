@@ -86,11 +86,14 @@ class BinanceTrader:
         return self.exchange is not None
 
     def is_auto_trade_enabled(self) -> bool:
-        # Enforce Single Master Cloud Execution: Only Render cloud executes live orders to prevent dual execution
-        if not os.getenv("RENDER") and os.getenv("ALLOW_LOCAL_LIVE_TRADING", "false").lower() != "true":
-            return False
         enabled_setting = get_setting("binance_auto_trade", str(BINANCE_AUTO_TRADE))
-        return enabled_setting.lower() == "true"
+        if str(enabled_setting).lower() != "true":
+            return False
+        if not os.getenv("RENDER"):
+            allow_local = get_setting("allow_local_live_trading", os.getenv("ALLOW_LOCAL_LIVE_TRADING", "true"))
+            if str(allow_local).lower() != "true":
+                return False
+        return True
 
     def fetch_futures_balance(self) -> Dict[str, Any]:
         """Fetches live Binance USDT-M Futures account balance or returns detailed status."""
@@ -324,14 +327,14 @@ class BinanceTrader:
                     err_msg = str(oe)
                     # Dynamic Auto-Recovery on -4061 (Position side does not match user's setting)
                     if "-4061" in err_msg:
-                        alt_pos_side = 'BOTH' if pos_side == 'SHORT' else 'SHORT'
+                        alt_pos_side = 'BOTH' if pos_side in ('LONG', 'SHORT') else ('LONG' if is_long else 'SHORT')
                         print(f"[BINANCE RETRY] Position side mismatch (-4061). Retrying with positionSide='{alt_pos_side}'...")
                         order_params['positionSide'] = alt_pos_side
-                        self._is_hedge_mode = (alt_pos_side == 'SHORT')
+                        self._is_hedge_mode = (alt_pos_side in ('LONG', 'SHORT'))
                         order = self.exchange.create_order(
                             symbol=sym,
                             type='limit',
-                            side='sell',
+                            side=order_side,
                             amount=amount,
                             price=entry_price,
                             params=order_params
