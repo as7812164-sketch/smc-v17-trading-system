@@ -149,54 +149,58 @@ def init_db():
             except Exception:
                 pass
 
-        # Ensure Account 1: Binance 4H Macro Compounding ($50 -> $2,000)
+        # Ensure Account 1: Bitget 4H Macro (Section A) ($50 -> $2,000)
         acc1_exists = conn.execute("SELECT id FROM paper_account WHERE id = 1").fetchone()
         if not acc1_exists:
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (1, '4h', 'Binance 4H Macro Compounding', 'BINANCE', 'binance_4h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+            VALUES (1, '4h', 'Bitget 4H Macro (Section A)', 'BITGET', 'bitget_4h_1', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Binance 4H Macro Compounding', exchange = 'BINANCE', channel = 'binance_4h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 1")
+            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro (Section A)', exchange = 'BITGET', channel = 'bitget_4h_1', mode = 'HERMES_3.0_QUANTUM' WHERE id = 1")
 
-        # Ensure Account 2: Binance 1H Intraday Compounding ($50 -> $2,000)
+        # Ensure Account 2: Bitget 4H Macro (Section B) ($50 -> $2,000)
         acc2_exists = conn.execute("SELECT id FROM paper_account WHERE id = 2").fetchone()
         if not acc2_exists:
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (2, '1h', 'Binance 1H Intraday Compounding', 'BINANCE', 'binance_1h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+            VALUES (2, '4h', 'Bitget 4H Macro (Section B)', 'BITGET', 'bitget_4h_2', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Binance 1H Intraday Compounding', exchange = 'BINANCE', channel = 'binance_1h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 2")
+            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro (Section B)', exchange = 'BITGET', channel = 'bitget_4h_2', mode = 'HERMES_3.0_QUANTUM' WHERE id = 2")
 
-        # Ensure Account 3: Bitget 4H Macro Compounding ($50 -> $2,000)
+        # Ensure Account 3: Bitget 1H Intraday (Section A) ($50 -> $2,000)
         acc3_exists = conn.execute("SELECT id FROM paper_account WHERE id = 3").fetchone()
         if not acc3_exists:
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (3, '4h', 'Bitget 4H Macro Compounding', 'BITGET', 'bitget_4h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+            VALUES (3, '1h', 'Bitget 1H Intraday (Section A)', 'BITGET', 'bitget_1h_1', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro Compounding', exchange = 'BITGET', channel = 'bitget_4h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 3")
+            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday (Section A)', exchange = 'BITGET', channel = 'bitget_1h_1', mode = 'HERMES_3.0_QUANTUM' WHERE id = 3")
 
-        # Ensure Account 4: Bitget 1H Intraday Compounding ($50 -> $2,000)
+        # Ensure Account 4: Bitget 1H Intraday (Section B) ($50 -> $2,000)
         acc4_exists = conn.execute("SELECT id FROM paper_account WHERE id = 4").fetchone()
         if not acc4_exists:
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (4, '1h', 'Bitget 1H Intraday Compounding', 'BITGET', 'bitget_1h', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+            VALUES (4, '1h', 'Bitget 1H Intraday (Section B)', 'BITGET', 'bitget_1h_2', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday Compounding', exchange = 'BITGET', channel = 'bitget_1h', mode = 'HERMES_3.0_QUANTUM' WHERE id = 4")
+            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday (Section B)', exchange = 'BITGET', channel = 'bitget_1h_2', mode = 'HERMES_3.0_QUANTUM' WHERE id = 4")
+
+        # Reassign open Binance legacy positions to account 99 so they exit cleanly without polluting Bitget accounts
+        conn.execute("UPDATE paper_trades SET account_id = 99, channel = 'binance_legacy' WHERE exchange = 'BINANCE' AND status = 'OPEN'")
 
         # Universal upgrade: Ensure all 4 accounts and paper trades run HERMES_3.0_QUANTUM
         conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM'")
         conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.0_QUANTUM' WHERE mode IS NULL OR mode = '' OR mode LIKE '%2.5%'")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_QUANTUM')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('binance_auto_trade', 'false')")
 
         # Initialize default metrics if not present
         default_metrics = {
@@ -599,33 +603,37 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
         return acc
 
 def get_quad_paper_accounts() -> Dict[str, Any]:
-    """Returns separate states for all 4 compounding tracks plus combined portfolio metrics."""
-    acc_bin_4h = get_paper_account(account_id=1)
-    acc_bin_1h = get_paper_account(account_id=2)
-    acc_bg_4h = get_paper_account(account_id=3)
-    acc_bg_1h = get_paper_account(account_id=4)
+    """Returns separate states for all 4 Bitget compounding tracks plus combined portfolio metrics."""
+    acc_bg_4h_1 = get_paper_account(account_id=1)
+    acc_bg_4h_2 = get_paper_account(account_id=2)
+    acc_bg_1h_1 = get_paper_account(account_id=3)
+    acc_bg_1h_2 = get_paper_account(account_id=4)
 
     with get_connection() as conn:
-        total_open = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN'").fetchone()[0]
+        total_open = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND account_id IN (1, 2, 3, 4)").fetchone()[0]
 
-    comb_init = acc_bin_4h["initial_balance"] + acc_bin_1h["initial_balance"] + acc_bg_4h["initial_balance"] + acc_bg_1h["initial_balance"]
-    comb_curr = acc_bin_4h["current_balance"] + acc_bin_1h["current_balance"] + acc_bg_4h["current_balance"] + acc_bg_1h["current_balance"]
-    comb_vault = acc_bin_4h["vault_balance"] + acc_bin_1h["vault_balance"] + acc_bg_4h["vault_balance"] + acc_bg_1h["vault_balance"]
+    comb_init = acc_bg_4h_1["initial_balance"] + acc_bg_4h_2["initial_balance"] + acc_bg_1h_1["initial_balance"] + acc_bg_1h_2["initial_balance"]
+    comb_curr = acc_bg_4h_1["current_balance"] + acc_bg_4h_2["current_balance"] + acc_bg_1h_1["current_balance"] + acc_bg_1h_2["current_balance"]
+    comb_vault = acc_bg_4h_1["vault_balance"] + acc_bg_4h_2["vault_balance"] + acc_bg_1h_1["vault_balance"] + acc_bg_1h_2["vault_balance"]
     comb_equity = comb_curr + comb_vault
-    comb_pnl = round(acc_bin_4h["total_pnl"] + acc_bin_1h["total_pnl"] + acc_bg_4h["total_pnl"] + acc_bg_1h["total_pnl"], 2)
-    comb_wins = acc_bin_4h["win_count"] + acc_bin_1h["win_count"] + acc_bg_4h["win_count"] + acc_bg_1h["win_count"]
-    comb_losses = acc_bin_4h["loss_count"] + acc_bin_1h["loss_count"] + acc_bg_4h["loss_count"] + acc_bg_1h["loss_count"]
+    comb_pnl = round(acc_bg_4h_1["total_pnl"] + acc_bg_4h_2["total_pnl"] + acc_bg_1h_1["total_pnl"] + acc_bg_1h_2["total_pnl"], 2)
+    comb_wins = acc_bg_4h_1["win_count"] + acc_bg_4h_2["win_count"] + acc_bg_1h_1["win_count"] + acc_bg_1h_2["win_count"]
+    comb_losses = acc_bg_4h_1["loss_count"] + acc_bg_4h_2["loss_count"] + acc_bg_1h_1["loss_count"] + acc_bg_1h_2["loss_count"]
     comb_completed = comb_wins + comb_losses
     comb_win_rate = round((comb_wins / comb_completed * 100), 1) if comb_completed > 0 else 0.0
 
     return {
-        "binance_4h": acc_bin_4h,
-        "binance_1h": acc_bin_1h,
-        "bitget_4h": acc_bg_4h,
-        "bitget_1h": acc_bg_1h,
-        # backward compatibility:
-        "account_4h": acc_bin_4h,
-        "account_1h": acc_bin_1h,
+        "bitget_4h_1": acc_bg_4h_1,
+        "bitget_4h_2": acc_bg_4h_2,
+        "bitget_1h_1": acc_bg_1h_1,
+        "bitget_1h_2": acc_bg_1h_2,
+        # Backward compatibility aliases:
+        "binance_4h": acc_bg_4h_1,
+        "binance_1h": acc_bg_4h_2,
+        "bitget_4h": acc_bg_1h_1,
+        "bitget_1h": acc_bg_1h_2,
+        "account_4h": acc_bg_4h_1,
+        "account_1h": acc_bg_1h_1,
         "combined": {
             "initial_balance": round(comb_init, 2),
             "current_balance": round(comb_curr, 2),
@@ -665,24 +673,26 @@ def format_duration_str(ms: int) -> str:
 def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
     """
     Deploys compounding margin at 5x Isolated Perpetual leverage under HERMES 3.0 QUANTUM rules.
-    Independent sequential queues across Quad-Compounding accounts (Binance 4H/1H, Bitget 4H/1H).
+    Independent sequential queues across Bitget 4-Track Compounding accounts ($50 x 4: 4Hx2, 1Hx2).
     """
     tf = str(zone.get("timeframe", "4h")).lower()
     ch = str(zone.get("channel", "")).lower()
-    exch = str(zone.get("exchange", "BINANCE")).upper()
-    if ch:
-        if ch == "binance_4h": acc_id = 1
-        elif ch == "binance_1h": acc_id = 2
-        elif ch == "bitget_4h": acc_id = 3
-        elif ch == "bitget_1h": acc_id = 4
-        else: acc_id = 2 if "1h" in tf else 1
-    elif "BITGET" in exch:
-        acc_id = 4 if "1h" in tf else 3
-    else:
-        acc_id = 2 if "1h" in tf else 1
+    exch = str(zone.get("exchange", "BITGET")).upper()
 
-    channel_name = ch or ("binance_1h" if acc_id == 2 else "bitget_4h" if acc_id == 3 else "bitget_1h" if acc_id == 4 else "binance_4h")
-    exchange_name = exch or ("BITGET" if "bitget" in channel_name else "BINANCE")
+    if ch:
+        if ch in ("bitget_4h_1", "binance_4h"): acc_id = 1
+        elif ch in ("bitget_4h_2", "binance_1h"): acc_id = 2
+        elif ch in ("bitget_1h_1", "bitget_4h"): acc_id = 3
+        elif ch in ("bitget_1h_2", "bitget_1h"): acc_id = 4
+        elif "4h" in tf: acc_id = 1
+        else: acc_id = 3
+    elif "4h" in tf:
+        acc_id = 1
+    else:
+        acc_id = 3
+
+    channel_name = ch or ("bitget_4h_1" if acc_id == 1 else "bitget_4h_2" if acc_id == 2 else "bitget_1h_1" if acc_id == 3 else "bitget_1h_2")
+    exchange_name = "BITGET"
 
     with get_connection() as conn:
         row = conn.execute("SELECT current_balance FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
@@ -862,26 +872,6 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[f
         roundtrip_fee = pos_size * 0.0016
         net_pnl_usdt = round(gross_pnl_usdt - roundtrip_fee, 2)
 
-        # 100% Compounding Rule: 100% of Net P&L compounded directly into current_balance
-        acc_row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
-        curr_balance = float(acc_row["current_balance"]) if acc_row else 50.0
-        vault_balance = float(acc_row["vault_balance"]) if acc_row and "vault_balance" in acc_row.keys() else 0.0
-        win_count = int(acc_row["win_count"]) if acc_row else 0
-        loss_count = int(acc_row["loss_count"]) if acc_row else 0
-        win_streak = int(acc_row["win_streak"] or 0) if acc_row and "win_streak" in acc_row.keys() and acc_row["win_streak"] is not None else 0
-        total_pnl = float(acc_row["total_pnl"]) if acc_row else 0.0
-
-        if outcome == "TP_HIT" or net_pnl_usdt > 0:
-            win_count += 1
-            win_streak += 1
-            outcome = "TP_HIT"
-        else:
-            loss_count += 1
-            win_streak = 0
-
-        new_balance = round(max(1.0, curr_balance + net_pnl_usdt), 2)
-        new_total_pnl = round(total_pnl + net_pnl_usdt, 2)
-
         # Duration & MAE / MFE calculation
         entry_time = trade["entry_time"] or now
         duration_ms = max(0, now - entry_time)
@@ -911,6 +901,40 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[f
         if cursor.rowcount == 0:
             # Already settled by another event; do not update account again!
             return None
+
+        # ISOLATION GUARANTEE: If trade was a legacy Binance position (acc_id == 99 or Binance),
+        # do NOT modify any Bitget compounding accounts!
+        if acc_id == 99 or str(trade.get("exchange", "")).upper() == "BINANCE" or str(trade.get("channel", "")).startswith("binance"):
+            conn.commit()
+            return {
+                "trade_id": trade_id,
+                "outcome": outcome,
+                "timeframe": tf,
+                "pnl_usdt": net_pnl_usdt,
+                "duration": duration_str,
+                "new_balance": 50.0,
+                "note": "Binance Legacy Trade exited without modifying Bitget compounding accounts"
+            }
+
+        # 100% Compounding Rule: 100% of Net P&L compounded directly into current_balance of specific Bitget track
+        acc_row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
+        curr_balance = float(acc_row["current_balance"]) if acc_row else 50.0
+        vault_balance = float(acc_row["vault_balance"]) if acc_row and "vault_balance" in acc_row.keys() else 0.0
+        win_count = int(acc_row["win_count"]) if acc_row else 0
+        loss_count = int(acc_row["loss_count"]) if acc_row else 0
+        win_streak = int(acc_row["win_streak"] or 0) if acc_row and "win_streak" in acc_row.keys() and acc_row["win_streak"] is not None else 0
+        total_pnl = float(acc_row["total_pnl"]) if acc_row else 0.0
+
+        if outcome == "TP_HIT" or net_pnl_usdt > 0:
+            win_count += 1
+            win_streak += 1
+            outcome = "TP_HIT"
+        else:
+            loss_count += 1
+            win_streak = 0
+
+        new_balance = round(max(1.0, curr_balance + net_pnl_usdt), 2)
+        new_total_pnl = round(total_pnl + net_pnl_usdt, 2)
 
         conn.execute("""
         UPDATE paper_account SET

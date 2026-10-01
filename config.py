@@ -122,32 +122,35 @@ BITGET_4H_SL_PCT = 0.0280  # -2.80% soft SL on 4H candle close
 BITGET_HARD_DISASTER_SL_PCT = 0.0380  # 3.80% emergency disaster stop on exchange
 BITGET_MIN_CONFLUENCE = int(os.getenv("BITGET_MIN_CONFLUENCE", "80"))
 
-# --- Binance Real Auto-Trading Config (Challenge: 4H Macro Compounding) ---
+# --- Binance Real Auto-Trading Config (Decommissioned - Waiting for TP exit on open positions) ---
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", "")
 BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET", "")
-BINANCE_AUTO_TRADE = os.getenv("BINANCE_AUTO_TRADE", "true").lower() == "true"
+BINANCE_AUTO_TRADE = False  # PERMANENTLY DISABLED: All new compounding trades execute exclusively on Bitget
 BINANCE_TIMEFRAME = "4h"
-BINANCE_ALLOWED_SIDES = ["BUY", "LONG", "SELL", "SHORT"]  # Both LONG & SHORT enabled for Quad-Compounding
-BINANCE_MARGIN_MODE = "ISOLATED"           # Strictly ISOLATED margin mode - CROSS mode prohibited
+BINANCE_ALLOWED_SIDES = ["BUY", "LONG", "SELL", "SHORT"]
+BINANCE_MARGIN_MODE = "ISOLATED"
 BINANCE_DEFAULT_LEVERAGE = 5
-BINANCE_STARTING_MARGIN = 50.0  # $50 USDT compounding starting size
-BINANCE_COMPOUNDING_TARGET = 2000.0  # $2,000 USDT Milestone Target Goal
-BINANCE_4H_TP_PCT = 0.0280  # +2.80% price move (+14.00% ROE @ 5x)
-BINANCE_4H_SL_PCT = 0.0280  # -2.80% soft SL on 4H candle close
-BINANCE_HARD_DISASTER_SL_PCT = 0.0380  # +3.80% emergency disaster stop order on exchange
-BINANCE_1H_TP_PCT = 0.0160  # +1.60% price move (+8.00% ROE @ 5x)
-BINANCE_1H_SL_PCT = 0.0145  # -1.45% price move (-7.27% ROE @ 5x)
+BINANCE_STARTING_MARGIN = 50.0
+BINANCE_COMPOUNDING_TARGET = 2000.0
+BINANCE_4H_TP_PCT = 0.0280
+BINANCE_4H_SL_PCT = 0.0280
+BINANCE_HARD_DISASTER_SL_PCT = 0.0380
+BINANCE_1H_TP_PCT = 0.0160
+BINANCE_1H_SL_PCT = 0.0145
 
 BITGET_1H_TP_PCT = 0.0160  # +1.60% price move (+8.00% ROE @ 5x)
 BITGET_1H_SL_PCT = 0.0145  # -1.45% soft SL on 1H candle close
 BITGET_1H_HARD_SL_PCT = 0.0300  # 3.00% emergency disaster stop on exchange
 
-# --- Quad-Compounding Fortress Challenge Specifications ($50 x 4 Tracks) ---
+# --- Bitget Exclusive Quad-Compounding Fortress ($50 x 4 Tracks: 4Hx2, 1Hx2) ---
 QUAD_CHALLENGES = {
-    "binance_4h": {
-        "name": "Binance 4H Macro Compounding",
-        "exchange": "Binance",
+    "bitget_4h_1": {
+        "name": "Bitget 4H Macro (Section A)",
+        "exchange": "Bitget",
         "timeframe": "4h",
+        "section": "A",
+        "account_id": 1,
+        "channel": "bitget_4h_1",
         "start_balance": 50.0,
         "target_balance": 2000.0,
         "leverage": 5,
@@ -155,25 +158,15 @@ QUAD_CHALLENGES = {
         "tp_pct": 0.0280,  # +2.80% price move (+14.00% ROE @ 5x)
         "sl_pct": 0.0280,  # -2.80% soft SL on 4H candle close
         "disaster_sl_pct": 0.0380,
-        "description": "Binance 4H Macro Swing • 5x ISOLATED ($50 -> $2,000)"
+        "description": "Bitget 4H Macro Swing (Section A) • 5x ISOLATED ($50 -> $2,000)"
     },
-    "binance_1h": {
-        "name": "Binance 1H Intraday Compounding",
-        "exchange": "Binance",
-        "timeframe": "1h",
-        "start_balance": 50.0,
-        "target_balance": 2000.0,
-        "leverage": 5,
-        "margin_mode": "ISOLATED",
-        "tp_pct": 0.0160,  # +1.60% price move (+8.00% ROE @ 5x)
-        "sl_pct": 0.0145,  # -1.45% soft SL on 1H candle close
-        "disaster_sl_pct": 0.0300,
-        "description": "Binance 1H Intraday Scalp • 5x ISOLATED ($50 -> $2,000)"
-    },
-    "bitget_4h": {
-        "name": "Bitget 4H Macro Compounding",
+    "bitget_4h_2": {
+        "name": "Bitget 4H Macro (Section B)",
         "exchange": "Bitget",
         "timeframe": "4h",
+        "section": "B",
+        "account_id": 2,
+        "channel": "bitget_4h_2",
         "start_balance": 50.0,
         "target_balance": 2000.0,
         "leverage": 5,
@@ -181,12 +174,15 @@ QUAD_CHALLENGES = {
         "tp_pct": 0.0280,  # +2.80% price move (+14.00% ROE @ 5x)
         "sl_pct": 0.0280,  # -2.80% soft SL on 4H candle close
         "disaster_sl_pct": 0.0380,
-        "description": "Bitget 4H Macro Swing • 5x ISOLATED ($50 -> $2,000)"
+        "description": "Bitget 4H Macro Swing (Section B) • 5x ISOLATED ($50 -> $2,000)"
     },
-    "bitget_1h": {
-        "name": "Bitget 1H Intraday Compounding",
+    "bitget_1h_1": {
+        "name": "Bitget 1H Intraday (Section A)",
         "exchange": "Bitget",
         "timeframe": "1h",
+        "section": "A",
+        "account_id": 3,
+        "channel": "bitget_1h_1",
         "start_balance": 50.0,
         "target_balance": 2000.0,
         "leverage": 5,
@@ -194,10 +190,31 @@ QUAD_CHALLENGES = {
         "tp_pct": 0.0160,  # +1.60% price move (+8.00% ROE @ 5x)
         "sl_pct": 0.0145,  # -1.45% soft SL on 1H candle close
         "disaster_sl_pct": 0.0300,
-        "description": "Bitget 1H Intraday Scalp • 5x ISOLATED ($50 -> $2,000)"
+        "description": "Bitget 1H Fast Scalp (Section A) • 5x ISOLATED ($50 -> $2,000)"
+    },
+    "bitget_1h_2": {
+        "name": "Bitget 1H Intraday (Section B)",
+        "exchange": "Bitget",
+        "timeframe": "1h",
+        "section": "B",
+        "account_id": 4,
+        "channel": "bitget_1h_2",
+        "start_balance": 50.0,
+        "target_balance": 2000.0,
+        "leverage": 5,
+        "margin_mode": "ISOLATED",
+        "tp_pct": 0.0160,  # +1.60% price move (+8.00% ROE @ 5x)
+        "sl_pct": 0.0145,  # -1.45% soft SL on 1H candle close
+        "disaster_sl_pct": 0.0300,
+        "description": "Bitget 1H Fast Scalp (Section B) • 5x ISOLATED ($50 -> $2,000)"
     }
 }
-DUAL_CHALLENGES = QUAD_CHALLENGES  # Backward compatibility
+# Backward compatibility aliases:
+QUAD_CHALLENGES["binance_4h"] = QUAD_CHALLENGES["bitget_4h_1"]
+QUAD_CHALLENGES["binance_1h"] = QUAD_CHALLENGES["bitget_4h_2"]
+QUAD_CHALLENGES["bitget_4h"] = QUAD_CHALLENGES["bitget_1h_1"]
+QUAD_CHALLENGES["bitget_1h"] = QUAD_CHALLENGES["bitget_1h_2"]
+DUAL_CHALLENGES = QUAD_CHALLENGES
 
 # --- Advanced Hybrid Stop-Loss (Candle-Close Confirmation + Disaster Hard Stop) ---
 CANDLE_CLOSE_SL_ENABLED = True

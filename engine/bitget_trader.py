@@ -305,8 +305,11 @@ class BitgetTrader:
                     print(f"[COMPOUNDING BALANCE GUARD] {msg}")
                     return {"success": False, "skipped": True, "reason": msg}
 
-                comp_bal = float(get_setting("bitget_compounding_balance", str(BITGET_STARTING_MARGIN)))
-                margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))
+                if setup.get("margin"):
+                    margin = min(free_usdt, float(setup["margin"]))
+                else:
+                    comp_bal = float(get_setting("bitget_compounding_balance", str(BITGET_STARTING_MARGIN)))
+                    margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))
                 notional = margin * BITGET_DEFAULT_LEVERAGE
                 raw_amount = notional / entry_price
 
@@ -484,8 +487,11 @@ class BitgetTrader:
                     print(f"[COMPOUNDING BALANCE GUARD] {msg}")
                     return {"success": False, "skipped": True, "reason": msg}
 
-                comp_bal = float(get_setting("bitget_1h_compounding_balance", str(BITGET_STARTING_MARGIN)))
-                margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))
+                if setup.get("margin"):
+                    margin = min(free_usdt, float(setup["margin"]))
+                else:
+                    comp_bal = float(get_setting("bitget_1h_compounding_balance", str(BITGET_STARTING_MARGIN)))
+                    margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))
                 notional = margin * BITGET_DEFAULT_LEVERAGE
                 raw_amount = notional / entry_price
 

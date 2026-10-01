@@ -2223,107 +2223,116 @@ async def get_quad_challenge_status():
     bg_wallet_total = float(bitget_bal.get("total_usdt", 107.0) or 107.0)
     bg_wallet_free = float(bitget_bal.get("free_usdt", 107.0) or 107.0)
 
-    # 1. Binance 4H Macro Compounding
+    # 1. Bitget 4H Macro (Section A)
     acc1 = get_paper_account(account_id=1)
-    bin_4h_bal = float(acc1.get("current_balance") or get_setting("binance_compounding_balance", "50.0"))
-    b4h_stage, b4h_pct = get_stage_and_pct(bin_4h_bal)
+    bg_4h_1_bal = float(acc1.get("current_balance") or get_setting("bitget_4h_1_compounding_balance", "50.0"))
+    bg4h1_stage, bg4h1_pct = get_stage_and_pct(bg_4h_1_bal)
 
-    # 2. Binance 1H Intraday Compounding
+    # 2. Bitget 4H Macro (Section B)
     acc2 = get_paper_account(account_id=2)
-    bin_1h_bal = float(acc2.get("current_balance") or get_setting("binance_1h_compounding_balance", "50.0"))
-    b1h_stage, b1h_pct = get_stage_and_pct(bin_1h_bal)
+    bg_4h_2_bal = float(acc2.get("current_balance") or get_setting("bitget_4h_2_compounding_balance", "50.0"))
+    bg4h2_stage, bg4h2_pct = get_stage_and_pct(bg_4h_2_bal)
 
-    # 3. Bitget 4H Macro Compounding
+    # 3. Bitget 1H Intraday (Section A)
     acc3 = get_paper_account(account_id=3)
-    bg_4h_bal = float(acc3.get("current_balance") or get_setting("bitget_compounding_balance", "50.0"))
-    bg4h_stage, bg4h_pct = get_stage_and_pct(bg_4h_bal)
+    bg_1h_1_bal = float(acc3.get("current_balance") or get_setting("bitget_1h_1_compounding_balance", "50.0"))
+    bg1h1_stage, bg1h1_pct = get_stage_and_pct(bg_1h_1_bal)
 
-    # 4. Bitget 1H Intraday Compounding
+    # 4. Bitget 1H Intraday (Section B)
     acc4 = get_paper_account(account_id=4)
-    bg_1h_bal = float(acc4.get("current_balance") or get_setting("bitget_1h_compounding_balance", "50.0"))
-    bg1h_stage, bg1h_pct = get_stage_and_pct(bg_1h_bal)
+    bg_1h_2_bal = float(acc4.get("current_balance") or get_setting("bitget_1h_2_compounding_balance", "50.0"))
+    bg1h2_stage, bg1h2_pct = get_stage_and_pct(bg_1h_2_bal)
 
     challenges = {
-        "binance_4h": {
-            "name": "Binance 4H Macro Compounding",
-            "exchange": "Binance",
+        "bitget_4h_1": {
+            "name": "Bitget 4H Macro (Section A)",
+            "exchange": "Bitget",
             "timeframe": "4h",
+            "section": "A",
             "start_balance": 50.0,
-            "current_compounding_balance": round(bin_4h_bal, 2),
-            "wallet_total_usdt": round(bin_wallet_total, 2),
-            "wallet_free_usdt": round(bin_wallet_free, 2),
+            "current_compounding_balance": round(bg_4h_1_bal, 2),
+            "wallet_total_usdt": round(bg_wallet_total, 2),
+            "wallet_free_usdt": round(bg_wallet_free, 2),
             "goal": 2000.0,
-            "current_stage": b4h_stage,
-            "progress_pct": b4h_pct,
+            "current_stage": bg4h1_stage,
+            "progress_pct": bg4h1_pct,
             "target_roe_per_trade": "+14.0% (+2.8% price move @ 5x)",
             "hard_sl": "-19.0% (Disaster stop on exchange)",
             "leverage": 5,
             "margin_mode": "ISOLATED",
             "account_id": 1,
             "open_trades_count": acc1.get("open_trades_count", 0),
-            "mode": "Active Real Binance Futures (5x ISOLATED)" if binance_bal.get("connected") else "Simulated Live 4H"
+            "mode": "Active Real Bitget Futures (5x ISOLATED)" if bitget_bal.get("connected") else "Simulated Bitget 4H (A)"
         },
-        "binance_1h": {
-            "name": "Binance 1H Intraday Compounding",
-            "exchange": "Binance",
-            "timeframe": "1h",
-            "start_balance": 50.0,
-            "current_compounding_balance": round(bin_1h_bal, 2),
-            "wallet_total_usdt": round(bin_wallet_total, 2),
-            "wallet_free_usdt": round(bin_wallet_free, 2),
-            "goal": 2000.0,
-            "current_stage": b1h_stage,
-            "progress_pct": b1h_pct,
-            "target_roe_per_trade": "+11.0% (+2.2% price move @ 5x)",
-            "hard_sl": "-15.0% (Disaster stop on exchange)",
-            "leverage": 5,
-            "margin_mode": "ISOLATED",
-            "account_id": 2,
-            "open_trades_count": acc2.get("open_trades_count", 0),
-            "mode": "Active Real Binance Futures (5x ISOLATED)" if binance_bal.get("connected") else "Simulated Live 1H"
-        },
-        "bitget_4h": {
-            "name": "Bitget 4H Macro Compounding",
+        "bitget_4h_2": {
+            "name": "Bitget 4H Macro (Section B)",
             "exchange": "Bitget",
             "timeframe": "4h",
+            "section": "B",
             "start_balance": 50.0,
-            "current_compounding_balance": round(bg_4h_bal, 2),
+            "current_compounding_balance": round(bg_4h_2_bal, 2),
             "wallet_total_usdt": round(bg_wallet_total, 2),
             "wallet_free_usdt": round(bg_wallet_free, 2),
             "goal": 2000.0,
-            "current_stage": bg4h_stage,
-            "progress_pct": bg4h_pct,
+            "current_stage": bg4h2_stage,
+            "progress_pct": bg4h2_pct,
             "target_roe_per_trade": "+14.0% (+2.8% price move @ 5x)",
             "hard_sl": "-19.0% (Disaster stop on exchange)",
             "leverage": 5,
             "margin_mode": "ISOLATED",
-            "account_id": 3,
-            "open_trades_count": acc3.get("open_trades_count", 0),
-            "mode": "Active Real Bitget Futures (5x ISOLATED)" if bitget_bal.get("connected") else "Simulated Bitget 4H"
+            "account_id": 2,
+            "open_trades_count": acc2.get("open_trades_count", 0),
+            "mode": "Active Real Bitget Futures (5x ISOLATED)" if bitget_bal.get("connected") else "Simulated Bitget 4H (B)"
         },
-        "bitget_1h": {
-            "name": "Bitget 1H Intraday Compounding",
+        "bitget_1h_1": {
+            "name": "Bitget 1H Intraday (Section A)",
             "exchange": "Bitget",
             "timeframe": "1h",
+            "section": "A",
             "start_balance": 50.0,
-            "current_compounding_balance": round(bg_1h_bal, 2),
+            "current_compounding_balance": round(bg_1h_1_bal, 2),
             "wallet_total_usdt": round(bg_wallet_total, 2),
             "wallet_free_usdt": round(bg_wallet_free, 2),
             "goal": 2000.0,
-            "current_stage": bg1h_stage,
-            "progress_pct": bg1h_pct,
-            "target_roe_per_trade": "+11.0% (+2.2% price move @ 5x)",
+            "current_stage": bg1h1_stage,
+            "progress_pct": bg1h1_pct,
+            "target_roe_per_trade": "+8.0% (+1.6% price move @ 5x)",
+            "hard_sl": "-15.0% (Disaster stop on exchange)",
+            "leverage": 5,
+            "margin_mode": "ISOLATED",
+            "account_id": 3,
+            "open_trades_count": acc3.get("open_trades_count", 0),
+            "mode": "Active Real Bitget Futures (5x ISOLATED)" if bitget_bal.get("connected") else "Simulated Bitget 1H (A)"
+        },
+        "bitget_1h_2": {
+            "name": "Bitget 1H Intraday (Section B)",
+            "exchange": "Bitget",
+            "timeframe": "1h",
+            "section": "B",
+            "start_balance": 50.0,
+            "current_compounding_balance": round(bg_1h_2_bal, 2),
+            "wallet_total_usdt": round(bg_wallet_total, 2),
+            "wallet_free_usdt": round(bg_wallet_free, 2),
+            "goal": 2000.0,
+            "current_stage": bg1h2_stage,
+            "progress_pct": bg1h2_pct,
+            "target_roe_per_trade": "+8.0% (+1.6% price move @ 5x)",
             "hard_sl": "-15.0% (Disaster stop on exchange)",
             "leverage": 5,
             "margin_mode": "ISOLATED",
             "account_id": 4,
             "open_trades_count": acc4.get("open_trades_count", 0),
-            "mode": "Active Real Bitget Futures (5x ISOLATED)" if bitget_bal.get("connected") else "Simulated Bitget 1H"
+            "mode": "Active Real Bitget Futures (5x ISOLATED)" if bitget_bal.get("connected") else "Simulated Bitget 1H (B)"
         }
     }
+    # Backward compatibility aliases:
+    challenges["binance_4h"] = challenges["bitget_4h_1"]
+    challenges["binance_1h"] = challenges["bitget_4h_2"]
+    challenges["bitget_4h"] = challenges["bitget_1h_1"]
+    challenges["bitget_1h"] = challenges["bitget_1h_2"]
 
     comb_initial = 200.0
-    comb_current = round(bin_4h_bal + bin_1h_bal + bg_4h_bal + bg_1h_bal, 2)
+    comb_current = round(bg_4h_1_bal + bg_4h_2_bal + bg_1h_1_bal + bg_1h_2_bal, 2)
     comb_pnl = round(comb_current - comb_initial, 2)
     comb_return_pct = round((comb_pnl / comb_initial) * 100, 2)
 

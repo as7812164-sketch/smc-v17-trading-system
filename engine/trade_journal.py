@@ -14,17 +14,19 @@ from datetime import datetime, timezone
 JOURNAL_CSV_PATH = BASE_DIR / "trade_journal_ledger.csv"
 
 QUAD_ACCOUNT_NAMES = {
-    1: "Binance 4H Macro",
-    2: "Binance 1H Intraday",
-    3: "Bitget 4H Macro",
-    4: "Bitget 1H Intraday"
+    1: "Bitget 4H Macro (Section A)",
+    2: "Bitget 4H Macro (Section B)",
+    3: "Bitget 1H Intraday (Section A)",
+    4: "Bitget 1H Intraday (Section B)",
+    99: "Binance Legacy (Pending TP)"
 }
 
 QUAD_CHANNELS = {
-    1: "binance_4h",
-    2: "binance_1h",
-    3: "bitget_4h",
-    4: "bitget_1h"
+    1: "bitget_4h_1",
+    2: "bitget_4h_2",
+    3: "bitget_1h_1",
+    4: "bitget_1h_2",
+    99: "binance_legacy"
 }
 
 CSV_HEADERS = [

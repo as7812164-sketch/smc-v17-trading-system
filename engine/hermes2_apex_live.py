@@ -539,45 +539,37 @@ class Hermes2ApexLiveEngine:
             logger.info(f"🛡️ [ANTI-COLLISION] Skipping {sym} ({tf.upper()} {side}): Symbol is already open in another slot!")
             return
 
-        # 2. QUAD-SLOT DISPATCHER (Binance 4H, Binance 1H, Bitget 4H, Bitget 1H)
+        # 2. BITGET EXCLUSIVE QUAD-SLOT DISPATCHER ($50 x 4 Tracks: 4Hx2, 1Hx2)
         target_channel = None
         target_account_id = None
-        target_exchange = None
+        target_exchange = "BITGET"
 
         if tf == "4h":
-            bin_4h_open = any(t.get("channel") == "binance_4h" or (t.get("timeframe") == "4h" and t.get("exchange") == "BINANCE") for t in all_open_trades)
-            bg_4h_open = any(t.get("channel") == "bitget_4h" or (t.get("timeframe") == "4h" and t.get("exchange") == "BITGET") for t in all_open_trades)
+            bg_4h_1_open = any(t.get("account_id") == 1 or t.get("channel") == "bitget_4h_1" for t in all_open_trades if t.get("status") == "OPEN")
+            bg_4h_2_open = any(t.get("account_id") == 2 or t.get("channel") == "bitget_4h_2" for t in all_open_trades if t.get("status") == "OPEN")
 
-            if not bin_4h_open and side.upper() in ("SHORT", "SELL"):
-                target_channel = "binance_4h"
+            if not bg_4h_1_open:
+                target_channel = "bitget_4h_1"
                 target_account_id = 1
-                target_exchange = "BINANCE"
-            elif not bg_4h_open:
-                target_channel = "bitget_4h"
-                target_account_id = 3
-                target_exchange = "BITGET"
-            elif not bin_4h_open:
-                target_channel = "binance_4h"
-                target_account_id = 1
-                target_exchange = "BINANCE"
+            elif not bg_4h_2_open:
+                target_channel = "bitget_4h_2"
+                target_account_id = 2
             else:
-                logger.info(f"Both 4H compounding slots (Binance 4H & Bitget 4H) are full. Waiting...")
+                logger.info(f"Both Bitget 4H compounding slots (Section A & Section B) are full. Waiting...")
                 return
 
         elif tf == "1h":
-            bin_1h_open = any(t.get("channel") == "binance_1h" or (t.get("timeframe") == "1h" and t.get("exchange") == "BINANCE") for t in all_open_trades)
-            bg_1h_open = any(t.get("channel") == "bitget_1h" or (t.get("timeframe") == "1h" and t.get("exchange") == "BITGET") for t in all_open_trades)
+            bg_1h_1_open = any(t.get("account_id") == 3 or t.get("channel") == "bitget_1h_1" for t in all_open_trades if t.get("status") == "OPEN")
+            bg_1h_2_open = any(t.get("account_id") == 4 or t.get("channel") == "bitget_1h_2" for t in all_open_trades if t.get("status") == "OPEN")
 
-            if not bin_1h_open:
-                target_channel = "binance_1h"
-                target_account_id = 2
-                target_exchange = "BINANCE"
-            elif not bg_1h_open:
-                target_channel = "bitget_1h"
+            if not bg_1h_1_open:
+                target_channel = "bitget_1h_1"
+                target_account_id = 3
+            elif not bg_1h_2_open:
+                target_channel = "bitget_1h_2"
                 target_account_id = 4
-                target_exchange = "BITGET"
             else:
-                logger.info(f"Both 1H compounding slots (Binance 1H & Bitget 1H) are full. Waiting...")
+                logger.info(f"Both Bitget 1H compounding slots (Section A & Section B) are full. Waiting...")
                 return
 
         # Live Proximity Check: Price must be within the Order Block zone or 0.50% range
@@ -654,41 +646,22 @@ class Hermes2ApexLiveEngine:
                 "hard_sl_pct": hard_sl_pct,
                 "margin": margin
             }
-            logger.info(f"🚀 [REAL EXCHANGE DISPATCH] Routing {sym} {side} to {target_exchange} ({target_channel.upper()}) | ${margin} Margin @ 5x Isolated")
+            logger.info(f"🚀 [BITGET REAL DISPATCH] Routing {sym} {side} to BITGET ({target_channel.upper()}) | ${margin:.2f} Margin @ 5x Isolated (Account #{target_account_id})")
             res = None
             try:
-                if target_channel == "binance_4h":
-                    res = await binance_trader.execute_4h_trade(setup_with_flag)
-                elif target_channel == "binance_1h":
-                    res = await binance_trader.execute_1h_trade(setup_with_flag)
-                elif target_channel == "bitget_4h":
+                from engine.bitget_trader import bitget_trader
+                if "4h" in target_channel:
                     res = await bitget_trader.execute_4h_trade(setup_with_flag)
-                elif target_channel == "bitget_1h":
+                else:
                     res = await bitget_trader.execute_1h_trade(setup_with_flag)
             except Exception as be:
-                logger.error(f"❌ Real order exception on {target_exchange} ({target_channel}): {be}")
+                logger.error(f"❌ Real order exception on BITGET ({target_channel}): {be}")
                 return
 
             if not res or not res.get("success"):
                 reason = res.get("reason") or res.get("error") if res else "Order placement failed"
-                logger.warning(f"🛡️ [FAILOVER DETECTED] Trade on {sym} rejected on {target_exchange}: {reason}. Triggering Self-Healing Reroute...")
-                
-                # AUTONOMOUS SELF-HEALING FALLBACK: Attempt rerouting to alternative exchange
-                try:
-                    from engine.self_healing_sentinel import self_healing_sentinel
-                    reroute_res = await self_healing_sentinel.attempt_smart_exchange_reroute(setup_with_flag, target_exchange, str(reason))
-                    if reroute_res and reroute_res.get("success"):
-                        res = reroute_res
-                        target_exchange = reroute_res["target_exchange"]
-                        target_channel = reroute_res["target_channel"]
-                        target_account_id = reroute_res["target_account_id"]
-                        logger.info(f"✨ [SELF-HEALING HEALED ORDER] Successfully rerouted {sym} to {target_exchange} ({target_channel})!")
-                    else:
-                        logger.warning(f"🛡️ [REAL PARITY ENFORCED] Trade on {sym} was skipped/rejected: {reason}. Paper trade NOT opened to maintain 1:1 real parity!")
-                        return
-                except Exception as rhe:
-                    logger.error(f"Reroute error: {rhe}")
-                    return
+                logger.warning(f"🛡️ [REAL PARITY ENFORCED] Trade on {sym} skipped/rejected on Bitget: {reason}. Paper trade NOT opened to maintain 1:1 real parity!")
+                return
 
             execution_order_id = res.get("order_id") or (res.get("order", {}).get("id") if isinstance(res.get("order"), dict) else None)
             if res.get("entry_price"):
@@ -1029,11 +1002,11 @@ class Hermes2ApexLiveEngine:
                     # Check if this specific timeframe has capacity across its 2 slots
                     open_trades_current = get_open_paper_trades()
                     if tf_setup == "4h":
-                        slots_4h_count = sum(1 for t in open_trades_current if (t.get("timeframe") == "4h" or "4h" in str(t.get("channel", ""))))
+                        slots_4h_count = sum(1 for t in open_trades_current if t.get("account_id") in (1, 2) or str(t.get("channel", "")).startswith("bitget_4h"))
                         if slots_4h_count >= 2:
                             continue
                     elif tf_setup == "1h":
-                        slots_1h_count = sum(1 for t in open_trades_current if (t.get("timeframe") == "1h" or "1h" in str(t.get("channel", ""))))
+                        slots_1h_count = sum(1 for t in open_trades_current if t.get("account_id") in (3, 4) or str(t.get("channel", "")).startswith("bitget_1h"))
                         if slots_1h_count >= 2:
                             continue
                     logger.info(f"⚡ REAL-TIME TAP WATCHDOG TRIGGERED on {sym} ({side})! Live Price: {cur_price} tapped OB [{ob_low}, {ob_high}] (TF: {tf_setup.upper()})")
@@ -1076,6 +1049,39 @@ class Hermes2ApexLiveEngine:
         gross_pnl_usdt = pos_size * (gross_pnl_pct / 100.0)
         net_pnl_usdt = gross_pnl_usdt - roundtrip_fee
 
+        # ISOLATION GUARANTEE: If legacy Binance trade (acc_id == 99 or BINANCE exchange)
+        if acc_id == 99 or target_exchange == "BINANCE" or str(trade.get("exchange", "")).upper() == "BINANCE" or str(trade.get("channel", "")).startswith("binance"):
+            with get_connection() as conn:
+                cursor = conn.execute("""
+                UPDATE paper_trades SET
+                    status = ?, exit_time = ?, exit_price = ?,
+                    pnl_usdt = ?, pnl_pct = ?, vault_stashed_usdt = 0.0,
+                    highest_price = ?, lowest_price = ?, mae_pct = ?, mfe_pct = ?,
+                    duration_str = ?, roi_pct = ?
+                WHERE id = ? AND status = 'OPEN'
+                """, (
+                    outcome, now_ms, exit_price, round(net_pnl_usdt, 2), round(gross_pnl_pct * 5.0, 2),
+                    highest, lowest, final_mae, final_mfe, duration_str, round(gross_pnl_pct * 5.0, 2), trade_id
+                ))
+                if cursor.rowcount == 0:
+                    logger.info(f"Trade #{trade_id} on {sym} was already settled. Skipping duplicate exit processing.")
+                    return
+                conn.commit()
+
+            # Close Binance real market position
+            try:
+                from engine.binance_trader import binance_trader
+                await binance_trader.close_position_market(sym, side)
+                logger.info(f"✅ Binance legacy trade on {sym} closed on Binance exchange.")
+            except Exception as bce:
+                logger.error(f"Error closing Binance legacy trade {sym}: {bce}")
+
+            self.active_position = None
+            self.trade_cooldowns[sym] = time.time() + 1800
+            logger.info(f"🏆 Binance legacy position #{trade_id} on {sym} exited cleanly with outcome {outcome}. Bitget compounding accounts untouched.")
+            return
+
+        # Bitget Compounding Account update (acc_id in 1, 2, 3, 4)
         acc = get_paper_account(account_id=acc_id)
         current_balance = float(acc.get("current_balance", 50.0) or 50.0)
         vault_balance = float(acc.get("vault_balance", 0.0) or 0.0)
@@ -1083,7 +1089,7 @@ class Hermes2ApexLiveEngine:
         loss_count = int(acc.get("loss_count", 0) or 0)
         total_pnl = float(acc.get("total_pnl", 0.0) or 0.0)
 
-        # 100% Compounding Rule: 100% of Net P&L credited/debited directly to current_balance
+        # 100% Compounding Rule: 100% of Net P&L credited/debited directly to this specific account only!
         is_win = (outcome == "TP_HIT" or net_pnl_usdt > 0)
         win_streak = int(acc.get("win_streak") or 0)
         if is_win:
@@ -1096,39 +1102,20 @@ class Hermes2ApexLiveEngine:
         new_balance = round(max(1.0, current_balance + net_pnl_usdt), 2)
         new_total_pnl = round(total_pnl + net_pnl_usdt, 2)
 
-        # Sync compounding ladder balance for the specific channel
-        channel_name = str(trade.get("channel") or ("binance_1h" if acc_id == 2 else "bitget_4h" if acc_id == 3 else "bitget_1h" if acc_id == 4 else "binance_4h"))
-        target_exchange = str(trade.get("exchange") or ("BITGET" if "bitget" in channel_name else "BINANCE")).upper()
-
+        # Sync compounding setting for this specific track
         try:
             if acc_id == 1:
-                set_setting("binance_compounding_balance", str(new_balance))
+                set_setting("bitget_4h_1_compounding_balance", str(new_balance))
             elif acc_id == 2:
-                set_setting("binance_1h_compounding_balance", str(new_balance))
+                set_setting("bitget_4h_2_compounding_balance", str(new_balance))
             elif acc_id == 3:
-                set_setting("bitget_compounding_balance", str(new_balance))
+                set_setting("bitget_1h_1_compounding_balance", str(new_balance))
             elif acc_id == 4:
-                set_setting("bitget_1h_compounding_balance", str(new_balance))
+                set_setting("bitget_1h_2_compounding_balance", str(new_balance))
         except Exception:
             pass
 
-        # Duration & MAE / MFE calculation
-        entry_time = trade["entry_time"] or now_ms
-        duration_ms = max(0, now_ms - entry_time)
-        duration_str = format_duration_str(duration_ms)
-
-        highest = max(float(trade.get("highest_price") or entry_price), exit_price)
-        lowest = min(float(trade.get("lowest_price") or entry_price), exit_price)
-        leverage = 5.0
-        if side in ("BUY", "LONG"):
-            final_mfe = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
-            final_mae = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
-        else:
-            final_mfe = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
-            final_mae = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
-
         with get_connection() as conn:
-            # Atomic update: only update if status is still 'OPEN' (prevents duplicate settlement)
             cursor = conn.execute("""
             UPDATE paper_trades SET
                 status = ?, exit_time = ?, exit_price = ?,
@@ -1171,39 +1158,16 @@ class Hermes2ApexLiveEngine:
             pass
 
         self.active_position = None
-        self.trade_cooldowns[sym] = time.time() + 1800  # 30-minute cooldown on this symbol to prevent rapid loop
+        self.trade_cooldowns[sym] = time.time() + 1800
 
-        # Close real exchange futures position if auto-trade was active
-        close_res = None
-        if target_exchange == "BINANCE":
-            from engine.binance_trader import binance_trader
-            if binance_trader.is_auto_trade_enabled():
-                try:
-                    close_res = await binance_trader.close_position_market(sym, side)
-                    logger.info(f"Binance real market close result for {sym}: {close_res}")
-                except Exception as ce:
-                    logger.error(f"Binance real market close exception for {sym}: {ce}")
-        elif target_exchange == "BITGET":
+        # Close real Bitget futures position
+        try:
             from engine.bitget_trader import bitget_trader
             if bitget_trader.is_auto_trade_enabled():
-                try:
-                    close_res = await bitget_trader.close_position_market(sym, side)
-                    logger.info(f"Bitget real market close result for {sym}: {close_res}")
-                except Exception as bge:
-                    logger.error(f"Bitget real market close exception for {sym}: {bge}")
-        else:
-            from engine.binance_trader import binance_trader
-            if binance_trader.is_auto_trade_enabled():
-                try:
-                    await binance_trader.close_position_market(sym, side)
-                except Exception:
-                    pass
-            from engine.bitget_trader import bitget_trader
-            if bitget_trader.is_auto_trade_enabled():
-                try:
-                    await bitget_trader.close_position_market(sym, side)
-                except Exception:
-                    pass
+                close_res = await bitget_trader.close_position_market(sym, side)
+                logger.info(f"Bitget real market close result for {sym}: {close_res}")
+        except Exception as bge:
+            logger.error(f"Bitget real market close exception for {sym}: {bge}")
 
         completed = win_count + loss_count
         win_rate = round(win_count / completed * 100, 1) if completed > 0 else 0.0
