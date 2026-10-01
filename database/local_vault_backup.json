@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "updated_at": 1790822716953,
-  "updated_at_str": "2026-10-01 08:15:16 IST",
+  "updated_at": 1790824127556,
+  "updated_at_str": "2026-10-01 08:38:47 IST",
   "accounts": [
     {
       "id": 1,
@@ -383,7 +383,7 @@
       "tp_price": 10.545714,
       "soft_sl_price": 11.153286,
       "hard_sl_price": 11.261781,
-      "status": "OPEN",
+      "status": "CLOSED_CLEARED",
       "margin_usdt": 50.0,
       "leverage": 5,
       "pnl_usdt": null,
@@ -441,7 +441,7 @@
       "tp_price": 0.043012,
       "soft_sl_price": 0.045079,
       "hard_sl_price": 0.045563,
-      "status": "OPEN",
+      "status": "CLOSED_CLEARED",
       "margin_usdt": 50.0,
       "leverage": 5,
       "pnl_usdt": null,
@@ -502,7 +502,7 @@
     "coins_subscribed": "50/50",
     "last_scan_duration": "6s",
     "hermes_status": "ACTIVE_24_7",
-    "hermes_last_scan": "01 Oct 2026 \u2022 08:12:57 AM IST",
+    "hermes_last_scan": "01 Oct 2026 \u2022 08:32:30 AM IST",
     "hermes_setups_detected": "37",
     "hermes_mode": "HERMES_3.0_QUANTUM"
   },

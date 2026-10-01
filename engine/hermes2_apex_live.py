@@ -649,8 +649,24 @@ class Hermes2ApexLiveEngine:
 
             if not res or not res.get("success"):
                 reason = res.get("reason") or res.get("error") if res else "Order placement failed"
-                logger.warning(f"🛡️ [REAL PARITY ENFORCED] Trade on {sym} was skipped/rejected on {target_exchange}: {reason}. Paper trade NOT opened to maintain 1:1 real parity!")
-                return
+                logger.warning(f"🛡️ [FAILOVER DETECTED] Trade on {sym} rejected on {target_exchange}: {reason}. Triggering Self-Healing Reroute...")
+                
+                # AUTONOMOUS SELF-HEALING FALLBACK: Attempt rerouting to alternative exchange
+                try:
+                    from engine.self_healing_sentinel import self_healing_sentinel
+                    reroute_res = await self_healing_sentinel.attempt_smart_exchange_reroute(setup_with_flag, target_exchange, str(reason))
+                    if reroute_res and reroute_res.get("success"):
+                        res = reroute_res
+                        target_exchange = reroute_res["target_exchange"]
+                        target_channel = reroute_res["target_channel"]
+                        target_account_id = reroute_res["target_account_id"]
+                        logger.info(f"✨ [SELF-HEALING HEALED ORDER] Successfully rerouted {sym} to {target_exchange} ({target_channel})!")
+                    else:
+                        logger.warning(f"🛡️ [REAL PARITY ENFORCED] Trade on {sym} was skipped/rejected: {reason}. Paper trade NOT opened to maintain 1:1 real parity!")
+                        return
+                except Exception as rhe:
+                    logger.error(f"Reroute error: {rhe}")
+                    return
 
             execution_order_id = res.get("order_id") or (res.get("order", {}).get("id") if isinstance(res.get("order"), dict) else None)
             if res.get("entry_price"):
@@ -773,10 +789,20 @@ class Hermes2ApexLiveEngine:
                 logger.warning(f"Failed to render/send chart image: {ce}")
 
             if not chart_sent:
-                keyboard = telegram_service.get_alert_inline_keyboard(sym, exchange=target_exchange)
-                await telegram_service.send_raw_message(tg_msg, parse_mode="HTML", reply_markup=keyboard)
+                try:
+                    keyboard = telegram_service.get_alert_inline_keyboard(sym, exchange=target_exchange)
+                    await telegram_service.send_raw_message(tg_msg, parse_mode="HTML", reply_markup=keyboard)
+                except Exception:
+                    # Bulletproof fallback: Send text without markup if keyboard fails
+                    await telegram_service.send_raw_message(tg_msg, parse_mode="HTML")
         except Exception as e:
             logger.warning(f"Telegram alert error on entry: {e}")
+            try:
+                # Emergency plain alert
+                emergency_msg = f"⚡ <b>HERMES 3.0 LIVE ENTRY</b>: #{sym} ({side}) @ {entry_price} | TP: {tp_price} | SL: {sl_price}"
+                await telegram_service.send_raw_message(emergency_msg, parse_mode="HTML")
+            except Exception:
+                pass
 
         await self.broadcast("HERMES_POSITION_OPENED", trade_obj)
 
@@ -1214,10 +1240,18 @@ class Hermes2ApexLiveEngine:
                     logger.warning(f"Failed to render/send exit chart photo: {ce}")
 
                 if not chart_sent:
-                    keyboard = telegram_service.get_alert_inline_keyboard(sym)
-                    await telegram_service.send_raw_message(tg_msg, parse_mode="HTML", reply_markup=keyboard)
+                    try:
+                        keyboard = telegram_service.get_alert_inline_keyboard(sym)
+                        await telegram_service.send_raw_message(tg_msg, parse_mode="HTML", reply_markup=keyboard)
+                    except Exception:
+                        await telegram_service.send_raw_message(tg_msg, parse_mode="HTML")
             except Exception as e:
                 logger.warning(f"Telegram exit alert error: {e}")
+                try:
+                    emergency_exit_msg = f"🏆 <b>HERMES 3.0 TRADE CLOSED</b>: #{sym} ({side}) | Outcome: {outcome} | P&L: {net_pnl_usdt:+.2f} USDT"
+                    await telegram_service.send_raw_message(emergency_exit_msg, parse_mode="HTML")
+                except Exception:
+                    pass
 
         await self.broadcast("HERMES_POSITION_CLOSED", {
             "symbol": sym,

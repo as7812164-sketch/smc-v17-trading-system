@@ -172,17 +172,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         pass
 
-    # Hermes 2.0 Apex robot, keepalive, and telegram polling in background
+    # Hermes 3.0 Apex robot, keepalive, self-healing sentinel, and telegram polling in background
     hermes2_task = asyncio.create_task(hermes2_apex_engine.start())
     tg_polling_task = asyncio.create_task(telegram_service.start_polling())
     keepalive_task = asyncio.create_task(keepalive_loop())
     ticker_task = asyncio.create_task(ticker_cache_loop())
     vault_sync_task = asyncio.create_task(cloud_vault_periodic_sync_loop())
     binance_heartbeat_task = asyncio.create_task(binance_ip_heartbeat_loop())
+    from engine.self_healing_sentinel import self_healing_sentinel
+    sentinel_task = asyncio.create_task(self_healing_sentinel.start())
     yield
     # Shutdown
     hermes2_apex_engine.stop()
     hermes2_task.cancel()
+    self_healing_sentinel.stop()
+    sentinel_task.cancel()
     tg_polling_task.cancel()
     keepalive_task.cancel()
     ticker_task.cancel()
@@ -610,6 +614,12 @@ async def get_system_status():
         "metrics": metrics,
         "paper_trading": paper
     }
+
+@app.get("/api/health/self-heal")
+async def trigger_self_healing_endpoint():
+    from engine.self_healing_sentinel import self_healing_sentinel
+    result = await self_healing_sentinel.run_full_diagnostic_and_repair_cycle()
+    return {"status": "ok", "self_healing": result}
 
 @app.get("/api/strategy/mode")
 async def get_strategy_mode():
