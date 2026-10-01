@@ -164,31 +164,42 @@ class HermesSelfHealingSentinel:
         from engine.binance_trader import binance_trader
         from engine.bitget_trader import bitget_trader
 
+        binance_fetch_success = False
         if binance_trader.is_configured():
-            try:
-                bin_pos = binance_trader.exchange.fapiPrivateV2GetPositionRisk()
-                for p in bin_pos:
-                    amt = float(p.get('positionAmt', 0) or 0)
-                    if amt != 0:
-                        sym = p['symbol'].upper()
-                        real_binance_symbols.add(sym)
-                        real_binance_positions[sym] = p
-            except Exception as e:
-                if "-451" in str(e) or "451" in str(e) or "restricted" in str(e).lower():
-                    self.binance_geo_blocked = True
+            for _ in range(2):
+                try:
+                    bin_pos = binance_trader.exchange.fapiPrivateV2GetPositionRisk()
+                    for p in bin_pos:
+                        amt = float(p.get('positionAmt', 0) or 0)
+                        if amt != 0:
+                            sym = p['symbol'].upper()
+                            real_binance_symbols.add(sym)
+                            real_binance_positions[sym] = p
+                    binance_fetch_success = True
+                    break
+                except Exception as e:
+                    if "-451" in str(e) or "451" in str(e) or "restricted" in str(e).lower():
+                        self.binance_geo_blocked = True
+                        break
+                    time.sleep(1)
 
+        bitget_fetch_success = False
         if bitget_trader.is_configured():
-            try:
-                bg_pos = bitget_trader.exchange.fetch_positions()
-                for p in bg_pos:
-                    contracts = float(p.get('contracts', 0) or 0)
-                    size = float(p.get('size', 0) or 0)
-                    if contracts > 0 or size > 0:
-                        sym = p.get('symbol', '').replace('/', '').replace(':USDT', '').upper()
-                        real_bitget_symbols.add(sym)
-                        real_bitget_positions[sym] = p
-            except Exception:
-                pass
+            for _ in range(2):
+                try:
+                    bg_pos = bitget_trader.exchange.fetch_positions()
+                    for p in bg_pos:
+                        contracts = float(p.get('contracts', 0) or 0)
+                        size = float(p.get('size', 0) or 0)
+                        if contracts > 0 or size > 0:
+                            sym = p.get('symbol', '').replace('/', '').replace(':USDT', '').upper()
+                            real_bitget_symbols.add(sym)
+                            real_bitget_positions[sym] = p
+                    bitget_fetch_success = True
+                    break
+                except Exception as be:
+                    logger.warning(f"Bitget fetch_positions retry error: {be}")
+                    time.sleep(1)
 
         # 2. Reconcile existing open trades in DB against live exchanges
         open_trades = get_open_paper_trades()
@@ -229,12 +240,16 @@ class HermesSelfHealingSentinel:
             is_on_exchange = is_on_binance or is_on_bitget
 
             is_live_enabled = False
+            exchange_fetch_ok = False
             if "BINANCE" in exchange:
                 is_live_enabled = binance_trader.is_auto_trade_enabled()
+                exchange_fetch_ok = binance_fetch_success
             elif "BITGET" in exchange:
                 is_live_enabled = bitget_trader.is_auto_trade_enabled()
+                exchange_fetch_ok = bitget_fetch_success
 
-            if is_live_enabled and not is_on_exchange and age_seconds > 180:
+            # ONLY clear if fetch was 100% successful and confirmed missing after 180s
+            if is_live_enabled and exchange_fetch_ok and not is_on_exchange and age_seconds > 180:
                 with get_connection() as conn:
                     conn.execute("""
                     UPDATE paper_trades 
