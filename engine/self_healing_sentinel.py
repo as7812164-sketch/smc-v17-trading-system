@@ -38,6 +38,8 @@ class HermesSelfHealingSentinel:
         self.last_repair_action = ""
         self.total_repairs_count = 0
         self.binance_geo_blocked = False
+        self._armed_positions = {}  # key -> timestamp
+        self._last_alert_time = {}  # repairs_signature -> timestamp
 
     async def start(self):
         """Autonomous 24/7 background self-healing loop."""
@@ -86,20 +88,27 @@ class HermesSelfHealingSentinel:
             self.last_repair_action = "; ".join(repairs_applied)
             logger.info(f"✨ [SELF-HEALING COMPLETE] Auto-applied {len(repairs_applied)} repairs: {self.last_repair_action}")
 
-            # Notify Telegram if critical repairs were performed
-            try:
-                from alerts.telegram_service import telegram_service
-                msg = (
-                    f"🤖 <b>HERMES AI AUTONOMOUS SELF-HEALER</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🛡️ <b>Status</b>: Auto-Repaired {len(repairs_applied)} Issue(s)\n"
-                    f"🔧 <b>Fixes Applied:</b>\n"
-                    + "\n".join([f"• {r}" for r in repairs_applied]) + "\n\n"
-                    f"⚡ <i>All 4 Compounding Tracks fully synchronized & active!</i>"
-                )
-                await telegram_service.send_raw_message(msg, parse_mode="HTML")
-            except Exception:
-                pass
+            # Throttling Telegram alerts so identical messages aren't spammed
+            now = time.time()
+            repairs_signature = tuple(sorted(repairs_applied))
+            last_sent = self._last_alert_time.get(repairs_signature, 0)
+
+            # Only send to Telegram if this specific set of repairs hasn't been notified in the last 30 minutes
+            if (now - last_sent) > 1800:
+                self._last_alert_time[repairs_signature] = now
+                try:
+                    from alerts.telegram_service import telegram_service
+                    msg = (
+                        f"🤖 <b>HERMES AI AUTONOMOUS SELF-HEALER</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"🛡️ <b>Status</b>: Auto-Repaired {len(repairs_applied)} Issue(s)\n"
+                        f"🔧 <b>Fixes Applied:</b>\n"
+                        + "\n".join([f"• {r}" for r in repairs_applied]) + "\n\n"
+                        f"⚡ <i>All 4 Compounding Tracks fully synchronized & active!</i>"
+                    )
+                    await telegram_service.send_raw_message(msg, parse_mode="HTML")
+                except Exception:
+                    pass
 
         return {
             "status": "healthy",
@@ -109,15 +118,22 @@ class HermesSelfHealingSentinel:
         }
 
     def auto_heal_trading_permissions(self) -> List[str]:
-        """Ensures auto-trade permissions are strictly active across all layers."""
+        """Ensures auto-trade permissions are strictly active across all layers according to config."""
         fixes = []
-        if get_setting("binance_auto_trade", "false").lower() != "true":
-            set_setting("binance_auto_trade", "true")
-            fixes.append("Auto-enabled Binance Auto-Trade flag")
+        from config import BINANCE_AUTO_TRADE, BITGET_AUTO_TRADE
 
-        if get_setting("bitget_auto_trade", "false").lower() != "true":
-            set_setting("bitget_auto_trade", "true")
-            fixes.append("Auto-enabled Bitget Auto-Trade flag")
+        if BINANCE_AUTO_TRADE:
+            if get_setting("binance_auto_trade", "false").lower() != "true":
+                set_setting("binance_auto_trade", "true")
+                fixes.append("Auto-enabled Binance Auto-Trade flag")
+        else:
+            if get_setting("binance_auto_trade", "false").lower() == "true":
+                set_setting("binance_auto_trade", "false")
+
+        if BITGET_AUTO_TRADE:
+            if get_setting("bitget_auto_trade", "false").lower() != "true":
+                set_setting("bitget_auto_trade", "true")
+                fixes.append("Auto-enabled Bitget Auto-Trade flag")
 
         if not os.getenv("RENDER"):
             if get_setting("allow_local_live_trading", "false").lower() != "true":
@@ -446,28 +462,63 @@ class HermesSelfHealingSentinel:
                         if total > 0:
                             sym = p.get('symbol', '').replace('/', '').replace(':USDT', '').upper()
                             hold_side = p.get('holdSide', '').lower()
+                            pos_key = f"{sym}_{hold_side}"
+
+                            # Native Bitget V2 position TP/SL check
+                            tp_val = p.get('takeProfit') or ''
+                            tp_id = p.get('takeProfitId') or ''
+                            sl_val = p.get('stopLoss') or ''
+                            sl_id = p.get('stopLossId') or ''
+                            has_tp = bool((tp_val and str(tp_val) != '0') or tp_id)
+                            has_sl = bool((sl_val and str(sl_val) != '0') or sl_id)
+
+                            if has_tp and has_sl:
+                                self._armed_positions[pos_key] = time.time()
+                                continue
+
+                            # Skip if armed in the last 30 minutes
+                            if pos_key in self._armed_positions and (time.time() - self._armed_positions[pos_key]) < 1800:
+                                continue
+
                             entry_p = float(p.get('openPriceAvg', 0) or 0)
+                            if entry_p <= 0:
+                                continue
 
                             with get_connection() as conn:
                                 db_tr = conn.execute("SELECT tp_price, hard_sl_price, sl_price FROM paper_trades WHERE symbol = ? AND status = 'OPEN' ORDER BY id DESC LIMIT 1", (sym,)).fetchone()
 
-                            tp_price = float(db_tr[0]) if db_tr and db_tr[0] else round(entry_p * (1.028 if hold_side == 'long' else 0.972), 6)
-                            sl_price = float(db_tr[1]) if db_tr and db_tr[1] else round(entry_p * (0.962 if hold_side == 'long' else 1.038), 6)
+                            tp_raw = float(db_tr[0]) if db_tr and db_tr[0] else (entry_p * (1.028 if hold_side == 'long' else 0.972))
+                            sl_raw = float(db_tr[1]) if db_tr and db_tr[1] else (entry_p * (0.962 if hold_side == 'long' else 1.038))
+
+                            # Precise price formatting according to Bitget contract rules
+                            try:
+                                ccxt_sym = bitget_trader.format_symbol_for_bitget(sym)
+                                if not bitget_trader.exchange.markets:
+                                    bitget_trader.exchange.load_markets()
+                                tp_str = str(bitget_trader.exchange.price_to_precision(ccxt_sym, tp_raw))
+                                sl_str = str(bitget_trader.exchange.price_to_precision(ccxt_sym, sl_raw))
+                            except Exception:
+                                tp_str = str(round(tp_raw, 4 if tp_raw > 1 else 6))
+                                sl_str = str(round(sl_raw, 4 if sl_raw > 1 else 6))
 
                             try:
-                                bitget_trader.exchange.privateMixPostV2MixOrderPlacePosTpsl({
+                                arm_res = bitget_trader.exchange.privateMixPostV2MixOrderPlacePosTpsl({
                                     'marginCoin': 'USDT',
                                     'symbol': sym,
                                     'productType': 'USDT-FUTURES',
                                     'holdSide': hold_side,
-                                    'stopSurplusTriggerPrice': str(round(tp_price, 6)),
+                                    'stopSurplusTriggerPrice': tp_str,
                                     'stopSurplusTriggerType': 'fill_price',
-                                    'stopLossTriggerPrice': str(round(sl_price, 6)),
+                                    'stopLossTriggerPrice': sl_str,
                                     'stopLossTriggerType': 'fill_price'
                                 })
-                                fixes.append(f"Auto-armed Bitget Pos TP/SL on {sym} {hold_side}")
-                            except Exception:
-                                pass
+                                if arm_res and arm_res.get('code') == '00000':
+                                    self._armed_positions[pos_key] = time.time()
+                                    fixes.append(f"Auto-armed Bitget Pos TP/SL on {sym} {hold_side} (TP: {tp_str}, SL: {sl_str})")
+                                else:
+                                    logger.warning(f"Bitget placePosTpsl response for {sym}: {arm_res}")
+                            except Exception as arm_ex:
+                                logger.warning(f"Bitget placePosTpsl error on {sym}: {arm_ex}")
             except Exception as bge:
                 logger.warning(f"Bitget TP/SL check error: {bge}")
 
