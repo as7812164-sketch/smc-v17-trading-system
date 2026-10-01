@@ -157,7 +157,9 @@ class HermesSelfHealingSentinel:
 
         # 1. Fetch real exchange positions
         real_binance_symbols = set()
+        real_binance_positions = {}
         real_bitget_symbols = set()
+        real_bitget_positions = {}
 
         from engine.binance_trader import binance_trader
         from engine.bitget_trader import bitget_trader
@@ -166,10 +168,12 @@ class HermesSelfHealingSentinel:
             try:
                 bin_pos = binance_trader.exchange.fapiPrivateV2GetPositionRisk()
                 for p in bin_pos:
-                    if float(p.get('positionAmt', 0) or 0) != 0:
-                        real_binance_symbols.add(p['symbol'].upper())
+                    amt = float(p.get('positionAmt', 0) or 0)
+                    if amt != 0:
+                        sym = p['symbol'].upper()
+                        real_binance_symbols.add(sym)
+                        real_binance_positions[sym] = p
             except Exception as e:
-                # If geo-blocked on cloud, note it
                 if "-451" in str(e) or "451" in str(e) or "restricted" in str(e).lower():
                     self.binance_geo_blocked = True
 
@@ -182,10 +186,11 @@ class HermesSelfHealingSentinel:
                     if contracts > 0 or size > 0:
                         sym = p.get('symbol', '').replace('/', '').replace(':USDT', '').upper()
                         real_bitget_symbols.add(sym)
+                        real_bitget_positions[sym] = p
             except Exception:
                 pass
 
-        # 2. Reconcile against open trades in DB
+        # 2. Reconcile existing open trades in DB against live exchanges
         open_trades = get_open_paper_trades()
         for t in open_trades:
             trade_id = t["id"]
@@ -194,22 +199,42 @@ class HermesSelfHealingSentinel:
             entry_time = t.get("entry_time") or 0
             age_seconds = (now_ms - entry_time) / 1000.0
 
-            # If trade has been open > 2 minutes and does not exist on the real exchange
-            is_on_exchange = False
-            if "BINANCE" in exchange and sym in real_binance_symbols:
-                is_on_exchange = True
-            elif "BITGET" in exchange and sym in real_bitget_symbols:
-                is_on_exchange = True
+            # Check presence across both exchanges
+            is_on_binance = sym in real_binance_symbols
+            is_on_bitget = sym in real_bitget_symbols
 
-            # If exchange trading is enabled but order is missing on exchange after 120s
+            # Exchange mapping healing
+            if is_on_bitget and "BITGET" not in exchange:
+                with get_connection() as conn:
+                    conn.execute("""
+                        UPDATE paper_trades
+                        SET exchange = 'BITGET', channel = 'bitget_1h', account_id = 4
+                        WHERE id = ?
+                    """, (trade_id,))
+                    conn.commit()
+                exchange = "BITGET"
+                fixes.append(f"Auto-healed {sym} exchange mapping to BITGET (Account 4)")
+
+            elif is_on_binance and "BINANCE" not in exchange:
+                with get_connection() as conn:
+                    conn.execute("""
+                        UPDATE paper_trades
+                        SET exchange = 'BINANCE', channel = 'binance_1h', account_id = 2
+                        WHERE id = ?
+                    """, (trade_id,))
+                    conn.commit()
+                exchange = "BINANCE"
+                fixes.append(f"Auto-healed {sym} exchange mapping to BINANCE (Account 2)")
+
+            is_on_exchange = is_on_binance or is_on_bitget
+
             is_live_enabled = False
             if "BINANCE" in exchange:
                 is_live_enabled = binance_trader.is_auto_trade_enabled()
             elif "BITGET" in exchange:
                 is_live_enabled = bitget_trader.is_auto_trade_enabled()
 
-            if is_live_enabled and not is_on_exchange and age_seconds > 120:
-                # Phantom trade detected blocking the slot! Auto-reconcile it!
+            if is_live_enabled and not is_on_exchange and age_seconds > 180:
                 with get_connection() as conn:
                     conn.execute("""
                     UPDATE paper_trades 
@@ -220,6 +245,98 @@ class HermesSelfHealingSentinel:
 
                 fixes.append(f"Auto-Reconciled ghost trade on {sym} ({exchange}) to free compounding slot")
                 logger.warning(f"🛡️ [PARITY AUTO-HEAL] Cleared orphan/ghost trade #{trade_id} on {sym} ({exchange}). Slot restored!")
+
+        # 3. BIDIRECTIONAL SYNC: Import Real Exchange Positions into DB if missing
+        active_db_symbols = {t["symbol"].upper() for t in get_open_paper_trades()}
+
+        for sym, p in real_bitget_positions.items():
+            if sym not in active_db_symbols:
+                contracts = float(p.get('contracts', 0) or 0)
+                entry_p = float(p.get('entryPrice') or 0.0)
+                side_raw = (p.get('side') or 'short').upper()
+                side = 'LONG' if side_raw in ('BUY', 'LONG') else 'SHORT'
+                notional = float(p.get('notional', 0) or (contracts * entry_p))
+                if notional <= 0:
+                    notional = 250.0
+                tp_p = round(entry_p * (1.016 if side == 'LONG' else 0.984), 6)
+                sl_p = round(entry_p * (0.9855 if side == 'LONG' else 1.0145), 6)
+
+                with get_connection() as conn:
+                    existing = conn.execute("""
+                        SELECT id FROM paper_trades 
+                        WHERE symbol = ? AND UPPER(side) = ? 
+                        ORDER BY id DESC LIMIT 1
+                    """, (sym, side)).fetchone()
+
+                    if existing:
+                        conn.execute("""
+                            UPDATE paper_trades
+                            SET status = 'OPEN', exchange = 'BITGET', channel = 'bitget_1h', account_id = 4,
+                                entry_price = ?, position_size_usdt = ?, exit_time = NULL, exit_price = NULL,
+                                duration_str = 'Live'
+                            WHERE id = ?
+                        """, (entry_p, round(notional, 2), existing[0]))
+                        fixes.append(f"Auto-synchronized live Bitget position {sym} #{existing[0]} into DB & UI")
+                    else:
+                        conn.execute("""
+                            INSERT INTO paper_trades (
+                                symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
+                                hard_sl_price, timeframe, channel, exchange, account_id, status,
+                                entry_time, sentry_reasons, mode, duration_str, roi_pct
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, '1h', 'bitget_1h', 'BITGET', 4, 'OPEN', ?, 'Hermes 3.0 Live Bitget Synced', 'HERMES_3.0_QUANTUM', 'Live', 0.0)
+                        """, (sym, side, entry_p, round(notional, 2), tp_p, sl_p, sl_p, now_ms))
+                        fixes.append(f"Auto-imported live Bitget position {sym} into DB & UI")
+                    conn.commit()
+
+                try:
+                    from engine.trade_journal import sync_quad_accounts_to_ledger
+                    sync_quad_accounts_to_ledger()
+                    push_vault_state()
+                except Exception:
+                    pass
+
+        for sym, p in real_binance_positions.items():
+            if sym not in active_db_symbols:
+                amt = float(p.get('positionAmt', 0) or 0)
+                entry_p = float(p.get('entryPrice', 0) or 0.0)
+                side = 'LONG' if amt > 0 else 'SHORT'
+                notional = abs(amt * entry_p) if entry_p > 0 else 250.0
+                tp_p = round(entry_p * (1.016 if side == 'LONG' else 0.984), 6)
+                sl_p = round(entry_p * (0.9855 if side == 'LONG' else 1.0145), 6)
+
+                with get_connection() as conn:
+                    existing = conn.execute("""
+                        SELECT id FROM paper_trades 
+                        WHERE symbol = ? AND UPPER(side) = ? 
+                        ORDER BY id DESC LIMIT 1
+                    """, (sym, side)).fetchone()
+
+                    if existing:
+                        conn.execute("""
+                            UPDATE paper_trades
+                            SET status = 'OPEN', exchange = 'BINANCE', channel = 'binance_1h', account_id = 2,
+                                entry_price = ?, position_size_usdt = ?, exit_time = NULL, exit_price = NULL,
+                                duration_str = 'Live'
+                            WHERE id = ?
+                        """, (entry_p, round(notional, 2), existing[0]))
+                        fixes.append(f"Auto-synchronized live Binance position {sym} #{existing[0]} into DB & UI")
+                    else:
+                        conn.execute("""
+                            INSERT INTO paper_trades (
+                                symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
+                                hard_sl_price, timeframe, channel, exchange, account_id, status,
+                                entry_time, sentry_reasons, mode, duration_str, roi_pct
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, '1h', 'binance_1h', 'BINANCE', 2, 'OPEN', ?, 'Hermes 3.0 Live Binance Synced', 'HERMES_3.0_QUANTUM', 'Live', 0.0)
+                        """, (sym, side, entry_p, round(notional, 2), tp_p, sl_p, sl_p, now_ms))
+                        fixes.append(f"Auto-imported live Binance position {sym} into DB & UI")
+                    conn.commit()
+
+                try:
+                    from engine.trade_journal import sync_quad_accounts_to_ledger
+                    sync_quad_accounts_to_ledger()
+                    push_vault_state()
+                except Exception:
+                    pass
 
         return fixes
 
