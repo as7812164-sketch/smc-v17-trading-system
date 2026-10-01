@@ -357,6 +357,10 @@ class BinanceTrader:
                     print(f"[BINANCE HARD SL NOTE] Exchange stop market note: {sle}. Dynamic Hermes Profit Armor & Watchdog active.")
 
                 print(f"[BINANCE REAL 4H {side} EXECUTED] {sym} {side} @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED - {order_params.get('positionSide')})")
+                fill_price = float(order.get('average') or order.get('price') or entry_price)
+                if fill_price <= 0:
+                    fill_price = entry_price
+
                 return {
                     "success": True,
                     "mode": f"Live Binance Futures (4H {side})",
@@ -366,7 +370,7 @@ class BinanceTrader:
                     "symbol": sym,
                     "side": side,
                     "position_side": order_params.get('positionSide'),
-                    "entry_price": entry_price,
+                    "entry_price": fill_price,
                     "tp_price": tp_price,
                     "soft_sl_price": soft_sl_price,
                     "hard_disaster_sl": hard_disaster_sl,
@@ -520,13 +524,17 @@ class BinanceTrader:
                     print(f"[BINANCE 1H HARD SL NOTE] Exchange stop market note: {sle}. Dynamic Hermes Profit Armor & Watchdog active.")
 
                 print(f"[BINANCE REAL 1H ORDER] {sym} {side} @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
+                fill_price = float(order.get('average') or order.get('price') or entry_price)
+                if fill_price <= 0:
+                    fill_price = entry_price
+
                 return {
                     "success": True,
                     "order_id": order.get("id"),
                     "mode": "Binance Real 1H Compounding (5x ISOLATED)",
                     "symbol": sym,
                     "side": side,
-                    "entry_price": entry_price,
+                    "entry_price": fill_price,
                     "tp_price": tp_price,
                     "soft_sl_price": soft_sl_price,
                     "hard_disaster_sl": hard_disaster_sl,
