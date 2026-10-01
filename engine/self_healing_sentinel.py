@@ -383,7 +383,13 @@ class HermesSelfHealingSentinel:
 
                         open_orders = binance_trader.exchange.fapiPrivateGetOpenOrders({'symbol': sym})
                         has_tp = any(o.get('type') == 'LIMIT' and o.get('side').lower() == close_side for o in open_orders)
-                        has_sl = any(o.get('type') in ('STOP', 'STOP_MARKET') for o in open_orders)
+                        
+                        open_algo = []
+                        try:
+                            open_algo = binance_trader.exchange.fapiPrivateGetOpenAlgoOrders({'symbol': sym})
+                        except Exception:
+                            pass
+                        has_sl = any(o.get('orderType') in ('STOP', 'STOP_MARKET') or o.get('algoType') == 'CONDITIONAL' for o in open_algo)
 
                         with get_connection() as conn:
                             db_tr = conn.execute("SELECT tp_price, hard_sl_price, sl_price FROM paper_trades WHERE symbol = ? AND status = 'OPEN' ORDER BY id DESC LIMIT 1", (sym,)).fetchone()
