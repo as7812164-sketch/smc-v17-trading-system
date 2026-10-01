@@ -67,6 +67,8 @@ class Hermes2ApexLiveEngine:
         self.active_position: Optional[Dict[str, Any]] = None
         self.detected_setups: List[Dict[str, Any]] = []
         self.trade_cooldowns: Dict[str, float] = {}  # Symbol -> timestamp of when cooldown ends
+        self._order_execution_lock = asyncio.Lock()
+        self._in_flight_symbols = set()
         self.ws_broadcast_callback = None
         self._ensure_db_schema()
 
@@ -500,6 +502,26 @@ class Hermes2ApexLiveEngine:
         }
 
     async def execute_apex_entry(self, setup: Dict[str, Any]):
+        """Guarded entrypoint: Enforces atomic lock and in-flight symbol deduplication across all loops."""
+        sym_clean = setup.get("symbol", "").upper()
+        if not sym_clean:
+            return
+
+        if sym_clean in self._in_flight_symbols:
+            logger.info(f"🛡️ [IN-FLIGHT GUARD] Skipping {sym_clean}: Execution already in flight!")
+            return
+
+        async with self._order_execution_lock:
+            if sym_clean in self._in_flight_symbols:
+                logger.info(f"🛡️ [IN-FLIGHT GUARD] Skipping {sym_clean}: Already queued in flight!")
+                return
+            self._in_flight_symbols.add(sym_clean)
+            try:
+                await self._execute_apex_entry_internal(setup)
+            finally:
+                self._in_flight_symbols.discard(sym_clean)
+
+    async def _execute_apex_entry_internal(self, setup: Dict[str, Any]):
         """Executes a 5x Isolated Simulated Compounding position on a verified setup for its specific timeframe."""
         tf = (setup.get("interval") or "4h").lower()
         sym = setup["symbol"]

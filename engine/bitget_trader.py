@@ -250,6 +250,19 @@ class BitgetTrader:
 
         if self.exchange and self.is_configured():
             try:
+                # 0. Anti-Duplicate Exchange Guard: Abort if position already exists for this symbol
+                try:
+                    existing_positions = self.exchange.fetch_positions([ccxt_sym])
+                    for p in existing_positions:
+                        contracts = float(p.get('contracts', 0) or 0)
+                        size = float(p.get('size', 0) or 0)
+                        if contracts > 0 or size > 0:
+                            msg = f"[BITGET DUPLICATE GUARD] Aborting: {sym} already has an active position ({contracts} contracts / ${p.get('notional', 0)} notional) on Bitget!"
+                            print(msg)
+                            return {"success": False, "skipped": True, "reason": msg}
+                except Exception as p_err:
+                    print(f"[BITGET GUARD] Position pre-check warning: {p_err}")
+
                 # 1. Enforce ISOLATED margin mode
                 self.enforce_isolated_margin(sym)
 
@@ -389,6 +402,19 @@ class BitgetTrader:
 
         if self.exchange and self.is_configured():
             try:
+                # 0. Anti-Duplicate Exchange Guard: Abort if position already exists for this symbol
+                try:
+                    existing_positions = self.exchange.fetch_positions([ccxt_sym])
+                    for p in existing_positions:
+                        contracts = float(p.get('contracts', 0) or 0)
+                        size = float(p.get('size', 0) or 0)
+                        if contracts > 0 or size > 0:
+                            msg = f"[BITGET DUPLICATE GUARD] Aborting: {sym} already has an active position ({contracts} contracts / ${p.get('notional', 0)} notional) on Bitget!"
+                            print(msg)
+                            return {"success": False, "skipped": True, "reason": msg}
+                except Exception as p_err:
+                    print(f"[BITGET GUARD] Position pre-check warning: {p_err}")
+
                 self.enforce_isolated_margin(sym)
                 self.set_leverage_isolated(BITGET_DEFAULT_LEVERAGE, sym, hold_side)
 

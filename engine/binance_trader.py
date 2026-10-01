@@ -274,6 +274,19 @@ class BinanceTrader:
 
         if self.exchange and self.is_configured():
             try:
+                # 0. Anti-Duplicate Exchange Guard: Abort if position already exists for this symbol
+                try:
+                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                    bin_pos = self.exchange.fapiPrivateV2GetPositionRisk({'symbol': clean_sym})
+                    for p in bin_pos:
+                        amt = float(p.get('positionAmt', 0) or 0)
+                        if amt != 0:
+                            msg = f"[BINANCE DUPLICATE GUARD] Aborting: {sym} already has an active position ({amt}) on Binance!"
+                            print(msg)
+                            return {"success": False, "skipped": True, "reason": msg}
+                except Exception as p_err:
+                    print(f"[BINANCE GUARD] Position pre-check warning: {p_err}")
+
                 # 2. STRICT ISOLATED MARGIN ENFORCEMENT
                 iso_res = self.enforce_isolated_margin(sym)
                 if not iso_res["success"]:
@@ -446,6 +459,19 @@ class BinanceTrader:
 
         if self.exchange and self.is_configured():
             try:
+                # 0. Anti-Duplicate Exchange Guard: Abort if position already exists for this symbol
+                try:
+                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                    bin_pos = self.exchange.fapiPrivateV2GetPositionRisk({'symbol': clean_sym})
+                    for p in bin_pos:
+                        amt = float(p.get('positionAmt', 0) or 0)
+                        if amt != 0:
+                            msg = f"[BINANCE DUPLICATE GUARD] Aborting: {sym} already has an active position ({amt}) on Binance!"
+                            print(msg)
+                            return {"success": False, "skipped": True, "reason": msg}
+                except Exception as p_err:
+                    print(f"[BINANCE GUARD] Position pre-check warning: {p_err}")
+
                 # 1. Enforce ISOLATED margin mode
                 iso_res = self.enforce_isolated_margin(sym)
                 if not iso_res["success"]:
