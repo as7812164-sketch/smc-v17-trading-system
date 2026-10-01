@@ -310,8 +310,6 @@ class BinanceTrader:
 
                 order_params = {
                     'positionSide': pos_side,
-                    'stopLossPrice': hard_disaster_sl,
-                    'takeProfitPrice': tp_price
                 }
 
                 try:
@@ -341,6 +339,22 @@ class BinanceTrader:
                         )
                     else:
                         raise oe
+
+                # Arm exchange-side hard disaster stop (non-blocking safeguard)
+                try:
+                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                    close_side = 'sell' if is_long else 'buy'
+                    self.exchange.fapiPrivatePostOrder({
+                        'symbol': clean_sym,
+                        'side': close_side.upper(),
+                        'positionSide': order_params.get('positionSide', pos_side),
+                        'type': 'STOP_MARKET',
+                        'stopPrice': str(round(hard_disaster_sl, 4)),
+                        'closePosition': 'true'
+                    })
+                    print(f"[BINANCE HARD SL ARMED] Placed STOP_MARKET @ {hard_disaster_sl}")
+                except Exception as sle:
+                    print(f"[BINANCE HARD SL NOTE] Exchange stop market note: {sle}. Dynamic Hermes Profit Armor & Watchdog active.")
 
                 print(f"[BINANCE REAL 4H {side} EXECUTED] {sym} {side} @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED - {order_params.get('positionSide')})")
                 return {
@@ -462,8 +476,6 @@ class BinanceTrader:
 
                 order_params = {
                     'positionSide': pos_side,
-                    'stopLossPrice': hard_disaster_sl,
-                    'takeProfitPrice': tp_price
                 }
 
                 try:
@@ -490,6 +502,22 @@ class BinanceTrader:
                         )
                     else:
                         raise oe
+
+                # Arm exchange-side hard disaster stop (non-blocking safeguard)
+                try:
+                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                    close_side = 'sell' if is_long else 'buy'
+                    self.exchange.fapiPrivatePostOrder({
+                        'symbol': clean_sym,
+                        'side': close_side.upper(),
+                        'positionSide': order_params.get('positionSide', pos_side),
+                        'type': 'STOP_MARKET',
+                        'stopPrice': str(round(hard_disaster_sl, 4)),
+                        'closePosition': 'true'
+                    })
+                    print(f"[BINANCE 1H HARD SL ARMED] Placed STOP_MARKET @ {hard_disaster_sl}")
+                except Exception as sle:
+                    print(f"[BINANCE 1H HARD SL NOTE] Exchange stop market note: {sle}. Dynamic Hermes Profit Armor & Watchdog active.")
 
                 print(f"[BINANCE REAL 1H ORDER] {sym} {side} @ {entry_price} | TP: {tp_price} | Hard SL: {hard_disaster_sl} (5x ISOLATED)")
                 return {
