@@ -197,7 +197,7 @@ async def lifespan(app: FastAPI):
     binance_heartbeat_task.cancel()
     await binance_feed.close()
 
-app = FastAPI(title="HERMES 3.0 QUANTUM Autonomous Terminal & Quant Engine", lifespan=lifespan)
+app = FastAPI(title="HERMES 3.5 DUAL SNIPER Autonomous Terminal & Quant Engine", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/manifest.json")
@@ -611,7 +611,7 @@ async def get_system_status():
     return {
         "status": "online",
         "version": active_version,
-        "strategy_options": ["HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"],
+        "strategy_options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"],
         "timeframe": TIMEFRAME,
         "performance": stats,
         "metrics": metrics,
@@ -629,19 +629,22 @@ async def get_strategy_mode():
     active_version = get_setting("strategy_version", STRATEGY_VERSION)
     return {
         "active_mode": active_version,
-        "options": ["HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"],
+        "options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"],
         "features": {
             "mean_threshold_entry": active_version.startswith("HERMES_3"),
             "multi_stage_profit_armor": True,
             "btc_emergency_shield": True,
-            "dynamic_atr_buffer": active_version.startswith("HERMES_3")
+            "dynamic_atr_buffer": active_version.startswith("HERMES_3"),
+            "micro_sniper_gate_15m": active_version.startswith("HERMES_3.5"),
+            "cvd_delta_absorption": active_version.startswith("HERMES_3.5"),
+            "fast_break_even_armor": active_version.startswith("HERMES_3.5")
         }
     }
 
 @app.post("/api/strategy/switch")
 async def switch_strategy_mode(payload: Dict[str, Any] = Body(...)):
     target_mode = payload.get("mode")
-    if target_mode not in ["HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"]:
+    if target_mode not in ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"]:
         return JSONResponse({"status": "error", "message": f"Invalid mode: {target_mode}"}, status_code=400)
     set_setting("strategy_version", target_mode)
     with get_connection() as conn:

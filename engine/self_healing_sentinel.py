@@ -135,12 +135,11 @@ class HermesSelfHealingSentinel:
     def auto_heal_strategy_consistency(self) -> List[str]:
         """Ensures valid strategy version (HERMES_3.5_DUAL_TIER_SNIPER or HERMES_3.0_QUANTUM) is set."""
         fixes = []
-        from config import STRATEGY_OPTIONS
+        from config import STRATEGY_OPTIONS, STRATEGY_VERSION
         current_ver = get_setting("strategy_version", "")
-        if current_ver not in STRATEGY_OPTIONS:
-            target_ver = "HERMES_3.5_DUAL_TIER_SNIPER"
-            set_setting("strategy_version", target_ver)
-            fixes.append(f"Auto-locked strategy_version to {target_ver}")
+        if current_ver != STRATEGY_VERSION:
+            set_setting("strategy_version", STRATEGY_VERSION)
+            fixes.append(f"Auto-synced strategy_version to {STRATEGY_VERSION}")
 
         with get_connection() as conn:
             # Check paper accounts mode and milestone targets

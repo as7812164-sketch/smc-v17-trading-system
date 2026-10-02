@@ -49,11 +49,8 @@ from engine.chart_image_generator import render_smc_chart_image
 
 logger = logging.getLogger("Hermes2ApexLive")
 
-TOP_22_CHAMPIONS = [
-    "DOGEUSDT", "ALGOUSDT", "FETUSDT", "SANDUSDT", "BTCUSDT", "THETAUSDT", "OPUSDT", "FILUSDT",
-    "RENDERUSDT", "RUNEUSDT", "AVAXUSDT", "SOLUSDT", "SUIUSDT", "NEARUSDT", "APTUSDT", "LDOUSDT",
-    "MKRUSDT", "UNIUSDT", "AAVEUSDT", "GALAUSDT", "ICPUSDT", "PYTHUSDT"
-]
+from config import TOP_22_CHAMPIONS, STRATEGY_VERSION
+from engine.hermes3_5_apex import hermes35_engine
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -259,20 +256,40 @@ class Hermes2ApexLiveEngine:
                                             w_ratio = (l_wick / c_range) if c_range > 0 else 0
                                             mt = (dec_top + dec_bot) / 2.0
 
-                                            strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                                            strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.5_DUAL_TIER_SNIPER"))
                                             is_hermes3 = strat_mode.startswith("HERMES_3")
+                                            is_hermes35 = strat_mode.startswith("HERMES_3.5")
                                             is_valid_tap = (tap_c["low"] <= mt and tap_c["close"] >= mt) if is_hermes3 else (tap_c["close"] >= mt)
 
                                             # Sentry 3: IDM Sweep + >=18% Wick Absorption + 50% MT
                                             if swept and w_ratio >= 0.18 and is_valid_tap:
-                                                age = n - 1 - t
-                                                is_fresh_trigger = (age <= 1)
-                                                if is_hermes3:
+                                                tier = "TIER_1_INSTITUTIONAL"
+                                                be_lock_pct = 0.016
+                                                trail_lock_pct = 0.022
+                                                cvd_confirmed = True
+
+                                                if is_hermes35:
+                                                    passed_sniper, sniper_reason = hermes35_engine.evaluate_15m_micro_sniper_gate(tap_c, "LONG")
+                                                    if not passed_sniper:
+                                                        logger.info(f"🛑 [HERMES 3.5 SNIPER VETO] {symbol} LONG tap rejected: {sniper_reason}")
+                                                        continue
+                                                    tier_info = hermes35_engine.classify_dual_tier_setup(candles, t, "LONG")
+                                                    tier = tier_info.get("tier", "TIER_1_INSTITUTIONAL")
+                                                    tier_name = tier_info.get("tier_name", "Tier 1 (Institutional)")
+                                                    be_lock_pct = tier_info.get("be_lock_pct", 0.016)
+                                                    trail_lock_pct = tier_info.get("trail_lock_pct", 0.022)
+                                                    cvd_confirmed = tier_info.get("cvd_confirmed", True)
+                                                    eff_entry = mt
+                                                    sentry_lbl = f"HERMES 3.5 DUAL SNIPER [{tier_name}] | {sniper_reason} | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT 50% | Sentry 4 Fresh: Bar #{t - high_idx}"
+                                                elif is_hermes3:
                                                     eff_entry = mt
                                                     sentry_lbl = f"HERMES 3.0 QUANTUM (Mean Threshold 50% EQ) | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT 50% Rejection | Sentry 4 Fresh: Bar #{t - high_idx}"
                                                 else:
                                                     eff_entry = dec_top
                                                     sentry_lbl = f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {gain*100:.1f}% + FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - high_idx}"
+
+                                                age = n - 1 - t
+                                                is_fresh_trigger = (age <= 1)
 
                                                 setups.append({
                                                     "symbol": symbol,
@@ -294,7 +311,11 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh_trigger,
                                                     "status": "FRESH_TRIGGERED" if is_fresh_trigger else "CONFIRMED_TAP",
-                                                    "sentry_reasons": sentry_lbl
+                                                    "sentry_reasons": sentry_lbl,
+                                                    "tier": tier,
+                                                    "be_lock_pct": be_lock_pct,
+                                                    "trail_lock_pct": trail_lock_pct,
+                                                    "cvd_confirmed": cvd_confirmed
                                                 })
                                                 tapped_found = True
                                             break
@@ -370,19 +391,39 @@ class Hermes2ApexLiveEngine:
                                             w_ratio = (u_wick / c_range) if c_range > 0 else 0
                                             mt = (dec_top + dec_bot) / 2.0
 
-                                            strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                                            strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.5_DUAL_TIER_SNIPER"))
                                             is_hermes3 = strat_mode.startswith("HERMES_3")
+                                            is_hermes35 = strat_mode.startswith("HERMES_3.5")
                                             is_valid_tap = (tap_c["high"] >= mt and tap_c["close"] <= mt) if is_hermes3 else (tap_c["close"] <= mt)
 
                                             if swept and w_ratio >= 0.18 and is_valid_tap:
-                                                age = n - 1 - t
-                                                is_fresh_trigger = (age <= 1)
-                                                if is_hermes3:
+                                                tier = "TIER_1_INSTITUTIONAL"
+                                                be_lock_pct = 0.016
+                                                trail_lock_pct = 0.022
+                                                cvd_confirmed = True
+
+                                                if is_hermes35:
+                                                    passed_sniper, sniper_reason = hermes35_engine.evaluate_15m_micro_sniper_gate(tap_c, "SHORT")
+                                                    if not passed_sniper:
+                                                        logger.info(f"🛑 [HERMES 3.5 SNIPER VETO] {symbol} SHORT tap rejected: {sniper_reason}")
+                                                        continue
+                                                    tier_info = hermes35_engine.classify_dual_tier_setup(candles, t, "SHORT")
+                                                    tier = tier_info.get("tier", "TIER_1_INSTITUTIONAL")
+                                                    tier_name = tier_info.get("tier_name", "Tier 1 (Institutional)")
+                                                    be_lock_pct = tier_info.get("be_lock_pct", 0.016)
+                                                    trail_lock_pct = tier_info.get("trail_lock_pct", 0.022)
+                                                    cvd_confirmed = tier_info.get("cvd_confirmed", True)
+                                                    eff_entry = mt
+                                                    sentry_lbl = f"HERMES 3.5 DUAL SNIPER [{tier_name}] | {sniper_reason} | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT 50% | Sentry 4 Fresh: Bar #{t - low_idx}"
+                                                elif is_hermes3:
                                                     eff_entry = mt
                                                     sentry_lbl = f"HERMES 3.0 QUANTUM (Mean Threshold 50% EQ) | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT 50% Rejection | Sentry 4 Fresh: Bar #{t - low_idx}"
                                                 else:
                                                     eff_entry = dec_bot
                                                     sentry_lbl = f"HERMES 2.5 APEX HYBRID | Sentry 1 Clean | Sentry 2 Disp: {drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {w_ratio*100:.1f}% & MT OK | Sentry 4 Fresh: Bar #{t - low_idx}"
+
+                                                age = n - 1 - t
+                                                is_fresh_trigger = (age <= 1)
 
                                                 setups.append({
                                                     "symbol": symbol,
@@ -404,7 +445,11 @@ class Hermes2ApexLiveEngine:
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh_trigger,
                                                     "status": "FRESH_TRIGGERED" if is_fresh_trigger else "CONFIRMED_TAP",
-                                                    "sentry_reasons": sentry_lbl
+                                                    "sentry_reasons": sentry_lbl,
+                                                    "tier": tier,
+                                                    "be_lock_pct": be_lock_pct,
+                                                    "trail_lock_pct": trail_lock_pct,
+                                                    "cvd_confirmed": cvd_confirmed
                                                 })
                                                 tapped_found = True
                                             break
@@ -677,6 +722,11 @@ class Hermes2ApexLiveEngine:
                 position_size = round(margin * 5.0, 2)
             logger.info(f"✅ Real exchange order placed on {target_exchange}: Order ID {execution_order_id}")
 
+        tier = setup.get("tier", "TIER_1_INSTITUTIONAL")
+        be_lock_pct = float(setup.get("be_lock_pct", 0.016))
+        trail_lock_pct = float(setup.get("trail_lock_pct", 0.022))
+        trade_mode = strat_mode if strat_mode else "HERMES_3.5_DUAL_TIER_SNIPER"
+
         with get_connection() as conn:
             cursor = conn.execute("""
             INSERT INTO paper_trades (
@@ -684,14 +734,16 @@ class Hermes2ApexLiveEngine:
                 tp_price, sl_price, hard_sl_price, timeframe,
                 channel, exchange, account_id,
                 status, entry_time, sentry_reasons, mode,
-                highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, 'HERMES_3.0_QUANTUM', ?, ?, 0.0, 0.0, '', 0.0)
+                highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct,
+                tier, be_lock_pct, trail_lock_pct
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, ?, 0.0, 0.0, '', 0.0, ?, ?, ?)
             """, (
                 sym, side, entry_price, position_size,
                 tp_price, sl_price, hard_sl_price, tf,
                 target_channel, target_exchange, target_account_id,
-                now_ms, sentry_reasons,
-                entry_price, entry_price
+                now_ms, sentry_reasons, trade_mode,
+                entry_price, entry_price,
+                tier, be_lock_pct, trail_lock_pct
             ))
             conn.commit()
             trade_id = cursor.lastrowid
@@ -727,6 +779,10 @@ class Hermes2ApexLiveEngine:
             "status": "OPEN",
             "entry_time": now_ms,
             "sentry_reasons": sentry_reasons,
+            "mode": trade_mode,
+            "tier": tier,
+            "be_lock_pct": be_lock_pct,
+            "trail_lock_pct": trail_lock_pct,
             "order_id": execution_order_id
         }
         self.active_position = trade_obj
@@ -843,21 +899,24 @@ class Hermes2ApexLiveEngine:
                     highest = max(float(trade.get("highest_price") or entry_price), cur_price)
                     gain_from_entry = (highest - entry_price) / entry_price if entry_price > 0 else 0.0
 
+                    trade_be_trigger = float(trade.get("be_lock_pct") or 0.016)
+                    trade_trail_trigger = float(trade.get("trail_lock_pct") or 0.022)
+
                     # Evaluate Multi-Stage Dynamic Profit Armor for LONG
                     current_effective_sl = sl_price
                     sl_updated = False
-                    if gain_from_entry >= 0.022:
+                    if gain_from_entry >= trade_trail_trigger:
                         stage2_sl = round(entry_price * (1.0 + 0.008), 6) # +0.80% Trailing Profit Lock
                         if stage2_sl > current_effective_sl:
                             current_effective_sl = stage2_sl
                             sl_updated = True
-                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 2 ACTIVE: {sym} LONG SL locked at {stage2_sl} (+0.80% trailing profit lock)")
-                    elif gain_from_entry >= 0.016:
+                            logger.info(f"🛡️ HERMES PROFIT ARMOR STAGE 2 ACTIVE: {sym} LONG SL locked at {stage2_sl} (+0.80% trailing profit lock)")
+                    elif gain_from_entry >= trade_be_trigger:
                         stage1_sl = round(entry_price * (1.0 + 0.001), 6) # +0.10% Breakeven Lock
                         if stage1_sl > current_effective_sl:
                             current_effective_sl = stage1_sl
                             sl_updated = True
-                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 1 ACTIVE: {sym} LONG SL locked at {stage1_sl} (BE +0.10% profit)")
+                            logger.info(f"🛡️ HERMES PROFIT ARMOR STAGE 1 ACTIVE: {sym} LONG SL locked at {stage1_sl} (BE +0.10% profit)")
 
                     if sl_updated:
                         try:
@@ -874,29 +933,31 @@ class Hermes2ApexLiveEngine:
                         # Price pulled back down and touched our tightened profitable SL -> Protected Profit Exit!
                         exit_triggered = "TP_HIT"
                         exit_price = current_effective_sl
-                        logger.info(f"🛡️ HERMES 3.0 ARMOR PROFIT LOCKED EXIT TRIGGERED: {sym} LONG at {exit_price}")
+                        logger.info(f"🛡️ HERMES PROFIT LOCKED EXIT TRIGGERED: {sym} LONG at {exit_price}")
                     elif cur_price <= hard_sl_price:
                         exit_triggered = "SL_HIT"
                         exit_price = hard_sl_price
-                else: # SELL / SHORT (HERMES 3.0 MULTI-STAGE DYNAMIC PROFIT ARMOR)
+                else: # SELL / SHORT (HERMES MULTI-STAGE DYNAMIC PROFIT ARMOR)
                     lowest = min(float(trade.get("lowest_price") or entry_price), cur_price)
                     drop_from_entry = (entry_price - lowest) / entry_price if entry_price > 0 else 0.0
+                    trade_be_trigger = float(trade.get("be_lock_pct") or 0.016)
+                    trade_trail_trigger = float(trade.get("trail_lock_pct") or 0.022)
 
                     # Evaluate Multi-Stage Dynamic Profit Armor
                     current_effective_sl = sl_price
                     sl_updated = False
-                    if drop_from_entry >= 0.022:
+                    if drop_from_entry >= trade_trail_trigger:
                         stage2_sl = round(entry_price * (1.0 - 0.008), 6) # +0.80% Trailing Profit Lock
                         if stage2_sl < current_effective_sl:
                             current_effective_sl = stage2_sl
                             sl_updated = True
-                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 2 ACTIVE: {sym} SHORT SL locked at {stage2_sl} (+0.80% trailing profit lock)")
-                    elif drop_from_entry >= 0.016:
+                            logger.info(f"🛡️ HERMES PROFIT ARMOR STAGE 2 ACTIVE: {sym} SHORT SL locked at {stage2_sl} (+0.80% trailing profit lock)")
+                    elif drop_from_entry >= trade_be_trigger:
                         stage1_sl = round(entry_price * (1.0 - 0.001), 6) # +0.10% Breakeven Lock
                         if stage1_sl < current_effective_sl:
                             current_effective_sl = stage1_sl
                             sl_updated = True
-                            logger.info(f"🛡️ HERMES 3.0 ARMOR STAGE 1 ACTIVE: {sym} SHORT SL locked at {stage1_sl} (BE +0.10% profit)")
+                            logger.info(f"🛡️ HERMES PROFIT ARMOR STAGE 1 ACTIVE: {sym} SHORT SL locked at {stage1_sl} (BE +0.10% profit)")
 
                     if sl_updated:
                         try:
@@ -976,12 +1037,12 @@ class Hermes2ApexLiveEngine:
                 is_fresh = setup.get("is_fresh_trigger", False)
 
                 mt = float(setup.get("mean_threshold", (ob_high + ob_low) / 2.0))
-                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+                strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.5_DUAL_TIER_SNIPER"))
 
                 tapped = False
                 if side in ("BUY", "LONG"):
                     if strat_mode.startswith("HERMES_3"):
-                        # In Hermes 3.0, enter at Mean Threshold 50% discount depth
+                        # In Hermes 3.0/3.5, enter at Mean Threshold 50% discount depth
                         if (cur_price <= mt * 1.002) and (cur_price >= ob_low * 0.995):
                             tapped = True
                             setup["entry_price"] = mt
@@ -991,7 +1052,7 @@ class Hermes2ApexLiveEngine:
                             tapped = True
                 else: # SHORT / SELL
                     if strat_mode.startswith("HERMES_3"):
-                        # In Hermes 3.0, enter at Mean Threshold 50% premium depth
+                        # In Hermes 3.0/3.5, enter at Mean Threshold 50% premium depth
                         if (cur_price >= mt * 0.998) and (cur_price <= ob_high * 1.005):
                             tapped = True
                             setup["entry_price"] = mt
@@ -1015,6 +1076,19 @@ class Hermes2ApexLiveEngine:
                         slots_1h_count = sum(1 for t in open_trades_current if t.get("account_id") in (3, 4) or str(t.get("channel", "")).startswith("bitget_1h"))
                         if slots_1h_count >= 2:
                             continue
+
+                    # Live 15m Micro-Sniper check on tap
+                    if strat_mode.startswith("HERMES_3.5"):
+                        try:
+                            k15 = await binance_feed.fetch_klines(sym, interval="15m", limit=3)
+                            if k15:
+                                p_gate, r_gate = hermes35_engine.evaluate_15m_micro_sniper_gate(k15[-1], side)
+                                if not p_gate:
+                                    logger.info(f"🛑 [HERMES 3.5 TAP VETO] {sym} {side} live tap rejected: {r_gate}")
+                                    continue
+                        except Exception:
+                            pass
+
                     logger.info(f"⚡ REAL-TIME TAP WATCHDOG TRIGGERED on {sym} ({side})! Live Price: {cur_price} tapped OB [{ob_low}, {ob_high}] (TF: {tf_setup.upper()})")
                     if setup in self.detected_setups:
                         self.detected_setups.remove(setup)
@@ -1045,6 +1119,14 @@ class Hermes2ApexLiveEngine:
                 acc_id = 4
             else:
                 acc_id = 2 if "1h" in tf else 1
+
+        highest = max(float(trade.get("highest_price") or entry_price), exit_price)
+        lowest = min(float(trade.get("lowest_price") or entry_price), exit_price)
+        final_mae = float(trade.get("mae_pct") or 0.0)
+        final_mfe = float(trade.get("mfe_pct") or 0.0)
+        entry_t = trade.get("entry_time", now_ms)
+        duration_str = format_duration_str(now_ms - entry_t)
+
         roundtrip_fee = pos_size * 0.0016 # 0.16% roundtrip exchange fee
 
         if side in ("BUY", "LONG"):
@@ -1056,7 +1138,7 @@ class Hermes2ApexLiveEngine:
         net_pnl_usdt = gross_pnl_usdt - roundtrip_fee
 
         # ISOLATION GUARANTEE: If legacy Binance trade (acc_id == 99 or BINANCE exchange)
-        if acc_id == 99 or target_exchange == "BINANCE" or str(trade.get("exchange", "")).upper() == "BINANCE" or str(trade.get("channel", "")).startswith("binance"):
+        if acc_id == 99 or str(trade.get("exchange", "")).upper() == "BINANCE" or str(trade.get("channel", "")).startswith("binance"):
             with get_connection() as conn:
                 cursor = conn.execute("""
                 UPDATE paper_trades SET

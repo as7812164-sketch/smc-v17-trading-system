@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 from config import (
     STRATEGY_VERSION,
+    CURRENT_STRATEGY_NAME,
     TIMEFRAME,
     DEFAULT_COINS,
     TP_PCT,
@@ -147,7 +148,7 @@ def format_trade_open_alert(
     sl_sign = "+" if sl_dist_pct >= 0 else ""
 
     lines = [
-        "<pre>⚡ HERMES 3.0 QUANTUM • TRADE OPEN",
+        f"<pre>⚡ {CURRENT_STRATEGY_NAME} • TRADE OPEN",
         "━━━━━━━━━━━━━━━━━━━━━━",
         "",
         f"{symbol:<24} {side_icon}",
@@ -181,8 +182,8 @@ def format_trade_open_alert(
         date_time_str + "</pre>"
     ])
 
-    armor_name = "HERMES 3.0 QUANTUM PROFIT ARMOR"
-    armor_desc = "Stage 1 BE Lock @ +1.6% | Stage 2 Trailing Lock @ +2.2%"
+    armor_name = f"{CURRENT_STRATEGY_NAME} PROFIT ARMOR"
+    armor_desc = "Tier 1: BE +1.6% / Trail +2.2% | Tier 2: BE +1.0% / Trail +1.8%"
     ai_suggestion_txt = (
         "Institutional sweep confirmed at OB boundary. High rejection wick detected. Dynamic Profit Armor armed — target +2.8% TP."
         if side_raw not in ("BUY", "LONG")
@@ -238,7 +239,7 @@ def format_trade_closed_alert(
     wr_str = f"{win_rate:.0f}" if float(win_rate).is_integer() else f"{win_rate:.1f}"
 
     lines = [
-        "<pre>🏆 HERMES 3.0 QUANTUM • TRADE CLOSED",
+        f"<pre>🏆 {CURRENT_STRATEGY_NAME} • TRADE CLOSED",
         "━━━━━━━━━━━━━━━━━━━━━━",
         "",
         f"{symbol:<24} {side_icon}",

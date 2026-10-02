@@ -15,7 +15,7 @@ import urllib.error
 import sqlite3
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-from config import BASE_DIR, DB_PATH
+from config import BASE_DIR, DB_PATH, STRATEGY_VERSION
 from database.db import get_connection
 
 logger = logging.getLogger("smc.vault")
@@ -77,6 +77,7 @@ def push_vault_state() -> bool:
             3: ("BITGET", "bitget_1h_1", "Bitget 1H Intraday (Section A)", "1h"),
             4: ("BITGET", "bitget_1h_2", "Bitget 1H Intraday (Section B)", "1h"),
         }
+        active_mode = settings.get("strategy_version") or STRATEGY_VERSION
         for acc in accounts:
             acc_id = acc.get("id")
             if acc_id in channel_map:
@@ -85,12 +86,13 @@ def push_vault_state() -> bool:
                 acc["channel"] = ch
                 acc["name"] = name
                 acc["timeframe"] = tf
-            acc["mode"] = "HERMES_3.0_QUANTUM"
+            acc["mode"] = active_mode
         for pt in paper_trades:
-            pt["mode"] = "HERMES_3.0_QUANTUM"
+            if not pt.get("mode"):
+                pt["mode"] = active_mode
 
-        metrics["hermes_mode"] = "HERMES_3.0_QUANTUM"
-        settings["strategy_version"] = "HERMES_3.0_QUANTUM"
+        metrics["hermes_mode"] = active_mode
+        settings["strategy_version"] = active_mode
 
         payload_data = {
             "version": "1.0",
@@ -221,13 +223,13 @@ def pull_and_restore_vault_state() -> bool:
                 channel = excluded.channel,
                 name = excluded.name,
                 timeframe = excluded.timeframe,
-                mode = 'HERMES_3.0_QUANTUM'
+                mode = ?
             """, (
                 acc_id, acc.get("initial_balance", 50.0), acc.get("current_balance", 50.0),
                 acc.get("vault_balance", 0.0), acc.get("total_pnl", 0.0), acc.get("win_count", 0),
-                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), "HERMES_3.0_QUANTUM",
+                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), STRATEGY_VERSION,
                 tf, acc_name, acc.get("win_streak", 0),
-                exch, ch
+                exch, ch, STRATEGY_VERSION
             ))
 
         # Restore paper_trades
@@ -237,6 +239,7 @@ def pull_and_restore_vault_state() -> bool:
             side = pt.get("side")
             ep = pt.get("entry_price")
             status = pt.get("status")
+            trade_mode = pt.get("mode") or STRATEGY_VERSION
             
             existing = None
             if pt_id:
@@ -251,7 +254,7 @@ def pull_and_restore_vault_state() -> bool:
                     tp_price, sl_price, hard_sl_price, status, entry_time, exit_time,
                     pnl_usdt, pnl_pct, timeframe, sentry_reasons, highest_price, lowest_price,
                     mae_pct, mfe_pct, duration_str, roi_pct, exchange, channel, account_id, mode
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'HERMES_3.0_QUANTUM')
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     pt_id, sym, side, ep, pt.get("exit_price"), pt.get("position_size_usdt", 250.0),
                     pt.get("tp_price"), pt.get("sl_price"), pt.get("hard_sl_price", 0.0), status,
@@ -259,7 +262,7 @@ def pull_and_restore_vault_state() -> bool:
                     pt.get("pnl_usdt"), pt.get("pnl_pct"), pt.get("timeframe", "1h"),
                     pt.get("sentry_reasons", ""), pt.get("highest_price"), pt.get("lowest_price"),
                     pt.get("mae_pct", 0.0), pt.get("mfe_pct", 0.0), pt.get("duration_str", ""), pt.get("roi_pct", 0.0),
-                    pt.get("exchange", "BINANCE"), pt.get("channel", "binance_4h"), pt.get("account_id", 1)
+                    pt.get("exchange", "BINANCE"), pt.get("channel", "binance_4h"), pt.get("account_id", 1), trade_mode
                 ))
             else:
                 # Update existing trade status if changed in vault
@@ -268,8 +271,7 @@ def pull_and_restore_vault_state() -> bool:
                     status = ?, exit_price = COALESCE(?, exit_price), exit_time = COALESCE(?, exit_time),
                     pnl_usdt = COALESCE(?, pnl_usdt), pnl_pct = COALESCE(?, pnl_pct), roi_pct = COALESCE(?, roi_pct),
                     highest_price = COALESCE(?, highest_price), lowest_price = COALESCE(?, lowest_price),
-                    mae_pct = COALESCE(?, mae_pct), mfe_pct = COALESCE(?, mfe_pct), duration_str = COALESCE(?, duration_str),
-                    mode = 'HERMES_3.0_QUANTUM'
+                    mae_pct = COALESCE(?, mae_pct), mfe_pct = COALESCE(?, mfe_pct), duration_str = COALESCE(?, duration_str)
                 WHERE id = ?
                 """, (
                     status, pt.get("exit_price"), pt.get("exit_time"), pt.get("pnl_usdt"), pt.get("pnl_pct"),

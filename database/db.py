@@ -143,6 +143,9 @@ def init_db():
             ("paper_trades", "mfe_pct", "REAL DEFAULT 0.0"),
             ("paper_trades", "duration_str", "TEXT DEFAULT ''"),
             ("paper_trades", "roi_pct", "REAL DEFAULT 0.0"),
+            ("paper_trades", "tier", "TEXT DEFAULT 'TIER_1'"),
+            ("paper_trades", "be_lock_pct", "REAL DEFAULT 0.016"),
+            ("paper_trades", "trail_lock_pct", "REAL DEFAULT 0.022"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE {col_def[0]} ADD COLUMN {col_def[1]} {col_def[2]}")
@@ -155,10 +158,10 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (1, '4h', 'Bitget 4H Macro (Section A)', 'BITGET', 'bitget_4h_1', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+            VALUES (1, '4h', 'Bitget 4H Macro (Section A)', 'BITGET', 'bitget_4h_1', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro (Section A)', exchange = 'BITGET', channel = 'bitget_4h_1', mode = 'HERMES_3.0_QUANTUM' WHERE id = 1")
+            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro (Section A)', exchange = 'BITGET', channel = 'bitget_4h_1', mode = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE id = 1")
 
         # Ensure Account 2: Bitget 4H Macro (Section B) ($50 -> $2,000)
         acc2_exists = conn.execute("SELECT id FROM paper_account WHERE id = 2").fetchone()
@@ -166,10 +169,10 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (2, '4h', 'Bitget 4H Macro (Section B)', 'BITGET', 'bitget_4h_2', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+            VALUES (2, '4h', 'Bitget 4H Macro (Section B)', 'BITGET', 'bitget_4h_2', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro (Section B)', exchange = 'BITGET', channel = 'bitget_4h_2', mode = 'HERMES_3.0_QUANTUM' WHERE id = 2")
+            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro (Section B)', exchange = 'BITGET', channel = 'bitget_4h_2', mode = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE id = 2")
 
         # Ensure Account 3: Bitget 1H Intraday (Section A) ($50 -> $2,000)
         acc3_exists = conn.execute("SELECT id FROM paper_account WHERE id = 3").fetchone()
@@ -177,10 +180,10 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (3, '1h', 'Bitget 1H Intraday (Section A)', 'BITGET', 'bitget_1h_1', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+            VALUES (3, '1h', 'Bitget 1H Intraday (Section A)', 'BITGET', 'bitget_1h_1', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday (Section A)', exchange = 'BITGET', channel = 'bitget_1h_1', mode = 'HERMES_3.0_QUANTUM' WHERE id = 3")
+            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday (Section A)', exchange = 'BITGET', channel = 'bitget_1h_1', mode = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE id = 3")
 
         # Ensure Account 4: Bitget 1H Intraday (Section B) ($50 -> $2,000)
         acc4_exists = conn.execute("SELECT id FROM paper_account WHERE id = 4").fetchone()
@@ -188,18 +191,18 @@ def init_db():
             conn.execute("""
             INSERT INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (4, '1h', 'Bitget 1H Intraday (Section B)', 'BITGET', 'bitget_1h_2', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+            VALUES (4, '1h', 'Bitget 1H Intraday (Section B)', 'BITGET', 'bitget_1h_2', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER');
             """)
         else:
-            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday (Section B)', exchange = 'BITGET', channel = 'bitget_1h_2', mode = 'HERMES_3.0_QUANTUM' WHERE id = 4")
+            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday (Section B)', exchange = 'BITGET', channel = 'bitget_1h_2', mode = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE id = 4")
 
         # Reassign open Binance legacy positions to account 99 so they exit cleanly without polluting Bitget accounts
         conn.execute("UPDATE paper_trades SET account_id = 99, channel = 'binance_legacy' WHERE exchange = 'BINANCE' AND status = 'OPEN'")
 
-        # Universal upgrade: Ensure all 4 accounts and paper trades run HERMES_3.0_QUANTUM
-        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM'")
+        # Universal upgrade: Ensure all 4 accounts run HERMES_3.5_DUAL_TIER_SNIPER
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_DUAL_TIER_SNIPER'")
         conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.0_QUANTUM' WHERE mode IS NULL OR mode = '' OR mode LIKE '%2.5%'")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_QUANTUM')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_DUAL_TIER_SNIPER')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('binance_auto_trade', 'false')")
 
         # Initialize default metrics if not present
@@ -216,11 +219,11 @@ def init_db():
             "network_status": "STABLE",
             "coins_active_count": "50",
             "hermes_status": "ACTIVE_24_7",
-            "hermes_mode": "HERMES_3.0_QUANTUM"
+            "hermes_mode": "HERMES_3.5_DUAL_TIER_SNIPER"
         }
         for k, v in default_metrics.items():
             conn.execute("INSERT OR IGNORE INTO system_metrics (key, value) VALUES (?, ?)", (k, v))
-        conn.execute("UPDATE system_metrics SET value = 'HERMES_3.0_QUANTUM' WHERE key = 'hermes_mode'")
+        conn.execute("UPDATE system_metrics SET value = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE key = 'hermes_mode'")
         
         # Ensure default Telegram Chat ID is set to Akash's ID
         conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('telegram_chat_id', '752247227')")
@@ -573,7 +576,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
             conn.execute("""
             INSERT OR IGNORE INTO paper_account 
             (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM')
+            VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER')
             """, (acc_id, tf_str, tf_name))
             conn.commit()
             row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
