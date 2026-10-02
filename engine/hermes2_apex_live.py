@@ -929,14 +929,18 @@ class Hermes2ApexLiveEngine:
                     if cur_price >= tp_price:
                         exit_triggered = "TP_HIT"
                         exit_price = tp_price
-                    elif current_effective_sl > entry_price and cur_price <= current_effective_sl:
-                        # Price pulled back down and touched our tightened profitable SL -> Protected Profit Exit!
-                        exit_triggered = "TP_HIT"
-                        exit_price = current_effective_sl
-                        logger.info(f"🛡️ HERMES PROFIT LOCKED EXIT TRIGGERED: {sym} LONG at {exit_price}")
                     elif cur_price <= hard_sl_price:
                         exit_triggered = "SL_HIT"
                         exit_price = hard_sl_price
+                    elif cur_price <= current_effective_sl:
+                        if current_effective_sl > entry_price:
+                            exit_triggered = "TP_HIT"
+                            exit_price = current_effective_sl
+                            logger.info(f"🛡️ HERMES PROFIT LOCKED EXIT TRIGGERED: {sym} LONG at {exit_price}")
+                        else:
+                            exit_triggered = "SL_HIT"
+                            exit_price = current_effective_sl
+                            logger.info(f"🛑 HERMES SL TRIGGERED: {sym} LONG at {exit_price}")
                 else: # SELL / SHORT (HERMES MULTI-STAGE DYNAMIC PROFIT ARMOR)
                     lowest = min(float(trade.get("lowest_price") or entry_price), cur_price)
                     drop_from_entry = (entry_price - lowest) / entry_price if entry_price > 0 else 0.0
@@ -970,14 +974,18 @@ class Hermes2ApexLiveEngine:
                     if cur_price <= tp_price:
                         exit_triggered = "TP_HIT"
                         exit_price = tp_price
-                    elif current_effective_sl < entry_price and cur_price >= current_effective_sl:
-                        # Price bounced back up and touched our tightened profitable SL -> Protected Profit Exit!
-                        exit_triggered = "TP_HIT"
-                        exit_price = current_effective_sl
-                        logger.info(f"🛡️ HERMES 3.0-C ARMOR PROFIT LOCKED EXIT TRIGGERED: {sym} SHORT at {exit_price}")
                     elif cur_price >= hard_sl_price:
                         exit_triggered = "SL_HIT"
                         exit_price = hard_sl_price
+                    elif cur_price >= current_effective_sl:
+                        if current_effective_sl < entry_price:
+                            exit_triggered = "TP_HIT"
+                            exit_price = current_effective_sl
+                            logger.info(f"🛡️ HERMES 3.0-C ARMOR PROFIT LOCKED EXIT TRIGGERED: {sym} SHORT at {exit_price}")
+                        else:
+                            exit_triggered = "SL_HIT"
+                            exit_price = current_effective_sl
+                            logger.info(f"🛑 HERMES SL TRIGGERED: {sym} SHORT at {exit_price}")
 
                 if exit_triggered:
                     await self.resolve_trade_exit(trade, exit_triggered, exit_price)

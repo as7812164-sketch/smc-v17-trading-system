@@ -1192,6 +1192,20 @@ async def close_futures_position(body: Optional[Dict[str, Any]] = Body(None), sy
         mark_price = float(target_trade.get("entry_price", 0.0))
 
     res = close_paper_trade_manually(int(target_trade["id"]), mark_price)
+
+    # Also attempt market close on exchange if position is open on real exchange
+    try:
+        from engine.binance_trader import binance_trader
+        from engine.bitget_trader import bitget_trader
+        trade_exchange = str(target_trade.get("exchange") or "").upper()
+        trade_side = str(target_trade.get("side") or "")
+        if "BINANCE" in trade_exchange and binance_trader.is_configured():
+            await binance_trader.close_position_market(sym_name, trade_side)
+        elif "BITGET" in trade_exchange and bitget_trader.is_configured():
+            await bitget_trader.close_position_market(sym_name, trade_side)
+    except Exception as ex:
+        logger.warning(f"Exchange close exception: {ex}")
+
     return res
 
 @app.post("/api/futures/reverse_position")

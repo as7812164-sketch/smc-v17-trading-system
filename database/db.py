@@ -852,6 +852,7 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[f
         now = int(time.time() * 1000)
         if not trade:
             return None
+        trade = dict(trade)
 
         trade_id = trade["id"]
         pos_size = float(trade["position_size_usdt"])
@@ -985,6 +986,7 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
         trade = conn.execute("SELECT * FROM paper_trades WHERE id = ?", (trade_id,)).fetchone()
         if not trade or trade["status"] != "OPEN":
             return {"success": False, "error": "Trade not found or already closed"}
+        trade = dict(trade)
 
         pos_size = float(trade["position_size_usdt"] or 10.0)
         entry_price = float(trade["entry_price"])

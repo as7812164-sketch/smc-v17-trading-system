@@ -23,7 +23,8 @@ from database.db import (
     set_setting,
     get_open_paper_trades,
     get_paper_trades_history,
-    get_quad_paper_accounts
+    get_quad_paper_accounts,
+    set_metric
 )
 from database.cloud_vault import push_vault_state
 
@@ -83,9 +84,16 @@ class HermesSelfHealingSentinel:
         # 5. AUTO-HEAL: Geo-Fence Detection (Binance Cloud Restrictions)
         await self.check_and_cache_exchange_health()
 
+        # 6. AUTO-HEAL & AUTO-TUNE: Stuck Positions, Breached SLs, & Time-Stop Guard
+        pos_repairs = await self.auto_heal_stuck_positions_and_time_stops()
+        if pos_repairs:
+            repairs_applied.extend(pos_repairs)
+
         if repairs_applied:
             self.total_repairs_count += len(repairs_applied)
             self.last_repair_action = "; ".join(repairs_applied)
+            set_metric("ai_self_heal_last_action", self.last_repair_action)
+            set_metric("ai_self_heal_total_count", str(self.total_repairs_count))
             logger.info(f"✨ [SELF-HEALING COMPLETE] Auto-applied {len(repairs_applied)} repairs: {self.last_repair_action}")
 
             # Background Self-Healing is now 100% SILENT as requested by user.
@@ -623,6 +631,88 @@ class HermesSelfHealingSentinel:
                     logger.error(f"Binance fallback error: {ex}")
 
         return None
+
+    async def auto_heal_stuck_positions_and_time_stops(self) -> List[str]:
+        """
+        Autonomous AI Position Doctor & Auto-Tuner:
+        1. Checks all open paper positions.
+        2. Detects if an open trade has breached Soft SL, Hard SL, or TP and was not resolved by watchdog.
+        3. Detects if a trade has lingered past MAX_HOLD_HOURS (48h for 4H, 16h for 1H) -> Auto Time-Stop resolution.
+        4. Detects wick penetrations (highest/lowest price breached SL during past candles) -> Auto-cleans.
+        5. Automatically closes the position at live market price, updates ledger, and restores compounding slots!
+        """
+        fixes = []
+        now_ms = int(time.time() * 1000)
+        open_trades = get_open_paper_trades()
+        if not open_trades:
+            return fixes
+
+        from feed.binance_feed import binance_feed
+        from database.db import close_paper_trade_manually
+
+        for trade in open_trades:
+            trade_id = trade["id"]
+            sym = str(trade.get("symbol", "")).upper()
+            side = str(trade.get("side", "")).upper()
+            tf = str(trade.get("timeframe") or "4h").lower()
+            entry_p = float(trade.get("entry_price") or 0.0)
+            tp_p = float(trade.get("tp_price") or 0.0)
+            sl_p = float(trade.get("sl_price") or 0.0)
+            hard_sl_p = float(trade.get("hard_sl_price") or sl_p)
+            highest_p = float(trade.get("highest_price") or entry_p)
+            lowest_p = float(trade.get("lowest_price") or entry_p)
+            entry_time = trade.get("entry_time") or now_ms
+            age_hours = (now_ms - entry_time) / (1000.0 * 3600.0)
+
+            # Fetch live ticker
+            cur_price = entry_p
+            try:
+                t = await binance_feed.fetch_ticker(sym)
+                if t and float(t.get("price", 0)) > 0:
+                    cur_price = float(t["price"])
+            except Exception:
+                pass
+
+            should_close = False
+            close_reason = ""
+
+            # Check 1: Exceeded SL / TP
+            if side in ("BUY", "LONG"):
+                if cur_price <= hard_sl_p or cur_price <= sl_p:
+                    should_close = True
+                    close_reason = f"SL Breached (Cur Price {cur_price} <= SL {sl_p})"
+                elif tp_p > 0 and cur_price >= tp_p:
+                    should_close = True
+                    close_reason = f"TP Reached (Cur Price {cur_price} >= TP {tp_p})"
+                elif lowest_p > 0 and lowest_p <= sl_p and cur_price <= entry_p:
+                    should_close = True
+                    close_reason = f"Past Wick Breached SL (Low {lowest_p} <= SL {sl_p})"
+            else: # SELL / SHORT
+                if cur_price >= hard_sl_p or cur_price >= sl_p:
+                    should_close = True
+                    close_reason = f"SL Breached (Cur Price {cur_price} >= SL {sl_p})"
+                elif tp_p > 0 and cur_price <= tp_p:
+                    should_close = True
+                    close_reason = f"TP Reached (Cur Price {cur_price} <= TP {tp_p})"
+                elif highest_p > 0 and highest_p >= sl_p and cur_price >= entry_p:
+                    should_close = True
+                    close_reason = f"Past Wick Breached SL (High {highest_p} >= SL {sl_p})"
+
+            # Check 2: Max Hold Time-Stop (48 hours for 4H, 16 hours for 1H)
+            max_hold = 48.0 if tf == "4h" else 16.0
+            if not should_close and age_hours >= max_hold:
+                should_close = True
+                close_reason = f"Time-Stop Expired ({age_hours:.1f}h >= {max_hold}h limit)"
+
+            if should_close:
+                logger.info(f"🩺 [AI DOCTOR AUTO-HEAL] Closing stuck/lingering position #{trade_id} on {sym} ({close_reason})")
+                res = close_paper_trade_manually(int(trade_id), cur_price)
+                if res.get("success"):
+                    fixes.append(f"Auto-Healed position {sym} #{trade_id}: {close_reason}")
+                else:
+                    logger.warning(f"Failed to auto-heal trade #{trade_id}: {res.get('error')}")
+
+        return fixes
 
 
 # Global Singleton Instance
