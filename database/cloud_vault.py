@@ -71,8 +71,20 @@ def push_vault_state() -> bool:
 
         conn.close()
 
-        # Enforce HERMES_3.0_QUANTUM mode across all accounts and trades in vault snapshot
+        channel_map = {
+            1: ("BITGET", "bitget_4h_1", "Bitget 4H Macro (Section A)", "4h"),
+            2: ("BITGET", "bitget_4h_2", "Bitget 4H Macro (Section B)", "4h"),
+            3: ("BITGET", "bitget_1h_1", "Bitget 1H Intraday (Section A)", "1h"),
+            4: ("BITGET", "bitget_1h_2", "Bitget 1H Intraday (Section B)", "1h"),
+        }
         for acc in accounts:
+            acc_id = acc.get("id")
+            if acc_id in channel_map:
+                exch, ch, name, tf = channel_map[acc_id]
+                acc["exchange"] = exch
+                acc["channel"] = ch
+                acc["name"] = name
+                acc["timeframe"] = tf
             acc["mode"] = "HERMES_3.0_QUANTUM"
         for pt in paper_trades:
             pt["mode"] = "HERMES_3.0_QUANTUM"
@@ -183,11 +195,15 @@ def pull_and_restore_vault_state() -> bool:
         conn = get_connection()
 
         # Restore accounts
+        channel_map = {
+            1: ("BITGET", "bitget_4h_1", "Bitget 4H Macro (Section A)", "4h"),
+            2: ("BITGET", "bitget_4h_2", "Bitget 4H Macro (Section B)", "4h"),
+            3: ("BITGET", "bitget_1h_1", "Bitget 1H Intraday (Section A)", "1h"),
+            4: ("BITGET", "bitget_1h_2", "Bitget 1H Intraday (Section B)", "1h"),
+        }
         for acc in vault_data.get("accounts", []):
             acc_id = acc.get("id", 1)
-            exch = acc.get("exchange") or ("BINANCE" if acc_id in (1, 2) else "BITGET")
-            ch = acc.get("channel") or ("binance_4h" if acc_id == 1 else "binance_1h" if acc_id == 2 else "bitget_4h" if acc_id == 3 else "bitget_1h")
-            acc_name = acc.get("name") or ("Binance 4H Macro Compounding" if acc_id == 1 else "Binance 1H Intraday Compounding" if acc_id == 2 else "Bitget 4H Macro Compounding" if acc_id == 3 else "Bitget 1H Intraday Compounding")
+            exch, ch, acc_name, tf = channel_map.get(acc_id, ("BITGET", f"bitget_{acc_id}", f"Bitget Account #{acc_id}", "4h"))
             conn.execute("""
             INSERT INTO paper_account (
                 id, initial_balance, current_balance, vault_balance, total_pnl, win_count,
@@ -210,7 +226,7 @@ def pull_and_restore_vault_state() -> bool:
                 acc_id, acc.get("initial_balance", 50.0), acc.get("current_balance", 50.0),
                 acc.get("vault_balance", 0.0), acc.get("total_pnl", 0.0), acc.get("win_count", 0),
                 acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), "HERMES_3.0_QUANTUM",
-                acc.get("timeframe", "4h" if acc_id in (1, 3) else "1h"), acc_name, acc.get("win_streak", 0),
+                tf, acc_name, acc.get("win_streak", 0),
                 exch, ch
             ))
 

@@ -88,27 +88,9 @@ class HermesSelfHealingSentinel:
             self.last_repair_action = "; ".join(repairs_applied)
             logger.info(f"✨ [SELF-HEALING COMPLETE] Auto-applied {len(repairs_applied)} repairs: {self.last_repair_action}")
 
-            # Throttling Telegram alerts so identical messages aren't spammed
-            now = time.time()
-            repairs_signature = tuple(sorted(repairs_applied))
-            last_sent = self._last_alert_time.get(repairs_signature, 0)
-
-            # Only send to Telegram if this specific set of repairs hasn't been notified in the last 30 minutes
-            if (now - last_sent) > 1800:
-                self._last_alert_time[repairs_signature] = now
-                try:
-                    from alerts.telegram_service import telegram_service
-                    msg = (
-                        f"🤖 <b>HERMES AI AUTONOMOUS SELF-HEALER</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🛡️ <b>Status</b>: Auto-Repaired {len(repairs_applied)} Issue(s)\n"
-                        f"🔧 <b>Fixes Applied:</b>\n"
-                        + "\n".join([f"• {r}" for r in repairs_applied]) + "\n\n"
-                        f"⚡ <i>All 4 Compounding Tracks fully synchronized & active!</i>"
-                    )
-                    await telegram_service.send_raw_message(msg, parse_mode="HTML")
-                except Exception:
-                    pass
+            # Background Self-Healing is now 100% SILENT as requested by user.
+            # All repairs, parity checks, and TP/SL guards run automatically in the background without messaging Telegram.
+            logger.info(f"✨ [SELF-HEALING COMPLETE - SILENT] {len(repairs_applied)} background fix(es) executed.")
 
         return {
             "status": "healthy",
@@ -299,28 +281,48 @@ class HermesSelfHealingSentinel:
 
                 with get_connection() as conn:
                     existing = conn.execute("""
-                        SELECT id FROM paper_trades 
+                        SELECT id, account_id, channel, timeframe FROM paper_trades 
                         WHERE symbol = ? AND UPPER(side) = ? AND status = 'OPEN'
                         ORDER BY id DESC LIMIT 1
                     """, (sym, side)).fetchone()
 
                     if existing:
+                        target_acc_id = existing[1] or 4
+                        target_ch = existing[2] or 'bitget_1h_2'
                         conn.execute("""
                             UPDATE paper_trades
-                            SET exchange = 'BITGET', channel = 'bitget_1h', account_id = 4,
+                            SET exchange = 'BITGET', channel = ?, account_id = ?,
                                 entry_price = ?, position_size_usdt = ?, duration_str = 'Live'
                             WHERE id = ?
-                        """, (entry_p, round(notional, 2), existing[0]))
+                        """, (target_ch, target_acc_id, entry_p, round(notional, 2), existing[0]))
                         fixes.append(f"Auto-synchronized live Bitget position {sym} #{existing[0]} into DB & UI")
                     else:
+                        # Find an available Bitget compounding slot (1, 2, 3, or 4)
+                        occupied_slots = {row[0] for row in conn.execute("SELECT account_id FROM paper_trades WHERE status = 'OPEN' AND account_id IN (1, 2, 3, 4)").fetchall()}
+                        channel_slots = [
+                            (1, 'bitget_4h_1', '4h'),
+                            (2, 'bitget_4h_2', '4h'),
+                            (3, 'bitget_1h_1', '1h'),
+                            (4, 'bitget_1h_2', '1h')
+                        ]
+                        target_acc_id = 4
+                        target_ch = 'bitget_1h_2'
+                        target_tf = '1h'
+                        for slot_id, slot_ch, slot_tf in channel_slots:
+                            if slot_id not in occupied_slots:
+                                target_acc_id = slot_id
+                                target_ch = slot_ch
+                                target_tf = slot_tf
+                                break
+
                         conn.execute("""
                             INSERT INTO paper_trades (
                                 symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
                                 hard_sl_price, timeframe, channel, exchange, account_id, status,
                                 entry_time, sentry_reasons, mode, duration_str, roi_pct
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, '1h', 'bitget_1h', 'BITGET', 4, 'OPEN', ?, 'Hermes 3.0 Live Bitget Synced', 'HERMES_3.0_QUANTUM', 'Live', 0.0)
-                        """, (sym, side, entry_p, round(notional, 2), tp_p, sl_p, sl_p, now_ms))
-                        fixes.append(f"Auto-imported live Bitget position {sym} into DB & UI")
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'BITGET', ?, 'OPEN', ?, 'Hermes 3.0 Live Bitget Synced', 'HERMES_3.0_QUANTUM', 'Live', 0.0)
+                        """, (sym, side, entry_p, round(notional, 2), tp_p, sl_p, sl_p, target_tf, target_ch, target_acc_id, now_ms))
+                        fixes.append(f"Auto-imported live Bitget position {sym} into DB & UI (Track {target_acc_id})")
                     conn.commit()
 
                 try:
