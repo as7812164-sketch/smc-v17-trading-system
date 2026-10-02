@@ -533,6 +533,12 @@ class Hermes2ApexLiveEngine:
             all_open = conn.execute("SELECT * FROM paper_trades WHERE status = 'OPEN'").fetchall()
             all_open_trades = [dict(r) for r in all_open]
 
+        # 0. STRICT POST-LOSS / EXIT COOLDOWN CHECK
+        if self.trade_cooldowns.get(sym.upper(), 0) > time.time():
+            remaining_m = int((self.trade_cooldowns[sym.upper()] - time.time()) / 60)
+            logger.info(f"🛑 [COOLDOWN ENFORCED] Skipping {sym}: In mandatory cooldown for {remaining_m} more minutes!")
+            return
+
         # 1. STRICT ANTI-COLLISION & ASSET EXCLUSIVITY ("dono ka samne trade nhi hona chaiye")
         busy_symbols = {t["symbol"].upper() for t in all_open_trades}
         if sym.upper() in busy_symbols:
@@ -1077,7 +1083,8 @@ class Hermes2ApexLiveEngine:
                 logger.error(f"Error closing Binance legacy trade {sym}: {bce}")
 
             self.active_position = None
-            self.trade_cooldowns[sym] = time.time() + 1800
+            self.trade_cooldowns[sym] = time.time() + 7200
+            self.detected_setups = [s for s in self.detected_setups if s.get("symbol") != sym]
             logger.info(f"🏆 Binance legacy position #{trade_id} on {sym} exited cleanly with outcome {outcome}. Bitget compounding accounts untouched.")
             return
 
@@ -1158,7 +1165,8 @@ class Hermes2ApexLiveEngine:
             pass
 
         self.active_position = None
-        self.trade_cooldowns[sym] = time.time() + 1800
+        self.trade_cooldowns[sym] = time.time() + 7200
+        self.detected_setups = [s for s in self.detected_setups if s.get("symbol") != sym]
 
         # Close real Bitget futures position
         try:

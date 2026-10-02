@@ -264,6 +264,15 @@ class HermesSelfHealingSentinel:
                 fixes.append(f"Auto-Reconciled ghost trade on {sym} ({exchange}) to free compounding slot")
                 logger.warning(f"🛡️ [PARITY AUTO-HEAL] Cleared orphan/ghost trade #{trade_id} on {sym} ({exchange}). Slot restored!")
 
+                # CRITICAL SAFETY: Impose 2-hour post-exit cooldown on this symbol and purge broken setups
+                try:
+                    from engine.hermes2_apex_live import hermes2_apex_engine
+                    hermes2_apex_engine.trade_cooldowns[sym] = time.time() + 7200
+                    hermes2_apex_engine.detected_setups = [s for s in hermes2_apex_engine.detected_setups if s.get("symbol") != sym]
+                    logger.info(f"🛑 [POST-EXIT COOLDOWN] Locked {sym} for 2 hours to prevent immediate re-entry!")
+                except Exception:
+                    pass
+
         # 3. BIDIRECTIONAL SYNC: Import Real Exchange Positions into DB if missing
         active_db_symbols = {t["symbol"].upper() for t in get_open_paper_trades()}
 
