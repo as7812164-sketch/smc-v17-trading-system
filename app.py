@@ -593,7 +593,34 @@ async def get_backtest_1h():
     if path.exists():
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
-    return {"status": "error", "message": "1H 100-trade backtest file not found"}
+@app.get("/api/reports/daily")
+async def get_daily_report_endpoint(date: Optional[str] = None):
+    try:
+        from engine.hermes35_weekly_monitor import weekly_monitor
+        return {"status": "ok", "data": weekly_monitor.get_daily_report(date)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/reports/weekly")
+async def get_weekly_report_endpoint(days: int = 7):
+    try:
+        from engine.hermes35_weekly_monitor import weekly_monitor
+        weekly_monitor.generate_weekly_markdown_artifact()
+        return {"status": "ok", "data": weekly_monitor.get_weekly_report(days=days)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/reports/autopsy")
+async def get_autopsy_report_endpoint():
+    try:
+        from engine.hermes35_weekly_monitor import weekly_monitor
+        weekly_monitor.backfill_missing_autopsies()
+        with get_connection() as conn:
+            rows = conn.execute("SELECT * FROM trade_autopsy ORDER BY id DESC").fetchall()
+            autopsies = [dict(r) for r in rows]
+        return {"status": "ok", "count": len(autopsies), "autopsies": autopsies}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- REST Endpoints ---
 @app.get("/api/admin/reset_clean")

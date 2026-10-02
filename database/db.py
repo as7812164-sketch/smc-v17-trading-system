@@ -115,6 +115,28 @@ def init_db():
         """)
 
         conn.execute("""
+        CREATE TABLE IF NOT EXISTS trade_autopsy (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trade_id INTEGER,
+            symbol TEXT NOT NULL,
+            side TEXT NOT NULL,
+            timeframe TEXT NOT NULL,
+            entry_price REAL,
+            exit_price REAL,
+            pnl_usdt REAL,
+            roe_pct REAL,
+            mae_pct REAL,
+            mfe_pct REAL,
+            duration_str TEXT,
+            btc_macro_state TEXT,
+            order_flow_delta REAL,
+            loss_category TEXT,
+            autopsy_diagnosis TEXT,
+            created_at INTEGER NOT NULL
+        );
+        """)
+
+        conn.execute("""
         INSERT OR IGNORE INTO paper_account (id, initial_balance, current_balance, total_pnl, win_count, loss_count)
         VALUES (1, 50.0, 50.0, 0.0, 0, 0);
         """)
@@ -146,6 +168,7 @@ def init_db():
             ("paper_trades", "tier", "TEXT DEFAULT 'TIER_1'"),
             ("paper_trades", "be_lock_pct", "REAL DEFAULT 0.016"),
             ("paper_trades", "trail_lock_pct", "REAL DEFAULT 0.022"),
+            ("paper_trades", "autopsy_diagnosis", "TEXT DEFAULT ''"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE {col_def[0]} ADD COLUMN {col_def[1]} {col_def[2]}")
@@ -1062,6 +1085,14 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
         try:
             from database.cloud_vault import push_vault_state
             push_vault_state()
+        except Exception:
+            pass
+
+        # Trigger weekly monitor autopsy & artifact update
+        try:
+            from engine.hermes35_weekly_monitor import weekly_monitor
+            weekly_monitor.backfill_missing_autopsies()
+            weekly_monitor.generate_weekly_markdown_artifact()
         except Exception:
             pass
 

@@ -1172,6 +1172,15 @@ class Hermes2ApexLiveEngine:
             except Exception as bce:
                 logger.error(f"Error closing Binance legacy trade {sym}: {bce}")
 
+            # Record weekly forensic audit & autopsy
+            try:
+                from engine.hermes35_weekly_monitor import weekly_monitor
+                if outcome == "SL_HIT" or net_pnl_usdt < 0:
+                    await weekly_monitor.record_loss_autopsy(trade, exit_price, outcome)
+                weekly_monitor.generate_weekly_markdown_artifact()
+            except Exception as wme:
+                logger.warning(f"Weekly monitor hook error (legacy): {wme}")
+
             self.active_position = None
             self.trade_cooldowns[sym] = time.time() + 7200
             self.detected_setups = [s for s in self.detected_setups if s.get("symbol") != sym]
@@ -1253,6 +1262,15 @@ class Hermes2ApexLiveEngine:
             push_vault_state()
         except Exception:
             pass
+
+        # Record weekly forensic audit & autopsy
+        try:
+            from engine.hermes35_weekly_monitor import weekly_monitor
+            if outcome == "SL_HIT" or net_pnl_usdt < 0:
+                await weekly_monitor.record_loss_autopsy(trade, exit_price, outcome)
+            weekly_monitor.generate_weekly_markdown_artifact()
+        except Exception as wme:
+            logger.warning(f"Weekly monitor hook error: {wme}")
 
         self.active_position = None
         self.trade_cooldowns[sym] = time.time() + 7200
