@@ -36,7 +36,10 @@ from database.db import (
     format_duration_str,
     get_paper_trade_sequence_num,
     get_setting,
-    set_metric
+    set_setting,
+    set_metric,
+    is_alert_sent,
+    record_sent_alert
 )
 from feed.binance_feed import binance_feed
 from alerts.telegram_service import (
@@ -486,7 +489,15 @@ class Hermes2ApexLiveEngine:
                                                     "sentry_reasons": sentry_lbl
                                                 })
 
-        return setups
+        # Deduplicate setups: At most 1 setup per symbol, side, and timeframe
+        unique_setups_map = {}
+        for s in setups:
+            k = (s["symbol"], s["side"], s.get("interval", "4h"))
+            # Prefer fresh trigger or confirmed tap over waiting
+            if k not in unique_setups_map or s.get("is_fresh_trigger") or s.get("status") == "CONFIRMED_TAP":
+                unique_setups_map[k] = s
+
+        return list(unique_setups_map.values())
 
     async def run_full_champion_scan(self) -> Dict[str, Any]:
         """Scans all Top-22 Champion crypto pairs across 1H and 4H timeframes."""
@@ -514,7 +525,16 @@ class Hermes2ApexLiveEngine:
             except Exception as e:
                 logger.debug(f"4H scan error on {sym}: {e}")
 
-        self.detected_setups = found_setups
+        # Global deduplication across all scanned setups
+        deduped_setups = []
+        seen_setup_keys = set()
+        for s in found_setups:
+            s_key = f"{s['symbol']}_{s['side']}_{s.get('interval', '4h')}"
+            if s_key not in seen_setup_keys:
+                seen_setup_keys.add(s_key)
+                deduped_setups.append(s)
+
+        self.detected_setups = deduped_setups
         self.last_scan_time = time.time()
         now_dt = datetime.now(IST)
         now_str = now_dt.strftime("%d %b %Y • %I:%M:%S %p IST")
@@ -578,9 +598,11 @@ class Hermes2ApexLiveEngine:
             all_open = conn.execute("SELECT * FROM paper_trades WHERE status = 'OPEN'").fetchall()
             all_open_trades = [dict(r) for r in all_open]
 
-        # 0. STRICT POST-LOSS / EXIT COOLDOWN CHECK
-        if self.trade_cooldowns.get(sym.upper(), 0) > time.time():
-            remaining_m = int((self.trade_cooldowns[sym.upper()] - time.time()) / 60)
+        # 0. STRICT POST-LOSS / EXIT COOLDOWN CHECK (In-Memory + SQLite Persistent)
+        db_cooldown = int(get_setting(f"cooldown_{sym.upper()}", "0") or "0")
+        current_cooldown = max(self.trade_cooldowns.get(sym.upper(), 0), db_cooldown)
+        if current_cooldown > time.time():
+            remaining_m = int((current_cooldown - time.time()) / 60)
             logger.info(f"🛑 [COOLDOWN ENFORCED] Skipping {sym}: In mandatory cooldown for {remaining_m} more minutes!")
             return
 
@@ -793,6 +815,18 @@ class Hermes2ApexLiveEngine:
             logger.info("Paper trading alerts are muted. Skipping Telegram entry alert.")
             await self.broadcast("HERMES_POSITION_OPENED", trade_obj)
             return
+
+        # -------------------------------------------------------------
+        # STRICT TELEGRAM ANTI-SPAM & DEDUPLICATION GATEWAY
+        # -------------------------------------------------------------
+        cooldown_bucket = int(now_ms // (2 * 3600 * 1000))  # 2-hour window
+        alert_key = f"{sym.upper()}_{side.upper()}_{tf.upper()}_{cooldown_bucket}_HERMES_ENTRY"
+        if is_alert_sent(alert_key):
+            logger.warning(f"🛡️ [TG ANTI-SPAM BLOCKED] Telegram alert for {sym} {side} ({tf}) suppressed: Already sent within 2-hour window!")
+            await self.broadcast("HERMES_POSITION_OPENED", trade_obj)
+            return
+
+        record_sent_alert(alert_key, sym, side, "HERMES_ENTRY", now_ms, None)
 
         # Send Telegram Announcement to User's Bot WITH LIVE CANDLESTICK CHART
         try:
@@ -1104,8 +1138,8 @@ class Hermes2ApexLiveEngine:
                             logger.debug(f"Live tap sniper/OI check error: {e_tap}")
 
                     logger.info(f"⚡ REAL-TIME TAP WATCHDOG TRIGGERED on {sym} ({side})! Live Price: {cur_price} tapped OB [{ob_low}, {ob_high}] (TF: {tf_setup.upper()})")
-                    if setup in self.detected_setups:
-                        self.detected_setups.remove(setup)
+                    # Purge ALL setups for this symbol across all timeframes to prevent repeated triggers
+                    self.detected_setups = [s for s in self.detected_setups if s.get("symbol") != sym]
                     await self.execute_apex_entry(setup)
                     break
         except Exception as e:
@@ -1279,7 +1313,8 @@ class Hermes2ApexLiveEngine:
             logger.warning(f"Weekly monitor hook error: {wme}")
 
         self.active_position = None
-        self.trade_cooldowns[sym] = time.time() + 7200
+        self.trade_cooldowns[sym.upper()] = time.time() + 7200
+        set_setting(f"cooldown_{sym.upper()}", str(int(time.time() + 7200)))
         self.detected_setups = [s for s in self.detected_setups if s.get("symbol") != sym]
 
         # Close real Bitget futures position
