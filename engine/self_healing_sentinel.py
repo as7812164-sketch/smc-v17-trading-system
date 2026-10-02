@@ -116,8 +116,16 @@ class HermesSelfHealingSentinel:
             if get_setting("bitget_auto_trade", "false").lower() != "true":
                 set_setting("bitget_auto_trade", "true")
                 fixes.append("Auto-enabled Bitget Auto-Trade flag")
+        else:
+            if get_setting("bitget_auto_trade", "false").lower() == "true":
+                set_setting("bitget_auto_trade", "false")
+                fixes.append("Auto-disabled Bitget Auto-Trade flag (Safety Guard)")
 
-        if not os.getenv("RENDER"):
+        if not BINANCE_AUTO_TRADE and not BITGET_AUTO_TRADE:
+            if get_setting("allow_local_live_trading", "false").lower() == "true":
+                set_setting("allow_local_live_trading", "false")
+                fixes.append("Auto-locked local live trading (Real money safety)")
+        elif not os.getenv("RENDER"):
             if get_setting("allow_local_live_trading", "false").lower() != "true":
                 set_setting("allow_local_live_trading", "true")
                 fixes.append("Auto-unlocked local live trading permissions")

@@ -111,7 +111,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 BITGET_API_KEY = os.getenv("BITGET_API_KEY", "")
 BITGET_SECRET = os.getenv("BITGET_SECRET", "")
 BITGET_PASSPHRASE = os.getenv("BITGET_PASSPHRASE", "")
-BITGET_AUTO_TRADE = os.getenv("BITGET_AUTO_TRADE", "true").lower() == "true"
+BITGET_AUTO_TRADE = False  # LIVE AUTO-TRADING OFF: Preserving capital for strategy R&D & Copy-Trading mode
 BITGET_DEFAULT_LEVERAGE = 5
 BITGET_STARTING_MARGIN = 50.0  # $50 USDT compounding starting size
 BITGET_COMPOUNDING_TARGET = 2000.0  # $2,000 USDT Milestone Target Goal

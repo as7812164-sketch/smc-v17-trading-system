@@ -27,7 +27,10 @@ from config import (
     BITGET_AUTO_TRADE,
     BITGET_MIN_CONFLUENCE,
     BITGET_STARTING_MARGIN,
-    MUTE_PAPER_TRADING_ALERTS
+    MUTE_PAPER_TRADING_ALERTS,
+    BINANCE_API_KEY,
+    BINANCE_API_SECRET,
+    BINANCE_AUTO_TRADE
 )
 from database.db import (
     get_connection,
