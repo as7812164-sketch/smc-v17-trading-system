@@ -1085,7 +1085,7 @@ class Hermes2ApexLiveEngine:
                         if slots_1h_count >= 2:
                             continue
 
-                    # Live 15m Micro-Sniper check on tap
+                    # Live 15m Micro-Sniper & Live Binance Open Interest (OI) check on tap
                     if strat_mode.startswith("HERMES_3.5"):
                         try:
                             k15 = await binance_feed.fetch_klines(sym, interval="15m", limit=3)
@@ -1094,8 +1094,14 @@ class Hermes2ApexLiveEngine:
                                 if not p_gate:
                                     logger.info(f"🛑 [HERMES 3.5 TAP VETO] {sym} {side} live tap rejected: {r_gate}")
                                     continue
-                        except Exception:
-                            pass
+                            # Live Binance Open Interest (OI) Verification
+                            live_oi_data = await binance_feed.fetch_open_interest(sym)
+                            oi_val = float(live_oi_data.get("open_interest", 0.0) or 0.0)
+                            if oi_val > 0:
+                                setup["live_oi"] = oi_val
+                                logger.info(f"📊 [HERMES 3.5 OI VERIFIED] {sym} live open interest confirmed: {oi_val:,.1f} contracts")
+                        except Exception as e_tap:
+                            logger.debug(f"Live tap sniper/OI check error: {e_tap}")
 
                     logger.info(f"⚡ REAL-TIME TAP WATCHDOG TRIGGERED on {sym} ({side})! Live Price: {cur_price} tapped OB [{ob_low}, {ob_high}] (TF: {tf_setup.upper()})")
                     if setup in self.detected_setups:
