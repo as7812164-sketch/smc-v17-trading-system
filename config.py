@@ -13,13 +13,16 @@ def get_ist_now() -> datetime:
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-# --- HERMES 3.0 QUANTUM (UNIVERSAL PRODUCTION ENGINE) ---
-STRATEGY_OPTIONS = ["HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"]
-STRATEGY_VERSION = "HERMES_3.0_QUANTUM"  # Universal Production Engine: 50% Mean Threshold Entry + Multi-Stage Profit Armor
+# --- HERMES STRATEGY OPTIONS (PRODUCTION & EXPERIMENTAL) ---
+STRATEGY_OPTIONS = ["HERMES_3.0_QUANTUM", "HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_2.5_APEX_HYBRID"]
+STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_3.5_DUAL_TIER_SNIPER")  # Dual-Tier Sizing + 15m Micro-Sniper
 HERMES_3_MEAN_THRESHOLD_ENTRY = True
 HERMES_3_MULTI_STAGE_ARMOR = True
 HERMES_3_BTC_EMERGENCY_SHIELD = True
 HERMES_3_DYNAMIC_ATR_BUFFER = True
+HERMES_3_5_DUAL_TIER_SIZING = True   # Pillar 1: Full Size Tier 1, Half Size Tier 2 with fast BE
+HERMES_3_5_15M_SNIPER_GATE = True    # Pillar 2: 15m Rejection Gate (rejects runaway knives/rockets)
+HERMES_3_5_CVD_DELTA_FILTER = True   # Pillar 3: Cumulative Volume Delta & OI Alignment
 TIMEFRAME = "4h"
 KLINES_LIMIT = 200
 
@@ -88,10 +91,20 @@ TOP_22_CHAMPIONS = [
     "MKRUSDT", "UNIUSDT", "AAVEUSDT", "GALAUSDT", "ICPUSDT", "PYTHUSDT"
 ]
 
-# Combined Master Priority Queue (Strictly Top 22 Champions)
-TIER1_COINS = TOP_22_CHAMPIONS
+# --- HERMES 3.5 APEX: TOP 45 EXTENDED LIQUID INSTITUTIONAL CHAMPIONS ---
+TOP_45_CHAMPIONS = [
+    # Top-22 Core Champions
+    "DOGEUSDT", "ALGOUSDT", "FETUSDT", "SANDUSDT", "BTCUSDT", "THETAUSDT", "OPUSDT", "FILUSDT",
+    "RENDERUSDT", "RUNEUSDT", "AVAXUSDT", "SHIBUSDT", "SUIUSDT", "NEARUSDT", "APTUSDT", "LDOUSDT",
+    "MKRUSDT", "UNIUSDT", "AAVEUSDT", "GALAUSDT", "ICPUSDT", "PYTHUSDT",
+    # 23 Extended High-Volume Institutional Movers
+    "SOLUSDT", "ETHUSDT", "BNBUSDT", "LINKUSDT", "INJUSDT", "TIAUSDT", "SEIUSDT", "ARBUSDT",
+    "PEPEUSDT", "WIFUSDT", "BONKUSDT", "DOTUSDT", "ADAUSDT", "PENDLEUSDT", "KASUSDT", "JUPUSDT",
+    "ENAUSDT", "ONDOUSDT", "TAOUSDT", "CRVUSDT", "LTCUSDT", "STXUSDT", "PEOPLEUSDT"
+]
 
-# --- Configured Active Universe (Strictly Top 22 Champions Only) ---
+# Combined Master Priority Queue
+TIER1_COINS = TOP_22_CHAMPIONS
 DEFAULT_COINS = TOP_22_CHAMPIONS
 
 # --- Database ---

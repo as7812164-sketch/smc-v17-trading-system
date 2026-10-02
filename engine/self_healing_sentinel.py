@@ -133,23 +133,24 @@ class HermesSelfHealingSentinel:
         return fixes
 
     def auto_heal_strategy_consistency(self) -> List[str]:
-        """Ensures HERMES_3.0_QUANTUM is uniformly set across accounts and tables."""
+        """Ensures valid strategy version (HERMES_3.5_DUAL_TIER_SNIPER or HERMES_3.0_QUANTUM) is set."""
         fixes = []
+        from config import STRATEGY_OPTIONS
         current_ver = get_setting("strategy_version", "")
-        if current_ver != "HERMES_3.0_QUANTUM":
-            set_setting("strategy_version", "HERMES_3.0_QUANTUM")
-            fixes.append("Auto-locked strategy_version to HERMES_3.0_QUANTUM")
+        if current_ver not in STRATEGY_OPTIONS:
+            target_ver = "HERMES_3.5_DUAL_TIER_SNIPER"
+            set_setting("strategy_version", target_ver)
+            fixes.append(f"Auto-locked strategy_version to {target_ver}")
 
         with get_connection() as conn:
             # Check paper accounts mode and milestone targets
             accs = conn.execute("SELECT id, mode, milestone_target FROM paper_account").fetchall()
             for row in accs:
-                acc_id = row[0]
-                mode = row[1]
-                target = row[2]
-                if mode != "HERMES_3.0_QUANTUM":
-                    conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM' WHERE id = ?", (acc_id,))
-                    fixes.append(f"Auto-healed account #{acc_id} mode to HERMES_3.0_QUANTUM")
+                acc_id, mode, target = row[0], row[1], row[2]
+                active_ver = get_setting("strategy_version", "HERMES_3.5_DUAL_TIER_SNIPER")
+                if mode != active_ver:
+                    conn.execute("UPDATE paper_account SET mode = ? WHERE id = ?", (active_ver, acc_id))
+                    fixes.append(f"Auto-healed account #{acc_id} mode to {active_ver}")
                 if target != 2000.0:
                     conn.execute("UPDATE paper_account SET milestone_target = 2000.0 WHERE id = ?", (acc_id,))
                     fixes.append(f"Auto-healed account #{acc_id} milestone target to $2,000.00")

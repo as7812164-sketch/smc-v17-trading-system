@@ -1,0 +1,38 @@
+{
+  "HERMES_3.0_QUANTUM": {
+    "total_trades": 5129,
+    "wins": 4567,
+    "losses": 562,
+    "win_rate": 89.04,
+    "profit_factor": 34.35,
+    "max_drawdown": 50.91,
+    "milestone_500": 63,
+    "milestone_1k": 93,
+    "milestone_2k": 101,
+    "final_equity": 5.857733975674263e+100
+  },
+  "HERMES_3.5_STRICT_VETO": {
+    "total_trades": 1093,
+    "wins": 970,
+    "losses": 123,
+    "win_rate": 88.75,
+    "profit_factor": 4.86,
+    "max_drawdown": 41.01,
+    "milestone_500": 56,
+    "milestone_1k": 64,
+    "milestone_2k": 75,
+    "final_equity": 3.453997267740061e+23
+  },
+  "HERMES_3.5_DUAL_TIER_SNIPER": {
+    "total_trades": 5996,
+    "wins": 5683,
+    "losses": 313,
+    "win_rate": 94.78,
+    "profit_factor": 23.66,
+    "max_drawdown": 45.26,
+    "milestone_500": 115,
+    "milestone_1k": 137,
+    "milestone_2k": 198,
+    "final_equity": 8.667363731341725e+69
+  }
+}
