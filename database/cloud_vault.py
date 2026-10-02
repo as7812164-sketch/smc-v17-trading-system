@@ -306,15 +306,15 @@ def pull_and_restore_vault_state() -> bool:
         except Exception as e:
             logger.warning(f"Error restoring trade_journal from vault: {e}")
 
-        # CRITICAL GUARANTEE: Never downgrade to Hermes 2.5 on container restart or vault re-pull
-        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM'")
-        conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.0_QUANTUM' WHERE mode IS NULL OR mode = '' OR mode LIKE '%2.5%'")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_QUANTUM')")
-        conn.execute("INSERT OR REPLACE INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.0_QUANTUM')")
+        # CRITICAL GUARANTEE: Enforce active STRATEGY_VERSION on container restart or vault re-pull
+        conn.execute("UPDATE paper_account SET mode = ?", (STRATEGY_VERSION,))
+        conn.execute("UPDATE paper_trades SET mode = ? WHERE mode IS NULL OR mode = '' OR mode LIKE '%2.5%'", (STRATEGY_VERSION,))
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', ?)", (STRATEGY_VERSION,))
+        conn.execute("INSERT OR REPLACE INTO system_metrics (key, value) VALUES ('hermes_mode', ?)", (STRATEGY_VERSION,))
 
         conn.commit()
         conn.close()
-        logger.info("Cloud Vault successfully restored into SQLite database (HERMES_3.0_QUANTUM active)!")
+        logger.info(f"Cloud Vault successfully restored into SQLite database ({STRATEGY_VERSION} active)!")
         return True
 
     except Exception as e:
