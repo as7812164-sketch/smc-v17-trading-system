@@ -222,10 +222,11 @@ def init_db():
         # Reassign open Binance legacy positions to account 99 so they exit cleanly without polluting Bitget accounts
         conn.execute("UPDATE paper_trades SET account_id = 99, channel = 'binance_legacy' WHERE exchange = 'BINANCE' AND status = 'OPEN'")
 
-        # Universal upgrade: Ensure all 4 accounts run HERMES_3.5_DUAL_TIER_SNIPER
-        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_DUAL_TIER_SNIPER'")
-        conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.0_QUANTUM' WHERE mode IS NULL OR mode = '' OR mode LIKE '%2.5%'")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_DUAL_TIER_SNIPER')")
+        # Universal upgrade: Ensure all 4 accounts run HERMES_3.5_SINGLE_TIER
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_SINGLE_TIER'")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', 'OB Boundary (Edge Touch)')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes_margin_allocation_pct', '0.15')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('binance_auto_trade', 'false')")
 
         # Initialize default metrics if not present
@@ -242,11 +243,11 @@ def init_db():
             "network_status": "STABLE",
             "coins_active_count": "50",
             "hermes_status": "ACTIVE_24_7",
-            "hermes_mode": "HERMES_3.5_DUAL_TIER_SNIPER"
+            "hermes_mode": "HERMES_3.5_SINGLE_TIER"
         }
         for k, v in default_metrics.items():
             conn.execute("INSERT OR IGNORE INTO system_metrics (key, value) VALUES (?, ?)", (k, v))
-        conn.execute("UPDATE system_metrics SET value = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE key = 'hermes_mode'")
+        conn.execute("UPDATE system_metrics SET value = 'HERMES_3.5_SINGLE_TIER' WHERE key = 'hermes_mode'")
         
         # Ensure default Telegram Chat ID is set to Akash's ID
         conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('telegram_chat_id', '752247227')")

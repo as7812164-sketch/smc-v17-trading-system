@@ -197,7 +197,7 @@ async def lifespan(app: FastAPI):
     binance_heartbeat_task.cancel()
     await binance_feed.close()
 
-app = FastAPI(title="HERMES 3.5 DUAL SNIPER Autonomous Terminal & Quant Engine", lifespan=lifespan)
+app = FastAPI(title="HERMES 3.5 SINGLE TIER Autonomous Terminal & Quant Engine", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/manifest.json")
