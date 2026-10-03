@@ -15,7 +15,7 @@ Integrates the Unified Master Strategy Blueprint into the live cloud platform.
     - 85% net profit reinvested / 15% Cold Storage Vault stashed.
     - Strict 1-Trade Sequential Queue (Zero margin contagion).
 - Real-Time Broadcast:
-    - Instant Telegram alerts to @SMC_V17_Trigger_Bot.
+    - Instant Telegram alerts to @Hermes_AI_Bot.
     - Live WebSocket feeds to https://smc-ai-agent.onrender.com.
 """
 
@@ -92,7 +92,7 @@ class Hermes2ApexLiveEngine:
             if "milestone_target" not in cols:
                 conn.execute("ALTER TABLE paper_account ADD COLUMN milestone_target REAL DEFAULT 2000.0")
             if "mode" not in cols:
-                conn.execute("ALTER TABLE paper_account ADD COLUMN mode TEXT DEFAULT 'HERMES_3.0_QUANTUM'")
+                conn.execute("ALTER TABLE paper_account ADD COLUMN mode TEXT DEFAULT 'HERMES_3.5_SINGLE_TIER'")
 
             # Check paper_trades columns
             trade_cols = [r[1] for r in conn.execute("PRAGMA table_info(paper_trades)").fetchall()]
@@ -111,7 +111,7 @@ class Hermes2ApexLiveEngine:
                 conn.execute("""
                 INSERT OR IGNORE INTO paper_account 
                 (id, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-                VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.0_QUANTUM');
+                VALUES (1, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_SINGLE_TIER');
                 """)
             elif acc["current_balance"] <= 0.0 and acc["win_count"] == 0 and acc["loss_count"] == 0:
                 conn.execute("""
@@ -123,7 +123,7 @@ class Hermes2ApexLiveEngine:
                     win_count = 0,
                     loss_count = 0,
                     milestone_target = 2000.0,
-                    mode = 'HERMES_3.0_QUANTUM'
+                    mode = 'HERMES_3.5_SINGLE_TIER'
                 WHERE id = 1
                 """)
             conn.commit()
@@ -150,7 +150,7 @@ class Hermes2ApexLiveEngine:
             acc["equity"] = round(equity, 2)
             acc["return_pct"] = round(((equity - init_b) / init_b * 100), 2)
             acc["milestone_progress_pct"] = round(min(100.0, (equity / target) * 100.0), 2)
-            acc["mode"] = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+            acc["mode"] = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.5_SINGLE_TIER"))
             return acc
 
     async def evaluate_btc_macro_sentry(self) -> Dict[str, Any]:
@@ -848,7 +848,7 @@ class Hermes2ApexLiveEngine:
             logger.warning(f"Telegram alert error on entry: {e}")
             try:
                 # Emergency plain alert
-                emergency_msg = f"⚡ <b>HERMES 3.0 LIVE ENTRY</b>: #{sym} ({side}) @ {entry_price} | TP: {tp_price} | SL: {sl_price}"
+                emergency_msg = f"⚡ <b>HERMES 3.5 LIVE ENTRY</b>: #{sym} ({side}) @ {entry_price} | TP: {tp_price} | SL: {sl_price}"
                 await telegram_service.send_raw_message(emergency_msg, parse_mode="HTML")
             except Exception:
                 pass
@@ -973,7 +973,7 @@ class Hermes2ApexLiveEngine:
                         if current_effective_sl < entry_price:
                             exit_triggered = "TP_HIT"
                             exit_price = current_effective_sl
-                            logger.info(f"🛡️ HERMES 3.0-C ARMOR PROFIT LOCKED EXIT TRIGGERED: {sym} SHORT at {exit_price}")
+                            logger.info(f"🛡️ HERMES 3.5 ARMOR PROFIT LOCKED EXIT TRIGGERED: {sym} SHORT at {exit_price}")
                         else:
                             exit_triggered = "SL_HIT"
                             exit_price = current_effective_sl
@@ -1351,7 +1351,7 @@ class Hermes2ApexLiveEngine:
             except Exception as e:
                 logger.warning(f"Telegram exit alert error: {e}")
                 try:
-                    emergency_exit_msg = f"🏆 <b>HERMES 3.0 TRADE CLOSED</b>: #{sym} ({side}) | Outcome: {outcome} | P&L: {net_pnl_usdt:+.2f} USDT"
+                    emergency_exit_msg = f"🏆 <b>HERMES 3.5 TRADE CLOSED</b>: #{sym} ({side}) | Outcome: {outcome} | P&L: {net_pnl_usdt:+.2f} USDT"
                     await telegram_service.send_raw_message(emergency_exit_msg, parse_mode="HTML")
                 except Exception:
                     pass
@@ -1368,7 +1368,7 @@ class Hermes2ApexLiveEngine:
     async def start(self):
         """Autonomous 24/7 background loop running on the cloud server."""
         self.is_running = True
-        active_ver = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.0_QUANTUM"))
+        active_ver = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.5_SINGLE_TIER"))
         logger.info(f"👑 {active_ver} Live Streaming Simulated Engine Started 24/7.")
         set_metric("hermes_status", "ACTIVE_24_7")
         set_metric("hermes_mode", active_ver)
@@ -1410,19 +1410,19 @@ class Hermes2ApexLiveEngine:
         try:
             acc = self.get_hermes_account()
             boot_msg = (
-                f"👑 <b>HERMES 3.0 QUANTUM: 24/7 CLOUD ROBOT DEPLOYED & ONLINE!</b>\n"
+                f"👑 <b>HERMES 3.5 SINGLE TIER: 24/7 CLOUD ROBOT DEPLOYED & ONLINE!</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"🌐 <b>Host</b>: 100% Free Render Cloud Server (24/7 Autonomous)\n"
                 f"🎯 <b>Compounding Mission</b>: $50.00 ➔ $2,000.00 USDT Milestone\n"
                 f"⚡ <b>Leverage</b>: 5x Isolated Perpetual Futures\n"
-                f"🛡️ <b>Armor</b>: 4 Sentry Guardians Active (Macro BTC Brake + Institutional Floor 5% + IDM Sweep + Freshness 28-Bar)\n"
+                f"🛡️ <b>Armor</b>: 4 Sentry Guardians Active (King BTC 4H EMA50 + Origin Floor 5% + Boundary Entry + Freshness 28-Bar)\n"
                 f"📊 <b>Starting Compounding Margin</b>: ${acc['current_balance']:.2f} USDT\n"
                 f"🔒 <b>Cold Storage Vault</b>: ${acc['vault_balance']:.2f} USDT\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"📡 <b>Scanning</b>: Top-22 Champion Crypto Pairs (1H & 4H)\n"
+                f"📡 <b>Scanning</b>: Top-28 Champion Crypto Pairs (1H & 4H)\n"
                 f"💻 <b>Live Terminal</b>: https://smc-ai-agent.onrender.com\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"🚀 <i>Your computer can be turned OFF now. Hermes 2.0 Apex operates 24/7 autonomously in the cloud!</i>"
+                f"🚀 <i>Your computer can be turned OFF now. Hermes 3.5 Single Tier operates 24/7 autonomously in the cloud!</i>"
             )
             await telegram_service.send_raw_message(boot_msg)
         except Exception as e:

@@ -6,7 +6,7 @@ import aiohttp
 import logging
 from contextlib import asynccontextmanager
 
-logger = logging.getLogger("smc_v17")
+logger = logging.getLogger("hermes35")
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Body, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
@@ -381,12 +381,12 @@ async def serve_quantum():
 
 @app.get("/api/pinescript")
 async def get_pinescript_code():
-    pine_file = BASE_DIR / "SMC_V17_TradingView_Indicator.pine"
+    pine_file = BASE_DIR / "HERMES_3_5_SINGLE_TIER_OFFICIAL.pine"
     if pine_file.exists():
         with open(pine_file, "r", encoding="utf-8") as f:
             code = f.read()
         return {"status": "ok", "code": code}
-    return {"status": "error", "code": "// SMC V17 Indicator file not found"}
+    return {"status": "error", "code": "// Hermes 3.5 Indicator file not found"}
 
 @app.get("/api/journal/trades")
 async def get_journal_trades_endpoint():
@@ -503,7 +503,7 @@ async def get_trade_forensics_endpoint():
             "cold_vault": cold_vault,
             "total_equity": round(capital + cold_vault, 2),
             "sentries": sentries,
-            "notes": t.get("notes") or "Hermes 3.0 Quantum High-Probability Order Block"
+            "notes": t.get("notes") or "Hermes 3.5 Single Tier Institutional Order Block"
         })
 
     forensic_trades.reverse()
@@ -638,7 +638,7 @@ async def get_system_status():
     return {
         "status": "online",
         "version": active_version,
-        "strategy_options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"],
+        "strategy_options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.5_SINGLE_TIER", "HERMES_2.5_APEX_HYBRID"],
         "timeframe": TIMEFRAME,
         "performance": stats,
         "metrics": metrics,
@@ -656,7 +656,7 @@ async def get_strategy_mode():
     active_version = get_setting("strategy_version", STRATEGY_VERSION)
     return {
         "active_mode": active_version,
-        "options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"],
+        "options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.5_SINGLE_TIER", "HERMES_2.5_APEX_HYBRID"],
         "features": {
             "mean_threshold_entry": active_version.startswith("HERMES_3"),
             "multi_stage_profit_armor": True,
@@ -671,7 +671,7 @@ async def get_strategy_mode():
 @app.post("/api/strategy/switch")
 async def switch_strategy_mode(payload: Dict[str, Any] = Body(...)):
     target_mode = payload.get("mode")
-    if target_mode not in ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.0_QUANTUM", "HERMES_2.5_APEX_HYBRID"]:
+    if target_mode not in ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.5_SINGLE_TIER", "HERMES_2.5_APEX_HYBRID"]:
         return JSONResponse({"status": "error", "message": f"Invalid mode: {target_mode}"}, status_code=400)
     set_setting("strategy_version", target_mode)
     with get_connection() as conn:
@@ -920,7 +920,7 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
         td["timestamp_ist"] = ts_ist or ts_str
         td["timestamp_utc"] = ts_str
         td["raw_timestamp"] = exit_time or entry_time
-        td["mode"] = td.get("mode") or "HERMES_3.0_QUANTUM"
+        td["mode"] = td.get("mode") or "HERMES_3.5_SINGLE_TIER"
         trades.append(td)
 
     # Sort trades with newest first
@@ -1143,7 +1143,7 @@ async def get_futures_positions(timeframe: Optional[str] = None):
             "tp_price": tp_price,
             "sl_price": sl_price,
             "entry_time": entry_time,
-            "sentry_reasons": ot.get("sentry_reasons", "Hermes 3.0 Quantum 4 Sentries Armed")
+            "sentry_reasons": ot.get("sentry_reasons", "Hermes 3.5 Single Tier 4 Sentries Armed")
         })
 
     return {
@@ -1291,12 +1291,12 @@ async def reset_paper_trading_account():
 
 @app.get("/api/pinescript")
 async def get_pinescript_code():
-    pine_file = BASE_DIR / "SMC_V17_TradingView_Indicator.pine"
+    pine_file = BASE_DIR / "HERMES_3_5_SINGLE_TIER_OFFICIAL.pine"
     if pine_file.exists():
         with open(pine_file, "r", encoding="utf-8") as f:
             code = f.read()
     else:
-        code = "// SMC V17 Indicator file not found"
+        code = "// Hermes 3.5 Indicator file not found"
     return {"code": code}
 
 
@@ -2009,7 +2009,7 @@ async def get_binance_account_status():
         "allowed_sides": "SHORT",
         "margin_mode": "ISOLATED",
         "timeframe": "4h",
-        "strategy": "HERMES 3.0 QUANTUM"
+        "strategy": "HERMES 3.5 SINGLE TIER"
     }
 
 @app.get("/api/bitget/status")
@@ -2098,7 +2098,7 @@ async def get_bitget_account_status():
     return {
         "enabled": enabled,
         "balance": bal,
-        "strategy": "HERMES 3.0 QUANTUM",
+        "strategy": "HERMES 3.5 SINGLE TIER",
         "min_confluence": min_conf,
         "leverage": "5x Isolated",
         "target": "+2.8% Real (+14.0% ROE)",
@@ -2440,7 +2440,7 @@ async def get_hermes_apex_status():
     acc = hermes2_apex_engine.get_hermes_account()
     return {
         "status": "ONLINE_24_7",
-        "engine": "HERMES 3.0 QUANTUM Master Unified",
+        "engine": "HERMES 3.5 SINGLE TIER Master Unified",
         "account": acc,
         "active_position": hermes2_apex_engine.active_position,
         "btc_macro_sentry": hermes2_apex_engine.last_btc_bias,
@@ -2465,15 +2465,15 @@ async def trigger_hermes_apex_scan():
 async def reset_hermes_apex_run():
     res = reset_paper_account()
     hermes2_apex_engine.active_position = None
-    return {"status": "ok", "message": "Hermes 3.0 Quantum compounding run reset to $50.00", "account": res}
+    return {"status": "ok", "message": "Hermes 3.5 Single Tier compounding run reset to $50.00", "account": res}
 
 @app.get("/api/pinescript")
 async def get_pinescript_endpoint():
-    pine_file = BASE_DIR / "SMC_V17_TradingView_Indicator.pine"
+    pine_file = BASE_DIR / "HERMES_3_5_SINGLE_TIER_OFFICIAL.pine"
     if pine_file.exists():
         with open(pine_file, "r", encoding="utf-8") as f:
             code = f.read()
-        return {"status": "ok", "code": code, "version": "SMC V17.5 Institutional Pro"}
+        return {"status": "ok", "code": code, "version": "Hermes 3.5 Single Tier Institutional"}
     raise HTTPException(status_code=404, detail="Pine script file not found")
 
 # --- WebSocket for Real-time Streaming ---

@@ -141,17 +141,17 @@ def init_db():
         VALUES (1, 50.0, 50.0, 0.0, 0, 0);
         """)
 
-        # Ensure Hermes 3.0 Quantum & Quad-Account columns exist
+        # Ensure Hermes 3.5 Single Tier & Quad-Account columns exist
         for col_def in [
             ("paper_account", "vault_balance", "REAL DEFAULT 0.0"),
             ("paper_account", "milestone_target", "REAL DEFAULT 2000.0"),
-            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_3.0_QUANTUM'"),
+            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_3.5_SINGLE_TIER'"),
             ("paper_account", "timeframe", "TEXT DEFAULT '4h'"),
             ("paper_account", "name", "TEXT DEFAULT 'Binance 4H Macro Compounding'"),
             ("paper_account", "exchange", "TEXT DEFAULT 'BINANCE'"),
             ("paper_account", "channel", "TEXT DEFAULT 'binance_4h'"),
             ("paper_account", "win_streak", "INTEGER DEFAULT 0"),
-            ("paper_trades", "mode", "TEXT DEFAULT 'HERMES_3.0_QUANTUM'"),
+            ("paper_trades", "mode", "TEXT DEFAULT 'HERMES_3.5_SINGLE_TIER'"),
             ("paper_trades", "timeframe", "TEXT DEFAULT '4h'"),
             ("paper_trades", "exchange", "TEXT DEFAULT 'BINANCE'"),
             ("paper_trades", "channel", "TEXT DEFAULT 'binance_4h'"),
@@ -426,7 +426,7 @@ def _sync_journal_to_paper_trades(conn):
                     tp_price, sl_price, hard_sl_price, status, entry_time, exit_time,
                     pnl_usdt, pnl_pct, timeframe, duration_str, roi_pct, mae_pct, mfe_pct,
                     highest_price, lowest_price, exchange, channel, account_id, mode
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'HERMES_3.0_QUANTUM')
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'HERMES_3.5_SINGLE_TIER')
                 """, (
                     sym, side, ep, exit_p, pos_size,
                     tp_p, sl_p, hard_sl_p, status, created_t, updated_t,
@@ -503,7 +503,7 @@ def get_performance_stats() -> Dict[str, Any]:
         }
 
 def wipe_legacy_database_clean() -> Dict[str, Any]:
-    """Wipes all legacy SMC V17 zones, signals, and alerts for a 100% clean Hermes 2.0 Apex forward-test."""
+    """Wipes all legacy Hermes 3.5 zones, signals, and alerts for a 100% clean Hermes 2.0 Apex forward-test."""
     with get_connection() as conn:
         conn.execute("DELETE FROM zones;")
         conn.execute("DELETE FROM signals;")
@@ -519,18 +519,18 @@ def wipe_legacy_database_clean() -> Dict[str, Any]:
             win_count = 2,
             loss_count = 0,
             milestone_target = 2000.0,
-            mode = 'HERMES_3.0_QUANTUM'
+            mode = 'HERMES_3.5_SINGLE_TIER'
         WHERE id = 1;
         """)
-        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_QUANTUM';")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_QUANTUM');")
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_SINGLE_TIER';")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER');")
         conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.0_QUANTUM')
-        ON CONFLICT(key) DO UPDATE SET value = 'HERMES_3.0_QUANTUM';
+        INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.5_SINGLE_TIER')
+        ON CONFLICT(key) DO UPDATE SET value = 'HERMES_3.5_SINGLE_TIER';
         """)
         conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 3.0 Quantum Live Engine Armed')
-        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 3.0 Quantum Live Engine Armed';
+        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 3.5 Single Tier Live Engine Armed')
+        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 3.5 Single Tier Live Engine Armed';
         """)
         conn.commit()
 
@@ -542,7 +542,7 @@ def wipe_legacy_database_clean() -> Dict[str, Any]:
 
     return {
         "status": "success",
-        "message": "All legacy SMC V17 zones and historical test records purged. Hermes 2.0 Apex forward-test synchronized to verified real trades."
+        "message": "All legacy Hermes 3.5 zones and historical test records purged. Hermes 2.0 Apex forward-test synchronized to verified real trades."
     }
 
 
@@ -625,7 +625,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
         acc["milestone_target"] = target
         acc["milestone_progress_pct"] = round(min(100.0, (total_equity / target) * 100.0), 2)
         acc["return_pct"] = round(((total_equity - init_b) / init_b * 100), 2)
-        acc["mode"] = acc.get("mode") or "HERMES_3.0_QUANTUM"
+        acc["mode"] = acc.get("mode") or "HERMES_3.5_SINGLE_TIER"
         acc["win_streak"] = int(row["win_streak"] if "win_streak" in row.keys() and row["win_streak"] is not None else (acc.get("win_count", 0) if acc.get("loss_count", 0) == 0 else 0))
         return acc
 
@@ -699,7 +699,7 @@ def format_duration_str(ms: int) -> str:
 
 def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Deploys compounding margin at 5x Isolated Perpetual leverage under HERMES 3.0 QUANTUM rules.
+    Deploys compounding margin at 5x Isolated Perpetual leverage under HERMES 3.5 SINGLE TIER rules.
     Independent sequential queues across Bitget 4-Track Compounding accounts ($50 x 4: 4Hx2, 1Hx2).
     """
     tf = str(zone.get("timeframe", "4h")).lower()
@@ -743,7 +743,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
         side = zone["side"].upper()
         entry_price = float(zone["entry_price"])
 
-        # HERMES 3.0 QUANTUM Targets:
+        # HERMES 3.5 SINGLE TIER Targets:
         # 4H: TP +2.80% (+14.0% ROE) | SL -2.80% (-14.0% ROE) | Hard SL -3.80% (-19.0% ROE)
         # 1H: TP +2.20% (+11.0% ROE) | SL -2.50% (-12.5% ROE) | Hard SL -3.60% (-18.0% ROE)
         if "1h" in tf:
@@ -766,7 +766,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             tp_price, sl_price, hard_sl_price, timeframe, channel, exchange, account_id,
             status, entry_time, mode,
             highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.0_QUANTUM', ?, ?, 0.0, 0.0, '', 0.0)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.5_SINGLE_TIER', ?, ?, 0.0, 0.0, '', 0.0)
         """, (
             zone.get("id"), zone["symbol"], side, entry_price,
             position_size, tp_price, sl_price, hard_sl_price, tf,
@@ -785,7 +785,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             "channel": channel_name,
             "exchange": exchange_name,
             "account_id": acc_id,
-            "mode": "HERMES_3.0_QUANTUM",
+            "mode": "HERMES_3.5_SINGLE_TIER",
             "entry_price": entry_price,
             "position_size_usdt": position_size,
             "margin_usdt": margin,
@@ -832,7 +832,7 @@ def update_paper_trade_mark_price(trade_id: int, mark_price: float):
             mfe_pct = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
             mae_pct = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
 
-            # HERMES 3.0-C MULTI-STAGE DYNAMIC PROFIT ARMOR FOR SHORT TRADES:
+            # HERMES 3.5-C MULTI-STAGE DYNAMIC PROFIT ARMOR FOR SHORT TRADES:
             # Stage 1: lowest drops >= +1.60% from entry -> Lock Break-Even +0.20% Profit
             # Stage 2: lowest drops >= +2.20% from entry -> Lock +1.20% Guaranteed Profit
             cur_sl = float(row["sl_price"]) if ("sl_price" in row.keys() and row["sl_price"]) else round(entry_price * 1.028, 6)
@@ -1231,7 +1231,7 @@ def reset_paper_account(starting_balance: float = 50.0, timeframe: Optional[str]
                 total_pnl = 0.0,
                 win_count = 0,
                 loss_count = 0,
-                mode = 'HERMES_3.0_QUANTUM'
+                mode = 'HERMES_3.5_SINGLE_TIER'
             WHERE id IN (1, 2, 3, 4)
             """, (starting_balance, starting_balance))
         conn.commit()

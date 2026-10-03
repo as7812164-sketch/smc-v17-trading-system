@@ -312,7 +312,7 @@ def format_daily_report_alert(
     comb_pnl_sign = "+" if comb_pnl >= 0 else ""
 
     lines = [
-        "<pre>📊 HERMES 3.0 QUANTUM • DAILY REPORT",
+        "<pre>📊 HERMES 3.5 SINGLE TIER • DAILY REPORT",
         "━━━━━━━━━━━━━━━━━━━━━━",
         "",
         date_str,
@@ -340,7 +340,7 @@ def format_daily_report_alert(
         f"{'COMBINED BALANCE':<24}{comb_bal:.2f} USDT",
         f"{'TODAY NET P&L':<24}{comb_pnl_sign}{comb_pnl:.2f} USDT",
         "",
-        "HERMES 3.0 QUANTUM • QUAD COMPOUNDING</pre>"
+        "HERMES 3.5 SINGLE TIER • QUAD COMPOUNDING</pre>"
     ]
     return "\n".join(lines)
 
@@ -538,7 +538,7 @@ class TelegramService:
             return False
 
     def build_live_status_text(self) -> str:
-        """Builds the SMC V17 Telegram Live Status Dashboard."""
+        """Builds the Hermes 3.5 Telegram Live Status Dashboard."""
         stats = get_performance_stats()
         paper = get_paper_account()
         now_dt = get_ist_now()
@@ -559,7 +559,7 @@ class TelegramService:
         last_alert = stats["last_alert"]
 
         msg = (
-            f"🟢 <b>HERMES 3.0 QUANTUM LIVE TERMINAL</b>\n\n"
+            f"🟢 <b>HERMES 3.5 SINGLE TIER LIVE TERMINAL</b>\n\n"
             f"📡 <b>CONNECTION</b>\n"
             f"🌌 Binance Live: {binance_status}\n"
             f"💓 Heartbeat: 2s ago\n"
@@ -1016,7 +1016,7 @@ class TelegramService:
         entry_level = zone["ob_high"] if zone["side"] == "BUY" else zone["ob_low"]
 
         text = (
-            f"⚠️ <b>HERMES 3.0 QUANTUM WATCHLIST</b>\n\n"
+            f"⚠️ <b>HERMES 3.5 SINGLE TIER WATCHLIST</b>\n\n"
             f"🪙 <b>Coin:</b> #{zone['symbol']}\n"
             f"🎯 <b>Approaching:</b> {side_emoji} 4H Order Block\n"
             f"📍 <b>Planned Entry:</b> <code>{entry_level}</code>\n"
@@ -1233,7 +1233,7 @@ class TelegramService:
         proximity_list.sort(key=lambda x: x["distance_pct"])
         top_zones = proximity_list[:7]
 
-        lines = ["📦 <b>HERMES 3.0 QUANTUM Top Order Blocks:</b>\n"]
+        lines = ["📦 <b>HERMES 3.5 SINGLE TIER Top Order Blocks:</b>\n"]
         for item in top_zones:
             z = item["zone"]
             side_icon = "🟢 BUY" if z["side"] == "BUY" else "🔴 SELL"
@@ -1254,7 +1254,7 @@ class TelegramService:
         history = get_paper_trades_history(limit=5)
 
         lines = [
-            f"⚡ <b>HERMES 3.0 QUANTUM 5X COMPOUNDING TRADES</b>\n",
+            f"⚡ <b>HERMES 3.5 SINGLE TIER 5X COMPOUNDING TRADES</b>\n",
             f"💰 <b>Bitget Wallet:</b> <code>${bg_bal:.2f} USDT</code> (Goal: $50 ➔ $2,000)\n"
         ]
 
@@ -1628,7 +1628,7 @@ class TelegramService:
                             # Start / Help / Greetings
                             if text in ("/start", "/help", "help", "menu", "❓ help"):
                                 reply = (
-                                    "👑 <b>HERMES 3.0 QUANTUM Autonomous Terminal Bot</b>\n\n"
+                                    "👑 <b>HERMES 3.5 SINGLE TIER Autonomous Terminal Bot</b>\n\n"
                                     "<b>⚡ Interactive Commands:</b>\n"
                                     "• <code>/hermes</code> - Hermes AI Quant Status & Win Rates\n"
                                     "• <code>/hermes scan</code> - Live 15m Binance Order Blocks audit\n"
@@ -1718,7 +1718,7 @@ class TelegramService:
                                 if not signals:
                                     reply = "ℹ️ No signals recorded yet. Scanner is monitoring for First Tap entries."
                                 else:
-                                    lines = ["📊 <b>Recent HERMES 3.0 QUANTUM Signals:</b>\n"]
+                                    lines = ["📊 <b>Recent HERMES 3.5 SINGLE TIER Signals:</b>\n"]
                                     for s in signals:
                                         lines.append(f"• <b>{s['symbol']}</b> ({s['side']}): {s['signal_type']} @ {s['price']}")
                                     reply = "\n".join(lines)
