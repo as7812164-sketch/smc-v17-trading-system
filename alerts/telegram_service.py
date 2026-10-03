@@ -71,7 +71,7 @@ def get_main_menu_keyboard() -> Dict[str, Any]:
     """Persistent 1-Tap bottom keyboard for Telegram clients."""
     return {
         "keyboard": [
-            [{"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com"}}],
+            [{"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}],
             [{"text": "📊 Live Status"}, {"text": "💰 PnL & Balance"}],
             [{"text": "📈 Open Trades"}, {"text": "🏆 Win Rate & Stats"}],
             [{"text": "📜 Trade History"}, {"text": "🧠 Hermes AI Agent"}],
@@ -100,10 +100,10 @@ def get_alert_inline_keyboard(symbol: str, exchange: Optional[str] = None) -> Di
             {"text": "📱 Open Binance App", "url": f"https://www.binance.com/en/futures/{clean_sym}"}
         ])
     kb.append([
-        {"text": "🎯 $50 ➔ $1K Goal (Quad Streams)", "callback_data": f"goal_{clean_sym}"}
+        {"text": "🎯 $500 ➔ $20K Deca Goal", "callback_data": f"goal_{clean_sym}"}
     ])
     kb.append([
-        {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com"}}
+        {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
     ])
     return {"inline_keyboard": kb}
 
@@ -540,7 +540,16 @@ class TelegramService:
     def build_live_status_text(self) -> str:
         """Builds the Hermes 3.5 Telegram Live Status Dashboard."""
         stats = get_performance_stats()
-        paper = get_paper_account()
+        from database.db import get_compounding_sections
+        sec_data = get_compounding_sections()
+        combined = sec_data.get("combined", {})
+        tot_bal = float(combined.get("total_current_balance", 500.0) or 500.0)
+        tot_ret = float(combined.get("total_growth_pct", 0.0) or 0.0)
+        open_sec = int(combined.get("total_open_trades", 0) or 0)
+        tot_wins = int(combined.get("total_wins", 0) or 0)
+        tot_losses = int(combined.get("total_losses", 0) or 0)
+        tot_wr = float(combined.get("overall_win_rate", 0.0) or 0.0)
+
         now_dt = get_ist_now()
         now_str = now_dt.strftime("%d %b %Y • %I:%M:%S %p IST")
 
@@ -573,7 +582,7 @@ class TelegramService:
             f"⏭ Next refresh: {next_refresh}\n\n"
             f"📦 <b>ACTIVE ORDER BLOCKS</b>\n"
             f"🟢 BUY zones: {stats['active_buy_zones']}\n"
-            f"🔴 SELL zones: {stats['active_sell_zones']}\n"
+            f"🔴 SELL zones: {stats['sell_signals']}\n"
             f"Total active: {stats['total_active_zones']}\n"
             f"🎯 Mode: FIRST TAP ONLY\n"
             f"⏱ Timeframe: {TIMEFRAME.upper()}\n"
@@ -586,11 +595,12 @@ class TelegramService:
             f"✅ TP hits: {stats['tp_hits']}\n"
             f"❌ SL hits: {stats['sl_hits']}\n"
             f"🏆 Win rate: {stats['win_rate']}%\n\n"
-            f"💼 <b>PAPER TRADING (100 USDT)</b>\n"
-            f"💰 Balance: ${paper['current_balance']:.2f} USDT\n"
-            f"📈 Net Return: {paper['return_pct']:+.2f}%\n"
-            f"⏳ Active Positions: {paper['open_trades_count']}\n"
-            f"🏆 Record: {paper['win_count']}W - {paper['loss_count']}L ({paper['win_rate']}% WR)\n\n"
+            f"💼 <b>HERMES 3.5 DECA COMPOUNDING ($500.00 USDT)</b>\n"
+            f"💰 Portfolio Balance: ${tot_bal:.2f} USDT (10 Sections × $50)\n"
+            f"🎯 Matrix Target: $20,000 USDT ($2,000 × 10)\n"
+            f"📈 Net Return: {tot_ret:+.2f}%\n"
+            f"⏳ Active Section Positions: {open_sec} / 10\n"
+            f"🏆 Matrix Record: {tot_wins}W - {tot_losses}L ({tot_wr:.1f}% WR)\n\n"
             f"🚨 <b>LAST ALERT</b>\n"
             f"{last_alert}\n\n"
             f"🛡 <b>SYSTEM HEALTH</b>\n"
@@ -613,7 +623,7 @@ class TelegramService:
                     {"text": "💰 PnL", "callback_data": "menu_pnl"}
                 ],
                 [
-                    {"text": "📱 Open In-App Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com"}},
+                    {"text": "📱 Open In-App Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}},
                     {"text": "📦 Active Zones", "callback_data": "menu_zones"}
                 ]
             ]
@@ -921,17 +931,17 @@ class TelegramService:
             f"🛑 <b>Emergency Hard SL (-4% Real = -20% ROI):</b> <code>${sl}</code>\n"
             f"🆔 <b>Bitget Order ID:</b> <code>{order_id}</code>\n\n"
             f"{conf_str}\n"
-            f"🎯 <b>Compounding Goal:</b> $50 ➔ $1,000 USDT (Stage 1)\n"
-            f"🛡 <i>Disciplined 5x Isolated execution active 24/7.</i>"
+            f"🎯 <b>Compounding Goal:</b> $500 ➔ $20,000 USDT (Deca Matrix)\n"
+            f"🛡 <i>Disciplined 5x Isolated execution active 24/7 across 10 sections.</i>"
         )
         keyboard = {
             "inline_keyboard": [
                 [
                     {"text": "📱 Open Bitget App", "url": f"https://www.bitget.com/futures/usdt/{sym.replace('USDT', '')}USDT"},
-                    {"text": "🎯 $50 ➔ $1K Positions", "callback_data": f"goal_{sym}"}
+                    {"text": "🎯 $500 ➔ $20K Deca Goal", "callback_data": f"goal_{sym}"}
                 ],
                 [
-                    {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com"}}
+                    {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
                 ]
             ]
         }
@@ -963,7 +973,7 @@ class TelegramService:
             await self.send_raw_message(text, reply_markup=keyboard)
 
     async def alert_bitget_tp_hit(self, trade: Dict[str, Any]):
-        """Triggered when real Bitget $50 -> $1,000 position hits Take Profit (+10% ROI)."""
+        """Triggered when real Bitget position hits Take Profit (+10% ROI)."""
         sym = trade.get("symbol", "")
         pnl = float(trade.get("pnl_usdt", 5.0) or 5.0)
         roi = float(trade.get("roi_pct", 10.0) or 10.0)
@@ -978,7 +988,7 @@ class TelegramService:
             f"💰 <b>Exit TP:</b> <code>${exit_p}</code>\n"
             f"💵 <b>Profit Secured:</b> <code>+${pnl:.2f} USDT</code> (<b>+{roi:.1f}% ROI</b>)\n"
             f"📈 <b>New Bitget Balance:</b> <code>${new_bal:.2f} USDT</code>\n\n"
-            f"🎯 <b>$50 ➔ $1,000 Goal Progress:</b> Compounding into next high-confidence 2nd OB setup!"
+            f"🎯 <b>$500 ➔ $20,000 Deca Matrix Progress:</b> Compounding into next high-confidence 2nd OB setup!"
         )
         keyboard = get_alert_inline_keyboard(sym)
         await self.send_raw_message(text, reply_markup=keyboard)
@@ -1246,16 +1256,17 @@ class TelegramService:
         await self.send_raw_message("\n".join(lines))
 
     async def handle_trades_command(self):
-        from engine.bitget_trader import bitget_trader
-        bal_info = await asyncio.to_thread(bitget_trader.fetch_futures_balance)
-        bg_bal = bal_info.get("total_usdt", 77.59) if bal_info.get("connected") else 77.59
+        from database.db import get_compounding_sections, get_open_paper_trades, get_paper_trades_history
+        sec_data = get_compounding_sections()
+        combined = sec_data.get("combined", {})
+        tot_bal = float(combined.get("total_current_balance", 500.0) or 500.0)
         
         open_trades = get_open_paper_trades()
         history = get_paper_trades_history(limit=5)
 
         lines = [
-            f"⚡ <b>HERMES 3.5 SINGLE TIER 5X COMPOUNDING TRADES</b>\n",
-            f"💰 <b>Bitget Wallet:</b> <code>${bg_bal:.2f} USDT</code> (Goal: $50 ➔ $2,000)\n"
+            f"⚡ <b>HERMES 3.5 SINGLE TIER 10-SECTION MATRIX TRADES</b>\n",
+            f"💰 <b>Combined Portfolio:</b> <code>${tot_bal:.2f} USDT</code> (Goal: $500 ➔ $20,000 across 10 Sections)\n"
         ]
 
         if open_trades:
@@ -1273,8 +1284,8 @@ class TelegramService:
                     f"   Unrealized PnL: <b>{pnl_sign}${pnl_usdt:.2f} ({pnl_sign}{pnl_pct:.2f}%)</b>\n"
                 )
         else:
-            lines.append("⏳ <b>Active Real Trade:</b> <i>No position open right now. ($50 margin is safe in wallet).</i>\n")
-            lines.append("🎯 <i>Mike bot 50 coins scan kar raha hai. 2nd OB (90+ Confluence) hit hote hi auto order place hoga!</i>\n")
+            lines.append("⏳ <b>Active Real Trade:</b> <i>No position open right now. (All 10 sections safe with $50.00 each).</i>\n")
+            lines.append("🎯 <i>Hermes 3.5 Single Tier scanner active across Top-22 champions. Qualified setup hit hote hi auto order place hoga!</i>\n")
 
         if history:
             lines.append("📜 <b>RECENT TRADES HISTORY:</b>")
@@ -1289,24 +1300,25 @@ class TelegramService:
         await self.send_raw_message("\n".join(lines), reply_markup=menu_kb)
 
     async def handle_challenge_positions_command(self, specific_sym: Optional[str] = None):
-        """Sends comprehensive $50 ➔ $1,000 challenge status with live positions and 2nd OB limit orders."""
-        from engine.bitget_trader import bitget_trader
-        bal_info = await asyncio.to_thread(bitget_trader.fetch_futures_balance)
-        bg_bal = bal_info.get("total_usdt", 77.59) if (bal_info and bal_info.get("connected")) else 77.59
-        bg_status = "🟢 AUTO ACTIVE" if bitget_trader.is_auto_trade_enabled() else "⏸️ PAUSED"
+        """Sends comprehensive $500 ➔ $20,000 10-Section Deca Compounding Matrix status."""
+        from database.db import get_compounding_sections, get_open_paper_trades, get_active_zones
+        sec_data = get_compounding_sections()
+        combined = sec_data.get("combined", {})
+        tot_bal = float(combined.get("total_current_balance", 500.0) or 500.0)
+        tot_ret = float(combined.get("total_growth_pct", 0.0) or 0.0)
 
         tickers = await binance_feed.fetch_all_tickers()
         open_trades = get_open_paper_trades()
         active_zones = get_active_zones()
 
-        progress_pct = max(0.0, min(100.0, ((bg_bal - 50.0) / (1000.0 - 50.0)) * 100))
+        progress_pct = max(0.0, min(100.0, ((tot_bal - 500.0) / (20000.0 - 500.0)) * 100))
 
         lines = [
-            f"🎯 <b>$50 ➔ $1,000 USDT COMPOUNDING CHALLENGE</b>",
+            f"🎯 <b>HERMES 3.5 DECA COMPOUNDING MATRIX ($500 ➔ $20,000)</b>",
             f"━━━━━━━━━━━━━━━━━━━━",
-            f"💰 <b>Bitget Wallet Balance:</b> <code>${bg_bal:.2f} USDT</code>",
-            f"📈 <b>Roadmap Progress:</b> <code>{progress_pct:.1f}%</code> ($50 ➔ $100 ➔ $250 ➔ $500 ➔ $1K)",
-            f"🛡️ <b>Engine:</b> 5x Isolated • 2nd OB Priority • 90+ Score ({bg_status})\n"
+            f"💰 <b>Combined Portfolio Balance:</b> <code>${tot_bal:.2f} USDT</code> (10 × $50)",
+            f"📈 <b>Matrix Progress:</b> <code>{progress_pct:.2f}%</code> ({tot_ret:+.2f}% Growth)",
+            f"🛡️ <b>Engine:</b> Hermes 3.5 Single Tier • 5x Isolated • 10 Independent Sections\n"
         ]
 
         if open_trades:
@@ -1334,7 +1346,7 @@ class TelegramService:
                     f"  🛑 Hard SL (-20% ROI): <code>${sl}</code>"
                 )
         else:
-            lines.append("ℹ️ <b>Live Positions:</b> <i>No active trade open right now. (50 pairs scanning for 2nd OB 90+ Score).</i>")
+            lines.append("ℹ️ <b>Live Positions:</b> <i>No active trade open right now. (All 10 sections scanning for qualified 1st tap setups).</i>")
 
         # Top 3 closest 2nd OB pending limits
         orders = []
@@ -1349,7 +1361,7 @@ class TelegramService:
 
         orders.sort(key=lambda x: x[0])
         if orders:
-            lines.append(f"\n🔭 <b>NEXT 2ND OB PENDING LIMITS (Armed for 1st Tap):</b>")
+            lines.append(f"\n🔭 <b>NEXT PENDING LIMITS (Armed for 1st Tap):</b>")
             for dist, sym, side, entry_p, cur_p in orders[:3]:
                 side_icon = "🟢 Buy Limit" if side == "BUY" else "🔴 Sell Limit"
                 lines.append(
@@ -1364,7 +1376,7 @@ class TelegramService:
 
         inline_buttons.extend([
             [
-                {"text": "📱 Open Full Terminal (Positions HUD)", "web_app": {"url": "https://smc-ai-agent.onrender.com"}}
+                {"text": "📱 Open Full Terminal (Positions HUD)", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
             ],
             [
                 {"text": "📊 Live Status", "callback_data": "refresh_status"},
@@ -1379,15 +1391,20 @@ class TelegramService:
         await self.send_raw_message("\n".join(lines), reply_markup=keyboard)
 
     async def handle_pnl_command(self):
-        from engine.bitget_trader import bitget_trader
-        bal_info = await asyncio.to_thread(bitget_trader.fetch_futures_balance)
-        bg_bal = bal_info.get("total_usdt", 77.59) if bal_info.get("connected") else 77.59
-        bg_status = "🟢 AUTO ACTIVE" if bitget_trader.is_auto_trade_enabled() else "⏸️ PAUSED"
+        from database.db import get_compounding_sections, get_open_paper_trades
+        sec_data = get_compounding_sections()
+        combined = sec_data.get("combined", {})
+        tot_bal = float(combined.get("total_current_balance", 500.0) or 500.0)
+        tot_ret = float(combined.get("total_growth_pct", 0.0) or 0.0)
+        tot_pnl = float(combined.get("total_pnl", 0.0) or 0.0)
+        tot_wins = int(combined.get("total_wins", 0) or 0)
+        tot_losses = int(combined.get("total_losses", 0) or 0)
+        tot_wr = float(combined.get("overall_win_rate", 0.0) or 0.0)
+        open_sec = int(combined.get("total_open_trades", 0) or 0)
 
-        paper = get_paper_account()
         open_trades = get_open_paper_trades()
 
-        active_tr_str = "⏳ <i>No active trade open. (50 pairs scanning for 2nd OB 90+ Score)</i>"
+        active_tr_str = f"⏳ <i>No active trade open right now. (10 sections armed & scanning)</i>"
         if open_trades:
             t = open_trades[0]
             side_icon = "🟢 BUY / LONG" if t["side"] == "BUY" else "🔴 SELL / SHORT"
@@ -1402,16 +1419,16 @@ class TelegramService:
             )
 
         text = (
-            f"⚡ <b>BITGET REAL 5X COMPOUNDING STATUS</b>\n\n"
-            f"💰 <b>Bitget Wallet Balance:</b> <code>${bg_bal:.2f} USDT</code>\n"
-            f"🎯 <b>Compounding Goal:</b> <code>$50 ➔ $1,000 USDT</code>\n"
-            f"🛡️ <b>Bot Auto-Trading:</b> {bg_status}\n"
-            f"📊 <b>Execution Mode:</b> 5x Isolated • 2nd OB • 90+ Score\n\n"
-            f"🔥 <b>CURRENT REAL TRADE STATUS:</b>\n"
+            f"⚡ <b>HERMES 3.5 DECA COMPOUNDING STATUS</b>\n\n"
+            f"💰 <b>Total Balance:</b> <code>${tot_bal:.2f} USDT</code> (10 Sections × $50)\n"
+            f"🎯 <b>Compounding Goal:</b> <code>$500 ➔ $20,000 USDT</code> ($2,000 × 10)\n"
+            f"🛡️ <b>Engine Status:</b> 🟢 ACTIVE (10 Sections Live)\n"
+            f"📊 <b>Execution Mode:</b> Hermes 3.5 Single Tier • 5x Isolated\n\n"
+            f"🔥 <b>CURRENT REAL TRADE STATUS ({open_sec} Open):</b>\n"
             f"{active_tr_str}\n\n"
-            f"💼 <b>PAPER TRADING STATS:</b>\n"
-            f"📈 Score: {paper['win_count']}W - {paper['loss_count']}L ({paper['win_rate']}% WR)\n"
-            f"💵 Total Realized: ${paper['total_pnl']:.2f} USDT"
+            f"💼 <b>10-SECTION MATRIX STATS:</b>\n"
+            f"📈 Score: {tot_wins}W - {tot_losses}L ({tot_wr:.1f}% WR)\n"
+            f"💵 Net Realized PnL: ${tot_pnl:+.2f} USDT"
         )
         menu_kb = get_main_menu_keyboard()
         await self.send_raw_message(text, reply_markup=menu_kb)

@@ -1,22 +1,12 @@
-// Hermes 2.5 APEX Service Worker
-const CACHE_NAME = 'hermes-apex-v7';
+// Hermes 3.5 Single Tier - Deca Matrix Service Worker
+const CACHE_NAME = 'hermes-35-deca-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/mobile',
-  '/static/mobile.html',
-  '/static/manifest.json',
   '/static/style.css',
-  '/static/icon-192.png',
-  '/static/icon-512.png',
+  '/static/manifest.json',
   '/static/favicon.ico'
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -25,9 +15,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+          return caches.delete(key);
         })
       );
     })
@@ -35,22 +23,25 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first strategy for dynamic trading data, cache fallback for assets
+// Network-first: Always fetch fresh HTML and dynamic data from network
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip caching for API endpoints and WebSockets
-  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/ws')) {
+  // Never cache HTML documents, API calls, or WebSockets
+  if (
+    url.pathname.startsWith('/api') || 
+    url.pathname.startsWith('/ws') || 
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'document' ||
+    url.pathname === '/' ||
+    url.pathname === '/mobile' ||
+    url.pathname === '/compounding'
+  ) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });

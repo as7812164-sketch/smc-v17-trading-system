@@ -208,7 +208,15 @@ async def serve_manifest():
 
 @app.get("/sw.js")
 async def serve_sw():
-    return FileResponse(STATIC_DIR / "sw.js", media_type="application/javascript")
+    return FileResponse(
+        STATIC_DIR / "sw.js", 
+        media_type="application/javascript",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 @app.get("/favicon.ico")
 async def serve_favicon():
@@ -242,7 +250,7 @@ async def serve_mobile():
     return FileResponse(
         file_path,
         headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
             "Pragma": "no-cache",
             "Expires": "0"
         }
@@ -263,7 +271,7 @@ async def serve_index(request: Request, view: Optional[str] = Query(None)):
     return FileResponse(
         target_file,
         headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
             "Pragma": "no-cache",
             "Expires": "0"
         }
