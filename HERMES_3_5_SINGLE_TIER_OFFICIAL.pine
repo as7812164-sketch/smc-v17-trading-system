@@ -175,11 +175,12 @@ if array.size(active_zones) > 0
                 // Tap condition: Low reaches entry level and holds above zone low
                 bool is_tap = (low <= z.entry_level) and (low >= z.ob_low * (1.0 - (sl_pct_in/100.0))) and (close >= z.ob_low)
                 if is_tap
-                    // Sentry 3: Rejection Wick Check (>= 18% wick or bullish close)
+                    // Sentry 3: Strict Institutional Gate (IDM Swept + 18% Lower Wick + Close >= 50% MT)
                     float l_wick = math.min(open, close) - low
                     float wick_ratio = candle_range > 0 ? (l_wick / candle_range) * 100.0 : 0.0
-                    bool is_green = close >= open
-                    bool wick_pass = (wick_ratio >= 18.0 or is_green)
+                    bool mt_defended = close >= z.mt
+                    bool idm_swept = (low < ta.lowest(low[1], 5))
+                    bool wick_pass = (wick_ratio >= 18.0 and mt_defended and idm_swept)
                     
                     if wick_pass
                         trigger_entry := z.entry_level
@@ -190,10 +191,12 @@ if array.size(active_zones) > 0
             else if z.side == "SHORT"
                 bool is_tap = (high >= z.entry_level) and (high <= z.ob_high * (1.0 + (sl_pct_in/100.0))) and (close <= z.ob_high)
                 if is_tap
+                    // Sentry 3: Strict Institutional Gate (IDM Swept + 18% Upper Wick + Close <= 50% MT)
                     float u_wick = high - math.max(open, close)
                     float wick_ratio = candle_range > 0 ? (u_wick / candle_range) * 100.0 : 0.0
-                    bool is_red = close <= open
-                    bool wick_pass = (wick_ratio >= 18.0 or is_red)
+                    bool mt_defended = close <= z.mt
+                    bool idm_swept = (high > ta.highest(high[1], 5))
+                    bool wick_pass = (wick_ratio >= 18.0 and mt_defended and idm_swept)
                     
                     if wick_pass
                         trigger_entry := z.entry_level

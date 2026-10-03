@@ -269,6 +269,8 @@ class Hermes35LiveEngine:
 
                     bars_since_ob = (n - 1) - (i + 2)
                     if 1 <= bars_since_ob <= max_tap_window:
+                        # Inducement (IDM) level: swing low before the tap
+                        idm_low = min(candles[k]["low"] for k in range(max(0, i - 3), min(i + 4, n)))
                         for t in range(i + 3, n):
                             curr_c = candles[t]
                             # Hard Invalidation: Close below OB low
@@ -276,19 +278,26 @@ class Hermes35LiveEngine:
                                 broken = True
                                 break
 
+                            # IDM Sweep check: Did any bar prior to/at tap sweep below the inducement low?
+                            idm_swept = any(candles[k]["low"] < idm_low for k in range(i + 3, t + 1)) or (curr_c["low"] < idm_low)
+
                             # Tap detection: Low dips to entry price and holds above zone low
                             if not tap_found and curr_c["low"] <= eff_entry * 1.0005 and curr_c["low"] >= ob_low * (1.0 - soft_sl_pct) and curr_c["close"] >= ob_low:
                                 c_range = curr_c["high"] - curr_c["low"]
                                 l_wick = min(curr_c["open"], curr_c["close"]) - curr_c["low"]
                                 w_ratio = (l_wick / c_range) if c_range > 0 else 0.0
-                                is_green = curr_c["close"] >= curr_c["open"]
-                                if w_ratio >= 0.18 or is_green:
+
+                                # INSTITUTIONAL WIN-RATE GATE (HERMES 3.5):
+                                # 1. Minimum 18% Rejection Absorption Wick
+                                # 2. Candle Close must defend 50% Mean Threshold (close >= mt)
+                                # 3. Inducement Liquidity Swept
+                                if w_ratio >= 0.18 and curr_c["close"] >= mt and idm_swept:
                                     tap_found = True
                                     tap_bar_idx = t
                                     tap_wick_ratio = w_ratio
 
                         if not broken:
-                            sentry_lbl = f"HERMES 3.5 SINGLE TIER | King BTC Bull Trend | Sentry 2 Disp: {bull_gain*100:.1f}% + FVG | Sentry 3 Wick: {tap_wick_ratio*100:.1f}% & {entry_mode} | Sentry 4 Fresh Window: {bars_since_ob}/28 Bars"
+                            sentry_lbl = f"HERMES 3.5 SINGLE TIER | King BTC Bull Trend | Sentry 2 Disp: {bull_gain*100:.1f}% + FVG | Sentry 3 IDM Swept + Wick: {tap_wick_ratio*100:.1f}% & MT Defended | Sentry 4 Fresh Window: {bars_since_ob}/28 Bars"
 
                             if tap_found:
                                 age = (n - 1) - tap_bar_idx
@@ -369,6 +378,8 @@ class Hermes35LiveEngine:
 
                     bars_since_ob = (n - 1) - (i + 2)
                     if 1 <= bars_since_ob <= max_tap_window:
+                        # Inducement (IDM) level: swing high before the tap
+                        idm_high = max(candles[k]["high"] for k in range(max(0, i - 3), min(i + 4, n)))
                         for t in range(i + 3, n):
                             curr_c = candles[t]
                             # Hard Invalidation: Close above OB high
@@ -376,19 +387,26 @@ class Hermes35LiveEngine:
                                 broken = True
                                 break
 
+                            # IDM Sweep check: Did any bar prior to/at tap sweep above the inducement high?
+                            idm_swept = any(candles[k]["high"] > idm_high for k in range(i + 3, t + 1)) or (curr_c["high"] > idm_high)
+
                             # Tap detection: High pushes up to entry price and holds below zone high
                             if not tap_found and curr_c["high"] >= eff_entry * 0.9995 and curr_c["high"] <= ob_high * (1.0 + soft_sl_pct) and curr_c["close"] <= ob_high:
                                 c_range = curr_c["high"] - curr_c["low"]
                                 u_wick = curr_c["high"] - max(curr_c["open"], curr_c["close"])
                                 w_ratio = (u_wick / c_range) if c_range > 0 else 0.0
-                                is_red = curr_c["close"] <= curr_c["open"]
-                                if w_ratio >= 0.18 or is_red:
+
+                                # INSTITUTIONAL WIN-RATE GATE (HERMES 3.5):
+                                # 1. Minimum 18% Upper Rejection Absorption Wick
+                                # 2. Candle Close must defend 50% Mean Threshold (close <= mt)
+                                # 3. Inducement Liquidity Swept
+                                if w_ratio >= 0.18 and curr_c["close"] <= mt and idm_swept:
                                     tap_found = True
                                     tap_bar_idx = t
                                     tap_wick_ratio = w_ratio
 
                         if not broken:
-                            sentry_lbl = f"HERMES 3.5 SINGLE TIER | King BTC Bear Trend | Sentry 2 Disp: {bear_drop*100:.1f}% + Bear FVG | Sentry 3 Wick: {tap_wick_ratio*100:.1f}% & {entry_mode} | Sentry 4 Fresh Window: {bars_since_ob}/28 Bars"
+                            sentry_lbl = f"HERMES 3.5 SINGLE TIER | King BTC Bear Trend | Sentry 2 Disp: {bear_drop*100:.1f}% + Bear FVG | Sentry 3 IDM Swept + Wick: {tap_wick_ratio*100:.1f}% & MT Defended | Sentry 4 Fresh Window: {bars_since_ob}/28 Bars"
 
                             if tap_found:
                                 age = (n - 1) - tap_bar_idx
