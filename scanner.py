@@ -59,10 +59,10 @@ class SMCScanner:
 
     async def run_full_structure_scan(self) -> Dict[str, Any]:
         """
-        Legacy SMC V17 structure scan delegated completely to HERMES 2.0 APEX.
+        Structure scan delegated completely to HERMES 3.5 SINGLE TIER.
         """
-        from engine.hermes2_apex_live import hermes2_apex_engine
-        return await hermes2_apex_engine.run_full_champion_scan()
+        from engine.hermes35_live import hermes35_live_engine
+        return await hermes35_live_engine.run_full_champion_scan()
 
     async def check_live_prices_and_triggers(self):
         """

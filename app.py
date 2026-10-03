@@ -64,7 +64,7 @@ from engine.binance_trader import binance_trader
 from engine.order_flow import analyze_order_flow
 from engine.trade_journal import get_all_journal_trades, JOURNAL_CSV_PATH
 from engine.dual_timeframe_sniper import dual_sniper
-from engine.hermes2_apex_live import hermes2_apex_engine, TOP_22_CHAMPIONS
+from engine.hermes35_live import hermes35_live_engine as hermes2_apex_engine, TOP_22_CHAMPIONS
 from database.mongo_client import is_mongo_connected
 
 STATIC_DIR = BASE_DIR / "static"

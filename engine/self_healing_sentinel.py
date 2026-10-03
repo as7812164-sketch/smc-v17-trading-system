@@ -282,7 +282,7 @@ class HermesSelfHealingSentinel:
 
                 # CRITICAL SAFETY: Impose 2-hour post-exit cooldown on this symbol and purge broken setups
                 try:
-                    from engine.hermes2_apex_live import hermes2_apex_engine
+                    from engine.hermes35_live import hermes35_live_engine as hermes2_apex_engine
                     hermes2_apex_engine.trade_cooldowns[sym] = time.time() + 7200
                     hermes2_apex_engine.detected_setups = [s for s in hermes2_apex_engine.detected_setups if s.get("symbol") != sym]
                     logger.info(f"🛑 [POST-EXIT COOLDOWN] Locked {sym} for 2 hours to prevent immediate re-entry!")
