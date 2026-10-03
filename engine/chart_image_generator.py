@@ -133,9 +133,12 @@ def render_smc_chart_image(
         z_side = str(z.get("side") or "BUY").upper()
         z_h = float(z["ob_high"]) if z.get("ob_high") is not None else highs[-1]
         z_l = float(z["ob_low"]) if z.get("ob_low") is not None else lows[-1]
+        z_mt = (z_h + z_l) / 2.0
 
         z_y1 = to_y(z_h)
         z_y2 = to_y(z_l)
+        z_ymt = to_y(z_mt)
+
         if z_y1 > z_y2:
             z_y1, z_y2 = z_y2, z_y1
         if z_y2 - z_y1 < 2:
@@ -151,19 +154,28 @@ def render_smc_chart_image(
                     break
         zone_end_x = pad_left + plot_w
 
-        # Ultra-light background tint (alpha 18 ~ 7% opacity for zero noise)
+        # Ultra-light background tint (alpha 24 ~ 9% opacity for crisp visibility)
         if z_side == "BUY":
-            box_fill = (8, 153, 129, 18)     # Soft Light Green
-            box_border = (8, 153, 129, 75)    # Subtle 1px border
-            lbl_color = (8, 153, 129, 170)
+            box_fill = (0, 230, 118, 22)      # Emerald Green Tint
+            box_border = (0, 230, 118, 120)   # 1px border
+            lbl_color = (0, 230, 118, 220)
+            mt_color = (0, 210, 255, 180)     # Cyan MT Line
         else:
-            box_fill = (242, 54, 69, 18)     # Soft Light Red
-            box_border = (242, 54, 69, 75)    # Subtle 1px border
-            lbl_color = (242, 54, 69, 170)
+            box_fill = (255, 23, 68, 22)      # Crimson Red Tint
+            box_border = (255, 23, 68, 120)
+            lbl_color = (255, 23, 68, 220)
+            mt_color = (255, 145, 0, 180)     # Orange MT Line
 
         overlay_draw.rectangle([z_start_x, z_y1, zone_end_x, z_y2], fill=box_fill, outline=box_border, width=1)
-        # Clean muted label
-        ob_lbl = f"HERMES {timeframe.upper()} {z_side} OB [${format_px(z_l)} - ${format_px(z_h)}]"
+        
+        # 50% Mean Threshold (MT) Dashed Line inside OB
+        mt_x = z_start_x
+        while mt_x < zone_end_x:
+            overlay_draw.line([(mt_x, z_ymt), (min(mt_x + 6, zone_end_x), z_ymt)], fill=mt_color, width=1)
+            mt_x += 10
+
+        # Indicator Order Block Badge
+        ob_lbl = f"⚡ HERMES 3.5 {z_side} OB [MT 50%: ${format_px(z_mt)} | High: ${format_px(z_h)} | Low: ${format_px(z_l)}]"
         overlay_draw.text((z_start_x + 6, z_y1 + 3), ob_lbl, fill=lbl_color, font=font)
 
     # CRITICAL: Composite OB overlay BEFORE drawing candlesticks
@@ -197,6 +209,19 @@ def render_smc_chart_image(
         half_w = candle_w // 2
         draw.rectangle([cx - half_w, top_y, cx + half_w, bot_y], fill=color, outline=color)
 
+    # Draw Indicator Trigger Signal Tag on the Tap/Entry Candle
+    if candle_x_coords:
+        trigger_cx = candle_x_coords[-1]
+        action_str = "LONG" if side in ("BUY", "LONG") else "SHORT"
+        if action_str == "LONG":
+            tag_y = to_y(display_candles[-1]["low"]) + 18
+            draw.polygon([(trigger_cx, tag_y - 6), (trigger_cx - 5, tag_y), (trigger_cx + 5, tag_y)], fill=(0, 230, 118, 255))
+            draw.text((trigger_cx - 38, tag_y + 2), "⚡ H3.5 BUY", fill=(0, 230, 118, 255), font=font)
+        else:
+            tag_y = to_y(display_candles[-1]["high"]) - 22
+            draw.polygon([(trigger_cx, tag_y + 6), (trigger_cx - 5, tag_y), (trigger_cx + 5, tag_y)], fill=(255, 23, 68, 255))
+            draw.text((trigger_cx - 40, tag_y - 12), "⚡ H3.5 SELL", fill=(255, 23, 68, 255), font=font)
+
     # Draw Target Lines with Badges: Entry, TP, SL
     def draw_level_line(price: float, line_color: tuple, badge_color: tuple, label: str):
         ly = to_y(price)
@@ -219,8 +244,8 @@ def render_smc_chart_image(
         draw.text((pad_left + plot_w + 5, ly - 5), badge_text, fill=(255, 255, 255, 255), font=font)
 
     # Dynamic calculation of TP / SL move percentages
-    tp_move_pct = (abs(tp_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 2.8
-    sl_move_pct = (abs(sl_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 2.8
+    tp_move_pct = (abs(tp_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 2.44
+    sl_move_pct = (abs(sl_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 2.40
 
     # TP Line (+% move)
     draw_level_line(tp_p, (0, 230, 118, 220), (0, 180, 80, 255), f"TP (+{tp_move_pct:.1f}%):")
@@ -236,23 +261,31 @@ def render_smc_chart_image(
     # Symbol & Timeframe
     draw.text((24, 18), f"{symbol}  {timeframe.upper()}", fill=(255, 255, 255, 255), font=font)
 
-    # Signal Direction Badge: HERMES 2.0 APEX
+    # Signal Direction Badge: HERMES 3.5 SINGLE TIER
     action_str = "LONG" if side in ("BUY", "LONG") else "SHORT"
-    side_badge_text = f"HERMES 2.0 APEX {action_str}"
-    badge_x = 175
-    badge_w = 205
+    side_badge_text = f"HERMES 3.5 SINGLE TIER {action_str}"
+    badge_x = 160
+    badge_w = 230
     badge_bg = (8, 153, 129, 255) if action_str == "LONG" else (242, 54, 69, 255)
     draw.rectangle([badge_x, 14, badge_x + badge_w, 38], fill=badge_bg)
-    draw.text((badge_x + 10, 21), side_badge_text, fill=(255, 255, 255, 255), font=font)
+    draw.text((badge_x + 8, 21), side_badge_text, fill=(255, 255, 255, 255), font=font)
 
     # Current / Trigger Price
     cur_px_text = f"Trigger: ${format_px(entry_p)}  |  TP: ${format_px(tp_p)}  |  SL: ${format_px(sl_p)}"
     draw.text((badge_x + badge_w + 15, 21), cur_px_text, fill=(200, 210, 225, 255), font=font)
 
+    # Sentries HUD Overlay Box in upper right corner of plot
+    hud_x = pad_left + plot_w - 290
+    hud_y = pad_top + 10
+    draw.rectangle([hud_x, hud_y, hud_x + 280, hud_y + 36], fill=(15, 20, 30, 220), outline=(55, 65, 81, 255))
+    draw.text((hud_x + 8, hud_y + 4), "🛡️ HERMES 3.5 SENTRIES ACTIVE", fill=(56, 189, 248, 255), font=font)
+    draw.text((hud_x + 8, hud_y + 19), "S1: BTC OK | S2: Disp>=5% | S3: 50% MT | S4: Fresh", fill=(148, 163, 184, 255), font=font)
+
     # Watermark Footer
     now_str = get_ist_now().strftime("%d %b %Y %I:%M %p IST")
-    watermark = f"HERMES 2.0 APEX QUANT ENGINE | 4 SENTRIES ARMED | {timeframe.upper()} BINANCE FUTURES | {now_str}"
-    draw.text((pad_left, height - 25), watermark, fill=(80, 90, 105, 255), font=font)
+    watermark = f"HERMES 3.5 APEX QUANT ENGINE | SINGLE TIER INSTITUTIONAL | {timeframe.upper()} BINANCE FUTURES | {now_str}"
+    draw.text((pad_left, height - 25), watermark, fill=(100, 115, 135, 255), font=font)
+
 
     buf = io.BytesIO()
     img.convert("RGB").save(buf, format="PNG", quality=95)
