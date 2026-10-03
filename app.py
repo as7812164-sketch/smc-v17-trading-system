@@ -52,7 +52,9 @@ from database.db import (
     close_paper_trade_manually,
     update_paper_trade_mark_price,
     format_duration_str,
-    wipe_legacy_database_clean
+    wipe_legacy_database_clean,
+    get_compounding_sections,
+    reset_compounding_sections
 )
 from feed.binance_feed import binance_feed
 from engine.smc_v17 import analyze_candles_smc_v17, filter_active_zones
@@ -659,6 +661,8 @@ async def get_strategy_mode():
         "options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.5_SINGLE_TIER", "HERMES_2.5_APEX_HYBRID"],
         "features": {
             "mean_threshold_entry": active_version.startswith("HERMES_3"),
+            "idm_sweep_validation": active_version.startswith("HERMES_3.5"),
+            "rejection_wick_18pct": active_version.startswith("HERMES_3.5"),
             "multi_stage_profit_armor": True,
             "btc_emergency_shield": True,
             "dynamic_atr_buffer": active_version.startswith("HERMES_3"),
@@ -777,6 +781,16 @@ async def get_quad_paper_accounts_route():
     """Returns independent accounts for all 4 compounding tracks plus combined portfolio."""
     return get_quad_paper_accounts()
 
+@app.get("/api/paper/sections")
+async def get_paper_sections_route():
+    """Returns independent accounts and live metrics for all 10 Compounding Sections ($50 -> $2,000 each)."""
+    return get_compounding_sections()
+
+@app.post("/api/paper/sections/reset")
+async def reset_paper_sections_route():
+    """Resets all 10 Compounding Sections to starting balance ($50.00 each -> $500.00 portfolio total)."""
+    return reset_compounding_sections(50.0)
+
 @app.get("/api/paper/account")
 async def get_paper_account_route(timeframe: Optional[str] = None):
     acc = get_paper_account(timeframe=timeframe)
@@ -784,6 +798,7 @@ async def get_paper_account_route(timeframe: Optional[str] = None):
     perf = get_performance_stats()
     dual = get_dual_paper_accounts()
     quad = get_quad_paper_accounts()
+    comp_10 = get_compounding_sections()
 
     acc["open_trades"] = open_trades
     acc["open_count"] = len(open_trades)
@@ -804,7 +819,27 @@ async def get_paper_account_route(timeframe: Optional[str] = None):
     acc["binance_1h"] = quad.get("binance_1h", {})
     acc["bitget_4h"] = quad.get("bitget_4h", {})
     acc["bitget_1h"] = quad.get("bitget_1h", {})
-    acc.setdefault("balance", acc.get("current_balance", 50.0))
+
+    # 10-Section Compounding Portfolio Architecture
+    acc["sections"] = comp_10.get("sections", [])
+    acc["combined_10x"] = comp_10.get("combined_10x", {})
+    acc["portfolio_10x"] = comp_10.get("combined_10x", {})
+
+    if not timeframe:
+        comb = comp_10.get("combined_10x", {})
+        acc["initial_balance"] = comb.get("initial_capital", 500.0)
+        acc["current_balance"] = comb.get("total_capital", 500.0)
+        acc["balance"] = comb.get("total_capital", 500.0)
+        acc["equity"] = comb.get("equity", 500.0)
+        acc["total_pnl"] = comb.get("total_pnl", 0.0)
+        acc["return_pct"] = comb.get("total_pnl_pct", 0.0)
+        acc["win_count"] = comb.get("total_wins", 0)
+        acc["loss_count"] = comb.get("total_losses", 0)
+        acc["win_rate"] = comb.get("win_rate", 0.0)
+        acc["milestone_target"] = comb.get("ultimate_target", 20000.0)
+        acc["open_trades_count"] = comb.get("active_sections_count", 0)
+
+    acc.setdefault("balance", acc.get("current_balance", 500.0 if not timeframe else 50.0))
     acc.setdefault("daily_pnl", acc.get("total_pnl", 0.0))
     acc.setdefault("unrealized_pnl", 0.0)
     return acc

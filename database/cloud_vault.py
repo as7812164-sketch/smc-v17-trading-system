@@ -33,6 +33,19 @@ def get_vault_headers() -> Dict[str, str]:
         "Accept": "application/vnd.github.v3+json"
     }
 
+CHANNEL_MAP = {
+    1: ("BITGET", "sec_1", "Section 1 (4H Macro)", "4h"),
+    2: ("BITGET", "sec_2", "Section 2 (4H Macro)", "4h"),
+    3: ("BITGET", "sec_3", "Section 3 (4H Macro)", "4h"),
+    4: ("BITGET", "sec_4", "Section 4 (4H Macro)", "4h"),
+    5: ("BITGET", "sec_5", "Section 5 (4H Macro)", "4h"),
+    6: ("BITGET", "sec_6", "Section 6 (1H Intraday)", "1h"),
+    7: ("BITGET", "sec_7", "Section 7 (1H Intraday)", "1h"),
+    8: ("BITGET", "sec_8", "Section 8 (1H Intraday)", "1h"),
+    9: ("BITGET", "sec_9", "Section 9 (1H Intraday)", "1h"),
+    10: ("BITGET", "sec_10", "Section 10 (1H Intraday)", "1h"),
+}
+
 def push_vault_state() -> bool:
     """
     Dumps all accounts, open/closed paper trades, and trade journal
@@ -71,13 +84,8 @@ def push_vault_state() -> bool:
 
         conn.close()
 
-        channel_map = {
-            1: ("BITGET", "bitget_4h_1", "Bitget 4H Macro (Section A)", "4h"),
-            2: ("BITGET", "bitget_4h_2", "Bitget 4H Macro (Section B)", "4h"),
-            3: ("BITGET", "bitget_1h_1", "Bitget 1H Intraday (Section A)", "1h"),
-            4: ("BITGET", "bitget_1h_2", "Bitget 1H Intraday (Section B)", "1h"),
-        }
-        active_mode = settings.get("strategy_version") or STRATEGY_VERSION
+        channel_map = CHANNEL_MAP
+        active_mode = "HERMES_3.5_SINGLE_TIER"
         for acc in accounts:
             acc_id = acc.get("id")
             if acc_id in channel_map:
@@ -93,6 +101,7 @@ def push_vault_state() -> bool:
 
         metrics["hermes_mode"] = active_mode
         settings["strategy_version"] = active_mode
+        settings["hermes35_entry_mode"] = "50% Mean Threshold (MT)"
 
         payload_data = {
             "version": "1.0",
@@ -196,16 +205,15 @@ def pull_and_restore_vault_state() -> bool:
     try:
         conn = get_connection()
 
-        # Restore accounts
-        channel_map = {
-            1: ("BITGET", "bitget_4h_1", "Bitget 4H Macro (Section A)", "4h"),
-            2: ("BITGET", "bitget_4h_2", "Bitget 4H Macro (Section B)", "4h"),
-            3: ("BITGET", "bitget_1h_1", "Bitget 1H Intraday (Section A)", "1h"),
-            4: ("BITGET", "bitget_1h_2", "Bitget 1H Intraday (Section B)", "1h"),
-        }
+        # Restore accounts for all 10 compounding sections
+        channel_map = CHANNEL_MAP
+        conn.execute("DELETE FROM paper_account WHERE id > 10;")
+
         for acc in vault_data.get("accounts", []):
             acc_id = acc.get("id", 1)
-            exch, ch, acc_name, tf = channel_map.get(acc_id, ("BITGET", f"bitget_{acc_id}", f"Bitget Account #{acc_id}", "4h"))
+            if acc_id not in channel_map:
+                continue
+            exch, ch, acc_name, tf = channel_map[acc_id]
             conn.execute("""
             INSERT INTO paper_account (
                 id, initial_balance, current_balance, vault_balance, total_pnl, win_count,
@@ -227,10 +235,20 @@ def pull_and_restore_vault_state() -> bool:
             """, (
                 acc_id, acc.get("initial_balance", 50.0), acc.get("current_balance", 50.0),
                 acc.get("vault_balance", 0.0), acc.get("total_pnl", 0.0), acc.get("win_count", 0),
-                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), STRATEGY_VERSION,
+                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), "HERMES_3.5_SINGLE_TIER",
                 tf, acc_name, acc.get("win_streak", 0),
-                exch, ch, STRATEGY_VERSION
+                exch, ch, "HERMES_3.5_SINGLE_TIER"
             ))
+
+        # Ensure any missing sections from 1 to 10 are created
+        for sec_id, (s_exch, s_ch, s_name, s_tf) in channel_map.items():
+            sec_exists = conn.execute("SELECT id FROM paper_account WHERE id = ?", (sec_id,)).fetchone()
+            if not sec_exists:
+                conn.execute("""
+                INSERT INTO paper_account 
+                (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode)
+                VALUES (?, ?, ?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_SINGLE_TIER');
+                """, (sec_id, s_tf, s_name, s_exch, s_ch))
 
         # Restore paper_trades
         for pt in vault_data.get("paper_trades", []):
@@ -306,11 +324,12 @@ def pull_and_restore_vault_state() -> bool:
         except Exception as e:
             logger.warning(f"Error restoring trade_journal from vault: {e}")
 
-        # CRITICAL GUARANTEE: Enforce active STRATEGY_VERSION on container restart or vault re-pull
-        conn.execute("UPDATE paper_account SET mode = ?", (STRATEGY_VERSION,))
-        conn.execute("UPDATE paper_trades SET mode = ? WHERE mode IS NULL OR mode = '' OR mode LIKE '%2.5%'", (STRATEGY_VERSION,))
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', ?)", (STRATEGY_VERSION,))
-        conn.execute("INSERT OR REPLACE INTO system_metrics (key, value) VALUES ('hermes_mode', ?)", (STRATEGY_VERSION,))
+        # CRITICAL GUARANTEE: Enforce active HERMES_3.5_SINGLE_TIER on container restart or vault re-pull
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_SINGLE_TIER'")
+        conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.5_SINGLE_TIER' WHERE mode IS NULL OR mode = '' OR mode != 'HERMES_3.5_SINGLE_TIER'")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '50% Mean Threshold (MT)')")
+        conn.execute("INSERT OR REPLACE INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.5_SINGLE_TIER')")
 
         conn.commit()
         conn.close()

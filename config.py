@@ -16,7 +16,7 @@ load_dotenv(BASE_DIR / ".env")
 # --- HERMES STRATEGY OPTIONS (PRODUCTION & EXPERIMENTAL) ---
 STRATEGY_OPTIONS = ["HERMES_3.5_SINGLE_TIER", "HERMES_3.5_DUAL_TIER_SNIPER"]
 STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_3.5_SINGLE_TIER")  # Pure Hermes 3.5 Single Tier Institutional
-HERMES_3_MEAN_THRESHOLD_ENTRY = False # Default to True OB Boundary Entry per Master Backtest (+3,214% ROE)
+HERMES_3_MEAN_THRESHOLD_ENTRY = True # Default to 50% Mean Threshold (MT) Equilibrium Entry per 89.72% Win Rate Audit
 HERMES_3_MULTI_STAGE_ARMOR = True
 HERMES_3_BTC_EMERGENCY_SHIELD = True
 HERMES_3_DYNAMIC_ATR_BUFFER = True

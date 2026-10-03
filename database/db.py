@@ -175,59 +175,67 @@ def init_db():
             except Exception:
                 pass
 
-        # Ensure Account 1: Bitget 4H Macro (Section A) ($50 -> $2,000)
-        acc1_exists = conn.execute("SELECT id FROM paper_account WHERE id = 1").fetchone()
-        if not acc1_exists:
-            conn.execute("""
-            INSERT INTO paper_account 
-            (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (1, '4h', 'Bitget 4H Macro (Section A)', 'BITGET', 'bitget_4h_1', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER');
-            """)
-        else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro (Section A)', exchange = 'BITGET', channel = 'bitget_4h_1', mode = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE id = 1")
+        # 1. Clean wipe legacy paper trades and trade journal
+        conn.execute("DELETE FROM paper_trades;")
+        try:
+            conn.execute("DELETE FROM trade_journal;")
+        except Exception:
+            pass
 
-        # Ensure Account 2: Bitget 4H Macro (Section B) ($50 -> $2,000)
-        acc2_exists = conn.execute("SELECT id FROM paper_account WHERE id = 2").fetchone()
-        if not acc2_exists:
-            conn.execute("""
-            INSERT INTO paper_account 
-            (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (2, '4h', 'Bitget 4H Macro (Section B)', 'BITGET', 'bitget_4h_2', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER');
-            """)
-        else:
-            conn.execute("UPDATE paper_account SET timeframe = '4h', name = 'Bitget 4H Macro (Section B)', exchange = 'BITGET', channel = 'bitget_4h_2', mode = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE id = 2")
+        # 2. Delete any legacy accounts where id > 10
+        conn.execute("DELETE FROM paper_account WHERE id > 10;")
 
-        # Ensure Account 3: Bitget 1H Intraday (Section A) ($50 -> $2,000)
-        acc3_exists = conn.execute("SELECT id FROM paper_account WHERE id = 3").fetchone()
-        if not acc3_exists:
-            conn.execute("""
-            INSERT INTO paper_account 
-            (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (3, '1h', 'Bitget 1H Intraday (Section A)', 'BITGET', 'bitget_1h_1', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER');
-            """)
-        else:
-            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday (Section A)', exchange = 'BITGET', channel = 'bitget_1h_1', mode = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE id = 3")
+        # 3. Create / re-initialize 10 compounding sections in paper_account (IDs 1 through 10)
+        # ID 1 to 5: 4H Macro Swing Sections (Section 1 to 5) ($50 start, 5x Isolated, $2,000 target)
+        # ID 6 to 10: 1H Intraday Sections (Section 6 to 10) ($50 start, 5x Isolated, $2,000 target)
+        sections_config = [
+            (1, "4h", "Section 1 (4H Macro)", "BITGET", "sec_1"),
+            (2, "4h", "Section 2 (4H Macro)", "BITGET", "sec_2"),
+            (3, "4h", "Section 3 (4H Macro)", "BITGET", "sec_3"),
+            (4, "4h", "Section 4 (4H Macro)", "BITGET", "sec_4"),
+            (5, "4h", "Section 5 (4H Macro)", "BITGET", "sec_5"),
+            (6, "1h", "Section 6 (1H Intraday)", "BITGET", "sec_6"),
+            (7, "1h", "Section 7 (1H Intraday)", "BITGET", "sec_7"),
+            (8, "1h", "Section 8 (1H Intraday)", "BITGET", "sec_8"),
+            (9, "1h", "Section 9 (1H Intraday)", "BITGET", "sec_9"),
+            (10, "1h", "Section 10 (1H Intraday)", "BITGET", "sec_10"),
+        ]
 
-        # Ensure Account 4: Bitget 1H Intraday (Section B) ($50 -> $2,000)
-        acc4_exists = conn.execute("SELECT id FROM paper_account WHERE id = 4").fetchone()
-        if not acc4_exists:
-            conn.execute("""
-            INSERT INTO paper_account 
-            (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (4, '1h', 'Bitget 1H Intraday (Section B)', 'BITGET', 'bitget_1h_2', 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER');
-            """)
-        else:
-            conn.execute("UPDATE paper_account SET timeframe = '1h', name = 'Bitget 1H Intraday (Section B)', exchange = 'BITGET', channel = 'bitget_1h_2', mode = 'HERMES_3.5_DUAL_TIER_SNIPER' WHERE id = 4")
+        for s_id, s_tf, s_name, s_exch, s_ch in sections_config:
+            s_exists = conn.execute("SELECT id FROM paper_account WHERE id = ?", (s_id,)).fetchone()
+            if not s_exists:
+                conn.execute("""
+                INSERT INTO paper_account 
+                (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode)
+                VALUES (?, ?, ?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_SINGLE_TIER');
+                """, (s_id, s_tf, s_name, s_exch, s_ch))
+            else:
+                conn.execute("""
+                UPDATE paper_account SET
+                    timeframe = ?,
+                    name = ?,
+                    exchange = ?,
+                    channel = ?,
+                    initial_balance = 50.0,
+                    current_balance = 50.0,
+                    vault_balance = 0.0,
+                    total_pnl = 0.0,
+                    win_count = 0,
+                    loss_count = 0,
+                    win_streak = 0,
+                    milestone_target = 2000.0,
+                    mode = 'HERMES_3.5_SINGLE_TIER'
+                WHERE id = ?
+                """, (s_tf, s_name, s_exch, s_ch, s_id))
 
-        # Reassign open Binance legacy positions to account 99 so they exit cleanly without polluting Bitget accounts
-        conn.execute("UPDATE paper_trades SET account_id = 99, channel = 'binance_legacy' WHERE exchange = 'BINANCE' AND status = 'OPEN'")
-
-        # Universal upgrade: Ensure all 4 accounts run HERMES_3.5_SINGLE_TIER
+        # Enforce universal HERMES_3.5_SINGLE_TIER settings across all 10 sections
         conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_SINGLE_TIER'")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', 'OB Boundary (Edge Touch)')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '50% Mean Threshold (MT)')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes_margin_allocation_pct', '0.15')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('binance_auto_trade', 'false')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_sections', '10')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_capital', '500.0')")
 
         # Initialize default metrics if not present
         default_metrics = {
@@ -503,34 +511,41 @@ def get_performance_stats() -> Dict[str, Any]:
         }
 
 def wipe_legacy_database_clean() -> Dict[str, Any]:
-    """Wipes all legacy Hermes 3.5 zones, signals, and alerts for a 100% clean Hermes 2.0 Apex forward-test."""
+    """Wipes all legacy zones, signals, alerts, trades, and resets all 10 Hermes 3.5 compounding sections ($50 x 10 = $500)."""
     with get_connection() as conn:
         conn.execute("DELETE FROM zones;")
         conn.execute("DELETE FROM signals;")
         conn.execute("DELETE FROM sent_alerts;")
         conn.execute("DELETE FROM paper_trades;")
-        conn.execute("DELETE FROM trade_journal WHERE timestamp_ist LIKE '%2025%' OR notes LIKE '%Super Sniper%' OR notes LIKE '%Decisional%';")
+        try:
+            conn.execute("DELETE FROM trade_journal;")
+        except Exception:
+            pass
+        conn.execute("DELETE FROM paper_account WHERE id > 10;")
         conn.execute("""
         UPDATE paper_account SET
             initial_balance = 50.0,
-            current_balance = 73.45,
-            vault_balance = 4.14,
-            total_pnl = 27.59,
-            win_count = 2,
+            current_balance = 50.0,
+            vault_balance = 0.0,
+            total_pnl = 0.0,
+            win_count = 0,
             loss_count = 0,
+            win_streak = 0,
             milestone_target = 2000.0,
             mode = 'HERMES_3.5_SINGLE_TIER'
-        WHERE id = 1;
+        WHERE id BETWEEN 1 AND 10;
         """)
-        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_SINGLE_TIER';")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER');")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '50% Mean Threshold (MT)');")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_sections', '10');")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_capital', '500.0');")
         conn.execute("""
         INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.5_SINGLE_TIER')
         ON CONFLICT(key) DO UPDATE SET value = 'HERMES_3.5_SINGLE_TIER';
         """)
         conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 3.5 Single Tier Live Engine Armed')
-        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 3.5 Single Tier Live Engine Armed';
+        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 3.5 10-Section Compounding Engine Armed ($500 USDT)')
+        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 3.5 10-Section Compounding Engine Armed ($500 USDT)';
         """)
         conn.commit()
 
@@ -540,9 +555,15 @@ def wipe_legacy_database_clean() -> Dict[str, Any]:
     except Exception:
         pass
 
+    try:
+        from database.cloud_vault import push_vault_state
+        push_vault_state()
+    except Exception:
+        pass
+
     return {
         "status": "success",
-        "message": "All legacy Hermes 3.5 zones and historical test records purged. Hermes 2.0 Apex forward-test synchronized to verified real trades."
+        "message": "All legacy records purged. Hermes 3.5 10-Section Compounding Engine ($500 total) initialized cleanly."
     }
 
 
@@ -583,35 +604,35 @@ def get_setting(key: str, default: str = "") -> str:
         row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
         return row[0] if row else default
 
-# --- Paper Trading & Hermes 2.0 Apex Compounding Simulator ($50 -> $2,000 / $40,000) ---
+# --- Paper Trading & Hermes 3.5 10-Section Compounding Engine ($50 x 10 = $500 -> $20,000) ---
 def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int] = None) -> Dict[str, Any]:
-    """Retrieves paper account for either 4H (Account 1) or 1H (Account 2), or default."""
+    """Retrieves paper account for either 4H (IDs 1-5) or 1H (IDs 6-10), or specific section ID."""
     acc_id = 1
     if account_id:
         acc_id = account_id
     elif timeframe:
-        acc_id = 2 if "1h" in timeframe.lower() else 1
+        acc_id = 6 if "1h" in timeframe.lower() else 1
 
     with get_connection() as conn:
         row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
         if not row:
-            tf_name = '1H Fast Scalp' if acc_id == 2 else '4H Macro Swing'
-            tf_str = '1h' if acc_id == 2 else '4h'
+            tf_name = f'Section {acc_id} (1H Intraday)' if acc_id >= 6 else f'Section {acc_id} (4H Macro)'
+            tf_str = '1h' if acc_id >= 6 else '4h'
+            ch_str = f'sec_{acc_id}'
             conn.execute("""
             INSERT OR IGNORE INTO paper_account 
-            (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, milestone_target, mode)
-            VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 2000.0, 'HERMES_3.5_DUAL_TIER_SNIPER')
-            """, (acc_id, tf_str, tf_name))
+            (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode)
+            VALUES (?, ?, ?, 'BITGET', ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_SINGLE_TIER')
+            """, (acc_id, tf_str, tf_name, ch_str))
             conn.commit()
             row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
 
         acc = dict(row)
-        tf_filter = acc.get("timeframe", "4h" if acc_id == 1 else "1h")
-        ch_filter = acc.get("channel")
-        if ch_filter:
-            open_trades = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND (account_id = ? OR channel = ?)", (acc_id, ch_filter)).fetchone()[0]
-        else:
-            open_trades = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND (account_id = ? OR timeframe = ?)", (acc_id, tf_filter)).fetchone()[0]
+        ch_filter = acc.get("channel") or f"sec_{acc_id}"
+        open_trades = conn.execute(
+            "SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND (account_id = ? OR channel = ?)",
+            (acc_id, ch_filter)
+        ).fetchone()[0]
         acc["open_trades_count"] = open_trades
         completed = (acc.get("win_count", 0) or 0) + (acc.get("loss_count", 0) or 0)
         acc["win_rate"] = round((acc.get("win_count", 0) / completed * 100), 1) if completed > 0 else 0.0
@@ -629,50 +650,228 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
         acc["win_streak"] = int(row["win_streak"] if "win_streak" in row.keys() and row["win_streak"] is not None else (acc.get("win_count", 0) if acc.get("loss_count", 0) == 0 else 0))
         return acc
 
-def get_quad_paper_accounts() -> Dict[str, Any]:
-    """Returns separate states for all 4 Bitget compounding tracks plus combined portfolio metrics."""
-    acc_bg_4h_1 = get_paper_account(account_id=1)
-    acc_bg_4h_2 = get_paper_account(account_id=2)
-    acc_bg_1h_1 = get_paper_account(account_id=3)
-    acc_bg_1h_2 = get_paper_account(account_id=4)
+def ensure_10_sections(reset_balances: bool = False) -> None:
+    """Ensures all 10 independent compounding sections exist in paper_account ($50 -> $2,000 each)."""
+    with get_connection() as conn:
+        for i in range(1, 11):
+            tf = "4h" if i <= 5 else "1h"
+            name = f"Section {i} (4H Macro)" if i <= 5 else f"Section {i} (1H Intraday)"
+            ch = f"sec_{i}"
+            row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (i,)).fetchone()
+            if not row:
+                conn.execute("""
+                INSERT INTO paper_account 
+                (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode, channel, exchange)
+                VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_SINGLE_TIER', ?, 'BITGET')
+                """, (i, tf, name, ch))
+            elif reset_balances:
+                conn.execute("""
+                UPDATE paper_account SET
+                    timeframe = ?,
+                    name = ?,
+                    channel = ?,
+                    exchange = 'BITGET',
+                    initial_balance = 50.0,
+                    current_balance = 50.0,
+                    vault_balance = 0.0,
+                    total_pnl = 0.0,
+                    win_count = 0,
+                    loss_count = 0,
+                    win_streak = 0,
+                    milestone_target = 2000.0,
+                    mode = 'HERMES_3.5_SINGLE_TIER'
+                WHERE id = ?
+                """, (tf, name, ch, i))
+        conn.commit()
+
+def get_compounding_sections() -> Dict[str, Any]:
+    """
+    Fetches all 10 accounts from paper_account.
+    Calculates combined stats: total_starting_balance ($500.0), total_current_balance, total_pnl, overall win rate, total open trades.
+    Returns {"sections": [...], "combined": {...}}.
+    """
+    ensure_10_sections()
+    sections = []
+    total_curr = 0.0
+    total_init = 0.0
+    total_vault = 0.0
+    total_pnl = 0.0
+    total_wins = 0
+    total_losses = 0
+    active_sections_count = 0
 
     with get_connection() as conn:
-        total_open = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND account_id IN (1, 2, 3, 4)").fetchone()[0]
+        open_trades_rows = conn.execute("SELECT * FROM paper_trades WHERE status = 'OPEN'").fetchall()
+        open_trades_by_acc = {}
+        for otr in open_trades_rows:
+            ot = dict(otr)
+            acc_id = ot.get("account_id")
+            if acc_id and 1 <= int(acc_id) <= 10:
+                open_trades_by_acc[int(acc_id)] = ot
+            elif ot.get("channel"):
+                ch = str(ot.get("channel", "")).lower()
+                for i in range(1, 11):
+                    if ch in (f"sec_{i}", f"section_{i}", f"bitget_4h_{i}", f"bitget_1h_{i}"):
+                        open_trades_by_acc[i] = ot
+                        break
 
-    comb_init = acc_bg_4h_1["initial_balance"] + acc_bg_4h_2["initial_balance"] + acc_bg_1h_1["initial_balance"] + acc_bg_1h_2["initial_balance"]
-    comb_curr = acc_bg_4h_1["current_balance"] + acc_bg_4h_2["current_balance"] + acc_bg_1h_1["current_balance"] + acc_bg_1h_2["current_balance"]
-    comb_vault = acc_bg_4h_1["vault_balance"] + acc_bg_4h_2["vault_balance"] + acc_bg_1h_1["vault_balance"] + acc_bg_1h_2["vault_balance"]
-    comb_equity = comb_curr + comb_vault
-    comb_pnl = round(acc_bg_4h_1["total_pnl"] + acc_bg_4h_2["total_pnl"] + acc_bg_1h_1["total_pnl"] + acc_bg_1h_2["total_pnl"], 2)
-    comb_wins = acc_bg_4h_1["win_count"] + acc_bg_4h_2["win_count"] + acc_bg_1h_1["win_count"] + acc_bg_1h_2["win_count"]
-    comb_losses = acc_bg_4h_1["loss_count"] + acc_bg_4h_2["loss_count"] + acc_bg_1h_1["loss_count"] + acc_bg_1h_2["loss_count"]
-    comb_completed = comb_wins + comb_losses
-    comb_win_rate = round((comb_wins / comb_completed * 100), 1) if comb_completed > 0 else 0.0
+        for i in range(1, 11):
+            row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (i,)).fetchone()
+            if not row:
+                continue
+            acc = dict(row)
+            acc_id = acc["id"]
+            tf = (acc.get("timeframe") or ("4h" if acc_id <= 5 else "1h")).lower()
+            init_b = float(acc.get("initial_balance", 50.0) or 50.0)
+            curr_b = float(acc.get("current_balance", 50.0) or 50.0)
+            vault_b = float(acc.get("vault_balance", 0.0) or 0.0)
+            target = float(acc.get("milestone_target", 2000.0) or 2000.0)
+            equity = round(curr_b + vault_b, 2)
+            wins = int(acc.get("win_count", 0) or 0)
+            losses = int(acc.get("loss_count", 0) or 0)
+            completed = wins + losses
+            win_rate = round((wins / completed * 100), 1) if completed > 0 else 0.0
+            pnl = round(equity - init_b, 2)
+            pnl_pct = round(((equity - init_b) / init_b * 100.0), 2) if init_b > 0 else 0.0
+            progress_pct = round(min(100.0, (equity / target) * 100.0), 2)
+            streak = int(acc.get("win_streak", 0) or 0)
+
+            open_trade = open_trades_by_acc.get(acc_id)
+            status = "IN POSITION" if open_trade else "IDLE"
+            if open_trade:
+                active_sections_count += 1
+
+            sec_data = {
+                "id": acc_id,
+                "section_num": acc_id,
+                "name": acc.get("name") or (f"Section {acc_id} (4H Macro)" if acc_id <= 5 else f"Section {acc_id} (1H Intraday)"),
+                "short_name": f"Section {acc_id}",
+                "group": "4H Macro Swing" if acc_id <= 5 else "1H Intraday",
+                "timeframe": tf,
+                "exchange": acc.get("exchange") or "BITGET",
+                "channel": acc.get("channel") or f"sec_{acc_id}",
+                "initial_balance": init_b,
+                "balance": curr_b,
+                "current_balance": curr_b,
+                "vault_balance": vault_b,
+                "equity": equity,
+                "pnl": pnl,
+                "total_pnl": pnl,
+                "pnl_pct": pnl_pct,
+                "target": target,
+                "milestone_target": target,
+                "target_balance": target,
+                "progress_pct": progress_pct,
+                "milestone_progress_pct": progress_pct,
+                "win_count": wins,
+                "loss_count": losses,
+                "win_rate": win_rate,
+                "win_streak": streak,
+                "status": status,
+                "open_trades_count": 1 if open_trade else 0,
+                "open_trade": open_trade,
+                "active_trade": open_trade,
+                "mode": acc.get("mode") or "HERMES_3.5_SINGLE_TIER"
+            }
+            sections.append(sec_data)
+
+            total_curr += curr_b
+            total_init += init_b
+            total_vault += vault_b
+            total_pnl += pnl
+            total_wins += wins
+            total_losses += losses
+
+    total_equity = round(total_curr + total_vault, 2)
+    overall_pnl = round(total_equity - total_init, 2)
+    overall_pnl_pct = round(((total_equity - total_init) / total_init * 100.0), 2) if total_init > 0 else 0.0
+    total_completed = total_wins + total_losses
+    overall_win_rate = round((total_wins / total_completed * 100.0), 1) if total_completed > 0 else 0.0
+    ultimate_target = 20000.0
+
+    combined = {
+        "total_starting_balance": round(total_init, 2),
+        "initial_balance": round(total_init, 2),
+        "initial_capital": round(total_init, 2),
+        "total_current_balance": round(total_curr, 2),
+        "current_balance": round(total_curr, 2),
+        "total_capital": round(total_curr, 2),
+        "vault_balance": round(total_vault, 2),
+        "equity": total_equity,
+        "total_pnl": overall_pnl,
+        "total_pnl_pct": overall_pnl_pct,
+        "pnl_pct": overall_pnl_pct,
+        "overall_win_rate": overall_win_rate,
+        "win_rate": overall_win_rate,
+        "total_wins": total_wins,
+        "total_losses": total_losses,
+        "win_count": total_wins,
+        "loss_count": total_losses,
+        "total_open_trades": active_sections_count,
+        "open_trades_count": active_sections_count,
+        "active_sections": active_sections_count,
+        "active_sections_count": active_sections_count,
+        "active_trades_count": active_sections_count,
+        "total_sections": 10,
+        "macro_sections_count": 5,
+        "intraday_sections_count": 5,
+        "ultimate_target": ultimate_target,
+        "milestone_target": ultimate_target,
+        "target_capital": ultimate_target,
+        "progress_pct": round(min(100.0, (total_equity / ultimate_target) * 100.0), 2),
+        "milestone_progress_pct": round(min(100.0, (total_equity / ultimate_target) * 100.0), 2),
+        "mode": "HERMES_3.5_SINGLE_TIER"
+    }
 
     return {
-        "bitget_4h_1": acc_bg_4h_1,
-        "bitget_4h_2": acc_bg_4h_2,
-        "bitget_1h_1": acc_bg_1h_1,
-        "bitget_1h_2": acc_bg_1h_2,
-        # Backward compatibility aliases:
-        "binance_4h": acc_bg_4h_1,
-        "binance_1h": acc_bg_4h_2,
-        "bitget_4h": acc_bg_1h_1,
-        "bitget_1h": acc_bg_1h_2,
-        "account_4h": acc_bg_4h_1,
-        "account_1h": acc_bg_1h_1,
-        "combined": {
-            "initial_balance": round(comb_init, 2),
-            "current_balance": round(comb_curr, 2),
-            "vault_balance": round(comb_vault, 2),
-            "equity": round(comb_equity, 2),
-            "total_pnl": comb_pnl,
-            "win_count": comb_wins,
-            "loss_count": comb_losses,
-            "win_rate": comb_win_rate,
-            "open_trades_count": total_open
-        }
+        "status": "success",
+        "sections": sections,
+        "combined": combined,
+        "combined_10x": combined
     }
+
+def get_quad_paper_accounts() -> Dict[str, Any]:
+    """
+    Returns compounding sections with backward-compatibility for quad-account endpoints,
+    plus full 10-section deca portfolio breakdown.
+    """
+    deca = get_compounding_sections()
+    sections = deca["sections"]
+    sec_map = {s["id"]: s for s in sections}
+
+    res = {
+        # 10 Individual Section Keys
+        "sec_1": sec_map.get(1, {}),
+        "sec_2": sec_map.get(2, {}),
+        "sec_3": sec_map.get(3, {}),
+        "sec_4": sec_map.get(4, {}),
+        "sec_5": sec_map.get(5, {}),
+        "sec_6": sec_map.get(6, {}),
+        "sec_7": sec_map.get(7, {}),
+        "sec_8": sec_map.get(8, {}),
+        "sec_9": sec_map.get(9, {}),
+        "sec_10": sec_map.get(10, {}),
+        # Backward compatibility aliases for legacy callers:
+        "bitget_4h_1": sec_map.get(1, {}),
+        "bitget_4h_2": sec_map.get(2, {}),
+        "bitget_1h_1": sec_map.get(6, {}),
+        "bitget_1h_2": sec_map.get(7, {}),
+        "binance_4h": sec_map.get(1, {}),
+        "binance_1h": sec_map.get(6, {}),
+        "bitget_4h": sec_map.get(1, {}),
+        "bitget_1h": sec_map.get(6, {}),
+        "account_4h": sec_map.get(1, {}),
+        "account_1h": sec_map.get(6, {}),
+        # Deca & Section lists
+        "sections": sections,
+        "deca": deca,
+        "combined": deca["combined"]
+    }
+    return res
+
+def get_deca_paper_accounts() -> Dict[str, Any]:
+    """Alias for get_compounding_sections()."""
+    return get_compounding_sections()
 
 def get_dual_paper_accounts() -> Dict[str, Any]:
     """Returns Quad-Compounding portfolio accounts state."""
@@ -680,6 +879,35 @@ def get_dual_paper_accounts() -> Dict[str, Any]:
 
 def get_hermes_account() -> Dict[str, Any]:
     return get_paper_account()
+
+def reset_compounding_sections(starting_balance: float = 50.0) -> Dict[str, Any]:
+    """Resets all 10 Compounding Sections to starting balance ($50.00 each -> $500.00 total) and purges open paper trades."""
+    with get_connection() as conn:
+        conn.execute("DELETE FROM paper_trades WHERE status = 'OPEN'")
+        for i in range(1, 11):
+            tf = "4h" if i <= 5 else "1h"
+            name = f"Section {i} (4H Macro)" if i <= 5 else f"Section {i} (1H Intraday)"
+            ch = f"sec_{i}"
+            conn.execute("""
+            INSERT INTO paper_account (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode, channel, exchange)
+            VALUES (?, ?, ?, ?, ?, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_SINGLE_TIER', ?, 'BITGET')
+            ON CONFLICT(id) DO UPDATE SET
+                timeframe = excluded.timeframe,
+                name = excluded.name,
+                initial_balance = excluded.initial_balance,
+                current_balance = excluded.current_balance,
+                vault_balance = 0.0,
+                total_pnl = 0.0,
+                win_count = 0,
+                loss_count = 0,
+                win_streak = 0,
+                milestone_target = 2000.0,
+                mode = 'HERMES_3.5_SINGLE_TIER',
+                channel = excluded.channel,
+                exchange = excluded.exchange
+            """, (i, tf, name, starting_balance, starting_balance, ch))
+        conn.commit()
+    return get_compounding_sections()
 
 def format_duration_str(ms: int) -> str:
     """Formats millisecond duration to clean human-readable string without glitches."""
@@ -700,47 +928,80 @@ def format_duration_str(ms: int) -> str:
 def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
     """
     Deploys compounding margin at 5x Isolated Perpetual leverage under HERMES 3.5 SINGLE TIER rules.
-    Independent sequential queues across Bitget 4-Track Compounding accounts ($50 x 4: 4Hx2, 1Hx2).
+    Intelligent section allocation across 10 compounding sections ($50 x 10 = $500 total):
+      - 4H Macro Swing: Sections 1 to 5 (accounts 1..5)
+      - 1H Intraday: Sections 6 to 10 (accounts 6..10)
     """
     tf = str(zone.get("timeframe", "4h")).lower()
     ch = str(zone.get("channel", "")).lower()
     exch = str(zone.get("exchange", "BITGET")).upper()
 
-    if ch:
-        if ch in ("bitget_4h_1", "binance_4h"): acc_id = 1
-        elif ch in ("bitget_4h_2", "binance_1h"): acc_id = 2
-        elif ch in ("bitget_1h_1", "bitget_4h"): acc_id = 3
-        elif ch in ("bitget_1h_2", "bitget_1h"): acc_id = 4
-        elif "4h" in tf: acc_id = 1
-        else: acc_id = 3
-    elif "4h" in tf:
-        acc_id = 1
-    else:
-        acc_id = 3
-
-    channel_name = ch or ("bitget_4h_1" if acc_id == 1 else "bitget_4h_2" if acc_id == 2 else "bitget_1h_1" if acc_id == 3 else "bitget_1h_2")
-    exchange_name = "BITGET"
-
     with get_connection() as conn:
-        row = conn.execute("SELECT current_balance FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
+        # Check if already open for this zone
+        if zone.get("id"):
+            existing = conn.execute("SELECT * FROM paper_trades WHERE zone_id = ? AND status = 'OPEN'", (zone.get("id"),)).fetchone()
+            if existing:
+                tr = dict(existing)
+                row = conn.execute("SELECT current_balance FROM paper_account WHERE id = ?", (tr.get("account_id", 1),)).fetchone()
+                tr["balance_at_entry"] = float(row[0]) if row else 50.0
+                return tr
+
+        # Check if already open for this symbol and side (prevent duplicate simultaneous trades on same coin & side)
+        sym = zone.get("symbol")
+        side = zone.get("side", "BUY").upper()
+        if sym:
+            existing_sym = conn.execute("SELECT * FROM paper_trades WHERE symbol = ? AND side = ? AND status = 'OPEN'", (sym, side)).fetchone()
+            if existing_sym:
+                return dict(existing_sym)
+
+        # Intelligent section allocation
+        allocated_acc_id = None
+        if ch.startswith("sec_"):
+            try:
+                candidate = int(ch.replace("sec_", ""))
+                if 1 <= candidate <= 10:
+                    cnt = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND account_id = ?", (candidate,)).fetchone()[0]
+                    if cnt == 0:
+                        allocated_acc_id = candidate
+            except Exception:
+                pass
+        elif ch.startswith("section_"):
+            try:
+                candidate = int(ch.replace("section_", ""))
+                if 1 <= candidate <= 10:
+                    cnt = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND account_id = ?", (candidate,)).fetchone()[0]
+                    if cnt == 0:
+                        allocated_acc_id = candidate
+            except Exception:
+                pass
+
+        if not allocated_acc_id:
+            if "4h" in tf:
+                candidates = list(range(1, 6))
+            elif "1h" in tf:
+                candidates = list(range(6, 11))
+            else:
+                candidates = list(range(1, 11))
+
+            for cand_id in candidates:
+                cnt = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND account_id = ?", (cand_id,)).fetchone()[0]
+                if cnt == 0:
+                    allocated_acc_id = cand_id
+                    break
+
+        if not allocated_acc_id:
+            tf_label = "4H Macro Swing (Sections 1-5)" if "4h" in tf else "1H Intraday (Sections 6-10)" if "1h" in tf else "Compounding (Sections 1-10)"
+            return {"error": f"All sections in {tf_label} are currently busy (Sequential Queue Full)"}
+
+        channel_name = f"sec_{allocated_acc_id}"
+        exchange_name = "BITGET"
+
+        row = conn.execute("SELECT current_balance FROM paper_account WHERE id = ?", (allocated_acc_id,)).fetchone()
         balance = float(row[0]) if row and float(row[0]) > 0 else 50.0
 
-        # Check if already open for this zone
-        existing = conn.execute("SELECT * FROM paper_trades WHERE zone_id = ? AND status = 'OPEN'", (zone.get("id"),)).fetchone()
-        if existing:
-            tr = dict(existing)
-            tr["balance_at_entry"] = balance
-            return tr
-
-        # Strict 1-Trade Sequential Queue PER TIMEFRAME & ACCOUNT
-        open_count = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN' AND (account_id = ? OR (timeframe = ? AND exchange = ?))", (acc_id, tf, exchange_name)).fetchone()[0]
-        if open_count > 0:
-            return {"error": f"Trade already open in {channel_name.upper()} sequential queue"}
-
-        # 100% of compounding margin @ 5x Isolated
+        # Position size = current_balance * 5.0 (5x leverage isolated)
         margin = balance
         position_size = round(margin * 5.0, 2)
-        side = zone["side"].upper()
         entry_price = float(zone["entry_price"])
 
         # HERMES 3.5 SINGLE TIER Targets:
@@ -770,7 +1031,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
         """, (
             zone.get("id"), zone["symbol"], side, entry_price,
             position_size, tp_price, sl_price, hard_sl_price, tf,
-            channel_name, exchange_name, acc_id,
+            channel_name, exchange_name, allocated_acc_id,
             now,
             entry_price, entry_price
         ))
@@ -784,7 +1045,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             "timeframe": tf,
             "channel": channel_name,
             "exchange": exchange_name,
-            "account_id": acc_id,
+            "account_id": allocated_acc_id,
             "mode": "HERMES_3.5_SINGLE_TIER",
             "entry_price": entry_price,
             "position_size_usdt": position_size,
@@ -883,7 +1144,7 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[f
         side = trade["side"].upper()
         entry_price = float(trade["entry_price"])
         tf = (trade["timeframe"] or "4h").lower()
-        acc_id = trade.get("account_id") or (2 if "1h" in tf else 1)
+        acc_id = int(trade.get("account_id") or (6 if "1h" in tf else 1))
 
         if exit_price is None:
             if outcome == "TP_HIT":
@@ -1016,7 +1277,7 @@ def close_paper_trade_manually(trade_id: int, exit_price: float) -> Dict[str, An
         entry_price = float(trade["entry_price"])
         side = trade["side"].upper()
         tf = (trade["timeframe"] or "4h").lower()
-        acc_id = trade.get("account_id") or (2 if "1h" in tf else 1)
+        acc_id = int(trade.get("account_id") or (6 if "1h" in tf else 1))
         now = int(time.time() * 1000)
 
         if side in ("BUY", "LONG"):
@@ -1205,24 +1466,31 @@ def get_open_paper_trades(timeframe: Optional[str] = None) -> List[Dict[str, Any
         return [dict(r) for r in rows]
 
 def reset_paper_account(starting_balance: float = 50.0, timeframe: Optional[str] = None) -> Dict[str, Any]:
-    """Resets paper account(s) to starting balance ($50.00)."""
+    """Resets paper account(s) to starting balance ($50.00 each -> $500 total across 10 sections)."""
     with get_connection() as conn:
         if timeframe:
             tf = timeframe.lower()
-            acc_id = 2 if "1h" in tf else 1
-            conn.execute("DELETE FROM paper_trades WHERE timeframe = ?", (tf,))
-            conn.execute("""
-            UPDATE paper_account SET
-                initial_balance = ?,
-                current_balance = ?,
-                vault_balance = 0.0,
-                total_pnl = 0.0,
-                win_count = 0,
-                loss_count = 0
-            WHERE id = ?
-            """, (starting_balance, starting_balance, acc_id))
+            acc_ids = tuple(range(1, 6)) if "4h" in tf else tuple(range(6, 11))
+            conn.execute("DELETE FROM paper_trades WHERE LOWER(timeframe) = ?", (tf,))
+            for aid in acc_ids:
+                conn.execute("""
+                UPDATE paper_account SET
+                    initial_balance = ?,
+                    current_balance = ?,
+                    vault_balance = 0.0,
+                    total_pnl = 0.0,
+                    win_count = 0,
+                    loss_count = 0,
+                    win_streak = 0,
+                    mode = 'HERMES_3.5_SINGLE_TIER'
+                WHERE id = ?
+                """, (starting_balance, starting_balance, aid))
         else:
             conn.execute("DELETE FROM paper_trades")
+            try:
+                conn.execute("DELETE FROM trade_journal")
+            except Exception:
+                pass
             conn.execute("""
             UPDATE paper_account SET
                 initial_balance = ?,
@@ -1231,12 +1499,13 @@ def reset_paper_account(starting_balance: float = 50.0, timeframe: Optional[str]
                 total_pnl = 0.0,
                 win_count = 0,
                 loss_count = 0,
+                win_streak = 0,
                 mode = 'HERMES_3.5_SINGLE_TIER'
-            WHERE id IN (1, 2, 3, 4)
+            WHERE id BETWEEN 1 AND 10
             """, (starting_balance, starting_balance))
         conn.commit()
 
-    return get_quad_paper_accounts()
+    return get_compounding_sections()
 
 def get_paper_trade_sequence_num(timeframe: str, trade_id: Optional[int] = None) -> int:
     """Returns sequential trade number for this timeframe (e.g. 1, 2, 3) to render #001, #002."""

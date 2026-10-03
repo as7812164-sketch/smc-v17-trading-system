@@ -232,8 +232,16 @@ class Hermes35LiveEngine:
         min_displacement = 0.050
         max_tap_window = 28
 
-        entry_mode = get_setting("hermes35_entry_mode", "OB Boundary (Edge Touch)")
+        entry_mode = get_setting("hermes35_entry_mode", "50% Mean Threshold (MT)")
         use_boundary = entry_mode.startswith("OB Boundary")
+
+        # Precompute ATR(14) for dynamic institutional buffer
+        atr_series = [0.0] * n
+        for k in range(1, n):
+            tr = max(candles[k]["high"] - candles[k]["low"],
+                     abs(candles[k]["high"] - candles[k-1]["close"]),
+                     abs(candles[k]["low"] - candles[k-1]["close"]))
+            atr_series[k] = tr if k < 14 else (atr_series[k-1] * 13 + tr) / 14
 
         setups = []
 
@@ -303,6 +311,10 @@ class Hermes35LiveEngine:
                                 age = (n - 1) - tap_bar_idx
                                 is_fresh = (age <= 1)
                                 tap_time = candles[tap_bar_idx]["time"]
+                                cur_atr = atr_series[tap_bar_idx] if tap_bar_idx >= 0 else atr_series[-1]
+                                struct_sl = min(ob_low, candles[tap_bar_idx]["low"]) - 0.20 * cur_atr
+                                hard_sl = max(min(struct_sl, eff_entry * (1.0 - hard_sl_pct)), eff_entry * 0.962)
+                                soft_sl = (eff_entry + hard_sl) / 2.0
                                 setups.append({
                                     "symbol": symbol,
                                     "side": "LONG",
@@ -312,8 +324,8 @@ class Hermes35LiveEngine:
                                     "ob_low": ob_low,
                                     "mean_threshold": mt,
                                     "tp_price": eff_entry * (1.0 + tp_pct),
-                                    "soft_sl_price": eff_entry * (1.0 - soft_sl_pct),
-                                    "hard_sl_price": eff_entry * (1.0 - hard_sl_pct),
+                                    "soft_sl_price": round(soft_sl, 6),
+                                    "hard_sl_price": round(hard_sl, 6),
                                     "tp_pct": tp_pct,
                                     "soft_sl_pct": soft_sl_pct,
                                     "hard_sl_pct": hard_sl_pct,
@@ -412,6 +424,10 @@ class Hermes35LiveEngine:
                                 age = (n - 1) - tap_bar_idx
                                 is_fresh = (age <= 1)
                                 tap_time = candles[tap_bar_idx]["time"]
+                                cur_atr = atr_series[tap_bar_idx] if tap_bar_idx >= 0 else atr_series[-1]
+                                struct_sl = max(ob_high, candles[tap_bar_idx]["high"]) + 0.20 * cur_atr
+                                hard_sl = min(max(struct_sl, eff_entry * (1.0 + hard_sl_pct)), eff_entry * 1.038)
+                                soft_sl = (eff_entry + hard_sl) / 2.0
                                 setups.append({
                                     "symbol": symbol,
                                     "side": "SHORT",
@@ -421,8 +437,8 @@ class Hermes35LiveEngine:
                                     "ob_low": ob_low,
                                     "mean_threshold": mt,
                                     "tp_price": eff_entry * (1.0 - tp_pct),
-                                    "soft_sl_price": eff_entry * (1.0 + soft_sl_pct),
-                                    "hard_sl_price": eff_entry * (1.0 + hard_sl_pct),
+                                    "soft_sl_price": round(soft_sl, 6),
+                                    "hard_sl_price": round(hard_sl, 6),
                                     "tp_pct": tp_pct,
                                     "soft_sl_pct": soft_sl_pct,
                                     "hard_sl_pct": hard_sl_pct,
@@ -518,13 +534,13 @@ class Hermes35LiveEngine:
         set_metric("hermes_last_scan", now_str)
         set_metric("hermes_setups_detected", str(len(found_setups)))
 
-        # Check if any Quad-Compounding slot has capacity for fresh setups
+        # Check if any Compounding Section has capacity for fresh setups (10 Sections)
         open_trades = get_open_paper_trades()
-        if len(open_trades) < 4 and found_setups:
+        if len(open_trades) < 10 and found_setups:
             # Strictly enter fresh setups (tapped within latest candle, age <= 1)
             fresh = [s for s in found_setups if s.get("is_fresh_trigger")]
             for target_setup in fresh:
-                if len(get_open_paper_trades()) >= 4:
+                if len(get_open_paper_trades()) >= 10:
                     break
                 await self.execute_apex_entry(target_setup)
 
@@ -589,37 +605,33 @@ class Hermes35LiveEngine:
             logger.info(f"🛡️ [ANTI-COLLISION] Skipping {sym} ({tf.upper()} {side}): Symbol is already open in another slot!")
             return
 
-        # 2. BITGET EXCLUSIVE QUAD-SLOT DISPATCHER ($50 x 4 Tracks: 4Hx2, 1Hx2)
+        # 2. BITGET EXCLUSIVE 10-SECTION DISPATCHER ($50 x 10 Sections: 4H x 5, 1H x 5)
         target_channel = None
         target_account_id = None
         target_exchange = "BITGET"
 
         if tf == "4h":
-            bg_4h_1_open = any(t.get("account_id") == 1 or t.get("channel") == "bitget_4h_1" for t in all_open_trades if t.get("status") == "OPEN")
-            bg_4h_2_open = any(t.get("account_id") == 2 or t.get("channel") == "bitget_4h_2" for t in all_open_trades if t.get("status") == "OPEN")
-
-            if not bg_4h_1_open:
-                target_channel = "bitget_4h_1"
-                target_account_id = 1
-            elif not bg_4h_2_open:
-                target_channel = "bitget_4h_2"
-                target_account_id = 2
-            else:
-                logger.info(f"Both Bitget 4H compounding slots (Section A & Section B) are full. Waiting...")
+            # Search sections 1 through 5 for an idle account
+            for candidate_id in range(1, 6):
+                is_busy = any((t.get("account_id") == candidate_id or t.get("channel") in (f"sec_{candidate_id}", f"bitget_4h_{candidate_id}")) for t in all_open_trades if t.get("status") == "OPEN")
+                if not is_busy:
+                    target_account_id = candidate_id
+                    target_channel = f"sec_{candidate_id}"
+                    break
+            if not target_account_id:
+                logger.info(f"All 5 Bitget 4H compounding sections (Sections 1-5) are full. Waiting...")
                 return
 
         elif tf == "1h":
-            bg_1h_1_open = any(t.get("account_id") == 3 or t.get("channel") == "bitget_1h_1" for t in all_open_trades if t.get("status") == "OPEN")
-            bg_1h_2_open = any(t.get("account_id") == 4 or t.get("channel") == "bitget_1h_2" for t in all_open_trades if t.get("status") == "OPEN")
-
-            if not bg_1h_1_open:
-                target_channel = "bitget_1h_1"
-                target_account_id = 3
-            elif not bg_1h_2_open:
-                target_channel = "bitget_1h_2"
-                target_account_id = 4
-            else:
-                logger.info(f"Both Bitget 1H compounding slots (Section A & Section B) are full. Waiting...")
+            # Search sections 6 through 10 for an idle account
+            for candidate_id in range(6, 11):
+                is_busy = any((t.get("account_id") == candidate_id or t.get("channel") in (f"sec_{candidate_id}", f"bitget_1h_{candidate_id-5}")) for t in all_open_trades if t.get("status") == "OPEN")
+                if not is_busy:
+                    target_account_id = candidate_id
+                    target_channel = f"sec_{candidate_id}"
+                    break
+            if not target_account_id:
+                logger.info(f"All 5 Bitget 1H compounding sections (Sections 6-10) are full. Waiting...")
                 return
 
         # Live Proximity Check: Price must be within the Order Block zone or 0.50% range
@@ -1000,8 +1012,8 @@ class Hermes35LiveEngine:
                 if exit_triggered:
                     await self.resolve_trade_exit(trade, exit_triggered, exit_price)
 
-            # If all 4 compounding slots are full (4 trades open), do not scan for new entries
-            if len(open_trades) >= 4:
+            # If all 10 compounding sections are full (10 trades open), do not scan for new entries
+            if len(open_trades) >= 10:
                 return
 
         # -------------------------------------------------------------
@@ -1055,7 +1067,7 @@ class Hermes35LiveEngine:
                 is_fresh = setup.get("is_fresh_trigger", False)
 
                 mt = float(setup.get("mean_threshold", (ob_high + ob_low) / 2.0))
-                entry_mode = get_setting("hermes35_entry_mode", "OB Boundary (Edge Touch)")
+                entry_mode = get_setting("hermes35_entry_mode", "50% Mean Threshold (MT)")
                 use_boundary = entry_mode.startswith("OB Boundary")
                 target_entry_p = (ob_high if use_boundary else mt) if side in ("BUY", "LONG") else (ob_low if use_boundary else mt)
 
@@ -1083,15 +1095,15 @@ class Hermes35LiveEngine:
                 should_trigger = tapped or (is_fresh and diff_pct <= 0.30)
                 if should_trigger:
                     tf_setup = (setup.get("interval") or "4h").lower()
-                    # Check if this specific timeframe has capacity across its 2 slots
+                    # Check if this specific timeframe has capacity across its 5 sections
                     open_trades_current = get_open_paper_trades()
                     if tf_setup == "4h":
-                        slots_4h_count = sum(1 for t in open_trades_current if t.get("account_id") in (1, 2) or str(t.get("channel", "")).startswith("bitget_4h"))
-                        if slots_4h_count >= 2:
+                        slots_4h_count = sum(1 for t in open_trades_current if t.get("account_id") in (1, 2, 3, 4, 5) or str(t.get("channel", "")).startswith("sec_") or str(t.get("channel", "")).startswith("bitget_4h"))
+                        if slots_4h_count >= 5:
                             continue
                     elif tf_setup == "1h":
-                        slots_1h_count = sum(1 for t in open_trades_current if t.get("account_id") in (3, 4) or str(t.get("channel", "")).startswith("bitget_1h"))
-                        if slots_1h_count >= 2:
+                        slots_1h_count = sum(1 for t in open_trades_current if t.get("account_id") in (6, 7, 8, 9, 10) or str(t.get("channel", "")).startswith("sec_") or str(t.get("channel", "")).startswith("bitget_1h"))
+                        if slots_1h_count >= 5:
                             continue
 
                     # Live 15m Micro-Sniper & Live Binance Open Interest (OI) check on tap

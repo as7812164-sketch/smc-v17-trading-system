@@ -1,11 +1,11 @@
 """
-Bitget Real Futures Auto-Trading Execution Service (HERMES 2.5 APEX HYBRID).
+Bitget Real Futures Auto-Trading Execution Service (HERMES 3.5 SINGLE TIER).
 Manages:
 1. Account balance retrieval (USDT-M Swap).
 2. Strict 5x leverage & isolated margin enforcement.
-3. Placing 4H First-Tap Orders with preset TP (+14% ROE @ 5x) & Disaster Hard SL (+3.8% on Exchange).
+3. Placing First-Tap Orders with preset TP & Dynamic ATR Hard SL.
 4. Automated Position Closing at Market.
-5. $50 -> $2,000 USDT Compounding Challenge Progression.
+5. $50 -> $2,000 USDT Compounding Challenge Progression across 10 Sections.
 """
 
 import os
