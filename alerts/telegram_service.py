@@ -45,7 +45,7 @@ from ai.gemini_analyst import GeminiAnalyst
 from ai.smart_money_analyzer import evaluate_setup_confluence
 
 TELEGRAM_API_BASE = "https://api.telegram.org/bot"
-TELEGRAM_WEBAPP_URL = "https://smc-ai-agent.onrender.com/?v=350_deca"
+TELEGRAM_WEBAPP_URL = "https://smc-ai-agent.onrender.com/?v=350_single_tier"
 
 gemini_analyst = GeminiAnalyst()
 
@@ -74,9 +74,9 @@ def get_main_menu_keyboard() -> Dict[str, Any]:
         "keyboard": [
             [{"text": "📱 Open Mobile Terminal", "web_app": {"url": TELEGRAM_WEBAPP_URL}}],
             [{"text": "📊 Live Status"}, {"text": "💰 PnL & Balance"}],
-            [{"text": "📈 Open Trades"}, {"text": "🏆 Win Rate & Stats"}],
-            [{"text": "📜 Trade History"}, {"text": "🧠 Hermes AI Agent"}],
-            [{"text": "❓ Help"}]
+            [{"text": "📈 Open Trades"}, {"text": "📦 Active Zones"}],
+            [{"text": "📜 Trade History"}, {"text": "📜 Hermes 3.5 Indicator"}],
+            [{"text": "🧠 Hermes AI Agent"}, {"text": "❓ Help"}]
         ],
         "resize_keyboard": True,
         "is_persistent": True
@@ -422,6 +422,38 @@ class TelegramService:
         data.add_field("caption", caption)
         data.add_field("parse_mode", parse_mode)
         data.add_field("photo", photo_bytes, filename="chart.png", content_type="image/png")
+        if reply_markup:
+            data.add_field("reply_markup", json.dumps(reply_markup))
+
+        try:
+            async with session.post(url, data=data) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                else:
+                    increment_metric("errors")
+        except Exception:
+            increment_metric("errors")
+        return None
+
+    async def send_document(
+        self,
+        doc_bytes: bytes,
+        filename: str,
+        caption: str = "",
+        parse_mode: str = "HTML",
+        reply_markup: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
+        token, chat_id, _ = get_tg_credentials()
+        if not token or not chat_id:
+            return None
+
+        url = f"{TELEGRAM_API_BASE}{token}/sendDocument"
+        session = await self.get_session()
+        data = aiohttp.FormData()
+        data.add_field("chat_id", str(chat_id))
+        data.add_field("caption", caption)
+        data.add_field("parse_mode", parse_mode)
+        data.add_field("document", doc_bytes, filename=filename, content_type="text/plain")
         if reply_markup:
             data.add_field("reply_markup", json.dumps(reply_markup))
 
@@ -1092,30 +1124,42 @@ class TelegramService:
             cur_p = candles[-1]["close"]
             if zones:
                 zone = dict(zones[0])
-                if not zone.get("entry_price"):
-                    zone["entry_price"] = zone.get("ob_high") if zone.get("side") == "BUY" else zone.get("ob_low")
-                if not zone.get("tp_price") and zone.get("entry_price"):
-                    zone["tp_price"] = zone["entry_price"] * 1.04 if zone.get("side") == "BUY" else zone["entry_price"] * 0.96
-                if not zone.get("sl_price") and zone.get("entry_price"):
-                    zone["sl_price"] = zone["entry_price"] * 0.97 if zone.get("side") == "BUY" else zone["entry_price"] * 1.03
+                ob_h = float(zone.get("ob_high", candles[-1]["high"]))
+                ob_l = float(zone.get("ob_low", candles[-1]["low"]))
+                mt = float(zone.get("mean_threshold") or zone.get("entry_price") or ((ob_h + ob_l) / 2.0))
+                side = zone.get("side", "BUY")
+                zone["entry_price"] = mt
+                zone["mean_threshold"] = mt
+                zone["tp_price"] = mt * 1.0280 if side == "BUY" else mt * 0.9720
+                zone["sl_price"] = mt * 0.9720 if side == "BUY" else mt * 1.0280
+                zone["armor_stage1_price"] = mt * 1.0160 if side == "BUY" else mt * 0.9840
             else:
+                ob_h = float(candles[-1]["high"])
+                ob_l = float(candles[-1]["low"])
+                mt = (ob_h + ob_l) / 2.0
                 zone = {
                     "symbol": sym,
                     "side": "BUY",
-                    "ob_high": candles[-1]["high"],
-                    "ob_low": candles[-1]["low"],
-                    "entry_price": cur_p,
-                    "tp_price": cur_p * 1.04,
-                    "sl_price": cur_p * 0.97,
+                    "ob_high": ob_h,
+                    "ob_low": ob_l,
+                    "mean_threshold": mt,
+                    "entry_price": mt,
+                    "tp_price": mt * 1.0280,
+                    "sl_price": mt * 0.9720,
+                    "armor_stage1_price": mt * 1.0160,
                     "status": "CHART_VIEW"
                 }
 
             chart_bytes = render_smc_chart_image(sym, candles, zone, zones=zones[:3] if zones else [zone], timeframe="4H")
             ob_count = len(zones[:3]) if zones else 1
             caption = (
-                f"📊 <b>#{sym} (4H) Live SMC Chart</b>\n"
-                f"📍 Current Price: <code>${cur_p:,.4f}</code>\n"
-                f"📦 Active OBs Shown: <b>{ob_count}</b> | First Tap Only Rule"
+                f"🏛️ <b>HERMES 3.5 SINGLE TIER • #{sym} (4H)</b>\n\n"
+                f"📍 <b>Live Market Price:</b> <code>${cur_p:,.4f}</code>\n"
+                f"🎯 <b>50% Mean Threshold (MT):</b> <code>${zone['entry_price']:,.4f}</code>\n"
+                f"🟢 <b>TP (+14.0% ROE):</b> <code>${zone['tp_price']:,.4f}</code>\n"
+                f"🛡️ <b>Profit Armor (+8.0%):</b> <code>${zone['armor_stage1_price']:,.4f}</code>\n"
+                f"🛑 <b>Dynamic SL (-14.0% ROE):</b> <code>${zone['sl_price']:,.4f}</code>\n"
+                f"📦 <b>Active Order Blocks:</b> <b>{ob_count}</b> | Continuous Live Projection"
             )
             keyboard = get_alert_inline_keyboard(sym)
             resp = await self.send_photo(chart_bytes, caption, reply_markup=keyboard)
@@ -1123,6 +1167,47 @@ class TelegramService:
                 await self.send_raw_message(caption, reply_markup=keyboard)
         except Exception as e:
             await self.send_raw_message(f"⚠️ Error generating chart for #{sym}: {e}")
+
+    async def handle_pinescript_command(self):
+        """Sends the upgraded Hermes 3.5 Single Tier Pine Script v5 directly to Telegram."""
+        from config import BASE_DIR
+        pine_file = BASE_DIR / "HERMES_3_5_SINGLE_TIER_OFFICIAL.pine"
+        code_str = ""
+        if pine_file.exists():
+            with open(pine_file, "r", encoding="utf-8") as f:
+                code_str = f.read()
+
+        summary_msg = (
+            "📜 <b>HERMES 3.5 APEX — OFFICIAL PINE SCRIPT V5</b>\n\n"
+            "✨ <b>Latest Institutional Upgrades Applied:</b>\n"
+            "• 📈 <b>Continuous Live Alignment:</b> Zones dynamically extend alongside running price (+5 future candles margin).\n"
+            "• 🎯 <b>50% Mean Threshold (MT) Tap Freeze:</b> Price MT touch karte hi zone wahi instantly freeze aur mitigate ho jata hai.\n"
+            "• 🟢 <b>Target Take Profit:</b> +14.00% ROE (+2.80% move at 5x leverage).\n"
+            "• 🛡️ <b>Profit Armor Stage 1:</b> +8.00% ROE (+1.60% move ➔ Break-Even +0.10% lock).\n"
+            "• 🛑 <b>Dynamic Stop Loss:</b> -14.00% ROE (-2.80% move at 5x leverage).\n"
+            "• 👑 <b>Sentry 1 Macro:</b> King BTC 4H EMA50 Causal Sentry alignment.\n\n"
+            "👇 <i>Pine Script file document niche attach hai. Aap direct download karke TradingView me add kar sakte hain!</i>"
+        )
+        keyboard = {
+            "inline_keyboard": [
+                [
+                    {"text": "📱 Open Mobile Terminal", "web_app": {"url": TELEGRAM_WEBAPP_URL}}
+                ],
+                [
+                    {"text": "🌐 View Code Online", "url": "https://smc-ai-agent.onrender.com/api/pinescript"}
+                ]
+            ]
+        }
+        await self.send_raw_message(summary_msg, reply_markup=keyboard)
+
+        if code_str:
+            doc_bytes = code_str.encode("utf-8")
+            await self.send_document(
+                doc_bytes=doc_bytes,
+                filename="HERMES_3_5_SINGLE_TIER_OFFICIAL.pine",
+                caption="📜 <b>Hermes 3.5 Single Tier Official TradingView Indicator (.pine)</b>\n<i>TradingView Pine Editor me paste karein ya direct upload karein.</i>",
+                reply_markup=keyboard
+            )
 
     async def handle_ai_command(self, symbol_raw: str):
         sym = self.normalize_symbol(symbol_raw)
@@ -1230,7 +1315,9 @@ class TelegramService:
             cur_p = tickers.get(sym)
             if not cur_p:
                 continue
-            entry_p = z["ob_high"] if z["side"] == "BUY" else z["ob_low"]
+            ob_h = float(z.get("ob_high", 0.0))
+            ob_l = float(z.get("ob_low", 0.0))
+            entry_p = float(z.get("mean_threshold") or z.get("entry_price") or ((ob_h + ob_l) / 2.0))
             if entry_p <= 0:
                 continue
             dist_pct = abs(cur_p - entry_p) / entry_p * 100.0
@@ -1250,8 +1337,8 @@ class TelegramService:
             side_icon = "🟢 BUY" if z["side"] == "BUY" else "🔴 SELL"
             lines.append(
                 f"• <b>#{z['symbol']}</b> ({side_icon})\n"
-                f"   Distance: <b>{item['distance_pct']:.2f}%</b> away\n"
-                f"   Entry: <code>{item['entry_price']}</code> | Live: <code>{item['current_price']}</code>\n"
+                f"   Distance: <b>{item['distance_pct']:.2f}%</b> from 50% MT\n"
+                f"   50% MT: <code>{item['entry_price']}</code> | Live: <code>{item['current_price']}</code>\n"
             )
         lines.append("<i>Tip: Type /chart &lt;COIN&gt; to view any setup instantly.</i>")
         await self.send_raw_message("\n".join(lines))
@@ -1631,6 +1718,8 @@ class TelegramService:
                                     await self.handle_zones_command()
                                 elif cb_data in ("menu_trades", "trades", "positions"):
                                     await self.handle_challenge_positions_command()
+                                elif cb_data in ("menu_pinescript", "pinescript", "indicator"):
+                                    await self.handle_pinescript_command()
                                 elif cb_data.startswith("close_"):
                                     sym = cb_data.replace("close_", "")
                                     await self.handle_close_command(sym)
@@ -1648,22 +1737,23 @@ class TelegramService:
                                 reply = (
                                     "👑 <b>HERMES 3.5 SINGLE TIER Autonomous Terminal Bot</b>\n\n"
                                     "<b>⚡ Interactive Commands:</b>\n"
-                                    "• <code>/hermes</code> - Hermes AI Quant Status & Win Rates\n"
-                                    "• <code>/hermes scan</code> - Live 15m Binance Order Blocks audit\n"
-                                    "• <code>/hermes patterns</code> - Zero-loss institutional setups\n"
-                                    "• <code>/hermes audit</code> - Strategy loopholes & fixes\n"
+                                    "• <code>/indicator</code> or <code>/pinescript</code> - Download & view Hermes 3.5 Indicator\n"
                                     "• <code>/chart &lt;coin&gt;</code> - Instant 4H chart with Order Blocks (e.g. <code>/chart BTC</code>)\n"
-                                    "• <code>/ai &lt;coin&gt;</code> or <code>/analyze &lt;coin&gt;</code> - AI Deep Confluence & ICT Analysis\n"
-                                    "• <code>/zones</code> - Top Order Blocks closest to live price\n"
+                                    "• <code>/zones</code> - Top Order Blocks closest to live price (50% MT)\n"
+                                    "• <code>/trades</code> or <code>/positions</code> - Active 5x Positions & Pending Limits\n"
                                     "• <code>/pnl</code> - Paper trading balance & performance\n"
-                                    "• <code>/trades</code> or <code>/positions</code> - $50 ➔ $2,000 Milestone Positions & Limit Orders\n"
                                     "• <code>/status</code> - Full live scanner dashboard\n"
-                                    "• <code>/health</code> - Feed & container connection check\n"
+                                    "• <code>/hermes</code> - Hermes AI Quant Status & Win Rates\n"
+                                    "• <code>/ai &lt;coin&gt;</code> or <code>/analyze &lt;coin&gt;</code> - AI Deep Confluence Analysis\n"
                                     "• <code>/reset_paper</code> - Reset paper wallet to $50.00\n\n"
                                     "👇 <i>Use the 1-Tap keyboard buttons below anytime!</i>"
                                 )
                                 menu_kb = get_main_menu_keyboard()
                                 await self.send_raw_message(reply, reply_markup=menu_kb)
+
+                            # Pine Script / Hermes 3.5 Indicator Command
+                            elif text in ("/indicator", "/pinescript", "📜 hermes 3.5 indicator", "indicator", "pinescript"):
+                                await self.handle_pinescript_command()
 
                             # Hermes AI Agent Routing
                             elif text in ("🧠 hermes ai agent", "/hermes", "hermes") or text.startswith("/hermes") or text.startswith("hermes "):

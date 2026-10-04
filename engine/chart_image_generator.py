@@ -52,23 +52,21 @@ def render_smc_chart_image(
     ob_high = float(ob_h_val) if ob_h_val is not None else float(highs[-1])
     ob_low = float(ob_l_val) if ob_l_val is not None else float(lows[-1])
 
-    entry_val = zone.get("entry_price")
-    if entry_val is not None:
-        entry_p = float(entry_val)
-    else:
-        entry_p = ob_high if side == "BUY" else ob_low
+    # 50% Mean Threshold (MT) is the institutional entry
+    mt_calc = (ob_high + ob_low) / 2.0
+    entry_val = zone.get("mean_threshold") or zone.get("entry_price")
+    entry_p = float(entry_val) if entry_val is not None else mt_calc
 
+    # Target TP: +14.0% ROE at 5x = +2.80% price move
     tp_val = zone.get("tp_price")
-    if tp_val is not None:
-        tp_p = float(tp_val)
-    else:
-        tp_p = entry_p * 1.04 if side == "BUY" else entry_p * 0.96
+    tp_p = float(tp_val) if tp_val is not None else (entry_p * 1.0280 if side == "BUY" else entry_p * 0.9720)
 
+    # Dynamic SL: -14.0% ROE at 5x = -2.80% price move
     sl_val = zone.get("sl_price")
-    if sl_val is not None:
-        sl_p = float(sl_val)
-    else:
-        sl_p = entry_p * 0.97 if side == "BUY" else entry_p * 1.03
+    sl_p = float(sl_val) if sl_val is not None else (entry_p * 0.9720 if side == "BUY" else entry_p * 1.0280)
+
+    # Profit Armor Stage 1: +8.0% ROE at 5x = +1.60% price move (Locks BE +0.10%)
+    armor_p = float(zone.get("armor_stage1_price") or (entry_p * 1.0160 if side == "BUY" else entry_p * 0.9840))
 
     # Gather all prices for scale (including up to 3 OB zones)
     zones_list = zones[:3] if zones else ([zone] if zone else [])
@@ -152,17 +150,39 @@ def render_smc_chart_image(
                 if c.get("time") == z_time:
                     z_start_x = candle_x_coords[ci]
                     break
-        zone_end_x = pad_left + plot_w
+        # Check if zone is mitigated / tapped at 50% Mean Threshold
+        is_mitigated = z.get("status") in ("MITIGATED", "TAPPED", "FILLED")
+        mitigation_ci = None
+        origin_t = z.get("origin_time") or 0
+        for ci, c in enumerate(display_candles):
+            if c.get("time", 0) >= origin_t:
+                if z_side == "BUY" and c["low"] <= z_mt:
+                    is_mitigated = True
+                    mitigation_ci = ci
+                    break
+                elif z_side != "BUY" and c["high"] >= z_mt:
+                    is_mitigated = True
+                    mitigation_ci = ci
+                    break
+
+        if is_mitigated and mitigation_ci is not None:
+            zone_end_x = candle_x_coords[mitigation_ci]
+            status_desc = "🛡️ 50% MT MITIGATED"
+            box_border_alpha = 70
+        else:
+            zone_end_x = pad_left + plot_w
+            status_desc = "⚡ LIVE UNMITIGATED (+5 Bars Projection)"
+            box_border_alpha = 140
 
         # Ultra-light background tint (alpha 24 ~ 9% opacity for crisp visibility)
         if z_side == "BUY":
             box_fill = (0, 230, 118, 22)      # Emerald Green Tint
-            box_border = (0, 230, 118, 120)   # 1px border
+            box_border = (0, 230, 118, box_border_alpha)
             lbl_color = (0, 230, 118, 220)
             mt_color = (0, 210, 255, 180)     # Cyan MT Line
         else:
             box_fill = (255, 23, 68, 22)      # Crimson Red Tint
-            box_border = (255, 23, 68, 120)
+            box_border = (255, 23, 68, box_border_alpha)
             lbl_color = (255, 23, 68, 220)
             mt_color = (255, 145, 0, 180)     # Orange MT Line
 
@@ -175,7 +195,7 @@ def render_smc_chart_image(
             mt_x += 10
 
         # Indicator Order Block Badge
-        ob_lbl = f"⚡ HERMES 3.5 {z_side} OB [MT 50%: ${format_px(z_mt)} | High: ${format_px(z_h)} | Low: ${format_px(z_l)}]"
+        ob_lbl = f"🏛️ HERMES 3.5 {z_side} OB [50% MT: ${format_px(z_mt)}] • {status_desc}"
         overlay_draw.text((z_start_x + 6, z_y1 + 3), ob_lbl, fill=lbl_color, font=font)
 
     # CRITICAL: Composite OB overlay BEFORE drawing candlesticks
@@ -247,12 +267,14 @@ def render_smc_chart_image(
     tp_move_pct = (abs(tp_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 2.44
     sl_move_pct = (abs(sl_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 2.40
 
-    # TP Line (+% move)
-    draw_level_line(tp_p, (0, 230, 118, 220), (0, 180, 80, 255), f"TP (+{tp_move_pct:.1f}%):")
-    # Entry Line
-    draw_level_line(entry_p, (0, 210, 255, 240), (0, 140, 200, 255), "ENTRY:")
-    # SL Line (-% move)
-    draw_level_line(sl_p, (255, 82, 82, 220), (220, 40, 40, 255), f"SL (-{sl_move_pct:.1f}%):")
+    # TP Line (+14.0% ROE / +2.80% price move)
+    draw_level_line(tp_p, (0, 230, 118, 220), (0, 180, 80, 255), f"TP (+14% ROE):")
+    # Profit Armor Stage 1 Line (+8.0% ROE -> BE Lock +0.10%)
+    draw_level_line(armor_p, (0, 229, 255, 220), (0, 140, 200, 255), f"ARMOR (+8%):")
+    # 50% Mean Threshold Entry Line
+    draw_level_line(entry_p, (245, 158, 11, 240), (200, 130, 10, 255), "50% MT ENTRY:")
+    # Dynamic SL Line (-14.0% ROE / -2.80% price move)
+    draw_level_line(sl_p, (255, 82, 82, 220), (220, 40, 40, 255), f"SL (-14% ROE):")
 
     # Header Banner (Top bar)
     draw.rectangle([0, 0, width, 52], fill=(18, 22, 32, 255))
@@ -271,7 +293,7 @@ def render_smc_chart_image(
     draw.text((badge_x + 8, 21), side_badge_text, fill=(255, 255, 255, 255), font=font)
 
     # Current / Trigger Price
-    cur_px_text = f"Trigger: ${format_px(entry_p)}  |  TP: ${format_px(tp_p)}  |  SL: ${format_px(sl_p)}"
+    cur_px_text = f"50% MT: ${format_px(entry_p)} | TP: ${format_px(tp_p)} (+14%) | SL: ${format_px(sl_p)} (-14%)"
     draw.text((badge_x + badge_w + 15, 21), cur_px_text, fill=(200, 210, 225, 255), font=font)
 
     # Sentries HUD Overlay Box in upper right corner of plot
@@ -279,7 +301,7 @@ def render_smc_chart_image(
     hud_y = pad_top + 10
     draw.rectangle([hud_x, hud_y, hud_x + 280, hud_y + 36], fill=(15, 20, 30, 220), outline=(55, 65, 81, 255))
     draw.text((hud_x + 8, hud_y + 4), "🛡️ HERMES 3.5 SENTRIES ACTIVE", fill=(56, 189, 248, 255), font=font)
-    draw.text((hud_x + 8, hud_y + 19), "S1: BTC OK | S2: Disp>=5% | S3: 50% MT | S4: Fresh", fill=(148, 163, 184, 255), font=font)
+    draw.text((hud_x + 8, hud_y + 19), "S1: BTC OK | S2: Disp>=5% | S3: 50% MT | S4: Live Ext", fill=(148, 163, 184, 255), font=font)
 
     # Watermark Footer
     now_str = get_ist_now().strftime("%d %b %Y %I:%M %p IST")
