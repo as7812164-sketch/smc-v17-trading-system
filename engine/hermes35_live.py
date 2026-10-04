@@ -1026,6 +1026,7 @@ class Hermes35LiveEngine:
             return
 
         btc_sentry = self.last_btc_bias or {}
+        strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.5_SINGLE_TIER"))
 
         try:
             tickers = await binance_feed.fetch_all_tickers()
@@ -1130,7 +1131,7 @@ class Hermes35LiveEngine:
                     await self.execute_apex_entry(setup)
                     break
         except Exception as e:
-            logger.debug(f"Real-time tap watchdog error: {e}")
+            logger.error(f"Real-time tap watchdog error: {e}", exc_info=True)
 
     async def resolve_trade_exit(self, trade: Dict[str, Any], outcome: str, exit_price: float):
         """Resolves trade exit, calculates fees, vault stashing (15%), compounding reinvestment (85%), and MAE/MFE forensics."""
