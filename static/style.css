@@ -6277,6 +6277,202 @@ body.dark-theme::before {
     font-family: var(--font-mono);
 }
 
+/* ============================================================
+   HERMES 3.5 SINGLE TIER: LIVE SETUP RADAR CARDS
+   ============================================================ */
+.dash-radar-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.75), rgba(11, 17, 32, 0.9));
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    border-radius: 7px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.dash-radar-card:hover {
+    background: linear-gradient(135deg, rgba(20, 32, 60, 0.85), rgba(15, 23, 42, 0.95));
+    border-color: rgba(56, 189, 248, 0.45);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.dash-radar-card.imminent-pulse {
+    border-color: rgba(245, 158, 11, 0.55);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+    animation: radarPulse 2s infinite ease-in-out;
+}
+
+@keyframes radarPulse {
+    0%, 100% { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 0 8px rgba(245, 158, 11, 0.15); }
+    50% { border-color: rgba(245, 158, 11, 0.85); box-shadow: 0 0 16px rgba(245, 158, 11, 0.35); }
+}
+
+.dash-radar-card.active-running {
+    border-color: rgba(0, 245, 155, 0.6);
+    background: linear-gradient(135deg, rgba(6, 44, 28, 0.7), rgba(11, 25, 44, 0.9));
+    box-shadow: 0 0 14px rgba(0, 245, 155, 0.25);
+}
+
+.drc-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.drc-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.drc-sym {
+    font-size: 12px;
+    font-weight: 800;
+    color: #F8FAFC;
+    font-family: var(--font-mono);
+}
+
+.drc-badge {
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.3px;
+}
+
+.drc-badge.long {
+    background: rgba(0, 245, 155, 0.16);
+    color: #00F59B;
+    border: 1px solid rgba(0, 245, 155, 0.35);
+}
+
+.drc-badge.short {
+    background: rgba(255, 77, 106, 0.16);
+    color: #FF4D6A;
+    border: 1px solid rgba(255, 77, 106, 0.35);
+}
+
+.drc-prox-pill {
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.drc-prox-pill.imminent {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FBBF24;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.drc-prox-pill.in-zone {
+    background: rgba(0, 245, 155, 0.16);
+    color: #00F59B;
+    border: 1px solid rgba(0, 245, 155, 0.4);
+}
+
+.drc-prox-pill.approaching {
+    background: rgba(56, 189, 248, 0.14);
+    color: #38BDF8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.drc-prox-pill.monitoring {
+    background: rgba(148, 163, 184, 0.12);
+    color: #94A3B8;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.drc-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    background: rgba(8, 12, 22, 0.55);
+    padding: 4px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.drc-metric-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.drc-lbl {
+    font-size: 8px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.drc-val {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+.drc-val.entry-val { color: #38BDF8; }
+.drc-val.live-val { color: #E2E8F0; }
+.drc-val.tp-val { color: #00F59B; }
+.drc-val.dist-val { color: #FBBF24; }
+
+.drc-progress-wrap {
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.drc-progress-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.drc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #94A3B8;
+    padding-top: 2px;
+}
+
+.drc-prob-badge {
+    color: #00F59B;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.drc-sentry-badge {
+    color: #38BDF8;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.drc-status-lbl {
+    color: #CBD5E1;
+    font-weight: 600;
+}
+
 /* ROW 3: OPEN POSITIONS + PERFORMANCE 7D */
 .dashboard-bottom-row {
     display: grid;

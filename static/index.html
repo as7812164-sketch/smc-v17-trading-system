@@ -936,8 +936,12 @@
                 <!-- RIGHT: LIVE SIGNALS BOX -->
                 <div class="dashboard-signals-box">
                     <div class="dash-box-header">
-                        <span><i class="fa-solid fa-satellite-dish"></i> Live Signals</span>
-                        <button class="btn-text btn-xs" id="btnRefreshSignals" style="font-size:10px; color:#38BDF8; background:transparent; border:none; cursor:pointer;"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                        <span style="display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-satellite-dish" style="color:#00F59B;"></i> 
+                            <span>Live Setup Radar</span>
+                            <span id="radarSetupCountBadge" style="background:rgba(56,189,248,0.18); color:#38BDF8; font-size:10px; padding:2px 7px; border-radius:10px; font-weight:800; border:1px solid rgba(56,189,248,0.3);">SCANNING...</span>
+                        </span>
+                        <button class="btn-text btn-xs" id="btnRefreshSignals" title="Refresh Live Radar" style="font-size:11px; color:#38BDF8; background:transparent; border:none; cursor:pointer; display:flex; align-items:center; gap:4px;"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
                     </div>
                     <div class="dashboard-signals-list" id="signalsListContainer">
                         <div class="dash-signal-item" onclick="if(typeof switchCoin === 'function') switchCoin('BTCUSDT');">

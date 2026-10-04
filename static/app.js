@@ -75,6 +75,11 @@ document.addEventListener("DOMContentLoaded", () => {
         loadFuturesOrders();
     }, 2000);
 
+    // Dynamic 3.5s refresh for Live Setup Radar (distances, MT proximity, prices)
+    setInterval(() => {
+        loadRecentSignals();
+    }, 3500);
+
     setInterval(() => {
         loadSystemStatus();
         loadCoinsList();
@@ -2388,37 +2393,156 @@ ${p.last_alert || 'None yet'}
     } catch (e) {}
 }
 
-// --- Signals List ---
+// --- Live Setup Radar & Pending Executions (HERMES 3.5 SINGLE TIER) ---
 async function loadRecentSignals() {
     try {
-        const resp = await fetch('/api/signals?limit=30');
+        const resp = await fetch('/api/signals/radar?t=' + Date.now());
         if (!resp.ok) return;
         const data = await resp.json();
         const container = document.getElementById("signalsListContainer");
         if (!container) return;
 
-        const signals = data.signals || [];
-        if (signals.length === 0) {
-            container.innerHTML = `<span style="color:var(--text-muted);font-size:11px;">Koi signals record nahi hue hain abhi tak.</span>`;
+        const radar = data.radar || [];
+        const activeExecutions = data.active_executions || [];
+        const signals = data.recent_signals || [];
+
+        // Update badge in header if exists
+        const countBadge = document.getElementById("radarSetupCountBadge");
+        if (countBadge) {
+            const count = radar.length;
+            countBadge.innerText = count > 0 ? `${count} ARMED` : 'SCANNING...';
+            if (data.imminent_count > 0) {
+                countBadge.style.background = 'rgba(245, 158, 11, 0.25)';
+                countBadge.style.color = '#FBBF24';
+                countBadge.style.borderColor = 'rgba(245, 158, 11, 0.5)';
+                countBadge.innerText = `⚡ ${data.imminent_count} IMMINENT`;
+            } else {
+                countBadge.style.background = 'rgba(56, 189, 248, 0.18)';
+                countBadge.style.color = '#38BDF8';
+                countBadge.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+            }
+        }
+
+        if (radar.length === 0 && activeExecutions.length === 0 && signals.length === 0) {
+            container.innerHTML = `
+                <div style="padding:24px 12px; text-align:center; color:var(--text-muted); font-size:11px;">
+                    <i class="fa-solid fa-satellite-dish" style="font-size:22px; color:#38BDF8; margin-bottom:10px; display:block;"></i>
+                    <strong style="color:#F8FAFC; display:block; margin-bottom:4px;">Scanning 24/7 Order Blocks...</strong>
+                    Hermes 3.5 50% Mean Threshold setups & taps will appear here in real-time.
+                </div>
+            `;
             return;
         }
 
-        container.innerHTML = signals.map(s => {
-            const isBuy = s.side === "BUY";
-            const dt = new Date(s.timestamp).toLocaleTimeString();
-            return `
-                <div class="signal-card" onclick="selectCoin('${s.symbol}')" style="cursor:pointer;">
-                    <div class="signal-header">
-                        <span class="${isBuy ? 'text-buy' : 'text-sell'}">${s.symbol} • ${s.signal_type}</span>
-                        <span style="color:var(--text-muted);font-size:10px;">${dt}</span>
+        let html = "";
+
+        // 1. Render Active Live Executions at the very top (if any open trades)
+        if (activeExecutions.length > 0) {
+            activeExecutions.forEach(t => {
+                const isBuy = t.side === "BUY";
+                const pnlPositive = t.unrealized_pnl_pct >= 0;
+                const pnlColor = pnlPositive ? '#00F59B' : '#FF4D6A';
+                const sign = pnlPositive ? '+' : '';
+                html += `
+                    <div class="dash-radar-card active-running" onclick="if(typeof switchCoin==='function') switchCoin('${t.symbol}');" title="Click to view live chart for ${t.symbol}">
+                        <div class="drc-top">
+                            <div class="drc-left">
+                                <span class="drc-sym" style="color:#00F59B;"><i class="fa-solid fa-circle-dot" style="animation:pulse 1s infinite;"></i> ${t.symbol}</span>
+                                <span class="drc-badge ${isBuy ? 'long' : 'short'}">${t.side} ${t.timeframe}</span>
+                            </div>
+                            <span class="drc-prox-pill in-zone" style="background:rgba(0,245,155,0.2); color:#00F59B; border-color:rgba(0,245,155,0.5);">
+                                🔴 LIVE POSITION
+                            </span>
+                        </div>
+                        <div class="drc-metrics">
+                            <div class="drc-metric-item">
+                                <span class="drc-lbl">Entry</span>
+                                <span class="drc-val entry-val">$${formatPrice(t.entry_price)}</span>
+                            </div>
+                            <div class="drc-metric-item">
+                                <span class="drc-lbl">Mark Price</span>
+                                <span class="drc-val live-val">$${formatPrice(t.current_price)}</span>
+                            </div>
+                            <div class="drc-metric-item">
+                                <span class="drc-lbl">Live ROE (5x)</span>
+                                <span class="drc-val" style="color:${pnlColor}; font-weight:800;">${sign}${t.unrealized_roe_pct}%</span>
+                            </div>
+                        </div>
+                        <div class="drc-footer">
+                            <span class="drc-prob-badge"><i class="fa-solid fa-lock"></i> Compounding Sec ${t.channel ? t.channel.replace('sec_','') : '1'}</span>
+                            <span class="drc-status-lbl" style="color:#00F59B;">Running Protected</span>
+                        </div>
                     </div>
-                    <div class="signal-details">
-                        Price: $${formatPrice(s.price)} | Details: ${s.details || 'First Tap Trigger'}
+                `;
+            });
+        }
+
+        // 2. Render Pending / Approaching Setups
+        if (radar.length > 0) {
+            radar.forEach(s => {
+                const isBuy = s.side === "BUY";
+                const isImminent = s.proximity_state === "IMMINENT_TAP";
+                
+                let proxClass = "monitoring";
+                let proxIcon = "⏳";
+                if (s.proximity_state === "IMMINENT_TAP") {
+                    proxClass = "imminent";
+                    proxIcon = "⚡";
+                } else if (s.proximity_state === "IN_RADAR_ZONE") {
+                    proxClass = "in-zone";
+                    proxIcon = "🎯";
+                } else if (s.proximity_state === "APPROACHING") {
+                    proxClass = "approaching";
+                    proxIcon = "👀";
+                }
+
+                // Progress bar: smaller distance means bar fills closer to 100%
+                const pctClamped = Math.min(2.5, Math.max(0.0, s.distance_pct));
+                const progressWidth = Math.round(((2.5 - pctClamped) / 2.5) * 100);
+                const barColor = isImminent ? '#F59E0B' : (s.distance_pct <= 0.6 ? '#00F59B' : '#38BDF8');
+
+                html += `
+                    <div class="dash-radar-card ${isImminent ? 'imminent-pulse' : ''}" onclick="if(typeof switchCoin==='function') switchCoin('${s.symbol}'); else if(typeof selectCoin==='function') selectCoin('${s.symbol}');" title="Click to inspect ${s.symbol} on chart">
+                        <div class="drc-top">
+                            <div class="drc-left">
+                                <span class="drc-sym">${s.symbol}</span>
+                                <span class="drc-badge ${isBuy ? 'long' : 'short'}">${s.side} ${s.timeframe}</span>
+                            </div>
+                            <span class="drc-prox-pill ${proxClass}">
+                                ${proxIcon} ${s.distance_pct}% away
+                            </span>
+                        </div>
+                        <div class="drc-metrics">
+                            <div class="drc-metric-item">
+                                <span class="drc-lbl">50% MT Entry</span>
+                                <span class="drc-val entry-val">$${formatPrice(s.entry_price)}</span>
+                            </div>
+                            <div class="drc-metric-item">
+                                <span class="drc-lbl">Live Price</span>
+                                <span class="drc-val live-val">$${formatPrice(s.current_price)}</span>
+                            </div>
+                            <div class="drc-metric-item">
+                                <span class="drc-lbl">Target (5x)</span>
+                                <span class="drc-val tp-val">+14.0% ROE</span>
+                            </div>
+                        </div>
+                        <div class="drc-progress-wrap" title="${s.distance_pct}% away from 50% Mean Threshold trigger">
+                            <div class="drc-progress-bar" style="width:${progressWidth}%; background:${barColor};"></div>
+                        </div>
+                        <div class="drc-footer">
+                            <span class="drc-prob-badge"><i class="fa-solid fa-bolt"></i> ${s.probability_pct}% Win Prob</span>
+                            <span class="drc-sentry-badge"><i class="fa-solid fa-shield-halved"></i> 4/4 Sentries</span>
+                            <span class="drc-status-lbl">${s.proximity_label}</span>
+                        </div>
                     </div>
-                </div>
-            `;
-        }).join("");
-    } catch (e) {}
+                `;
+            });
+        }
+
+        container.innerHTML = html;
+    } catch (e) {
+        console.warn("loadRecentSignals radar error:", e);
+    }
 }
 
 // --- Paper Trading Live PnL State & Functions ---
