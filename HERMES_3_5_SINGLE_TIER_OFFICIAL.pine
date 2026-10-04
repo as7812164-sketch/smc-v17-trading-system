@@ -10,8 +10,8 @@ indicator("HERMES 3.5 APEX — Single Tier Official Live Indicator", shorttitle=
 // 2. Sentry 1: King BTC 4H Macro Causal Sentry (4H Trend Alignment)
 // 3. Sentry 2: Institutional Floor (Displacement Wave >= 5.0% + Fair Value Gap)
 // 4. Sentry 3: Inducement (IDM) Sweep + >= 18% Wick Rejection
-// 5. Sentry 4: Freshness Guard (Retest tap window <= 28 bars)
-// 6. Entry: Strictly at 50% Mean Threshold (MT = (OB_High + OB_Low) / 2)
+// 5. Dynamic Zone Extension: Zone continually extends alongside live price (+5 candles future margin)
+// 6. 50% Mean Threshold Mitigation: Zone freezes immediately at the tap candle (mitigated & invalidated for new entries)
 // 7. Target TP: +14.00% ROE (+2.80% Price Move at 5x Leverage)
 // 8. Profit Armor Stage 1: +8.00% ROE (+1.60% Price Move -> Locks Breakeven +0.10%)
 // 9. Dynamic Stop Loss: -14.00% ROE (-2.80% Price Move at 5x Leverage)
@@ -22,9 +22,12 @@ indicator("HERMES 3.5 APEX — Single Tier Official Live Indicator", shorttitle=
 // ------------------------------------------------------------------------------
 grp_entry   = "⚙️ Hermes 3.5 Institutional Core Pillars"
 min_disp    = input.float(5.0, "Min Displacement Wave (%)", minval=1.5, maxval=20.0, step=0.5, group=grp_entry)
-max_bars    = input.int(28, "Sentry 4 Freshness Limit (Bars)", minval=5, maxval=100, group=grp_entry)
 strict_col  = input.bool(true, "Strict Candle Color Gate (Red for Bull, Green for Bear)", group=grp_entry)
-extend_box  = input.bool(true, "Extend OB Box Until 1st Tap Mitigation", group=grp_entry)
+extend_box  = input.bool(true, "Dynamic Live Alignment Box Extension", group=grp_entry)
+future_ext  = input.int(5, "Future Candle Projection Margin (Bars)", minval=1, maxval=30, group=grp_entry, tooltip="Extends active unmitigated zones X bars ahead into the future aligned with live price")
+extend_mit  = input.bool(true, "Extend Continously Until 50% MT Mitigated", group=grp_entry, tooltip="Zones never stop early; they stay alive until price taps 50% MT or breaks structure")
+max_bars    = input.int(150, "Max Retest Window (Bars) [If Expiry Enabled]", minval=10, maxval=500, group=grp_entry)
+max_zones   = input.int(35, "Max Active Zones Tracked", minval=5, maxval=80, group=grp_entry)
 
 grp_sentry  = "🛡️ Sentry 1: King BTC 4H Macro Causal Sentry"
 btc_filter  = input.bool(true, "Enable King BTC 4H Trend Alignment", group=grp_sentry)
@@ -38,7 +41,7 @@ be_armor_roe= input.float(8.00, "Profit Armor Stage 1 ROE %", minval=1.0, maxval
 
 grp_ui      = "🎨 Visual Styling & Display"
 show_table  = input.bool(true, "Show Hermes 3.5 Sentries HUD Table", group=grp_ui)
-show_lines  = input.bool(true, "Draw 50% MT, TP, Armor, and SL Lines", group=grp_ui)
+show_lines  = input.bool(true, "Draw TP, Armor, and SL Lines Upon Trigger", group=grp_ui)
 col_bull_ob = input.color(color.new(#00F59B, 80), "Bullish Demand OB Box", group=grp_ui)
 col_bear_ob = input.color(color.new(#FF3B69, 80), "Bearish Supply OB Box", group=grp_ui)
 col_mt      = input.color(#F59E0B, "50% Mean Threshold Line (Amber Gold)", group=grp_ui)
@@ -122,11 +125,13 @@ if bull_ob_qual
     float sl     = mt * (1.0 - sl_price_pct)
     int s_bar    = bar_index - 3
 
-    box b = box.new(s_bar, o_high, bar_index + 2, o_low, border_color=color.new(#00F59B, 20), border_width=1, bgcolor=col_bull_ob)
-    line l_mt = line.new(s_bar, mt, bar_index + 2, mt, color=col_mt, width=1, style=line.style_dashed)
+    box b = box.new(s_bar, o_high, bar_index + future_ext, o_low, border_color=color.new(#00F59B, 20), border_width=1, bgcolor=col_bull_ob)
+    line l_mt = line.new(s_bar, mt, bar_index + future_ext, mt, color=col_mt, width=1, style=line.style_dashed)
     
     HermesZone nz = HermesZone.new(true, s_bar, o_high, o_low, mt, tp, armor, sl, b, l_mt, na, na, na, false, false, false)
     array.push(zones, nz)
+    if array.size(zones) > max_zones
+        array.shift(zones)
 
 if bear_ob_qual
     float o_high = c3_high
@@ -137,151 +142,208 @@ if bear_ob_qual
     float sl     = mt * (1.0 + sl_price_pct)
     int s_bar    = bar_index - 3
 
-    box b = box.new(s_bar, o_high, bar_index + 2, o_low, border_color=color.new(#FF3B69, 20), border_width=1, bgcolor=col_bear_ob)
-    line l_mt = line.new(s_bar, mt, bar_index + 2, mt, color=col_mt, width=1, style=line.style_dashed)
+    box b = box.new(s_bar, o_high, bar_index + future_ext, o_low, border_color=color.new(#FF3B69, 20), border_width=1, bgcolor=col_bear_ob)
+    line l_mt = line.new(s_bar, mt, bar_index + future_ext, mt, color=col_mt, width=1, style=line.style_dashed)
     
     HermesZone nz = HermesZone.new(false, s_bar, o_high, o_low, mt, tp, armor, sl, b, l_mt, na, na, na, false, false, false)
     array.push(zones, nz)
+    if array.size(zones) > max_zones
+        array.shift(zones)
 
 // ------------------------------------------------------------------------------
-// 5. 50% MEAN THRESHOLD TAP TRIGGER & SENTRY 3 AUDIT
+// 5. DYNAMIC ZONE EXTENSION & 50% MT TAP MITIGATION ENGINE
 // ------------------------------------------------------------------------------
 bool long_trigger  = false
 bool short_trigger = false
 float trigger_entry = 0.0
 candle_range = high - low
+int active_unmitigated_count = 0
 
 if array.size(zones) > 0
     for i = array.size(zones) - 1 to 0
         HermesZone z = array.get(zones, i)
         
-        if not z.completed
-            // Dynamic Box Extension
-            if extend_box and not z.tapped
-                box.set_right(z.ob_box, bar_index + 2)
-                line.set_x2(z.mt_line, bar_index + 2)
+        // ----------------------------------------------------------------------
+        // CASE A: ZONE IS ACTIVE & UNMITIGATED
+        // ----------------------------------------------------------------------
+        if not z.tapped and not z.completed
+            active_unmitigated_count += 1
+            
+            // Continuous Live Alignment Extension (+5 future candles margin)
+            if extend_box
+                box.set_right(z.ob_box, bar_index + future_ext)
+                line.set_x2(z.mt_line, bar_index + future_ext)
                 
-            // Check 1st Tap Mitigation
-            if not z.tapped
-                int bars_alive = bar_index - z.start_bar
-                if bars_alive > max_bars
+            int bars_alive = bar_index - z.start_bar
+            
+            // Expiry Check (Only if user turned off continuous extension)
+            if not extend_mit and bars_alive > max_bars
+                z.completed := true
+                box.set_right(z.ob_box, bar_index)
+                line.set_x2(z.mt_line, bar_index)
+                
+            else if z.is_bull
+                // Structural Invalidation: Candle body closes completely below OB Low
+                if close < z.ob_low
                     z.completed := true
-                else if z.is_bull
-                    // Invalidation: candle body closes below OB Low
-                    if close < z.ob_low
-                        z.completed := true
-                    else
-                        // 50% Mean Threshold Tap Condition
-                        bool tapped_mt = (low <= z.mt) and (low >= z.sl_p)
-                        if tapped_mt
-                            // Sentry 3: IDM Sweep + >= 18% Lower Wick Rejection
-                            float l_wick = math.min(open, close) - low
-                            float wick_ratio = candle_range > 0 ? (l_wick / candle_range) * 100.0 : 0.0
-                            bool idm_swept = (low < ta.lowest(low[1], 5))
-                            bool wick_pass = (wick_ratio >= 18.0) and (close >= z.mt)
-                            
-                            if wick_pass or idm_swept
-                                z.tapped := true
-                                trigger_entry := z.mt
-                                long_trigger := true
-                                box.set_right(z.ob_box, bar_index)
-                                line.set_x2(z.mt_line, bar_index)
-                                
-                                if show_lines
-                                    z.tp_line    := line.new(bar_index, z.tp_p, bar_index + 20, z.tp_p, color=col_tp, width=2, style=line.style_solid)
-                                    z.armor_line := line.new(bar_index, z.armor_p, bar_index + 20, z.armor_p, color=col_armor, width=1, style=line.style_dashed)
-                                    z.sl_line    := line.new(bar_index, z.sl_p, bar_index + 20, z.sl_p, color=col_sl, width=1, style=line.style_dashed)
-                                    
-                                label.new(bar_index, low, "⚡ H3.5 BUY\n50% MT: $" + str.tostring(z.mt, "#.####") + "\nTP: +14% ROE", color=color.new(#00F59B, 10), textcolor=color.black, style=label.style_label_up, size=size.small)
-                                alert("HERMES 3.5 50% MT BUY TRIGGERED on " + syminfo.ticker + " at $" + str.tostring(z.mt), alert.freq_once_per_bar_close)
+                    box.set_right(z.ob_box, bar_index)
+                    line.set_x2(z.mt_line, bar_index)
+                    box.set_border_style(z.ob_box, line.style_dotted)
+                    box.set_bgcolor(z.ob_box, color.new(color.gray, 92))
+                    
                 else
-                    if close > z.ob_high
-                        z.completed := true
-                    else
-                        bool tapped_mt = (high >= z.mt) and (high <= z.sl_p)
-                        if tapped_mt
-                            float u_wick = high - math.max(open, close)
-                            float wick_ratio = candle_range > 0 ? (u_wick / candle_range) * 100.0 : 0.0
-                            bool idm_swept = (high > ta.highest(high[1], 5))
-                            bool wick_pass = (wick_ratio >= 18.0) and (close <= z.mt)
+                    // 50% Mean Threshold Tap Mitigation Gate
+                    bool tapped_mt = (low <= z.mt) and (low >= z.sl_p)
+                    if tapped_mt
+                        // Freeze zone right at this exact mitigation candle!
+                        z.tapped := true
+                        trigger_entry := z.mt
+                        long_trigger := true
+                        box.set_right(z.ob_box, bar_index)
+                        line.set_x2(z.mt_line, bar_index)
+                        
+                        // Mark as mitigated in history
+                        box.set_bgcolor(z.ob_box, color.new(#00F59B, 90))
+                        box.set_border_style(z.ob_box, line.style_solid)
+                        
+                        // Sentry 3: IDM Sweep + >= 18% Lower Wick Rejection analysis
+                        float l_wick = math.min(open, close) - low
+                        float wick_ratio = candle_range > 0 ? (l_wick / candle_range) * 100.0 : 0.0
+                        bool idm_swept = (low < ta.lowest(low[1], 5))
+                        bool wick_pass = (wick_ratio >= 18.0) and (close >= z.mt)
+                        
+                        // Draw targets forward from mitigation candle
+                        if show_lines
+                            z.tp_line    := line.new(bar_index, z.tp_p, bar_index + future_ext, z.tp_p, color=col_tp, width=2, style=line.style_solid)
+                            z.armor_line := line.new(bar_index, z.armor_p, bar_index + future_ext, z.armor_p, color=col_armor, width=1, style=line.style_dashed)
+                            z.sl_line    := line.new(bar_index, z.sl_p, bar_index + future_ext, z.sl_p, color=col_sl, width=1, style=line.style_dashed)
                             
-                            if wick_pass or idm_swept
-                                z.tapped := true
-                                trigger_entry := z.mt
-                                short_trigger := true
-                                box.set_right(z.ob_box, bar_index)
-                                line.set_x2(z.mt_line, bar_index)
-                                
-                                if show_lines
-                                    z.tp_line    := line.new(bar_index, z.tp_p, bar_index + 20, z.tp_p, color=col_tp, width=2, style=line.style_solid)
-                                    z.armor_line := line.new(bar_index, z.armor_p, bar_index + 20, z.armor_p, color=col_armor, width=1, style=line.style_dashed)
-                                    z.sl_line    := line.new(bar_index, z.sl_p, bar_index + 20, z.sl_p, color=col_sl, width=1, style=line.style_dashed)
-                                    
-                                label.new(bar_index, high, "⚡ H3.5 SELL\n50% MT: $" + str.tostring(z.mt, "#.####") + "\nTP: +14% ROE", color=color.new(#FF3B69, 10), textcolor=color.white, style=label.style_label_down, size=size.small)
-                                alert("HERMES 3.5 50% MT SELL TRIGGERED on " + syminfo.ticker + " at $" + str.tostring(z.mt), alert.freq_once_per_bar_close)
+                        label.new(bar_index, low, "⚡ H3.5 BUY [50% MT]\nEntry: $" + str.tostring(z.mt, "#.####") + "\nTP: +14% ROE\n🛡️ Zone Mitigated", color=color.new(#00F59B, 10), textcolor=color.black, style=label.style_label_up, size=size.small)
+                        alert("HERMES 3.5 50% MT BUY TRIGGERED on " + syminfo.ticker + " at $" + str.tostring(z.mt), alert.freq_once_per_bar_close)
 
-            // Monitor Active Trade: Armor Lock & TP/SL Outcomes
             else
-                if not na(z.tp_line)
-                    line.set_x2(z.tp_line, bar_index)
-                if not na(z.armor_line)
-                    line.set_x2(z.armor_line, bar_index)
-                if not na(z.sl_line)
-                    line.set_x2(z.sl_line, bar_index)
-
-                if z.is_bull
-                    // Profit Armor Stage 1 Trigger (+8.0% ROE -> BE Lock +0.10%)
-                    if not z.armor_locked and high >= z.armor_p
-                        z.armor_locked := true
-                        float be_price = z.mt * 1.0010
-                        z.sl_p := be_price
-                        if not na(z.sl_line)
-                            line.set_y1(z.sl_line, be_price)
-                            line.set_y2(z.sl_line, be_price)
-                            line.set_color(z.sl_line, col_armor)
-                        label.new(bar_index, low, "🛡️ ARMOR LOCK (+8% ROE)\nBE Secured (+0.1%)", color=color.new(#00E5FF, 15), textcolor=color.black, style=label.style_label_up, size=size.tiny)
-                        alert("HERMES 3.5 Profit Armor Locked at Break-Even (+0.1% buffer) on " + syminfo.ticker, alert.freq_once_per_bar_close)
-
-                    // TP Outcome
-                    if high >= z.tp_p
-                        label.new(bar_index, high, "🎯 TP HIT! +14.0% ROE\n100% Compounded", color=#00F59B, textcolor=color.black, style=label.style_label_down, size=size.small)
-                        z.completed := true
-                        alert("HERMES 3.5 TAKE PROFIT HIT (+14.0% ROE) on " + syminfo.ticker, alert.freq_once_per_bar_close)
-                    else if low <= z.sl_p
-                        if z.armor_locked
-                            label.new(bar_index, low, "🛡️ BE EXIT (+0.1%)\nCapital Protected", color=color.new(#00E5FF, 20), textcolor=color.white, style=label.style_label_up, size=size.tiny)
-                        else
-                            label.new(bar_index, low, "🛑 SL HIT (-14.0% ROE)", color=#FF3B69, textcolor=color.white, style=label.style_label_up, size=size.tiny)
-                        z.completed := true
-
+                // Bearish Supply OB
+                if close > z.ob_high
+                    z.completed := true
+                    box.set_right(z.ob_box, bar_index)
+                    line.set_x2(z.mt_line, bar_index)
+                    box.set_border_style(z.ob_box, line.style_dotted)
+                    box.set_bgcolor(z.ob_box, color.new(color.gray, 92))
+                    
                 else
-                    // Bearish Trade Monitor
-                    if not z.armor_locked and low <= z.armor_p
-                        z.armor_locked := true
-                        float be_price = z.mt * 0.9990
-                        z.sl_p := be_price
-                        if not na(z.sl_line)
-                            line.set_y1(z.sl_line, be_price)
-                            line.set_y2(z.sl_line, be_price)
-                            line.set_color(z.sl_line, col_armor)
-                        label.new(bar_index, high, "🛡️ ARMOR LOCK (+8% ROE)\nBE Secured (+0.1%)", color=color.new(#00E5FF, 15), textcolor=color.black, style=label.style_label_down, size=size.tiny)
-                        alert("HERMES 3.5 Profit Armor Locked at Break-Even (+0.1% buffer) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+                    bool tapped_mt = (high >= z.mt) and (high <= z.sl_p)
+                    if tapped_mt
+                        z.tapped := true
+                        trigger_entry := z.mt
+                        short_trigger := true
+                        box.set_right(z.ob_box, bar_index)
+                        line.set_x2(z.mt_line, bar_index)
+                        
+                        box.set_bgcolor(z.ob_box, color.new(#FF3B69, 90))
+                        box.set_border_style(z.ob_box, line.style_solid)
+                        
+                        float u_wick = high - math.max(open, close)
+                        float wick_ratio = candle_range > 0 ? (u_wick / candle_range) * 100.0 : 0.0
+                        bool idm_swept = (high > ta.highest(high[1], 5))
+                        bool wick_pass = (wick_ratio >= 18.0) and (close <= z.mt)
+                        
+                        if show_lines
+                            z.tp_line    := line.new(bar_index, z.tp_p, bar_index + future_ext, z.tp_p, color=col_tp, width=2, style=line.style_solid)
+                            z.armor_line := line.new(bar_index, z.armor_p, bar_index + future_ext, z.armor_p, color=col_armor, width=1, style=line.style_dashed)
+                            z.sl_line    := line.new(bar_index, z.sl_p, bar_index + future_ext, z.sl_p, color=col_sl, width=1, style=line.style_dashed)
+                            
+                        label.new(bar_index, high, "⚡ H3.5 SELL [50% MT]\nEntry: $" + str.tostring(z.mt, "#.####") + "\nTP: +14% ROE\n🛡️ Zone Mitigated", color=color.new(#FF3B69, 10), textcolor=color.white, style=label.style_label_down, size=size.small)
+                        alert("HERMES 3.5 50% MT SELL TRIGGERED on " + syminfo.ticker + " at $" + str.tostring(z.mt), alert.freq_once_per_bar_close)
 
-                    if low <= z.tp_p
-                        label.new(bar_index, low, "🎯 TP HIT! +14.0% ROE\n100% Compounded", color=#00F59B, textcolor=color.black, style=label.style_label_up, size=size.small)
-                        z.completed := true
-                        alert("HERMES 3.5 TAKE PROFIT HIT (+14.0% ROE) on " + syminfo.ticker, alert.freq_once_per_bar_close)
-                    else if high >= z.sl_p
-                        if z.armor_locked
-                            label.new(bar_index, high, "🛡️ BE EXIT (+0.1%)\nCapital Protected", color=color.new(#00E5FF, 20), textcolor=color.white, style=label.style_label_down, size=size.tiny)
-                        else
-                            label.new(bar_index, high, "🛑 SL HIT (-14.0% ROE)", color=#FF3B69, textcolor=color.white, style=label.style_label_up, size=size.tiny)
-                        z.completed := true
+        // ----------------------------------------------------------------------
+        // CASE B: ZONE WAS TAPPED (MITIGATED) -> MONITOR ACTIVE TRADE OUTCOME
+        // Note: OB Box and MT Line stay FROZEN at the tap bar!
+        // ----------------------------------------------------------------------
+        else if z.tapped and not z.completed
+            if not na(z.tp_line)
+                line.set_x2(z.tp_line, bar_index + future_ext)
+            if not na(z.armor_line)
+                line.set_x2(z.armor_line, bar_index + future_ext)
+            if not na(z.sl_line)
+                line.set_x2(z.sl_line, bar_index + future_ext)
+
+            if z.is_bull
+                // Profit Armor Stage 1 Trigger (+8.0% ROE -> BE Lock +0.10%)
+                if not z.armor_locked and high >= z.armor_p
+                    z.armor_locked := true
+                    float be_price = z.mt * 1.0010
+                    z.sl_p := be_price
+                    if not na(z.sl_line)
+                        line.set_y1(z.sl_line, be_price)
+                        line.set_y2(z.sl_line, be_price + future_ext)
+                        line.set_color(z.sl_line, col_armor)
+                    label.new(bar_index, low, "🛡️ ARMOR LOCK (+8% ROE)\nBE Secured (+0.1%)", color=color.new(#00E5FF, 15), textcolor=color.black, style=label.style_label_up, size=size.tiny)
+                    alert("HERMES 3.5 Profit Armor Locked at Break-Even (+0.1% buffer) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+
+                // TP Outcome
+                if high >= z.tp_p
+                    label.new(bar_index, high, "🎯 TP HIT! +14.0% ROE\n100% Compounded", color=#00F59B, textcolor=color.black, style=label.style_label_down, size=size.small)
+                    z.completed := true
+                    if not na(z.tp_line)
+                        line.set_x2(z.tp_line, bar_index)
+                    if not na(z.sl_line)
+                        line.set_x2(z.sl_line, bar_index)
+                    if not na(z.armor_line)
+                        line.set_x2(z.armor_line, bar_index)
+                    alert("HERMES 3.5 TAKE PROFIT HIT (+14.0% ROE) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+                else if low <= z.sl_p
+                    if z.armor_locked
+                        label.new(bar_index, low, "🛡️ BE EXIT (+0.1%)\nCapital Protected", color=color.new(#00E5FF, 20), textcolor=color.white, style=label.style_label_up, size=size.tiny)
+                    else
+                        label.new(bar_index, low, "🛑 SL HIT (-14.0% ROE)", color=#FF3B69, textcolor=color.white, style=label.style_label_up, size=size.tiny)
+                    z.completed := true
+                    if not na(z.tp_line)
+                        line.set_x2(z.tp_line, bar_index)
+                    if not na(z.sl_line)
+                        line.set_x2(z.sl_line, bar_index)
+                    if not na(z.armor_line)
+                        line.set_x2(z.armor_line, bar_index)
+
+            else
+                // Bearish Active Trade
+                if not z.armor_locked and low <= z.armor_p
+                    z.armor_locked := true
+                    float be_price = z.mt * 0.9990
+                    z.sl_p := be_price
+                    if not na(z.sl_line)
+                        line.set_y1(z.sl_line, be_price)
+                        line.set_y2(z.sl_line, be_price + future_ext)
+                        line.set_color(z.sl_line, col_armor)
+                    label.new(bar_index, high, "🛡️ ARMOR LOCK (+8% ROE)\nBE Secured (+0.1%)", color=color.new(#00E5FF, 15), textcolor=color.black, style=label.style_label_down, size=size.tiny)
+                    alert("HERMES 3.5 Profit Armor Locked at Break-Even (+0.1% buffer) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+
+                if low <= z.tp_p
+                    label.new(bar_index, low, "🎯 TP HIT! +14.0% ROE\n100% Compounded", color=#00F59B, textcolor=color.black, style=label.style_label_up, size=size.small)
+                    z.completed := true
+                    if not na(z.tp_line)
+                        line.set_x2(z.tp_line, bar_index)
+                    if not na(z.sl_line)
+                        line.set_x2(z.sl_line, bar_index)
+                    if not na(z.armor_line)
+                        line.set_x2(z.armor_line, bar_index)
+                    alert("HERMES 3.5 TAKE PROFIT HIT (+14.0% ROE) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+                else if high >= z.sl_p
+                    if z.armor_locked
+                        label.new(bar_index, high, "🛡️ BE EXIT (+0.1%)\nCapital Protected", color=color.new(#00E5FF, 20), textcolor=color.white, style=label.style_label_down, size=size.tiny)
+                    else
+                        label.new(bar_index, high, "🛑 SL HIT (-14.0% ROE)", color=#FF3B69, textcolor=color.white, style=label.style_label_up, size=size.tiny)
+                    z.completed := true
+                    if not na(z.tp_line)
+                        line.set_x2(z.tp_line, bar_index)
+                    if not na(z.sl_line)
+                        line.set_x2(z.sl_line, bar_index)
+                    if not na(z.armor_line)
+                        line.set_x2(z.armor_line, bar_index)
 
 // ------------------------------------------------------------------------------
 // 6. ON-CHART HUD DASHBOARD
 // ------------------------------------------------------------------------------
-var table dash = table.new(position.top_right, 2, 6, bgcolor=color.new(#0B0E14, 15), border_color=color.new(#374151, 50), border_width=1)
+var table dash = table.new(position.top_right, 2, 7, bgcolor=color.new(#0B0E14, 15), border_color=color.new(#374151, 50), border_width=1)
 
 if show_table and barstate.islast
     table.cell(dash, 0, 0, "🏛️ HERMES 3.5 APEX", bgcolor=color.new(#1E293B, 10), text_color=color.white, text_size=size.small)
@@ -296,11 +358,14 @@ if show_table and barstate.islast
     table.cell(dash, 0, 3, "Sentry 3 (Entry Level)", text_color=color.white, text_size=size.tiny)
     table.cell(dash, 1, 3, "50% Mean Threshold (MT)", text_color=color.yellow, text_size=size.tiny)
     
-    table.cell(dash, 0, 4, "Target / SL (5x)", text_color=color.white, text_size=size.tiny)
-    table.cell(dash, 1, 4, "+14.0% TP / -14.0% SL", text_color=#00F59B, text_size=size.tiny)
+    table.cell(dash, 0, 4, "Active Unmitigated Zones", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 4, str.tostring(active_unmitigated_count) + " Forward (+5 Bars Margin)", text_color=#00F59B, text_size=size.tiny)
     
-    table.cell(dash, 0, 5, "Profit Armor Stage 1", text_color=color.white, text_size=size.tiny)
-    table.cell(dash, 1, 5, "+8.0% ROE -> BE Lock +0.1%", text_color=#00E5FF, text_size=size.tiny)
+    table.cell(dash, 0, 5, "Target / SL (5x)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 5, "+14.0% TP / -14.0% SL", text_color=#00F59B, text_size=size.tiny)
+    
+    table.cell(dash, 0, 6, "Profit Armor Stage 1", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 6, "+8.0% ROE -> BE Lock +0.1%", text_color=#00E5FF, text_size=size.tiny)
 
 // ------------------------------------------------------------------------------
 // 7. TRADINGVIEW REAL-TIME ALERTS
