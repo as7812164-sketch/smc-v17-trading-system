@@ -1,5 +1,5 @@
 // Hermes 3.5 Single Tier - Deca Matrix Service Worker
-const CACHE_NAME = 'hermes-35-deca-v2';
+const CACHE_NAME = 'hermes-35-deca-v3';
 const STATIC_ASSETS = [
   '/static/style.css',
   '/static/manifest.json',

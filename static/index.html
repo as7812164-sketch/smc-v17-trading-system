@@ -27,8 +27,54 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-    <!-- Quad Compounding Strip & Forensic Modal Styles -->
-    <style id="quadCompoundingCustomStyles">
+    <!-- Deca Compounding Matrix (10 Sections) & Forensic Modal Styles -->
+    <style id="decaCompoundingCustomStyles">
+        .deca-compounding-grid {
+            display: grid !important;
+            grid-template-columns: repeat(5, 1fr) !important;
+            gap: 10px !important;
+            margin-bottom: 14px !important;
+        }
+        @media (max-width: 1400px) {
+            .deca-compounding-grid {
+                grid-template-columns: repeat(5, 1fr) !important;
+            }
+        }
+        @media (max-width: 1100px) {
+            .deca-compounding-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+        @media (max-width: 640px) {
+            .deca-compounding-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        .deca-section-card {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(11, 15, 25, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: all 0.22s ease-in-out;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        }
+        .deca-section-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+        .deca-section-card.macro-4h {
+            border-left: 3px solid #38BDF8;
+        }
+        .deca-section-card.intraday-1h {
+            border-left: 3px solid #FFD700;
+        }
         .quad-compounding-row {
             display: grid !important;
             grid-template-columns: repeat(4, 1fr) !important;
@@ -516,7 +562,7 @@
                     <i class="fa-solid fa-feather-pointed"></i>
                 </div>
                 <div class="brand-titles" style="display: flex; flex-direction: column;">
-                    <span class="top-brand-text" style="font-size: 13px; font-weight: 800; letter-spacing: 0.6px; color:#FFFFFF;">HERMES 2.0</span>
+                    <span class="top-brand-text" style="font-size: 13px; font-weight: 800; letter-spacing: 0.6px; color:#FFFFFF;">HERMES 3.5</span>
                     <span class="top-brand-sub" style="font-size: 9.5px; font-weight: 700; color:#38BDF8; font-family:var(--font-mono); letter-spacing:0.8px;">SMC AI AGENT</span>
                 </div>
             </a>
@@ -580,11 +626,17 @@
             <div class="top-account-selector" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 6px;" title="Switch Account">
                 <span style="width: 18px; height: 18px; border-radius: 50%; background: #2563eb; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; font-family: var(--font-mono);">S</span>
                 <select id="topAccountSelector" aria-label="Select Trading Account" style="background: transparent; border: none; color: #F8FAFC; font-size: 11px; font-family: var(--font-mono); outline: none; cursor: pointer;">
-                    <option value="paper_trading" selected>Quad Portfolio ($200)</option>
-                    <option value="binance_4h">Binance 4H Macro ($50)</option>
-                    <option value="binance_1h">Binance 1H Scalp ($50)</option>
-                    <option value="bitget_4h">Bitget 4H Macro ($50)</option>
-                    <option value="bitget_1h">Bitget 1H Scalp ($50)</option>
+                    <option value="paper_trading" selected>Deca Portfolio ($500.00)</option>
+                    <option value="sec_1">Section 1 (4H Macro) - $50.00</option>
+                    <option value="sec_2">Section 2 (4H Macro) - $50.00</option>
+                    <option value="sec_3">Section 3 (4H Macro) - $50.00</option>
+                    <option value="sec_4">Section 4 (4H Macro) - $50.00</option>
+                    <option value="sec_5">Section 5 (4H Macro) - $50.00</option>
+                    <option value="sec_6">Section 6 (1H Intraday) - $50.00</option>
+                    <option value="sec_7">Section 7 (1H Intraday) - $50.00</option>
+                    <option value="sec_8">Section 8 (1H Intraday) - $50.00</option>
+                    <option value="sec_9">Section 9 (1H Intraday) - $50.00</option>
+                    <option value="sec_10">Section 10 (1H Intraday) - $50.00</option>
                     <option value="bitget_live">Live Accounts (Binance/Bitget)</option>
                 </select>
             </div>
@@ -752,90 +804,25 @@
         <main class="dashboard-main-content">
         <!-- PANEL 1: DASHBOARD MAIN OVERVIEW (EXACT SPECIFICATION FROM REFERENCE IMAGE) -->
         <div class="dashboard-overview-container">
-            <!-- ROW 1: QUAD COMPOUNDING LIVE ACCOUNTS (BINANCE 4H, BINANCE 1H, BITGET 4H, BITGET 1H) -->
-            <div class="dashboard-tickers-row quad-compounding-row" id="quadCompoundingRow">
-                <!-- 1. BINANCE 4H MACRO -->
-                <div class="quad-ticker-card binance" id="cardBinance4h" onclick="openQuadAccountModal('binance_4h', 1)" title="Click to view full Account #1 trades & live forensic stats">
-                    <div class="qtc-top">
-                        <div class="qtc-brand-box">
-                            <span class="qtc-badge binance"><i class="fa-solid fa-coins"></i> BINANCE</span>
-                            <span class="qtc-tf-pill">4H MACRO</span>
-                        </div>
-                        <span class="qtc-status-dot idle" id="qtcDot_binance_4h" title="Queue Status"></span>
+            <!-- ROW 1: HERMES 3.5 DECA COMPOUNDING MATRIX (10 SECTIONS • $500.00 PORTFOLIO) -->
+            <div style="margin-bottom: 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:0 2px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:12px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-layer-group"></i> HERMES 3.5 DECA COMPOUNDING MATRIX
+                        </span>
+                        <span style="background:rgba(255,215,0,0.12); color:var(--gold); border:1px solid rgba(255,215,0,0.3); font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; font-family:var(--font-mono);">
+                            10 SECTIONS • $500.00 TOTAL
+                        </span>
                     </div>
-                    <div class="qtc-mid">
-                        <div class="qtc-bal-group">
-                            <span class="qtc-balance" id="qtcBal_binance_4h">$50.00</span>
-                            <span class="qtc-roi-pill neutral" id="qtcRoi_binance_4h">+0.00%</span>
-                        </div>
-                    </div>
-                    <div class="qtc-bot">
-                        <div class="qtc-pos-status" id="qtcPos_binance_4h"><i class="fa-solid fa-satellite-dish"></i> Waiting (0 Active)</div>
-                        <span class="qtc-wr-pill" id="qtcWr_binance_4h">WR: 0% | 0T</span>
+                    <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-secondary);">
+                        Target: <span style="color:#00F59B; font-weight:700;">$20,000 USDT</span> ($2,000 / Section) • 5x Isolated
                     </div>
                 </div>
 
-                <!-- 2. BINANCE 1H INTRADAY -->
-                <div class="quad-ticker-card binance" id="cardBinance1h" onclick="openQuadAccountModal('binance_1h', 2)" title="Click to view full Account #2 trades & live forensic stats">
-                    <div class="qtc-top">
-                        <div class="qtc-brand-box">
-                            <span class="qtc-badge binance"><i class="fa-solid fa-bolt"></i> BINANCE</span>
-                            <span class="qtc-tf-pill">1H INTRADAY</span>
-                        </div>
-                        <span class="qtc-status-dot idle" id="qtcDot_binance_1h" title="Queue Status"></span>
-                    </div>
-                    <div class="qtc-mid">
-                        <div class="qtc-bal-group">
-                            <span class="qtc-balance" id="qtcBal_binance_1h">$50.00</span>
-                            <span class="qtc-roi-pill neutral" id="qtcRoi_binance_1h">+0.00%</span>
-                        </div>
-                    </div>
-                    <div class="qtc-bot">
-                        <div class="qtc-pos-status" id="qtcPos_binance_1h"><i class="fa-solid fa-satellite-dish"></i> Waiting (0 Active)</div>
-                        <span class="qtc-wr-pill" id="qtcWr_binance_1h">WR: 0% | 0T</span>
-                    </div>
-                </div>
-
-                <!-- 3. BITGET 4H MACRO -->
-                <div class="quad-ticker-card bitget" id="cardBitget4h" onclick="openQuadAccountModal('bitget_4h', 3)" title="Click to view full Account #3 trades & live forensic stats">
-                    <div class="qtc-top">
-                        <div class="qtc-brand-box">
-                            <span class="qtc-badge bitget"><i class="fa-solid fa-gem"></i> BITGET</span>
-                            <span class="qtc-tf-pill">4H MACRO</span>
-                        </div>
-                        <span class="qtc-status-dot idle" id="qtcDot_bitget_4h" title="Queue Status"></span>
-                    </div>
-                    <div class="qtc-mid">
-                        <div class="qtc-bal-group">
-                            <span class="qtc-balance" id="qtcBal_bitget_4h">$50.00</span>
-                            <span class="qtc-roi-pill neutral" id="qtcRoi_bitget_4h">+0.00%</span>
-                        </div>
-                    </div>
-                    <div class="qtc-bot">
-                        <div class="qtc-pos-status" id="qtcPos_bitget_4h"><i class="fa-solid fa-satellite-dish"></i> Waiting (0 Active)</div>
-                        <span class="qtc-wr-pill" id="qtcWr_bitget_4h">WR: 0% | 0T</span>
-                    </div>
-                </div>
-
-                <!-- 4. BITGET 1H INTRADAY -->
-                <div class="quad-ticker-card bitget" id="cardBitget1h" onclick="openQuadAccountModal('bitget_1h', 4)" title="Click to view full Account #4 trades & live forensic stats">
-                    <div class="qtc-top">
-                        <div class="qtc-brand-box">
-                            <span class="qtc-badge bitget"><i class="fa-solid fa-gem"></i> BITGET</span>
-                            <span class="qtc-tf-pill">1H INTRADAY</span>
-                        </div>
-                        <span class="qtc-status-dot idle" id="qtcDot_bitget_1h" title="Queue Status"></span>
-                    </div>
-                    <div class="qtc-mid">
-                        <div class="qtc-bal-group">
-                            <span class="qtc-balance" id="qtcBal_bitget_1h">$50.00</span>
-                            <span class="qtc-roi-pill neutral" id="qtcRoi_bitget_1h">+0.00%</span>
-                        </div>
-                    </div>
-                    <div class="qtc-bot">
-                        <div class="qtc-pos-status" id="qtcPos_bitget_1h"><i class="fa-solid fa-satellite-dish"></i> Waiting (0 Active)</div>
-                        <span class="qtc-wr-pill" id="qtcWr_bitget_1h">WR: 0% | 0T</span>
-                    </div>
+                <!-- 10 Sections Grid: Sections 1-5 (4H Macro) & Sections 6-10 (1H Intraday) -->
+                <div class="deca-compounding-grid" id="decaCompoundingGrid">
+                    <!-- Populated dynamically by syncDashboardMetrics() -->
                 </div>
             </div>
 
@@ -3165,71 +3152,77 @@
         // Live Top Bar & Performance & Positions & Trade History Synchronization
         async function syncDashboardMetrics() {
             try {
-                const [accRes, perfRes, posRes, tradesRes] = await Promise.all([
-                    fetch('/api/paper/account'),
-                    fetch('/api/performance'),
-                    fetch('/api/paper/positions'),
-                    fetch('/api/paper/trades')
+                const ts = Date.now();
+                const [secRes, accRes, perfRes, posRes, tradesRes] = await Promise.all([
+                    fetch(`/api/paper/sections?t=${ts}`),
+                    fetch(`/api/paper/account?t=${ts}`),
+                    fetch(`/api/performance?t=${ts}`),
+                    fetch(`/api/paper/positions?t=${ts}`),
+                    fetch(`/api/paper/trades?t=${ts}`)
                 ]);
 
+                let secData = null;
                 let acc = null;
                 let perf = null;
                 let posData = null;
                 let tradesData = null;
 
+                if (secRes.ok) secData = await secRes.json();
                 if (accRes.ok) acc = await accRes.json();
                 if (perfRes.ok) perf = await perfRes.json();
                 if (posRes.ok) posData = await posRes.json();
                 if (tradesRes.ok) tradesData = await tradesRes.json();
 
-                if (acc) {
-                    const bal = Number(acc.current_balance) || 50.0;
-                    const eq = Number(acc.equity) || bal;
-                    const unPnl = Number(acc.unrealized_pnl_usdt) || 0.0;
-                    const totPnl = Number(acc.total_pnl) || 0.0;
-                    const retPct = Number(acc.return_pct) || 0.0;
-                    const wr = Number(acc.win_rate !== undefined ? acc.win_rate : 0.0);
-                    const wins = Number(acc.win_count !== undefined ? acc.win_count : 0);
-                    const losses = Number(acc.loss_count !== undefined ? acc.loss_count : 0);
-                    const totalTrades = wins + losses;
+                const comb = (secData && secData.combined) ? secData.combined : (acc || {});
+                const bal = Number(comb.total_current_balance || comb.current_balance || 500.0);
+                const eq = Number(comb.equity || bal);
+                const totPnl = Number(comb.total_pnl || 0.0);
+                const retPct = Number(comb.total_pnl_pct || comb.return_pct || 0.0);
+                const wr = Number(comb.overall_win_rate !== undefined ? comb.overall_win_rate : (comb.win_rate || 0.0));
+                const wins = Number(comb.total_wins !== undefined ? comb.total_wins : (comb.win_count || 0));
+                const losses = Number(comb.total_losses !== undefined ? comb.total_losses : (comb.loss_count || 0));
+                const totalTrades = wins + losses;
 
-                    // 1. Top Bar Metric Cards
-                    const topBal = document.getElementById("topPaperBalVal");
-                    const topEq = document.getElementById("topEquityVal");
-                    const topOpenPnl = document.getElementById("topOpenPnlVal");
-                    const topDailyPnl = document.getElementById("topDailyPnlVal");
-                    const topPaperBalPct = document.getElementById("topPaperBalPct");
+                // Positions list
+                const positions = posData ? (Array.isArray(posData) ? posData : (posData.positions || [])) : [];
+                const unPnl = positions.reduce((s, p) => s + Number(p.unrealized_pnl || p.unrealized_pnl_usdt || 0), 0.0);
 
-                    if (topBal) topBal.textContent = `$${bal.toFixed(2)}`;
-                    if (topEq) topEq.textContent = `$${eq.toFixed(2)}`;
-                    if (topPaperBalPct) topPaperBalPct.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
+                // 1. Top Bar Metric Cards
+                const topBal = document.getElementById("topPaperBalVal");
+                const topEq = document.getElementById("topEquityVal");
+                const topOpenPnl = document.getElementById("topOpenPnlVal");
+                const topDailyPnl = document.getElementById("topDailyPnlVal");
+                const topPaperBalPct = document.getElementById("topPaperBalPct");
 
-                    if (topOpenPnl) {
-                        topOpenPnl.textContent = `${unPnl >= 0 ? '+' : ''}$${unPnl.toFixed(2)}`;
-                        topOpenPnl.className = unPnl >= 0 ? 'tmc-val text-buy' : 'tmc-val text-sell';
-                    }
-                    if (topDailyPnl) {
-                        topDailyPnl.textContent = `${totPnl >= 0 ? '+' : ''}$${totPnl.toFixed(2)}`;
-                        topDailyPnl.className = totPnl >= 0 ? 'tmc-val text-buy' : 'tmc-val text-sell';
-                    }
+                if (topBal) topBal.textContent = `$${bal.toFixed(2)}`;
+                if (topEq) topEq.textContent = `$${eq.toFixed(2)}`;
+                if (topPaperBalPct) topPaperBalPct.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
 
-                    // 2. Performance (Live Quant Stats) Card (Dynamic real-time sync)
-                    const pnlEl = document.getElementById("kpiTotalPnlVal");
-                    const pnlPctEl = document.getElementById("kpiTotalPnlPct");
-                    const wrEl = document.getElementById("kpiWinRate");
-                    const tradesEl = document.getElementById("kpiTradesTotal");
-
-                    if (pnlEl) {
-                        pnlEl.textContent = `${totPnl >= 0 ? '+' : ''}$${totPnl.toFixed(2)}`;
-                        pnlEl.className = `p-val ${totPnl >= 0 ? 'text-buy' : 'text-sell'}`;
-                    }
-                    if (pnlPctEl) {
-                        pnlPctEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
-                        pnlPctEl.className = `p-pill ${retPct >= 0 ? 'pos' : 'neg'}`;
-                    }
-                    if (wrEl) wrEl.textContent = `${wr.toFixed(1)}%`;
-                    if (tradesEl) tradesEl.textContent = totalTrades;
+                if (topOpenPnl) {
+                    topOpenPnl.textContent = `${unPnl >= 0 ? '+' : ''}$${unPnl.toFixed(2)}`;
+                    topOpenPnl.className = unPnl >= 0 ? 'tmc-val text-buy' : 'tmc-val text-sell';
                 }
+                if (topDailyPnl) {
+                    topDailyPnl.textContent = `${totPnl >= 0 ? '+' : ''}$${totPnl.toFixed(2)}`;
+                    topDailyPnl.className = totPnl >= 0 ? 'tmc-val text-buy' : 'tmc-val text-sell';
+                }
+
+                // 2. Performance (Live Quant Stats) Card
+                const pnlEl = document.getElementById("kpiTotalPnlVal");
+                const pnlPctEl = document.getElementById("kpiTotalPnlPct");
+                const wrEl = document.getElementById("kpiWinRate");
+                const tradesEl = document.getElementById("kpiTradesTotal");
+
+                if (pnlEl) {
+                    pnlEl.textContent = `${totPnl >= 0 ? '+' : ''}$${totPnl.toFixed(2)}`;
+                    pnlEl.className = `p-val ${totPnl >= 0 ? 'text-buy' : 'text-sell'}`;
+                }
+                if (pnlPctEl) {
+                    pnlPctEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`;
+                    pnlPctEl.className = `p-pill ${retPct >= 0 ? 'pos' : 'neg'}`;
+                }
+                if (wrEl) wrEl.textContent = `${wr.toFixed(1)}%`;
+                if (tradesEl) tradesEl.textContent = totalTrades;
 
                 if (perf) {
                     const pfEl = document.getElementById("kpiProfitFactor");
@@ -3237,11 +3230,7 @@
                         const pf = Number(perf.profit_factor) || 0.0;
                         pfEl.textContent = pf.toFixed(2);
                     }
-
                     const pStats = perf.stats || {};
-                    const wr = Number(pStats.win_rate !== undefined ? pStats.win_rate : (perf.win_rate || 0.0));
-                    const wins = Number(pStats.wins !== undefined ? pStats.wins : (perf.wins || 0));
-                    const losses = Number(pStats.losses !== undefined ? pStats.losses : (perf.losses || 0));
                     const buyWr = Number(pStats.buy_wr !== undefined ? pStats.buy_wr : 0.0);
                     const buyWins = Number(pStats.buy_wins !== undefined ? pStats.buy_wins : 0);
                     const buyCompleted = Number(pStats.buy_completed !== undefined ? pStats.buy_completed : 0);
@@ -3266,7 +3255,7 @@
                     if (tpHitsEl) tpHitsEl.textContent = wins;
                 }
 
-                const positions = posData ? (Array.isArray(posData) ? posData : (posData.positions || [])) : [];
+                // Positions badges
                 const sidePos = document.getElementById("sidebarPosBadge");
                 const drawPos = document.getElementById("drawerPosBadge");
                 const dockBadge = document.getElementById("proDockCountBadge");
@@ -3298,72 +3287,97 @@
 
                 renderFuturesTradeHistory(allClosedTrades);
 
-                // --- 3. QUAD COMPOUNDING STRIP REAL-TIME CARDS SYNC ---
-                const quadData = (acc && acc.quad) ? acc.quad : {};
-                const channels = [
-                    { key: 'binance_4h', accId: 1, name: 'Binance 4H Macro' },
-                    { key: 'binance_1h', accId: 2, name: 'Binance 1H Intraday' },
-                    { key: 'bitget_4h', accId: 3, name: 'Bitget 4H Macro' },
-                    { key: 'bitget_1h', accId: 4, name: 'Bitget 1H Intraday' }
-                ];
+                // --- 3. HERMES 3.5 DECA COMPOUNDING MATRIX REAL-TIME SYNC (10 SECTIONS) ---
+                const sections = (secData && secData.sections) ? (Array.isArray(secData.sections) ? secData.sections : Object.values(secData.sections)) : [];
+                renderDecaSectionsGrid(sections, positions, allClosedTrades);
 
-                window.allLiveQuadAccounts = quadData;
-                window.allLiveOpenPositions = positions;
-                window.allClosedTrades = allClosedTrades;
-
-                channels.forEach(ch => {
-                    const qInfo = quadData[ch.key] || {};
-                    const bal = Number(qInfo.current_balance !== undefined ? qInfo.current_balance : 50.0);
-                    const retPct = Number(qInfo.return_pct !== undefined ? qInfo.return_pct : 0.0);
-                    const wr = Number(qInfo.win_rate !== undefined ? qInfo.win_rate : 0.0);
-                    const wins = Number(qInfo.win_count || 0);
-                    const losses = Number(qInfo.loss_count || 0);
-                    const totalT = wins + losses;
-
-                    // Balance & ROI
-                    const balEl = document.getElementById(`qtcBal_${ch.key}`);
-                    const roiEl = document.getElementById(`qtcRoi_${ch.key}`);
-                    if (balEl) balEl.textContent = `$${bal.toFixed(2)}`;
-                    if (roiEl) {
-                        roiEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
-                        roiEl.className = `qtc-roi-pill ${retPct > 0 ? 'up' : retPct < 0 ? 'down' : 'neutral'}`;
-                    }
-
-                    // Check if active position exists for this channel / account
-                    const activePos = positions.find(p => (p.channel && p.channel.toLowerCase() === ch.key.toLowerCase()) || (p.account_id && Number(p.account_id) === Number(ch.accId)));
-                    const posEl = document.getElementById(`qtcPos_${ch.key}`);
-                    const dotEl = document.getElementById(`qtcDot_${ch.key}`);
-                    const wrEl = document.getElementById(`qtcWr_${ch.key}`);
-
-                    if (activePos) {
-                        const pSide = (activePos.side || 'LONG').toUpperCase();
-                        const pRoe = Number(activePos.roi_pct !== undefined ? activePos.roi_pct : (activePos.pnl_pct || 0.0));
-                        if (posEl) {
-                            posEl.innerHTML = `<i class="fa-solid fa-circle-dot" style="color:#00F59B;"></i> ${activePos.symbol} ${pSide} (${pRoe >= 0 ? '+' : ''}${pRoe.toFixed(1)}%)`;
-                            posEl.className = "qtc-pos-status in-trade";
-                        }
-                        if (dotEl) dotEl.className = "qtc-status-dot active";
-                    } else {
-                        if (posEl) {
-                            posEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> ${totalT > 0 ? '0 Active (' + totalT + ' Done)' : 'Waiting (0 Active)'}`;
-                            posEl.className = "qtc-pos-status";
-                        }
-                        if (dotEl) dotEl.className = "qtc-status-dot idle";
-                    }
-
-                    if (wrEl) {
-                        wrEl.textContent = `WR: ${wr.toFixed(0)}% (${wins}/${totalT})`;
-                        wrEl.className = `qtc-wr-pill ${wr > 0 ? '' : totalT > 0 ? 'down' : ''}`;
-                    }
-                });
-
-                // If Forensic Modal is currently open, refresh its data in real time!
-                if (window.currentActiveQuadModal) {
-                    refreshQuadModalContent(window.currentActiveQuadModal.channel, window.currentActiveQuadModal.accId);
-                }
             } catch (err) {
                 console.warn("syncDashboardMetrics error:", err);
             }
+        }
+
+        // Render 10 Deca Sections in responsive grid
+        function renderDecaSectionsGrid(sections, positions, allClosedTrades) {
+            const container = document.getElementById("decaCompoundingGrid");
+            if (!container) return;
+
+            window.allDecaSections = sections;
+            window.allLiveOpenPositions = positions;
+            window.allClosedTrades = allClosedTrades;
+
+            if (!sections || sections.length === 0) {
+                sections = Array.from({ length: 10 }, (_, i) => ({
+                    id: i + 1,
+                    section_num: i + 1,
+                    name: `Section ${i + 1} (${i < 5 ? '4H Macro' : '1H Intraday'})`,
+                    timeframe: i < 5 ? '4h' : '1h',
+                    channel: `sec_${i + 1}`,
+                    balance: 50.0,
+                    current_balance: 50.0,
+                    pnl: 0.0,
+                    pnl_pct: 0.0,
+                    target: 2000.0,
+                    win_rate: 0.0,
+                    win_count: 0,
+                    loss_count: 0,
+                    status: 'IDLE'
+                }));
+            }
+
+            container.innerHTML = sections.map(sec => {
+                const sId = sec.id || sec.section_num;
+                const is4h = (sec.timeframe || (sId <= 5 ? '4h' : '1h')).toLowerCase() === '4h';
+                const bal = Number(sec.current_balance !== undefined ? sec.current_balance : (sec.balance || 50.0));
+                const retPct = Number(sec.pnl_pct !== undefined ? sec.pnl_pct : (sec.return_pct || 0.0));
+                const wr = Number(sec.win_rate || 0.0);
+                const wins = Number(sec.win_count || 0);
+                const losses = Number(sec.loss_count || 0);
+                const totT = wins + losses;
+
+                // Active trade check
+                const activeTrade = (positions || []).find(p => (p.account_id && Number(p.account_id) === Number(sId)) || (p.channel && p.channel === `sec_${sId}`));
+                const hasTrade = !!activeTrade;
+
+                const tfBadgeClass = is4h ? 'badge-cyan' : 'badge-gold';
+                const tfLabel = is4h ? '4H MACRO' : '1H INTRADAY';
+                const cardClass = is4h ? 'deca-section-card macro-4h' : 'deca-section-card intraday-1h';
+                const dotClass = hasTrade ? 'qtc-status-dot active' : 'qtc-status-dot idle';
+
+                let posHtml = `<div class="qtc-pos-status" style="font-size:10px;"><i class="fa-solid fa-satellite-dish"></i> ${totT > 0 ? '0 Active (' + totT + ' Done)' : 'Armed (0 Active)'}</div>`;
+                if (hasTrade) {
+                    const pSide = (activeTrade.side || 'LONG').toUpperCase();
+                    const pRoe = Number(activeTrade.roi_pct !== undefined ? activeTrade.roi_pct : (activeTrade.pnl_pct || 0.0));
+                    posHtml = `<div class="qtc-pos-status in-trade" style="font-size:10px;"><i class="fa-solid fa-circle-dot" style="color:#00F59B;"></i> ${activeTrade.symbol} ${pSide} (${pRoe >= 0 ? '+' : ''}${pRoe.toFixed(1)}%)</div>`;
+                }
+
+                return `
+                    <div class="${cardClass}" onclick="openSectionAccountModal(${sId})" title="Click to view Section ${sId} details & trades">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span style="font-size:11px; font-weight:800; color:#FFFFFF;">Sec ${sId}</span>
+                                <span class="sidebar-badge ${tfBadgeClass}" style="font-size:8.5px; padding:1px 5px;">${tfLabel}</span>
+                            </div>
+                            <span class="${dotClass}"></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:2px;">
+                            <span style="font-family:var(--font-mono); font-size:15px; font-weight:800; color:#FFFFFF;">$${bal.toFixed(2)}</span>
+                            <span class="qtc-roi-pill ${retPct > 0 ? 'up' : retPct < 0 ? 'down' : 'neutral'}" style="font-size:10px;">${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; font-family:var(--font-mono); font-size:9.5px; color:var(--text-secondary);">
+                            ${posHtml}
+                            <span style="color:${wr > 0 ? '#00F59B' : 'var(--text-muted)'}; font-weight:700;">WR: ${wr.toFixed(0)}%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (window.currentActiveQuadModal) {
+                refreshQuadModalContent(window.currentActiveQuadModal.channel, window.currentActiveQuadModal.accId);
+            }
+        }
+
+        function openSectionAccountModal(secId) {
+            openQuadAccountModal(`sec_${secId}`, secId);
         }
 
         // --- QUAD COMPOUNDING FORENSIC DETAIL MODAL CONTROLLER ---
@@ -3465,17 +3479,42 @@
                 }
             };
 
-            const meta = channelMeta[channel] || {
-                title: `${channel.toUpperCase()} Compounding`,
-                badge: channel.toUpperCase(),
-                exchange: 'EXCHANGE',
-                icon: 'fa-solid fa-chart-line',
-                color: '#38BDF8',
-                bg: 'rgba(56, 189, 248, 0.15)',
-                border: 'rgba(56, 189, 248, 0.3)',
-                target: 2000.0,
-                sub: `Account #${accId} • 5x Isolated Leverage Perpetual Futures • 1-Trade Sequential Queue`
-            };
+            let secObj = null;
+            if (channel && channel.startsWith("sec_")) {
+                const sNum = parseInt(channel.replace("sec_", ""));
+                secObj = (window.allDecaSections || []).find(s => Number(s.id || s.section_num) === Number(sNum));
+            } else if (accId) {
+                secObj = (window.allDecaSections || []).find(s => Number(s.id || s.section_num) === Number(accId));
+            }
+
+            let meta;
+            if (secObj) {
+                const sId = secObj.id || secObj.section_num;
+                const is4h = (secObj.timeframe || (sId <= 5 ? '4h' : '1h')).toLowerCase() === '4h';
+                meta = {
+                    title: `Section ${sId} (${is4h ? '4H Macro' : '1H Intraday'}) Compounding`,
+                    badge: `SEC_${sId} • ${is4h ? '4H MACRO' : '1H INTRADAY'}`,
+                    exchange: 'BITGET',
+                    icon: is4h ? 'fa-solid fa-chart-line' : 'fa-solid fa-bolt',
+                    color: is4h ? '#38BDF8' : '#FFD700',
+                    bg: is4h ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 215, 0, 0.15)',
+                    border: is4h ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255, 215, 0, 0.3)',
+                    target: 2000.0,
+                    sub: `Section #${sId} • 5x Isolated Perpetual Futures • Goal: $50 ➔ $2,000 USDT`
+                };
+            } else {
+                meta = channelMeta[channel] || {
+                    title: `${channel.toUpperCase()} Compounding`,
+                    badge: channel.toUpperCase(),
+                    exchange: 'EXCHANGE',
+                    icon: 'fa-solid fa-chart-line',
+                    color: '#38BDF8',
+                    bg: 'rgba(56, 189, 248, 0.15)',
+                    border: 'rgba(56, 189, 248, 0.3)',
+                    target: 2000.0,
+                    sub: `Account #${accId} • 5x Isolated Leverage Perpetual Futures • 1-Trade Sequential Queue`
+                };
+            }
 
             // 1. Header
             const avatarEl = document.getElementById("qfmAvatar");
@@ -3499,14 +3538,24 @@
             if (subEl) subEl.textContent = meta.sub;
 
             // 2. Metrics Cards
-            const bal = Number(qInfo.current_balance !== undefined ? qInfo.current_balance : 50.0);
-            const totPnl = Number(qInfo.total_pnl !== undefined ? qInfo.total_pnl : (bal - 50.0));
-            const retPct = Number(qInfo.return_pct !== undefined ? qInfo.return_pct : ((totPnl / 50.0) * 100));
-            const wr = Number(qInfo.win_rate !== undefined ? qInfo.win_rate : 0.0);
-            const wins = Number(qInfo.win_count || 0);
-            const losses = Number(qInfo.loss_count || 0);
+            let bal, totPnl, retPct, wr, wins, losses;
+            if (secObj) {
+                bal = Number(secObj.current_balance !== undefined ? secObj.current_balance : (secObj.balance || 50.0));
+                totPnl = Number(secObj.pnl !== undefined ? secObj.pnl : (bal - 50.0));
+                retPct = Number(secObj.pnl_pct !== undefined ? secObj.pnl_pct : ((totPnl / 50.0) * 100));
+                wr = Number(secObj.win_rate || 0.0);
+                wins = Number(secObj.win_count || 0);
+                losses = Number(secObj.loss_count || 0);
+            } else {
+                bal = Number(qInfo.current_balance !== undefined ? qInfo.current_balance : 50.0);
+                totPnl = Number(qInfo.total_pnl !== undefined ? qInfo.total_pnl : (bal - 50.0));
+                retPct = Number(qInfo.return_pct !== undefined ? qInfo.return_pct : ((totPnl / 50.0) * 100));
+                wr = Number(qInfo.win_rate !== undefined ? qInfo.win_rate : 0.0);
+                wins = Number(qInfo.win_count || 0);
+                losses = Number(qInfo.loss_count || 0);
+            }
             const totalT = wins + losses;
-            const target = Number(qInfo.milestone_target || meta.target);
+            const target = Number((secObj && secObj.target) || qInfo.milestone_target || meta.target);
             const progPct = target > 0 ? (bal / target) * 100 : 0.0;
 
             const balEl = document.getElementById("qfmBalance");

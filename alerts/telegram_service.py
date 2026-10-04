@@ -45,6 +45,7 @@ from ai.gemini_analyst import GeminiAnalyst
 from ai.smart_money_analyzer import evaluate_setup_confluence
 
 TELEGRAM_API_BASE = "https://api.telegram.org/bot"
+TELEGRAM_WEBAPP_URL = "https://smc-ai-agent.onrender.com/?v=350_deca"
 
 gemini_analyst = GeminiAnalyst()
 
@@ -71,7 +72,7 @@ def get_main_menu_keyboard() -> Dict[str, Any]:
     """Persistent 1-Tap bottom keyboard for Telegram clients."""
     return {
         "keyboard": [
-            [{"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}],
+            [{"text": "📱 Open Mobile Terminal", "web_app": {"url": TELEGRAM_WEBAPP_URL}}],
             [{"text": "📊 Live Status"}, {"text": "💰 PnL & Balance"}],
             [{"text": "📈 Open Trades"}, {"text": "🏆 Win Rate & Stats"}],
             [{"text": "📜 Trade History"}, {"text": "🧠 Hermes AI Agent"}],
@@ -103,7 +104,7 @@ def get_alert_inline_keyboard(symbol: str, exchange: Optional[str] = None) -> Di
         {"text": "🎯 $500 ➔ $20K Deca Goal", "callback_data": f"goal_{clean_sym}"}
     ])
     kb.append([
-        {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
+        {"text": "📱 Open Mobile Terminal", "web_app": {"url": TELEGRAM_WEBAPP_URL}}
     ])
     return {"inline_keyboard": kb}
 
@@ -623,7 +624,7 @@ class TelegramService:
                     {"text": "💰 PnL", "callback_data": "menu_pnl"}
                 ],
                 [
-                    {"text": "📱 Open In-App Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}},
+                    {"text": "📱 Open In-App Terminal", "web_app": {"url": TELEGRAM_WEBAPP_URL}},
                     {"text": "📦 Active Zones", "callback_data": "menu_zones"}
                 ]
             ]
@@ -941,7 +942,7 @@ class TelegramService:
                     {"text": "🎯 $500 ➔ $20K Deca Goal", "callback_data": f"goal_{sym}"}
                 ],
                 [
-                    {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
+                    {"text": "📱 Open Mobile Terminal", "web_app": {"url": TELEGRAM_WEBAPP_URL}}
                 ]
             ]
         }
@@ -1376,7 +1377,7 @@ class TelegramService:
 
         inline_buttons.extend([
             [
-                {"text": "📱 Open Full Terminal (Positions HUD)", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
+                {"text": "📱 Open Full Terminal (Positions HUD)", "web_app": {"url": TELEGRAM_WEBAPP_URL}}
             ],
             [
                 {"text": "📊 Live Status", "callback_data": "refresh_status"},
@@ -1555,7 +1556,7 @@ class TelegramService:
                 "type": "web_app",
                 "text": "📱 Open App",
                 "web_app": {
-                    "url": "https://smc-ai-agent.onrender.com"
+                    "url": TELEGRAM_WEBAPP_URL
                 }
             }
         }

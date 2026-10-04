@@ -1247,9 +1247,7 @@
         if ('caches' in window) {
             caches.keys().then(keys => {
                 keys.forEach(k => {
-                    if (k.includes('hermes-apex') || k.includes('v7')) {
-                        caches.delete(k);
-                    }
+                    caches.delete(k);
                 });
             });
         }
@@ -1275,7 +1273,7 @@
 
         async function fetchAccountData() {
             try {
-                const secRes = await fetch('/api/paper/sections');
+                const secRes = await fetch('/api/paper/sections?t=' + Date.now());
                 const secData = await secRes.json();
                 
                 let total = 500.0;
@@ -1292,7 +1290,7 @@
                     openTradesCount = Number(comb.total_open_trades || secData.total_open_trades || 0);
                     winRate = Number(comb.overall_win_rate || secData.combined_win_rate || 0.0);
                 } else {
-                    const accRes = await fetch('/api/paper/account');
+                    const accRes = await fetch('/api/paper/account?t=' + Date.now());
                     const accData = await accRes.json();
                     if (accData && accData.combined) {
                         total = Number(accData.combined.current_balance || 500.0);
@@ -1438,7 +1436,7 @@
 
         async function fetchMarketsData() {
             try {
-                const res = await fetch('/api/markets/overview');
+                const res = await fetch('/api/markets/overview?t=' + Date.now());
                 const data = await res.json();
                 if (data && data.coins) {
                     allCoinsData = data.coins;
@@ -1617,7 +1615,7 @@
 
         async function fetchPositions() {
             try {
-                const res = await fetch('/api/paper/positions');
+                const res = await fetch('/api/paper/positions?t=' + Date.now());
                 const data = await res.json();
                 const container = document.getElementById('positionsContainer');
                 if (!container) return;
@@ -1700,7 +1698,7 @@
 
         async function fetchTradesHistory() {
             try {
-                const res = await fetch('/api/paper/trades');
+                const res = await fetch('/api/paper/trades?t=' + Date.now());
                 const data = await res.json();
                 const container = document.getElementById('tradesHistoryContainer');
                 if (!container) return;
