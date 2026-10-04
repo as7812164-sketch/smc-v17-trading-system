@@ -6473,6 +6473,73 @@ body.dark-theme::before {
     font-weight: 600;
 }
 
+/* HERMES 3.5 RADAR CARD 2 ACTION POINTS (Chart & Position) */
+.drc-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 3px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.drc-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.drc-action-btn.btn-chart {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38BDF8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.drc-action-btn.btn-chart:hover {
+    background: rgba(56, 189, 248, 0.25);
+    border-color: #38BDF8;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
+}
+
+.drc-action-btn.btn-position {
+    background: linear-gradient(135deg, rgba(0, 245, 155, 0.2), rgba(5, 150, 105, 0.3));
+    color: #00F59B;
+    border: 1px solid rgba(0, 245, 155, 0.45);
+}
+
+.drc-action-btn.btn-position:hover {
+    background: linear-gradient(135deg, #00F59B, #059669);
+    color: #000000;
+    border-color: #00F59B;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 10px rgba(0, 245, 155, 0.35);
+}
+
+.drc-action-btn.btn-close-pos {
+    background: rgba(255, 77, 106, 0.15);
+    color: #FF4D6A;
+    border: 1px solid rgba(255, 77, 106, 0.35);
+}
+
+.drc-action-btn.btn-close-pos:hover {
+    background: rgba(255, 77, 106, 0.3);
+    color: #FFFFFF;
+    border-color: #FF4D6A;
+}
+
 /* ROW 3: OPEN POSITIONS + PERFORMANCE 7D */
 .dashboard-bottom-row {
     display: grid;

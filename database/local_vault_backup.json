@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "updated_at": 1791058287568,
-  "updated_at_str": "2026-10-04 01:41:27 IST",
+  "updated_at": 1791118014798,
+  "updated_at_str": "2026-10-04 18:16:54 IST",
   "accounts": [
     {
       "id": 1,
@@ -174,15 +174,15 @@
     "last_scan_time": "",
     "last_ob_refresh": "26 Sep 2026 \u2022 01:30:43 PM IST",
     "next_refresh": "26 Sep 2026 \u2022 01:40:43 PM IST",
-    "last_alert": "GALAUSDT SL HIT (-3%)",
+    "last_alert": "Hermes 3.5 10-Section Compounding Engine Armed ($500 USDT)",
     "binance_status": "CONNECTED",
     "network_status": "STABLE",
     "coins_active_count": "50",
     "coins_subscribed": "50/50",
     "last_scan_duration": "6s",
     "hermes_status": "ACTIVE_24_7",
-    "hermes_last_scan": "03 Oct 2026 \u2022 01:59:55 PM IST",
-    "hermes_setups_detected": "19",
+    "hermes_last_scan": "04 Oct 2026 \u2022 05:03:46 PM IST",
+    "hermes_setups_detected": "13",
     "ai_self_heal_last_action": "Auto-Healed position APTUSDT #342: SL Breached (Cur Price 0.7867 <= SL 0.787487)",
     "ai_self_heal_total_count": "6",
     "hermes_mode": "HERMES_3.5_SINGLE_TIER"
@@ -220,10 +220,10 @@
     "bitget_4h_2_compounding_balance": "50.0",
     "bitget_1h_1_compounding_balance": "50.0",
     "bitget_1h_2_compounding_balance": "50.0",
-    "strategy_version": "HERMES_3.5_SINGLE_TIER",
-    "hermes35_entry_mode": "50% Mean Threshold (MT)",
     "hermes_margin_allocation_pct": "0.15",
     "binance_auto_trade": "false",
+    "strategy_version": "HERMES_3.5_SINGLE_TIER",
+    "hermes35_entry_mode": "50% Mean Threshold (MT)",
     "total_compounding_sections": "10",
     "total_compounding_capital": "500.0"
   }

@@ -599,179 +599,105 @@ function drawSmcZoneBoxes() {
 
         // Filter strictly fresh unmitigated & active zones
         const unmitigatedZones = rawZonesData.filter(z => z.status === 'QUALIFIED' || z.status === 'ACTIVE');
-        
-        const buyZones = unmitigatedZones.filter(z => z.side === 'BUY').sort((a, b) => b.ob_high - a.ob_high);
-        const sellZones = unmitigatedZones.filter(z => z.side === 'SELL').sort((a, b) => a.ob_low - b.ob_low);
 
-        const renderZoneList = (zoneList, isBuySide) => {
-            const totalCount = zoneList.length;
-            zoneList.forEach((z, rankIdx) => {
-                if (!z.ob_high || !z.ob_low || !z.origin_time) return;
+        unmitigatedZones.forEach(z => {
+            if (!z.ob_high || !z.ob_low || !z.origin_time) return;
 
-                const isMiddle = (totalCount >= 2 && rankIdx === 1) || Boolean(z.is_2nd_ob);
-                const isTop = (isBuySide ? rankIdx === 0 : rankIdx === (totalCount - 1));
-                const isBottom = (isBuySide ? rankIdx === (totalCount - 1) : rankIdx === 0);
+            const isBuySide = (z.side === 'BUY');
+            const originSec = Math.floor(z.origin_time / 1000);
 
-                const originSec = Math.floor(z.origin_time / 1000);
-
-                let x1 = timeScale.timeToCoordinate(originSec);
-                if (x1 === null || x1 === undefined) {
-                    if (visibleRange && originSec < visibleRange.from) {
-                        x1 = 0;
-                    } else if (visibleRange && originSec > visibleRange.to) {
-                        return;
-                    } else {
-                        x1 = 0;
-                    }
+            let x1 = timeScale.timeToCoordinate(originSec);
+            if (x1 === null || x1 === undefined) {
+                if (visibleRange && originSec < visibleRange.from) {
+                    x1 = 0;
+                } else if (visibleRange && originSec > visibleRange.to) {
+                    return;
                 } else {
-                    x1 = Math.max(0, x1);
+                    x1 = 0;
                 }
-
-                const x2 = plotWidth;
-                const boxWidth = x2 - x1;
-                if (boxWidth <= 4) return;
-
-                const yTop = mainSeries.priceToCoordinate(Math.max(z.ob_high, z.ob_low));
-                const yBottom = mainSeries.priceToCoordinate(Math.min(z.ob_high, z.ob_low));
-                if (yTop === null || yBottom === null) return;
-
-                const minY = Math.min(yTop, yBottom);
-                const maxY = Math.max(yTop, yBottom);
-                let boxHeight = Math.max(3, maxY - minY);
-
-                if (maxY < 0 || minY > height) return;
-
-                let fillColor = isBuySide ? 'rgba(0, 245, 155, 0.08)' : 'rgba(255, 59, 105, 0.08)';
-                let borderColor = isBuySide ? 'rgba(0, 245, 155, 0.40)' : 'rgba(255, 59, 105, 0.40)';
-                let textColor = isBuySide ? '#00F59B' : '#FF3B69';
-
-                ctx.save();
-                if (isMiddle) {
-                    fillColor = 'rgba(255, 215, 0, 0.18)';
-                    borderColor = '#FFD700';
-                    textColor = '#FFD700';
-                    ctx.shadowColor = 'rgba(255, 215, 0, 0.75)';
-                    ctx.shadowBlur = 10;
-                }
-
-                ctx.fillStyle = fillColor;
-                ctx.fillRect(x1, minY, boxWidth, boxHeight);
-
-                ctx.strokeStyle = borderColor;
-                ctx.lineWidth = isMiddle ? 2 : 1;
-                ctx.strokeRect(x1, minY, boxWidth, boxHeight);
-                ctx.restore();
-
-                // Zone Header Label
-                ctx.save();
-                ctx.font = "bold 10px 'JetBrains Mono', monospace";
-                ctx.fillStyle = textColor;
-                
-                let tagTitle = '';
-                if (isMiddle) {
-                    const airStr = (z.airspace_pct !== null && z.airspace_pct !== undefined) ? `${z.airspace_pct}%` : '≥3.0%';
-                    const airIcon = z.airspace_valid ? 'AIRSPACE QUALIFIED ✅' : (z.airspace_valid === false ? 'LOW AIRSPACE ❌' : 'VERIFIED ✅');
-                    tagTitle = `👑 2ND OB (THE TRADED ZONE) • Airspace: ${airStr} [${airIcon}]`;
-                } else if (isTop) {
-                    tagTitle = isBuySide ? '🟢 OB #1 (UPPER RESISTANCE CEILING)' : '🛡️ OB #3 (UPPER BASE)';
-                } else if (isBottom) {
-                    tagTitle = isBuySide ? '🛡️ OB #3 (LOWER DEMAND FLOOR)' : '🔴 OB #1 (LOWER DEMAND FLOOR)';
-                } else {
-                    tagTitle = isBuySide ? '🟢 BUY OB' : '🔴 SELL OB';
-                }
-
-                let statTitle = z.status === 'ACTIVE' ? ' [1ST TAP ARMED]' : ' [FRESH 1ST TAP]';
-                const tagText = `${tagTitle}${statTitle} [${formatPrice(z.ob_low)} - ${formatPrice(z.ob_high)}]`;
-                const textY = boxHeight >= 16 ? (minY + 12) : (minY - 4);
-                ctx.fillText(tagText, x1 + 8, textY);
-
-                // Right Info Tag
-                const entryVal = z.entry_price || (isBuySide ? z.ob_high * 1.0005 : z.ob_low * 0.9995);
-                const probText = z.prob_score ? `🚀 ${z.prob_score}% Prob • ` : '';
-                const infoText = `${probText}1-Tick Entry: $${formatPrice(entryVal)}`;
-                const infoMetrics = ctx.measureText(infoText);
-                if (boxWidth > infoMetrics.width + 160 && textY > 0) {
-                    ctx.fillStyle = textColor;
-                    ctx.fillText(infoText, x2 - infoMetrics.width - 10, textY);
-                }
-                ctx.restore();
-
-                // 2ND OB SNIPER PROJECTION LINES (TP, BE, Soft SL, Hard SL)
-                if (isMiddle) {
-                    const is1h = (currentTimeframe === "1h");
-                    const tpPx = z.tp_price || (isBuySide ? entryVal * (is1h ? 1.0160 : 1.0240) : entryVal * (is1h ? 0.9840 : 0.9760));
-                    const bePx = z.fee_shield_be_price || (isBuySide ? entryVal * 1.0010 : entryVal * 0.9990);
-                    const slPx = z.sl_price || (isBuySide ? entryVal * (is1h ? 0.9800 : 0.9775) : entryVal * (is1h ? 1.0200 : 1.0225));
-                    const hardSlPx = z.hard_sl_price || (isBuySide ? entryVal * 0.9680 : entryVal * 1.0320);
-
-                    const projStartX = Math.max(x1, plotWidth - 250);
-                    const projEndX = plotWidth + 60;
-
-                    const yTp = mainSeries.priceToCoordinate(tpPx);
-                    const yBe = mainSeries.priceToCoordinate(bePx);
-                    const ySl = mainSeries.priceToCoordinate(slPx);
-                    const yHardSl = mainSeries.priceToCoordinate(hardSlPx);
-
-                    // 1. Take Profit Line (Emerald Green)
-                    drawSmcProjectionLine(ctx, yTp, projStartX, projEndX, '#00F59B', [5, 4], `🎯 TP (+${is1h ? '8.0' : '12.0'}% ROE): $${formatPrice(tpPx)}`, 'rgba(0, 245, 155, 0.16)');
-
-                    // 2. Fee-Shield Breakeven Line (Cyan)
-                    drawSmcProjectionLine(ctx, yBe, projStartX, projEndX, '#00E5FF', [3, 3], `🛡️ Fee-Shield BE (+0.10% Buf): $${formatPrice(bePx)}`, 'rgba(0, 229, 255, 0.16)');
-
-                    // 3. Soft SL Line (Coral Red)
-                    drawSmcProjectionLine(ctx, ySl, projStartX, projEndX, '#FF3B69', [5, 4], `🛑 Soft SL (${is1h ? '-10.0' : '-11.25'}% ROE Close): $${formatPrice(slPx)}`, 'rgba(255, 59, 105, 0.16)');
-
-                    // 4. Hard SL Emergency Line (Dark Crimson)
-                    drawSmcProjectionLine(ctx, yHardSl, projStartX, projEndX, '#EF4444', [2, 3], `⚡ Hard SL (-16.0% ROE Tick): $${formatPrice(hardSlPx)}`, 'rgba(239, 68, 68, 0.22)');
-                }
-            });
-        };
-
-        renderZoneList(buyZones, true);
-        renderZoneList(sellZones, false);
-
-        // Visual Airspace Ruler Bracket between 2nd OB and 1st OB
-        const midBuy = buyZones.find(z => z.is_2nd_ob);
-        const topBuy = buyZones.length >= 1 ? buyZones[0] : null;
-        if (midBuy && topBuy && topBuy !== midBuy && topBuy.ob_low > midBuy.ob_high) {
-            const yTop = mainSeries.priceToCoordinate(topBuy.ob_low);
-            const yBot = mainSeries.priceToCoordinate(midBuy.ob_high);
-            if (yTop !== null && yBot !== null && yBot > yTop) {
-                const bracketX = Math.min(plotWidth - 18, width - 85);
-                const airValid = midBuy.airspace_valid !== false;
-                const airColor = airValid ? '#00F59B' : '#FF3B69';
-                ctx.save();
-                ctx.strokeStyle = airColor;
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([3, 3]);
-                ctx.beginPath();
-                ctx.moveTo(bracketX, yTop);
-                ctx.lineTo(bracketX, yBot);
-                ctx.stroke();
-
-                // Bracket Ticks
-                ctx.setLineDash([]);
-                ctx.beginPath();
-                ctx.moveTo(bracketX - 5, yTop);
-                ctx.lineTo(bracketX + 5, yTop);
-                ctx.moveTo(bracketX - 5, yBot);
-                ctx.lineTo(bracketX + 5, yBot);
-                ctx.stroke();
-
-                // Hermes Sentry Clearance Center Badge
-                const midY = (yTop + yBot) / 2;
-                const airLabel = `↕ Hermes Sentry Clearance: ${midBuy.airspace_pct || '0'}% ${airValid ? 'PASSED ≥ 3% ✅' : 'RESTRICTED < 3% ❌'}`;
-                ctx.font = "bold 9px 'JetBrains Mono', monospace";
-                const airWidth = ctx.measureText(airLabel).width;
-                ctx.fillStyle = "rgba(10, 13, 20, 0.92)";
-                ctx.fillRect(bracketX - airWidth - 12, midY - 9, airWidth + 8, 18);
-                ctx.strokeStyle = airColor;
-                ctx.strokeRect(bracketX - airWidth - 12, midY - 9, airWidth + 8, 18);
-                ctx.fillStyle = airColor;
-                ctx.fillText(airLabel, bracketX - airWidth - 8, midY + 4);
-                ctx.restore();
+            } else {
+                x1 = Math.max(0, x1);
             }
-        }
+
+            const x2 = plotWidth;
+            const boxWidth = x2 - x1;
+            if (boxWidth <= 4) return;
+
+            const yTop = mainSeries.priceToCoordinate(Math.max(z.ob_high, z.ob_low));
+            const yBottom = mainSeries.priceToCoordinate(Math.min(z.ob_high, z.ob_low));
+            if (yTop === null || yBottom === null) return;
+
+            const minY = Math.min(yTop, yBottom);
+            const maxY = Math.max(yTop, yBottom);
+            let boxHeight = Math.max(3, maxY - minY);
+
+            if (maxY < 0 || minY > height) return;
+
+            // Hermes 3.5 Single Tier Institutional Order Block Shading
+            const fillColor = isBuySide ? 'rgba(0, 245, 155, 0.12)' : 'rgba(255, 59, 105, 0.12)';
+            const borderColor = isBuySide ? '#00F59B' : '#FF3B69';
+            const textColor = isBuySide ? '#00F59B' : '#FF3B69';
+
+            ctx.save();
+            ctx.fillStyle = fillColor;
+            ctx.fillRect(x1, minY, boxWidth, boxHeight);
+
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(x1, minY, boxWidth, boxHeight);
+            ctx.restore();
+
+            // Zone Header Label
+            ctx.save();
+            ctx.font = "bold 10px 'JetBrains Mono', monospace";
+            ctx.fillStyle = textColor;
+            
+            const tagTitle = isBuySide ? '🏛️ HERMES 3.5 DEMAND OB (SINGLE TIER)' : '🏛️ HERMES 3.5 SUPPLY OB (SINGLE TIER)';
+            const statTitle = z.status === 'ACTIVE' ? ' [1ST TAP ARMED]' : ' [FRESH UNMITIGATED]';
+            const tagText = `${tagTitle}${statTitle} [${formatPrice(z.ob_low)} - ${formatPrice(z.ob_high)}]`;
+            const textY = boxHeight >= 16 ? (minY + 12) : (minY - 4);
+            ctx.fillText(tagText, x1 + 8, textY);
+
+            // Right Info Tag (50% Mean Threshold)
+            const mtVal = z.mean_threshold || z.entry_price || ((z.ob_high + z.ob_low) / 2.0);
+            const probText = z.prob_score ? `🚀 ${z.prob_score}% Prob • ` : '';
+            const infoText = `${probText}50% MT: $${formatPrice(mtVal)}`;
+            const infoMetrics = ctx.measureText(infoText);
+            if (boxWidth > infoMetrics.width + 160 && textY > 0) {
+                ctx.fillStyle = textColor;
+                ctx.fillText(infoText, x2 - infoMetrics.width - 10, textY);
+            }
+            ctx.restore();
+
+            // HERMES 3.5 SINGLE TIER PROJECTION LINES
+            // 1. Mean Threshold (MT) Entry: 50% of Order Block
+            // 2. Take Profit: +14.0% ROE (+2.80% move)
+            // 3. Profit Armor Stage 1: +8.0% ROE (+1.60% move -> BE lock)
+            // 4. Dynamic Stop Loss: -14.0% ROE (-2.80% move)
+            const tpPx = z.tp_price || (isBuySide ? mtVal * 1.0280 : mtVal * 0.9720);
+            const armorPx = z.armor_stage1_price || (isBuySide ? mtVal * 1.0160 : mtVal * 0.9840);
+            const slPx = z.sl_price || (isBuySide ? mtVal * 0.9720 : mtVal * 1.0280);
+
+            const projStartX = Math.max(x1, plotWidth - 270);
+            const projEndX = plotWidth + 60;
+
+            const yMt = mainSeries.priceToCoordinate(mtVal);
+            const yTp = mainSeries.priceToCoordinate(tpPx);
+            const yArmor = mainSeries.priceToCoordinate(armorPx);
+            const ySl = mainSeries.priceToCoordinate(slPx);
+
+            // 1. 50% Mean Threshold (MT) Entry Line (Amber Gold)
+            drawSmcProjectionLine(ctx, yMt, projStartX, projEndX, '#F59E0B', [4, 3], `⚡ 50% MT Entry: $${formatPrice(mtVal)}`, 'rgba(245, 158, 11, 0.22)');
+
+            // 2. Take Profit Line (+14.0% ROE / +2.8% move) (Emerald Green)
+            drawSmcProjectionLine(ctx, yTp, projStartX, projEndX, '#00F59B', [6, 4], `🎯 TP (+14.0% ROE / +2.8%): $${formatPrice(tpPx)}`, 'rgba(0, 245, 155, 0.20)');
+
+            // 3. Multi-Stage Profit Armor Stage 1 (+8.0% ROE -> BE Lock) (Cyan)
+            drawSmcProjectionLine(ctx, yArmor, projStartX, projEndX, '#00E5FF', [3, 3], `🛡️ Armor Stage 1 (+8.0% ROE -> BE Lock): $${formatPrice(armorPx)}`, 'rgba(0, 229, 255, 0.20)');
+
+            // 4. Dynamic Stop Loss Line (-14.0% ROE / -2.8% move) (Coral Red)
+            drawSmcProjectionLine(ctx, ySl, projStartX, projEndX, '#FF3B69', [5, 4], `🛑 Dynamic SL (-14.0% ROE / -2.8%): $${formatPrice(slPx)}`, 'rgba(255, 59, 105, 0.20)');
+        });
     }
 
     // 2. Render User Drawings from TradingView Floating Toolbar
@@ -1971,66 +1897,32 @@ function calculateBollingerBands(candles, period = 20, mult = 2) {
 }
 
 // --- Update Hermes 2.0 Apex Indicator Live Floating Chart HUD ---
+// --- Update Hermes 3.5 Single Tier Indicator Live Floating Chart HUD ---
 function updateSmcChartHud(data) {
     const hud = document.getElementById("smcChartHud");
     if (!hud) return;
 
     const tfEl = document.getElementById("hudTimeframe");
     const targetSlEl = document.getElementById("hudTargetSl");
-    const airValEl = document.getElementById("hudAirspaceVal");
     const gateStatusEl = document.getElementById("hudGateStatus");
 
     const tf = (currentTimeframe || "4h").toUpperCase();
-    const is1h = (currentTimeframe === "1h");
-    const targetRoe = is1h ? "+8.00% ROE" : "+14.00% ROE";
-    const slRoe = is1h ? "-10.00% ROE" : "-14.00% ROE";
+    const targetRoe = "+14.00% ROE (+2.80%)";
+    const slRoe = "-14.00% ROE (-2.80%)";
 
-    if (tfEl) tfEl.innerText = `${tf} APEX (${targetRoe})`;
+    if (tfEl) tfEl.innerText = `${tf} SINGLE TIER (5X)`;
     if (targetSlEl) targetSlEl.innerHTML = `<span style="color:#00F59B; font-weight:700;">${targetRoe}</span> / <span style="color:#FF3B69; font-weight:700;">${slRoe}</span>`;
 
-    // Locate active 2nd OB
     const zones = (data && data.zones) ? data.zones : (rawZonesData || []);
-    const midOb = zones.find(z => z.is_2nd_ob);
+    const activeZone = zones.find(z => z.status === 'ACTIVE' || z.status === 'QUALIFIED');
 
-    if (midOb) {
-        const isBuy = midOb.side === "BUY";
-        const indStatus = data ? data.indicator_status : null;
-        let airPct = midOb.airspace_pct;
-        if (airPct === null || airPct === undefined) {
-            airPct = indStatus ? (isBuy ? indStatus.buy_airspace_pct : indStatus.sell_airspace_pct) : 0;
-        }
-        const isValid = (midOb.airspace_valid !== null && midOb.airspace_valid !== undefined) 
-            ? midOb.airspace_valid 
-            : (airPct >= 3.0);
-
-        if (airValEl) {
-            if (isValid) {
-                airValEl.innerHTML = `<span style="color:#00F59B; font-weight:700;">${midOb.side} 2nd: ${airPct}% (≥3.0% CLEAR ✅)</span>`;
-            } else {
-                airValEl.innerHTML = `<span style="color:#FF3B69; font-weight:700;">${midOb.side} 2nd: ${airPct}% (&lt;3.0% FRICTION ❌)</span>`;
-            }
-        }
-
-        if (gateStatusEl) {
-            if (isValid) {
-                const entry = midOb.entry_price || (isBuy ? midOb.ob_high * 1.0005 : midOb.ob_low * 0.9995);
-                gateStatusEl.innerHTML = `<span style="color:#FFD700; font-weight:800;"><i class="fa-solid fa-crown"></i> 2nd OB ARMED: $${formatPrice(entry)}</span>`;
-            } else {
-                gateStatusEl.innerHTML = `<span style="color:#FF3B69; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> BLOCKED (Low Airspace)</span>`;
-            }
-        }
-    } else {
-        if (airValEl) {
-            const ind = data ? data.indicator_status : null;
-            if (ind && (ind.buy_airspace_pct > 0 || ind.sell_airspace_pct > 0)) {
-                airValEl.innerHTML = `<span style="color:#94A3B8;">Clearance: ${ind.buy_airspace_pct || ind.sell_airspace_pct}% (Scanning 2nd OB)</span>`;
-            } else {
-                airValEl.innerHTML = `<span style="color:#94A3B8;">Scanning 4-Sentries Structure...</span>`;
-            }
-        }
-        if (gateStatusEl) {
-            gateStatusEl.innerHTML = `<span style="color:#64748B;"><i class="fa-solid fa-hourglass-half"></i> Awaiting Structure Formation</span>`;
-        }
+    if (activeZone && gateStatusEl) {
+        const isBuy = activeZone.side === "BUY";
+        const mtVal = activeZone.mean_threshold || activeZone.entry_price || ((activeZone.ob_high + activeZone.ob_low) / 2.0);
+        const sideColor = isBuy ? '#00F59B' : '#FF3B69';
+        gateStatusEl.innerHTML = `<span style="color:#FFD700; font-weight:800;"><i class="fa-solid fa-crosshairs"></i> 50% MT <span style="color:${sideColor};">${activeZone.side}</span>: $${formatPrice(mtVal)}</span>`;
+    } else if (gateStatusEl) {
+        gateStatusEl.innerHTML = `<span style="color:#00F59B;"><i class="fa-solid fa-shield-halved"></i> 4/4 Sentries Active &amp; Guarded</span>`;
     }
 }
 
@@ -2040,53 +1932,39 @@ function renderActiveZonesStrip(zones, currentPx) {
     if (!container) return;
 
     if (!zones || zones.length === 0) {
-        container.innerHTML = `<span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> No active Hermes 2.0 Apex qualified zones for ${currentSymbol} on ${currentTimeframe.toUpperCase()} right now. Waiting for high-displacement setup.</span>`;
+        container.innerHTML = `<span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> No active Hermes 3.5 Single Tier order blocks for ${currentSymbol} on ${currentTimeframe.toUpperCase()} right now. Monitoring live CLOB.</span>`;
         return;
     }
 
-    const is1h = (currentTimeframe === "1h");
     container.innerHTML = zones.map(z => {
         const isBuy = z.side === "BUY";
-        const is2nd = Boolean(z.is_2nd_ob);
-        const entry = z.entry_price || (isBuy ? z.ob_high * 1.0005 : z.ob_low * 0.9995);
-        const dist = Math.abs(currentPx - entry) / (entry || 1) * 100;
-        let tagsList = [];
-        if (Array.isArray(z.tags)) {
-            tagsList = [...z.tags];
-        } else if (typeof z.tags === 'string') {
-            try {
-                tagsList = JSON.parse(z.tags);
-            } catch (e) {
-                tagsList = z.tags ? [z.tags] : [];
-            }
-        }
-        if (is2nd) tagsList.unshift("👑 2ND_OB");
-        if (z.airspace_pct !== null && z.airspace_pct !== undefined) {
-            tagsList.push(`Airspace: ${z.airspace_pct}% ${z.airspace_valid ? '✅' : '❌'}`);
-        }
-        const tagsStr = tagsList.length ? tagsList.join(" • ") : "Pure OB";
+        const mt = z.mean_threshold || z.entry_price || ((z.ob_high + z.ob_low) / 2.0);
+        const dist = Math.abs(currentPx - mt) / (mt || 1) * 100;
+        const tpVal = z.tp_price || (isBuy ? mt * 1.0280 : mt * 0.9720);
+        const armorVal = z.armor_stage1_price || (isBuy ? mt * 1.0160 : mt * 0.9840);
+        const slVal = z.sl_price || (isBuy ? mt * 0.9720 : mt * 1.0280);
 
-        const cardClass = is2nd ? 'gold-elite' : (isBuy ? 'buy' : 'sell');
-        const titleText = is2nd 
-            ? `👑 2ND OB (THE TRADED ZONE) • ${z.airspace_valid ? 'QUALIFIED (≥3% AIRSPACE) ✅' : 'LOW AIRSPACE (<3%) ❌'}`
-            : `${z.side} ZONE • ${z.status}`;
+        const cardClass = isBuy ? 'buy' : 'sell';
+        const titleText = `🏛️ HERMES 3.5 ${z.side} OB (SINGLE TIER) • ${z.status}`;
 
         return `
             <div class="zone-pill-card ${cardClass}">
                 <div>
-                    <div class="zone-pill-title ${is2nd ? 'text-gold' : (isBuy ? 'text-buy' : 'text-sell')}">
+                    <div class="zone-pill-title ${isBuy ? 'text-buy' : 'text-sell'}">
                         ${titleText}
                     </div>
                     <div class="zone-pill-info">
-                        Zone Range: $${formatPrice(z.ob_low)} - $${formatPrice(z.ob_high)}
+                        OB Range: $${formatPrice(z.ob_low)} - $${formatPrice(z.ob_high)}
                     </div>
                 </div>
                 <div>
                     <div class="zone-pill-info">
-                        1-Tick Entry: <b>$${formatPrice(entry)}</b> (${dist.toFixed(2)}% away)
-                        ${is2nd && z.tp_price ? ` | <span style="color:#00F59B; font-weight:700;">TP: $${formatPrice(z.tp_price)} (+${is1h ? '8' : '12'}% ROE)</span> | <span style="color:#00E5FF; font-weight:600;">BE: $${formatPrice(z.fee_shield_be_price)}</span> | <span style="color:#FF3B69; font-weight:700;">SL: $${formatPrice(z.sl_price)}</span>` : ''}
+                        50% MT Entry: <b>$${formatPrice(mt)}</b> (${dist.toFixed(2)}% away)
+                        | <span style="color:#00F59B; font-weight:700;">TP (+14%): $${formatPrice(tpVal)}</span>
+                        | <span style="color:#00E5FF; font-weight:600;">Armor (+8%): $${formatPrice(armorVal)}</span>
+                        | <span style="color:#FF3B69; font-weight:700;">SL (-14%): $${formatPrice(slVal)}</span>
                     </div>
-                    <div class="zone-pill-info">Specs: <span style="color: ${is2nd ? '#FFD700' : 'var(--color-accent)'};">${tagsStr}</span></div>
+                    <div class="zone-pill-info">Specs: <span style="color: #00F59B;">4/4 Sentries Verified • 5x Isolated</span></div>
                 </div>
             </div>
         `;
@@ -2444,7 +2322,7 @@ async function loadRecentSignals() {
                 const pnlColor = pnlPositive ? '#00F59B' : '#FF4D6A';
                 const sign = pnlPositive ? '+' : '';
                 html += `
-                    <div class="dash-radar-card active-running" onclick="if(typeof switchCoin==='function') switchCoin('${t.symbol}');" title="Click to view live chart for ${t.symbol}">
+                    <div class="dash-radar-card active-running" onclick="openRadarChart('${t.symbol}', '${t.timeframe}');" title="Click to view live chart for ${t.symbol}">
                         <div class="drc-top">
                             <div class="drc-left">
                                 <span class="drc-sym" style="color:#00F59B;"><i class="fa-solid fa-circle-dot" style="animation:pulse 1s infinite;"></i> ${t.symbol}</span>
@@ -2471,6 +2349,15 @@ async function loadRecentSignals() {
                         <div class="drc-footer">
                             <span class="drc-prob-badge"><i class="fa-solid fa-lock"></i> Compounding Sec ${t.channel ? t.channel.replace('sec_','') : '1'}</span>
                             <span class="drc-status-lbl" style="color:#00F59B;">Running Protected</span>
+                        </div>
+                        <!-- 2 ACTION POINTS: Chart & Close Position -->
+                        <div class="drc-actions">
+                            <button class="drc-action-btn btn-chart" onclick="event.stopPropagation(); openRadarChart('${t.symbol}', '${t.timeframe}');" title="Open ${t.symbol} on Hermes 3.5 Chart">
+                                <i class="fa-solid fa-chart-candlestick"></i> 📊 Chart
+                            </button>
+                            <button class="drc-action-btn btn-close-pos" onclick="event.stopPropagation(); if(typeof manualClosePosition==='function') manualClosePosition('${t.id}');" title="Close Position">
+                                <i class="fa-solid fa-xmark"></i> Close Trade
+                            </button>
                         </div>
                     </div>
                 `;
@@ -2502,7 +2389,7 @@ async function loadRecentSignals() {
                 const barColor = isImminent ? '#F59E0B' : (s.distance_pct <= 0.6 ? '#00F59B' : '#38BDF8');
 
                 html += `
-                    <div class="dash-radar-card ${isImminent ? 'imminent-pulse' : ''}" onclick="if(typeof switchCoin==='function') switchCoin('${s.symbol}'); else if(typeof selectCoin==='function') selectCoin('${s.symbol}');" title="Click to inspect ${s.symbol} on chart">
+                    <div class="dash-radar-card ${isImminent ? 'imminent-pulse' : ''}" onclick="openRadarChart('${s.symbol}', '${s.timeframe}');" title="Click card or [Chart] button to inspect ${s.symbol}">
                         <div class="drc-top">
                             <div class="drc-left">
                                 <span class="drc-sym">${s.symbol}</span>
@@ -2534,6 +2421,15 @@ async function loadRecentSignals() {
                             <span class="drc-sentry-badge"><i class="fa-solid fa-shield-halved"></i> 4/4 Sentries</span>
                             <span class="drc-status-lbl">${s.proximity_label}</span>
                         </div>
+                        <!-- 2 ACTION POINTS (Point 1: Chart, Point 2: Position) -->
+                        <div class="drc-actions">
+                            <button class="drc-action-btn btn-chart" onclick="event.stopPropagation(); openRadarChart('${s.symbol}', '${s.timeframe}');" title="Open ${s.symbol} on Hermes 3.5 Chart">
+                                <i class="fa-solid fa-chart-candlestick"></i> 📊 Chart
+                            </button>
+                            <button class="drc-action-btn btn-position" onclick="event.stopPropagation(); deployRadarPosition('${s.symbol}', '${s.side}', ${s.entry_price}, '${s.timeframe}', ${s.probability_pct});" title="Deploy 5x Position for ${s.symbol}">
+                                <i class="fa-solid fa-bolt"></i> ⚡ Position
+                            </button>
+                        </div>
                     </div>
                 `;
             });
@@ -2542,6 +2438,178 @@ async function loadRecentSignals() {
         container.innerHTML = html;
     } catch (e) {
         console.warn("loadRecentSignals radar error:", e);
+    }
+}
+
+// ============================================================
+// HERMES 3.5 INTERACTIVE RADAR ACTION POINTS & TELEGRAM MODAL
+// ============================================================
+
+function openRadarChart(symbol, timeframe) {
+    if (!symbol) return;
+    if (typeof switchCoin === 'function') {
+        switchCoin(symbol);
+    } else if (typeof selectCoin === 'function') {
+        selectCoin(symbol);
+    }
+    const tf = (timeframe || '4h').toLowerCase();
+    if (typeof setTimeframe === 'function') {
+        setTimeframe(tf);
+    }
+    const chartEl = document.getElementById("tvChartContainer");
+    if (chartEl && window.innerWidth <= 1024) {
+        chartEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    showToast(`📊 Loaded ${symbol} ${tf.toUpperCase()} Hermes 3.5 Chart`, "info");
+}
+
+let pendingDeploySetup = null;
+
+function deployRadarPosition(symbol, side, entryPrice, timeframe, probPct) {
+    pendingDeploySetup = {
+        symbol: symbol,
+        side: side,
+        entry_price: Number(entryPrice) || 0.0,
+        timeframe: timeframe || '4h',
+        probability_pct: probPct || 95.0
+    };
+
+    const modal = document.getElementById("deployPositionModal");
+    if (modal) {
+        const symEl = document.getElementById("dpmSymbol");
+        const sideEl = document.getElementById("dpmSide");
+        const entryEl = document.getElementById("dpmEntry");
+        const tpEl = document.getElementById("dpmTp");
+        const slEl = document.getElementById("dpmSl");
+        const armorEl = document.getElementById("dpmArmor");
+        const probEl = document.getElementById("dpmProb");
+
+        const isBuy = side.toUpperCase() === "BUY" || side.toUpperCase() === "LONG";
+        const entryP = pendingDeploySetup.entry_price;
+        const tpP = isBuy ? entryP * 1.0280 : entryP * 0.9720;
+        const slP = isBuy ? entryP * 0.9720 : entryP * 1.0280;
+        const armorP = isBuy ? entryP * 1.0160 : entryP * 0.9840;
+
+        if (symEl) symEl.innerText = symbol;
+        if (sideEl) {
+            sideEl.innerText = `${isBuy ? 'LONG' : 'SHORT'} 5x`;
+            sideEl.style.color = isBuy ? '#00F59B' : '#FF4D6A';
+        }
+        if (entryEl) entryEl.innerText = `$${formatPrice(entryP)}`;
+        if (tpEl) tpEl.innerText = `$${formatPrice(tpP)} (+14.0% ROE)`;
+        if (slEl) slEl.innerText = `$${formatPrice(slP)} (-14.0% ROE)`;
+        if (armorEl) armorEl.innerText = `$${formatPrice(armorP)} (+8.0% ROE)`;
+        if (probEl) probEl.innerText = `${probPct || 95.0}% Win Rate`;
+
+        modal.style.display = 'flex';
+    } else {
+        if (confirm(`Deploy 5x Isolated Position for ${symbol} (${side}) at 50% MT $${formatPrice(entryPrice)} in available Deca section?`)) {
+            executeDeployPosition(symbol, side, entryPrice, timeframe);
+        }
+    }
+}
+
+async function executeDeployPosition(symbol, side, entryPrice, timeframe) {
+    const s = symbol || (pendingDeploySetup ? pendingDeploySetup.symbol : "");
+    const d = side || (pendingDeploySetup ? pendingDeploySetup.side : "BUY");
+    const e = entryPrice || (pendingDeploySetup ? pendingDeploySetup.entry_price : 0.0);
+    const tf = timeframe || (pendingDeploySetup ? pendingDeploySetup.timeframe : "4h");
+
+    if (!s) return;
+
+    try {
+        const btn = document.getElementById("btnConfirmDeployPos");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deploying...`;
+        }
+
+        const resp = await fetch('/api/paper/deploy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                symbol: s,
+                side: d,
+                entry_price: Number(e),
+                timeframe: (tf || '4h').toLowerCase()
+            })
+        });
+
+        const res = await resp.json();
+        closeDeployModal();
+
+        if (res.success) {
+            showToast(`⚡ 5x Position Deployed on ${s}! (${res.message || ''})`, "success");
+            if (typeof loadRecentSignals === 'function') loadRecentSignals();
+            if (typeof loadPaperTrading === 'function') loadPaperTrading();
+            if (typeof syncDashboardMetrics === 'function') syncDashboardMetrics();
+        } else {
+            showToast(`❌ Could not deploy: ${res.error || 'All queue sections currently busy'}`, "warning");
+        }
+    } catch (err) {
+        showToast(`❌ Execution error: ${err.message}`, "danger");
+    } finally {
+        const btn = document.getElementById("btnConfirmDeployPos");
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Confirm &amp; Deploy 5x Position`;
+        }
+    }
+}
+
+function closeDeployModal() {
+    const modal = document.getElementById("deployPositionModal");
+    if (modal) modal.style.display = 'none';
+}
+
+function openTelegramModal() {
+    const modal = document.getElementById("telegramAlertModal");
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeTelegramModal() {
+    const modal = document.getElementById("telegramAlertModal");
+    if (modal) modal.style.display = 'none';
+}
+
+async function sendTelegramTestAlert() {
+    const btn = document.getElementById("btnSendTgTestModal");
+    const statusEl = document.getElementById("tgTestStatusMsg");
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Dispatching...`;
+    }
+    if (statusEl) {
+        statusEl.innerText = "Dispatching real-time test alert to Telegram...";
+        statusEl.style.color = "#38BDF8";
+    }
+
+    try {
+        const resp = await fetch('/api/telegram/test', { method: 'POST' });
+        const res = await resp.json();
+        if (res.success) {
+            if (statusEl) {
+                statusEl.innerHTML = `✅ <b>Alert Sent Successfully!</b> Check your Telegram (@Hermes_AI_Bot).`;
+                statusEl.style.color = "#00F59B";
+            }
+            showToast("📱 Live Telegram alert dispatched successfully!", "success");
+        } else {
+            if (statusEl) {
+                statusEl.innerHTML = `❌ <b>Failed:</b> ${res.message || 'Check Bot Token/Chat ID in Settings.'}`;
+                statusEl.style.color = "#FF4D6A";
+            }
+            showToast("Failed to send Telegram alert", "warning");
+        }
+    } catch (err) {
+        if (statusEl) {
+            statusEl.innerHTML = `❌ <b>Network error:</b> ${err.message}`;
+            statusEl.style.color = "#FF4D6A";
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Send Test Live Alert`;
+        }
     }
 }
 
