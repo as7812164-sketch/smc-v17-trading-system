@@ -395,7 +395,7 @@ async def get_pinescript_code():
     if pine_file.exists():
         with open(pine_file, "r", encoding="utf-8") as f:
             code = f.read()
-        return {"status": "ok", "code": code}
+        return {"status": "ok", "code": code, "version": "Hermes 3.5 Single Tier Institutional"}
     return {"status": "error", "code": "// Hermes 3.5 Indicator file not found"}
 
 @app.get("/api/journal/trades")
@@ -1418,16 +1418,6 @@ async def deploy_paper_position(body: Dict[str, Any] = Body(...)):
         "trade": trade_res,
         "message": f"Position deployed successfully for {sym} ({side}) in Section {trade_res.get('account_id', 1)}"
     }
-
-@app.get("/api/pinescript")
-async def get_pinescript_code():
-    pine_file = BASE_DIR / "HERMES_3_5_SINGLE_TIER_OFFICIAL.pine"
-    if pine_file.exists():
-        with open(pine_file, "r", encoding="utf-8") as f:
-            code = f.read()
-    else:
-        code = "// Hermes 3.5 Indicator file not found"
-    return {"code": code}
 
 
 
@@ -2774,15 +2764,6 @@ async def reset_hermes_apex_run():
     res = reset_paper_account()
     hermes2_apex_engine.active_position = None
     return {"status": "ok", "message": "Hermes 3.5 Single Tier compounding run reset to $50.00", "account": res}
-
-@app.get("/api/pinescript")
-async def get_pinescript_endpoint():
-    pine_file = BASE_DIR / "HERMES_3_5_SINGLE_TIER_OFFICIAL.pine"
-    if pine_file.exists():
-        with open(pine_file, "r", encoding="utf-8") as f:
-            code = f.read()
-        return {"status": "ok", "code": code, "version": "Hermes 3.5 Single Tier Institutional"}
-    raise HTTPException(status_code=404, detail="Pine script file not found")
 
 # --- WebSocket for Real-time Streaming ---
 @app.websocket("/ws")
