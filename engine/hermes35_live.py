@@ -653,12 +653,10 @@ class Hermes35LiveEngine:
 
         acc = get_paper_account(account_id=target_account_id)
         current_balance = float(acc.get("current_balance", 50.0) or 50.0)
-        if current_balance < 1.0:
-            current_balance = 50.0
-
-        # LOOPHOLE 4 FIX: 15% account allocation eliminates 100% all-in risk!
-        margin = round(current_balance * 0.15, 2)
-        margin = max(5.0, min(margin, round(current_balance * 0.25, 2)))
+        # 100% PURE COMPOUNDING RULE (USER MANDATE):
+        # 100% of section current_balance is deployed into each trade with ZERO amount split.
+        # Example: $50 USDT balance makes +10% profit -> next trade opens with full $55.00 USDT margin!
+        margin = round(current_balance, 2)
         position_size = round(margin * 5.0, 2)
         now_ms = int(time.time() * 1000)
 
