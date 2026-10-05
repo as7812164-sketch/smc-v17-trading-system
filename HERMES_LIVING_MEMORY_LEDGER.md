@@ -37,14 +37,13 @@
 
 | Sentry / Rule | Technical Formulation | Verification Criteria |
 | :--- | :--- | :--- |
-| **Sentry 1: Macro BTC Trend** | 4H BTC EMA50 Filter | If $BTC > EMA50$, market is Bullish $\rightarrow$ Alt Shorts are 100% FORBIDDEN. Alt Shorts only allowed if $BTC < EMA50$ or pair is BTCUSDT. |
+| **Sentry 1: Macro BTC Sentry** | Multi-EMA Trend Anchor | Trend Cross ($EMA20 \ge EMA50$) OR Macro Anchor ($Close \ge EMA200$). Emergency dump brake ($\ge 1.5\%$ drop) vetos longs. |
 | **Sentry 2: Institutional Floor** | Displacement $\ge 5.0\%$ + FVG | Requires clean structural impulse $\ge 5.0\%$ leaving an unmitigated 3-candle Fair Value Gap. |
-| **Sentry 3: Inducement (IDM)** | Liquidity Sweep + $\ge 18\%$ Wick | Decisional swing low/high swept by price with candle rejection wick $\ge 18\%$ of total candle range. |
-| **Entry Execution** | 50% Mean Threshold (MT) | Entry is STRICTLY placed at the 50% midpoint of the Decisional Order Block: $MT = \frac{OB_{top} + OB_{bot}}{2}$. Never at the outer edge! |
-| **Sentry 4: Freshness Guard** | $\le 28$ Bars Tap Window | The order block must be mitigated within 28 bars of the swing high/low. |
-| **Multi-Stage Profit Armor** | Dynamic Trailing Protection | **Stage 1:** At $+1.6\%$ gain $\rightarrow$ SL moved to Break-Even $+0.1\%$.<br>**Stage 2:** At $+2.2\%$ gain $\rightarrow$ SL locked in Trailing Profit at $+0.8\%$. |
+| **Sentry 3: Inducement (IDM)** | Liquidity Sweep + $\ge 18\%$ Wick | Decisional swing swept with candle rejection wick $\ge 18\%$ defending Mean Threshold ($MT$). |
+| **Entry Execution** | 5% Boundary Penetration | Entry placed at $OB_{high} - 0.05 \times \text{range}$ (Long) / $OB_{low} + 0.05 \times \text{range}$ (Short) with 0.20% Proximity Radar pre-arm. |
+| **Sentry 4: Retest Maturation** | 18h Intraday / 32h Macro | Order block must mature $\ge 18$ bars (1H) or $\ge 8$ bars (4H) before first tap is armed, eliminating early chop. |
+| **Multi-Stage Profit Harvest** | Stepped Profit Armor | **Stage 1:** $+8.0\%$ ROE ($+1.6\%$ move) $\rightarrow$ BE Lock $+0.1\%$.<br>**Stage 2:** $+9.0\%$ ROE ($+1.8\%$ move) $\rightarrow$ Locks $+4.5\%$ ROE cash profit.<br>**Final TP:** $+14.0\%$ ROE ($+2.8\%$ move). |
 | **Stop Loss Architecture** | Dynamic ATR Buffer SL | Structural SL placed beyond OB / tap wick with $0.20 \times ATR$ buffer, capped at Hard SL $3.8\%$. |
-| **Take Profit** | Macro Target | Standard $2.8\%$ TP on 4H/3H ($2.2\%$ on 1H). |
 
 ---
 
@@ -71,3 +70,39 @@ Tested on 6-Month High-Resolution 15m dataset (20 coins | 360,000 candles) and 2
 * `static/mobile.html`: Mobile responsive terminal with persistent cache-busting.
 * `static/sw.js`: Service worker managing PWA caching with version `hermes-35-deca-v3`.
 * `archive/`: Storage folder for obsolete and legacy scripts (SMG v17, Hermes 2.0/2.5).
+
+---
+
+## 🔭 6. USER STRUCTURAL DISCOVERIES: ROCKET GAP & 2-DAY MATURATION CYCLE
+
+Formulated from User's TradingView visual chart discoveries (OPUSDT, ICPUSDT, MANAUSDT) and verified across 1-Year Continuous OOS data (`user_discoveries_backtest_results.json`):
+
+1. **"The Rocket Gap" (Banning Late-Cycle Top OBs):**
+   * **Rule:** Bullish OBs must satisfy $\Phi_{\text{leg}} \le 0.70$ (vetoes late-cycle distribution traps in upper 30% of rally) and $\text{Airspace}_{\%} \ge 3.0\%$ (clean unmitigated liquidity void / "Red Gap" between OB base and origin pivot).
+   * **Result:** Eliminates false breakout tops, surges 4H Direct Win Rate to **64.52%** (PF 9.99, only 14 losses in 1 year across Top 25).
+2. **"The 2-Day Maturation Cycle" (Institutional Breathing Window):**
+   * **Rule:** Retest tap must satisfy $36 \le \text{bars\_since\_ob} \le 144$ on 1H ($9 \le \text{bars} \le 36$ on 4H).
+   * **Result:** Replaces obsolete `max_tap_window = 28` (which prematurely expired 60-bar winners like OPUSDT) and prevents premature noise stop-outs ($bars < 36$). Empirically verified average maturation: OPUSDT = **63.3 bars**, ICPUSDT = **63.1 bars**, MANAUSDT = **54.5 bars**.
+
+---
+
+## ⚡ 7. HERMES 3.5 RADAR HARVEST (5% BOUNDARY) PRODUCTION RULES
+
+Live in production across `engine/hermes35_live.py`, `app.py`, and `HERMES_3_5_SINGLE_TIER_OFFICIAL.pine`:
+
+1. **5% Boundary Entry:**
+   - Bullish: $\text{Entry} = \text{OB}_{\text{high}} - 0.05 \times (\text{OB}_{\text{high}} - \text{OB}_{\text{low}})$
+   - Bearish: $\text{Entry} = \text{OB}_{\text{low}} + 0.05 \times (\text{OB}_{\text{high}} - \text{OB}_{\text{low}})$
+2. **0.20% Proximity Radar Pre-Arm:**
+   - Bullish Radar: $\text{Entry} \times 1.0020$. Triggers limit order pre-arming before the 5% boundary touch.
+   - Bearish Radar: $\text{Entry} \times 0.9980$.
+3. **Stepped Profit Harvest (Guaranteed Cash Returns):**
+   - **Stage 1 (+8.0% ROE / +1.60% price gain at 5x):** SL moved to Break-Even ($\text{Entry} \times 1.0010$).
+   - **Stage 2 (+9.0% ROE / +1.80% price gain at 5x):** SL shifted to $+4.50\%$ ROE ($\text{Entry} \times 1.0090$ Long, $\text{Entry} \times 0.9910$ Short), locking guaranteed cash profit!
+   - **Final TP (+14.0% ROE / +2.80% price gain at 5x):** Full position exit.
+4. **Rocket Airspace Runway Void:** $\ge 5.0\%$ displacement clearance void away from OB before returning.
+5. **2-Day Maturation Horizon:** Retest occurs after $\ge 48$ bars on 1H / $\ge 12$ bars on 4H (max 720 bars 1H / 360 bars 4H).
+6. **Origin Bedrock Floor/Ceiling:** OB candle is the extreme lowest/highest of prior 25 bars.
+7. **Zero Legacy SMC v17:** All legacy `analyze_candles_smc_v17` code purged from `/api/klines`, helper scripts, and scanner loops.
+8. **Real-Time Tap Watchdog Strict Parity:** Evaluates live ticks against 5% Boundary Penetration (`eff_entry`) and 0.20% Proximity Radar (`radar_price`) every 5 seconds, preserving dynamic ATR structural SL/TP with zero fallback to 50% MT or 0% boundary.
+

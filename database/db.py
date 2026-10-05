@@ -231,7 +231,7 @@ def init_db():
         # Enforce universal HERMES_3.5_SINGLE_TIER settings across all 10 sections
         conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_SINGLE_TIER'")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '50% Mean Threshold (MT)')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '5% Boundary Penetration')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes_margin_allocation_pct', '0.15')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('binance_auto_trade', 'false')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_sections', '10')")
@@ -536,7 +536,7 @@ def wipe_legacy_database_clean() -> Dict[str, Any]:
         WHERE id BETWEEN 1 AND 10;
         """)
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER');")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '50% Mean Threshold (MT)');")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '5% Boundary Penetration');")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_sections', '10');")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_capital', '500.0');")
         conn.execute("""
@@ -1026,8 +1026,9 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             zone_id, symbol, side, entry_price, position_size_usdt,
             tp_price, sl_price, hard_sl_price, timeframe, channel, exchange, account_id,
             status, entry_time, mode,
-            highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.5_SINGLE_TIER', ?, ?, 0.0, 0.0, '', 0.0)
+            highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct,
+            be_lock_pct, trail_lock_pct
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.5_SINGLE_TIER', ?, ?, 0.0, 0.0, '', 0.0, 0.0160, 0.0180)
         """, (
             zone.get("id"), zone["symbol"], side, entry_price,
             position_size, tp_price, sl_price, hard_sl_price, tf,

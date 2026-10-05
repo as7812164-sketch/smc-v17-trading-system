@@ -101,7 +101,7 @@ def push_vault_state() -> bool:
 
         metrics["hermes_mode"] = active_mode
         settings["strategy_version"] = active_mode
-        settings["hermes35_entry_mode"] = "50% Mean Threshold (MT)"
+        settings["hermes35_entry_mode"] = "5% Boundary Penetration"
 
         payload_data = {
             "version": "1.0",
@@ -328,7 +328,7 @@ def pull_and_restore_vault_state() -> bool:
         conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_SINGLE_TIER'")
         conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.5_SINGLE_TIER' WHERE mode IS NULL OR mode = '' OR mode != 'HERMES_3.5_SINGLE_TIER'")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '50% Mean Threshold (MT)')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '5% Boundary Penetration')")
         conn.execute("INSERT OR REPLACE INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.5_SINGLE_TIER')")
 
         conn.commit()

@@ -170,12 +170,23 @@ function initChart() {
         updateLegendDisplay(data, volObj ? volObj.value : null);
     });
 
-    // Live SMC Zone Boxes Synchronization during pan/zoom
+    // Smooth RequestAnimationFrame Debounced SMC Zone Boxes Redraw
+    let smcDrawScheduled = false;
+    window.scheduleDrawSmcZoneBoxes = function() {
+        if (smcDrawScheduled) return;
+        smcDrawScheduled = true;
+        requestAnimationFrame(() => {
+            smcDrawScheduled = false;
+            drawSmcZoneBoxes();
+        });
+    };
+
+    // Live SMC Zone Boxes Synchronization during pan/zoom (Lag-free RAF debounced)
     tvChart.timeScale().subscribeVisibleLogicalRangeChange(() => {
-        drawSmcZoneBoxes();
+        scheduleDrawSmcZoneBoxes();
     });
     tvChart.timeScale().subscribeVisibleTimeRangeChange(() => {
-        drawSmcZoneBoxes();
+        scheduleDrawSmcZoneBoxes();
     });
 
     // Auto-resize observer with jitter threshold
@@ -193,7 +204,7 @@ function initChart() {
                     lastChartW = newWidth;
                     lastChartH = newHeight;
                     tvChart.applyOptions({ width: newWidth, height: newHeight });
-                    drawSmcZoneBoxes();
+                    scheduleDrawSmcZoneBoxes();
                 }
             }
         });
@@ -556,22 +567,23 @@ function getOverlayCanvas() {
 }
 
 // Helper to draw clean dashed projection lines with right-aligned pill badges
-function drawSmcProjectionLine(ctx, y, xStart, xEnd, color, dash, label, tagBg) {
+// Helper to draw clean dashed projection lines with right-aligned pill badges
+function drawSmcProjectionLine(ctx, y, xStart, xEnd, color, dash, label, tagBg, xOffset = 10) {
     if (y === null || y === undefined || isNaN(y) || y < -20 || y > ctx.canvas.height + 20) return;
     ctx.save();
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.3;
     ctx.setLineDash(dash);
     ctx.beginPath();
     ctx.moveTo(xStart, y);
     ctx.lineTo(xEnd, y);
     ctx.stroke();
 
-    // Right-aligned pill tag
+    // Staggered pill tag to prevent overlap
     ctx.setLineDash([]);
     ctx.font = "bold 9.5px 'JetBrains Mono', monospace";
     const textWidth = ctx.measureText(label).width;
-    const tagX = xEnd - textWidth - 10;
+    const tagX = xEnd - textWidth - xOffset;
     const tagY = y - 9;
     ctx.fillStyle = tagBg || "rgba(10, 13, 20, 0.90)";
     ctx.fillRect(tagX - 4, tagY, textWidth + 8, 18);
@@ -591,19 +603,21 @@ function drawSmcZoneBoxes() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // 1. Render Hermes 2.0 Apex Master Unmitigated Order Block Zones
+    // 1. Render Hermes 3.5 Radar Harvest Unmitigated Order Block Zones
     if (showSmcZones && mainSeries && tvChart && rawZonesData && rawZonesData.length > 0) {
         const timeScale = tvChart.timeScale();
         const visibleRange = timeScale.getVisibleRange();
         const plotWidth = (timeScale.width && timeScale.width()) ? timeScale.width() : (width - 65);
 
-        // Filter strictly fresh unmitigated & active zones
-        const unmitigatedZones = rawZonesData.filter(z => z.status === 'QUALIFIED' || z.status === 'ACTIVE');
+        // Filter active / unmitigated / radar pre-armed zones
+        const unmitigatedZones = rawZonesData.filter(z => 
+            z.status === 'QUALIFIED' || z.status === 'ACTIVE' || z.status === 'FRESH_TRIGGERED' || z.status === 'RADAR_PRE_ARMED'
+        );
 
         unmitigatedZones.forEach(z => {
             if (!z.ob_high || !z.ob_low || !z.origin_time) return;
 
-            const isBuySide = (z.side === 'BUY');
+            const isBuySide = (z.side === 'BUY' || z.side === 'LONG');
             const originSec = Math.floor(z.origin_time / 1000);
 
             let x1 = timeScale.timeToCoordinate(originSec);
@@ -633,7 +647,7 @@ function drawSmcZoneBoxes() {
 
             if (maxY < 0 || minY > height) return;
 
-            // Hermes 3.5 Single Tier Institutional Order Block Shading
+            // Hermes 3.5 Radar Harvest Order Block Shading
             const fillColor = isBuySide ? 'rgba(0, 245, 155, 0.12)' : 'rgba(255, 59, 105, 0.12)';
             const borderColor = isBuySide ? '#00F59B' : '#FF3B69';
             const textColor = isBuySide ? '#00F59B' : '#FF3B69';
@@ -652,16 +666,19 @@ function drawSmcZoneBoxes() {
             ctx.font = "bold 10px 'JetBrains Mono', monospace";
             ctx.fillStyle = textColor;
             
-            const tagTitle = isBuySide ? '🏛️ HERMES 3.5 DEMAND OB (SINGLE TIER)' : '🏛️ HERMES 3.5 SUPPLY OB (SINGLE TIER)';
-            const statTitle = z.status === 'ACTIVE' ? ' [1ST TAP ARMED]' : ' [FRESH UNMITIGATED]';
-            const tagText = `${tagTitle}${statTitle} [${formatPrice(z.ob_low)} - ${formatPrice(z.ob_high)}]`;
+            const tagTitle = isBuySide ? '🏛️ HERMES 3.5 DEMAND OB' : '🏛️ HERMES 3.5 SUPPLY OB';
+            const statTitle = z.status === 'RADAR_PRE_ARMED' ? ' [📡 0.20% RADAR ARMED]' : (z.status === 'ACTIVE' || z.status === 'FRESH_TRIGGERED' ? ' [⚡ 5% BOUNDARY TAP]' : ' [FRESH UNMITIGATED]');
+            const originTitle = z.is_origin ? ' [BEDROCK]' : '';
+            const tagText = `${tagTitle}${statTitle}${originTitle} [${formatPrice(z.ob_low)} - ${formatPrice(z.ob_high)}]`;
             const textY = boxHeight >= 16 ? (minY + 12) : (minY - 4);
             ctx.fillText(tagText, x1 + 8, textY);
 
-            // Right Info Tag (50% Mean Threshold)
-            const mtVal = z.mean_threshold || z.entry_price || ((z.ob_high + z.ob_low) / 2.0);
+            // Right Info Tag (5% Boundary Entry & Radar)
+            const obRange = Math.abs(z.ob_high - z.ob_low);
+            const entPx = z.entry_price || (isBuySide ? (z.ob_high - obRange * 0.05) : (z.ob_low + obRange * 0.05));
+            const radPx = z.radar_price || (isBuySide ? entPx * 1.0020 : entPx * 0.9980);
             const probText = z.prob_score ? `🚀 ${z.prob_score}% Prob • ` : '';
-            const infoText = `${probText}50% MT: $${formatPrice(mtVal)}`;
+            const infoText = `${probText}5% Ent: $${formatPrice(entPx)} • Radar: $${formatPrice(radPx)}`;
             const infoMetrics = ctx.measureText(infoText);
             if (boxWidth > infoMetrics.width + 160 && textY > 0) {
                 ctx.fillStyle = textColor;
@@ -669,34 +686,76 @@ function drawSmcZoneBoxes() {
             }
             ctx.restore();
 
-            // HERMES 3.5 SINGLE TIER PROJECTION LINES
-            // 1. Mean Threshold (MT) Entry: 50% of Order Block
-            // 2. Take Profit: +14.0% ROE (+2.80% move)
-            // 3. Profit Armor Stage 1: +8.0% ROE (+1.60% move -> BE lock)
-            // 4. Dynamic Stop Loss: -14.0% ROE (-2.80% move)
-            const tpPx = z.tp_price || (isBuySide ? mtVal * 1.0280 : mtVal * 0.9720);
-            const armorPx = z.armor_stage1_price || (isBuySide ? mtVal * 1.0160 : mtVal * 0.9840);
-            const slPx = z.sl_price || (isBuySide ? mtVal * 0.9720 : mtVal * 1.0280);
+            // HERMES 3.5 RADAR HARVEST PROJECTION LINES (STAGGERED ANTI-COLLISION)
+            const tpPx = z.tp_price || (isBuySide ? entPx * 1.0280 : entPx * 0.9720);
+            const harvestPx = z.harvest_lock_price || (isBuySide ? entPx * 1.0090 : entPx * 0.9910);
+            const armorPx = z.armor_stage1_price || (isBuySide ? entPx * 1.0160 : entPx * 0.9840);
+            const slPx = z.sl_price || (isBuySide ? entPx * 0.9720 : entPx * 1.0280);
 
-            const projStartX = Math.max(x1, plotWidth - 270);
+            const projStartX = Math.max(x1, plotWidth - 280);
             const projEndX = plotWidth + 60;
 
-            const yMt = mainSeries.priceToCoordinate(mtVal);
-            const yTp = mainSeries.priceToCoordinate(tpPx);
-            const yArmor = mainSeries.priceToCoordinate(armorPx);
-            const ySl = mainSeries.priceToCoordinate(slPx);
+            const projItems = [
+                { id: 'tp', label: `🎯 TP (+14% ROE): $${formatPrice(tpPx)}`, price: tpPx, color: '#00F59B', dash: [6, 4], bg: 'rgba(0, 245, 155, 0.22)' },
+                { id: 'harvest', label: `🌾 Harvest SL (+4.5% ROE): $${formatPrice(harvestPx)}`, price: harvestPx, color: '#00E5FF', dash: [4, 3], bg: 'rgba(0, 229, 255, 0.22)' },
+                { id: 'armor', label: `🛡️ Armor BE (+8% ROE): $${formatPrice(armorPx)}`, price: armorPx, color: '#2DD4BF', dash: [3, 3], bg: 'rgba(45, 212, 191, 0.22)' },
+                { id: 'radar', label: `📡 0.20% Radar: $${formatPrice(radPx)}`, price: radPx, color: '#38BDF8', dash: [2, 3], bg: 'rgba(56, 189, 248, 0.22)' },
+                { id: 'entry', label: `⚡ 5% Entry: $${formatPrice(entPx)}`, price: entPx, color: '#F59E0B', dash: [5, 2], bg: 'rgba(245, 158, 11, 0.25)' },
+                { id: 'sl', label: `🛑 Dynamic SL (-14% ROE): $${formatPrice(slPx)}`, price: slPx, color: '#FF3B69', dash: [5, 4], bg: 'rgba(255, 59, 105, 0.22)' }
+            ];
 
-            // 1. 50% Mean Threshold (MT) Entry Line (Amber Gold)
-            drawSmcProjectionLine(ctx, yMt, projStartX, projEndX, '#F59E0B', [4, 3], `⚡ 50% MT Entry: $${formatPrice(mtVal)}`, 'rgba(245, 158, 11, 0.22)');
+            const positioned = [];
+            projItems.forEach(it => {
+                const y = mainSeries.priceToCoordinate(it.price);
+                if (y !== null && y !== undefined && !isNaN(y) && y >= -20 && y <= height + 20) {
+                    positioned.push({ ...it, y });
+                }
+            });
 
-            // 2. Take Profit Line (+14.0% ROE / +2.8% move) (Emerald Green)
-            drawSmcProjectionLine(ctx, yTp, projStartX, projEndX, '#00F59B', [6, 4], `🎯 TP (+14.0% ROE / +2.8%): $${formatPrice(tpPx)}`, 'rgba(0, 245, 155, 0.20)');
+            // 1. Draw horizontal projection guide tracks
+            positioned.forEach(it => {
+                ctx.save();
+                ctx.strokeStyle = it.color;
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash(it.dash);
+                ctx.beginPath();
+                ctx.moveTo(projStartX, it.y);
+                ctx.lineTo(projEndX, it.y);
+                ctx.stroke();
+                ctx.restore();
+            });
 
-            // 3. Multi-Stage Profit Armor Stage 1 (+8.0% ROE -> BE Lock) (Cyan)
-            drawSmcProjectionLine(ctx, yArmor, projStartX, projEndX, '#00E5FF', [3, 3], `🛡️ Armor Stage 1 (+8.0% ROE -> BE Lock): $${formatPrice(armorPx)}`, 'rgba(0, 229, 255, 0.20)');
+            // 2. Sort by Y coordinate to detect & prevent label overlap
+            positioned.sort((a, b) => a.y - b.y);
 
-            // 4. Dynamic Stop Loss Line (-14.0% ROE / -2.8% move) (Coral Red)
-            drawSmcProjectionLine(ctx, ySl, projStartX, projEndX, '#FF3B69', [5, 4], `🛑 Dynamic SL (-14.0% ROE / -2.8%): $${formatPrice(slPx)}`, 'rgba(255, 59, 105, 0.20)');
+            ctx.save();
+            ctx.font = "bold 9.5px 'JetBrains Mono', monospace";
+            let lastY = -999;
+            let staggerCol = 0;
+
+            positioned.forEach(it => {
+                const textWidth = ctx.measureText(it.label).width;
+                if (Math.abs(it.y - lastY) < 18) {
+                    staggerCol = (staggerCol + 1) % 2;
+                } else {
+                    staggerCol = 0;
+                }
+                lastY = it.y;
+
+                const xOffset = staggerCol === 0 ? 10 : (textWidth + 24);
+                const tagX = projEndX - textWidth - xOffset;
+                const tagY = it.y - 9;
+
+                ctx.fillStyle = it.bg;
+                ctx.fillRect(tagX - 4, tagY, textWidth + 8, 18);
+                ctx.strokeStyle = it.color;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(tagX - 4, tagY, textWidth + 8, 18);
+
+                ctx.fillStyle = it.color;
+                ctx.fillText(it.label, tagX, it.y + 4);
+            });
+            ctx.restore();
         });
     }
 
@@ -2401,7 +2460,7 @@ async function loadRecentSignals() {
                         </div>
                         <div class="drc-metrics">
                             <div class="drc-metric-item">
-                                <span class="drc-lbl">50% MT Entry</span>
+                                <span class="drc-lbl">5% Boundary</span>
                                 <span class="drc-val entry-val">$${formatPrice(s.entry_price)}</span>
                             </div>
                             <div class="drc-metric-item">
@@ -2409,8 +2468,8 @@ async function loadRecentSignals() {
                                 <span class="drc-val live-val">$${formatPrice(s.current_price)}</span>
                             </div>
                             <div class="drc-metric-item">
-                                <span class="drc-lbl">Target (5x)</span>
-                                <span class="drc-val tp-val">+14.0% ROE</span>
+                                <span class="drc-lbl">Target / Harvest</span>
+                                <span class="drc-val tp-val" style="color:#00F59B;">+14% / +4.5%</span>
                             </div>
                         </div>
                         <div class="drc-progress-wrap" title="${s.distance_pct}% away from 50% Mean Threshold trigger">
@@ -3473,13 +3532,13 @@ function setupEventListeners() {
     document.querySelectorAll(".indicator-chip").forEach(chip => {
         chip.addEventListener("click", () => {
             const ind = chip.dataset.ind;
-            if (ind === 'smcv17') {
+            if (ind === 'smcv17' || ind === 'hermes_radar') {
                 showSmcZones = !showSmcZones;
                 chip.classList.toggle("active", showSmcZones);
                 if (showSmcZones) {
-                    chip.style.borderColor = "#00F59B";
-                    chip.style.color = "#00F59B";
-                    chip.style.background = "rgba(0, 245, 155, 0.12)";
+                    chip.style.borderColor = "#F59E0B";
+                    chip.style.color = "#F59E0B";
+                    chip.style.background = "rgba(245, 158, 11, 0.15)";
                 } else {
                     chip.style.borderColor = "";
                     chip.style.color = "";
@@ -3487,8 +3546,8 @@ function setupEventListeners() {
                 }
                 const hud = document.getElementById("smcChartHud");
                 if (hud) hud.style.display = showSmcZones ? "block" : "none";
-                drawSmcZoneBoxes();
-                showToast(`Hermes 2.0 Apex Zones ${showSmcZones ? 'ON' : 'OFF'}`);
+                scheduleDrawSmcZoneBoxes();
+                showToast(`Hermes 3.5 Radar Harvest Overlay ${showSmcZones ? 'ON' : 'OFF'}`);
                 return;
             }
             activeIndicators[ind] = !activeIndicators[ind];

@@ -57,7 +57,7 @@ from database.db import (
     reset_compounding_sections
 )
 from feed.binance_feed import binance_feed
-from engine.smc_v17 import analyze_candles_smc_v17, filter_active_zones
+# HERMES 3.5 RADAR HARVEST: Zero legacy SMC v17 dependency
 from scanner import scanner
 from alerts.telegram_service import telegram_service
 from ai.gemini_analyst import gemini_analyst
@@ -1944,21 +1944,9 @@ async def get_klines_with_analysis(
     if not candles:
         raise HTTPException(status_code=404, detail=f"Could not fetch klines for {symbol} on {tf}")
 
-    if tf in ("4h", "1h", "15m"):
-        detected = analyze_candles_smc_v17(symbol, candles)
-        active_zones = filter_active_zones(detected)
-    else:
-        active_zones = get_active_zones(symbol=symbol)
-
-    # HERMES 3.5 SINGLE TIER: Pure Institutional Order Blocks with 50% Mean Threshold (MT)
-    # Entry: Strictly at 50% Mean Threshold ((OB_High + OB_Low) / 2)
-    # Target (5x): +14.0% ROE (+2.80% price move)
-    # Profit Armor Stage 1: +8.0% ROE (+1.60% price move -> Breakeven Lock +0.10% buffer)
-    # Dynamic SL: -14.0% ROE (-2.80% price move)
-    tp_pct = 0.0280       # +14.0% ROE at 5x
-    armor1_pct = 0.0160   # +8.0% ROE at 5x (Stage 1 Lock)
-    sl_pct = 0.0280       # -14.0% ROE at 5x
-    fee_buf_pct = 0.0010  # +0.10% Breakeven Cushion
+    # HERMES 3.5 RADAR HARVEST ENGINE (Official Single Tier with 5% Boundary & 0.20% Radar)
+    btc_bias = hermes2_apex_engine.last_btc_bias if hasattr(hermes2_apex_engine, 'last_btc_bias') and hermes2_apex_engine.last_btc_bias else {"long_veto": False, "short_veto": False, "bias": "BULLISH"}
+    detected_setups = hermes2_apex_engine.detect_apex_setups_on_candles(symbol, candles, tf, btc_bias)
 
     # Historical quant probability baseline
     COIN_PROB_MAP = {
@@ -1975,36 +1963,43 @@ async def get_klines_with_analysis(
     if tf == "4h":
         base_prob = min(99.4, base_prob + 1.2)
 
-    for z in active_zones:
-        ob_h = float(z.get("ob_high", 0.0) or 0.0)
-        ob_l = float(z.get("ob_low", 0.0) or 0.0)
-        is_buy = z.get("side", "BUY").upper() in ("BUY", "LONG")
-        
-        # 50% Mean Threshold (MT) Entry
-        if ob_h > 0 and ob_l > 0:
-            mt = round((ob_h + ob_l) / 2.0, 6)
-        else:
-            mt = float(z.get("entry_price", 0.0) or 0.0)
+    active_zones = []
+    for s in detected_setups:
+        ob_h = float(s.get("ob_high", 0.0) or 0.0)
+        ob_l = float(s.get("ob_low", 0.0) or 0.0)
+        is_buy = s.get("side", "BUY").upper() in ("BUY", "LONG")
+        ent_p = float(s.get("entry_price", 0.0) or 0.0)
+        rad_p = float(s.get("radar_price", 0.0) or 0.0)
+        mt_p = float(s.get("mean_threshold", 0.0) or round((ob_h + ob_l) / 2.0, 6))
 
-        z["mean_threshold"] = mt
-        z["entry_price"] = mt
-        z["tier_type"] = "SINGLE_TIER"
-        z["strategy"] = "HERMES_3.5_SINGLE_TIER"
-        z["prob_score"] = round(base_prob, 1)
-        z["rank_label"] = f"🏛️ HERMES 3.5 INSTITUTIONAL OB (SINGLE TIER) [50% MT: ${mt}]"
-        
-        if is_buy:
-            z["tp_price"] = round(mt * (1.0 + tp_pct), 6)
-            z["armor_stage1_price"] = round(mt * (1.0 + armor1_pct), 6)
-            z["sl_price"] = round(mt * (1.0 - sl_pct), 6)
-            z["hard_sl_price"] = round(mt * (1.0 - 0.0380), 6)
-            z["fee_shield_be_price"] = round(mt * (1.0 + fee_buf_pct), 6)
-        else:
-            z["tp_price"] = round(mt * (1.0 - tp_pct), 6)
-            z["armor_stage1_price"] = round(mt * (1.0 - armor1_pct), 6)
-            z["sl_price"] = round(mt * (1.0 + sl_pct), 6)
-            z["hard_sl_price"] = round(mt * (1.0 + 0.0380), 6)
-            z["fee_shield_be_price"] = round(mt * (1.0 - fee_buf_pct), 6)
+        zone_dict = {
+            "symbol": symbol,
+            "side": "BUY" if is_buy else "SELL",
+            "timeframe": tf.upper(),
+            "ob_high": ob_h,
+            "ob_low": ob_l,
+            "origin_time": s.get("tap_time") or (candles[0]["time"] if candles else 0),
+            "mean_threshold": mt_p,
+            "entry_price": ent_p,
+            "radar_price": rad_p,
+            "tp_price": float(s.get("tp_price", 0.0)),
+            "armor_stage1_price": float(s.get("armor_stage1_price", 0.0)),
+            "armor_stage2_price": float(s.get("armor_stage2_price", 0.0)),
+            "harvest_lock_price": float(s.get("harvest_lock_price", 0.0)),
+            "sl_price": float(s.get("soft_sl_price", 0.0)),
+            "hard_sl_price": float(s.get("hard_sl_price", 0.0)),
+            "status": s.get("status", "ACTIVE"),
+            "displacement_pct": s.get("displacement_pct", 5.0),
+            "wick_ratio_pct": s.get("wick_ratio_pct", 18.0),
+            "runway_void_pct": s.get("runway_void_pct", 5.0),
+            "is_origin": s.get("is_origin", False),
+            "is_in_radar": s.get("is_in_radar", False),
+            "tier_type": "SINGLE_TIER",
+            "strategy": "HERMES_3.5_RADAR_HARVEST",
+            "prob_score": round(base_prob, 1),
+            "rank_label": f"🏛️ HERMES 3.5 RADAR HARVEST [5% Entry: ${ent_p} | Radar: ${rad_p}]"
+        }
+        active_zones.append(zone_dict)
 
     current_price = candles[-1]["close"] if candles else 0.0
 
@@ -2015,12 +2010,16 @@ async def get_klines_with_analysis(
         "candles": candles,
         "zones": active_zones,
         "indicator_status": {
-            "strategy": "HERMES 3.5 SINGLE TIER",
-            "entry_method": "50% Mean Threshold (MT)",
+            "strategy": "HERMES 3.5 RADAR HARVEST",
+            "entry_method": "5% Boundary Penetration",
+            "radar_threshold": "0.20% Proximity Pre-Arm Radar",
             "leverage": "5x Isolated",
-            "target_roe": "+14.00% ROE (+2.80%)",
+            "target_roe": "+14.00% ROE (+2.80% price move)",
             "armor_stage1_roe": "+8.00% ROE (+1.60% -> BE Lock)",
-            "dynamic_sl_roe": "-14.0% ROE (-2.80%)",
+            "armor_stage2_roe": "+9.00% ROE (+1.80% -> SL Lock @ +4.5% ROE Cash Profit)",
+            "dynamic_sl_roe": "-14.00% ROE (-2.80% price move)",
+            "maturation": "2-Day Maturation Horizon (48b 1H / 12b 4H)",
+            "airspace": "Rocket Airspace Void (>= 5.0%)",
             "sentries": "4/4 SENTRIES VERIFIED"
         }
     }

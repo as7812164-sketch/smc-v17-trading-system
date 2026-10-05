@@ -52,7 +52,13 @@ from engine.chart_image_generator import render_smc_chart_image
 
 logger = logging.getLogger("Hermes35Live")
 
-from config import TOP_22_CHAMPIONS, STRATEGY_VERSION
+from config import (
+    TOP_22_CHAMPIONS,
+    STRATEGY_VERSION,
+    HERMES_3_5_MIN_MATURATION_1H,
+    HERMES_3_5_MIN_MATURATION_4H,
+    HERMES_3_5_BTC_TREND_FILTER
+)
 from engine.hermes3_5_apex import hermes35_engine
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -155,22 +161,39 @@ class Hermes35LiveEngine:
 
     async def evaluate_btc_macro_sentry(self) -> Dict[str, Any]:
         """
-        Sentry 1: King BTC Macro Causal Brake & Trend Sentry.
-        1. Checks BTC 4H EMA50 Macro Trend:
-           - If BTC Close >= EMA50: King BTC is BULLISH -> ALT SHORTS ARE STRICTLY VETOED!
-           - If BTC Close < EMA50: King BTC is BEARISH -> ALT LONGS ARE STRICTLY VETOED!
-        2. Checks Prior 4H Candle Dump/Pump Cascade:
-           - If prior 4H candle dumped >= 1.5%: Veto longs immediately.
+        Sentry 1: King BTC Macro Causal Brake & Trend Sentry (High-Velocity Institutional Sentry).
+        1. Multi-EMA Macro Trend:
+           - EMA20 (Fast Momentum), EMA50 (Intermediate Trend), EMA200 (Macro Bull/Bear Anchor).
+           - Bullish Trend: (EMA20 >= EMA50 [Golden Trend Cross]) OR (Close >= EMA200 [Macro Anchor]).
+        2. Emergency Flash Dump / Pump Cascade Brake:
+           - If prior 4H candle dumped >= 1.5%: Veto longs immediately (prevents catching falling knives).
            - If prior 4H candle pumped >= 2.0%: Veto shorts immediately.
         """
         try:
-            btc_candles = await binance_feed.fetch_klines("BTCUSDT", interval="4h", limit=60)
-            if len(btc_candles) >= 50:
+            btc_candles = await binance_feed.fetch_klines("BTCUSDT", interval="4h", limit=210)
+            if len(btc_candles) >= 20:
                 closes = [float(c["close"]) for c in btc_candles]
-                k = 2.0 / (50 + 1.0)
-                ema50 = closes[0]
-                for p in closes[1:]:
-                    ema50 = p * k + ema50 * (1.0 - k)
+                
+                # EMA20
+                k20 = 2.0 / (20 + 1.0)
+                ema20 = closes[0]
+                for p in closes[1:]: ema20 = p * k20 + ema20 * (1.0 - k20)
+
+                # EMA50
+                if len(closes) >= 50:
+                    k50 = 2.0 / (50 + 1.0)
+                    ema50 = closes[0]
+                    for p in closes[1:]: ema50 = p * k50 + ema50 * (1.0 - k50)
+                else:
+                    ema50 = ema20
+
+                # EMA200
+                if len(closes) >= 200:
+                    k200 = 2.0 / (200 + 1.0)
+                    ema200 = closes[0]
+                    for p in closes[1:]: ema200 = p * k200 + ema200 * (1.0 - k200)
+                else:
+                    ema200 = ema50
 
                 cur_c = closes[-1]
                 closed_bar = btc_candles[-2]
@@ -179,7 +202,8 @@ class Hermes35LiveEngine:
                 dump_pct = (o - c) / o * 100.0 if o > 0 else 0.0
                 pump_pct = (c - o) / o * 100.0 if o > 0 else 0.0
 
-                btc_is_bull = (cur_c >= ema50)
+                # Proven Quant Trend Anchor: Trend Cross (EMA20 >= EMA50) OR Macro Anchor (cur_c >= EMA200)
+                btc_is_bull = (ema20 >= ema50) or (cur_c >= ema200)
 
                 short_veto = btc_is_bull or (pump_pct >= 2.0)
                 long_veto = (not btc_is_bull) or (dump_pct >= 1.5)
@@ -194,7 +218,9 @@ class Hermes35LiveEngine:
                     "bias": bias,
                     "change_pct": round((c - o) / o * 100.0, 2),
                     "btc_is_bull": btc_is_bull,
+                    "btc_ema20": round(ema20, 2),
                     "btc_ema50": round(ema50, 2),
+                    "btc_ema200": round(ema200, 2),
                     "long_veto": long_veto,
                     "short_veto": short_veto,
                     "bar_time": closed_bar["time"],
@@ -224,16 +250,19 @@ class Hermes35LiveEngine:
         if n < 40:
             return []
 
-        tp_pct = 0.0244 if interval == "1h" else 0.0280
-        soft_sl_pct = 0.0240 if interval == "1h" else 0.0280
-        hard_sl_pct = 0.0350 if interval == "1h" else 0.0380
-        be_lock_pct = 0.0150   # +1.5% price move (+7.5% ROE) -> Locks BE +0.10%
-        trail_lock_pct = 0.0200 # +2.0% price move (+10.0% ROE) -> Locks Trailing +1.00%
-        min_displacement = 0.050
-        max_tap_window = 28
+        # HERMES 3.5 SINGLE TIER OFFICIAL HARVEST PARAMETERS (100% PINE SCRIPT PARITY)
+        tp_pct = 0.0280          # +14.0% ROE at 5x (+2.80% price move)
+        soft_sl_pct = 0.0280     # -14.0% ROE at 5x (-2.80% price move)
+        hard_sl_pct = 0.0380     # -19.0% ROE at 5x
+        be_lock_pct = 0.0160     # Stage 1: +8.0% ROE (+1.60% price move) -> Locks BE +0.10%
+        trail_lock_pct = 0.0180  # Stage 2: +9.0% ROE (+1.80% price move) -> Locks SL at +4.50% ROE (+0.90% cash profit)
+        harvest_lock_pct = 0.0090# +4.50% ROE guaranteed cash profit lock (+0.90% price buffer)
+        min_displacement = 0.050 # Sentry 2: >= 5.0% displacement
+        min_runway_pct = 5.0     # Rocket Airspace Void: >= 5.0% clearance before retest
+        min_maturation_bars = HERMES_3_5_MIN_MATURATION_1H if interval == "1h" else HERMES_3_5_MIN_MATURATION_4H  # High-Velocity Retest (18h on 1H / 32h on 4H)
+        max_maturation_bars = 720 if interval == "1h" else 360 # Max 1-Month Horizon
 
-        entry_mode = get_setting("hermes35_entry_mode", "50% Mean Threshold (MT)")
-        use_boundary = entry_mode.startswith("OB Boundary")
+        cur_price = float(candles[-1]["close"]) if candles else 0.0
 
         # Precompute ATR(14) for dynamic institutional buffer
         atr_series = [0.0] * n
@@ -245,8 +274,8 @@ class Hermes35LiveEngine:
 
         setups = []
 
-        # Lookback to find origin Order Block formations
-        search_start = max(5, n - 45)
+        # Lookback to find origin Order Block formations within maturation horizon
+        search_start = max(5, n - max_maturation_bars)
         for i in range(search_start, n - 3):
             c3 = candles[i]
             c2 = candles[i+1]
@@ -266,8 +295,25 @@ class Hermes35LiveEngine:
                 if is_strict_red and has_bull_fvg and bull_gain >= min_displacement:
                     ob_high = c3["high"]
                     ob_low = c3["low"]
-                    mt = (ob_high + ob_low) / 2.0
-                    eff_entry = ob_high if use_boundary else mt
+                    ob_range = ob_high - ob_low
+                    mt = round((ob_high + ob_low) / 2.0, 8)
+
+                    # 5% BOUNDARY ENTRY & 0.20% PROXIMITY RADAR (HERMES 3.5 OFFICIAL)
+                    eff_entry = round(ob_high - (ob_range * 0.05), 8)
+                    radar_price = round(eff_entry * 1.0020, 8)
+
+                    # Origin Bedrock Floor: OB candle low is the lowest of prior 25 bars
+                    is_origin = (c3["low"] <= min(candles[k]["low"] for k in range(max(0, i - 25), i + 1)))
+
+                    # Rocket Airspace Runway Void Check: Must reach >= 5.0% void above OB
+                    peak_runway = max(candles[k]["high"] for k in range(i + 1, min(i + 25, n)))
+                    runway_pct = ((peak_runway - ob_high) / ob_high * 100.0) if ob_high > 0 else 0.0
+                    if runway_pct < min_runway_pct:
+                        continue
+
+                    bars_since_ob = (n - 1) - (i + 2)
+                    if bars_since_ob > max_maturation_bars:
+                        continue
 
                     # Check forward bars from i+3 to current bar for invalidation and tap
                     broken = False
@@ -275,99 +321,129 @@ class Hermes35LiveEngine:
                     tap_bar_idx = -1
                     tap_wick_ratio = 0.0
 
-                    bars_since_ob = (n - 1) - (i + 2)
-                    if 1 <= bars_since_ob <= max_tap_window:
-                        # Inducement (IDM) level: swing low before the tap
-                        idm_low = min(candles[k]["low"] for k in range(max(0, i - 3), min(i + 4, n)))
-                        for t in range(i + 3, n):
-                            curr_c = candles[t]
-                            # Hard Invalidation: Close below OB low
-                            if curr_c["close"] < ob_low:
-                                broken = True
-                                break
+                    # Inducement (IDM) level: swing low before the tap
+                    idm_low = min(candles[k]["low"] for k in range(max(0, i - 3), min(i + 4, n)))
+                    for t in range(i + 3, n):
+                        curr_c = candles[t]
+                        # Hard Invalidation: Close below OB low
+                        if curr_c["close"] < ob_low:
+                            broken = True
+                            break
 
-                            # IDM Sweep check: Did any bar prior to/at tap sweep below the inducement low?
-                            idm_swept = any(candles[k]["low"] < idm_low for k in range(i + 3, t + 1)) or (curr_c["low"] < idm_low)
+                        # IDM Sweep check
+                        idm_swept = any(candles[k]["low"] < idm_low for k in range(i + 3, t + 1)) or (curr_c["low"] < idm_low)
 
-                            # Tap detection: Low dips to entry price and holds above zone low
-                            if not tap_found and curr_c["low"] <= eff_entry * 1.0005 and curr_c["low"] >= ob_low * (1.0 - soft_sl_pct) and curr_c["close"] >= ob_low:
+                        # Maturation gate: Tap must occur after min_maturation_bars (2-Day Horizon)
+                        bars_alive_at_t = t - (i + 2)
+                        if not tap_found and bars_alive_at_t >= min_maturation_bars:
+                            # 5% Boundary Tap detection
+                            if curr_c["low"] <= eff_entry * 1.0005 and curr_c["low"] >= ob_low * (1.0 - soft_sl_pct) and curr_c["close"] >= ob_low:
                                 c_range = curr_c["high"] - curr_c["low"]
                                 l_wick = min(curr_c["open"], curr_c["close"]) - curr_c["low"]
                                 w_ratio = (l_wick / c_range) if c_range > 0 else 0.0
 
                                 # INSTITUTIONAL WIN-RATE GATE (HERMES 3.5):
                                 # 1. Minimum 18% Rejection Absorption Wick
-                                # 2. Candle Close must defend 50% Mean Threshold (close >= mt)
+                                # 2. Candle Close must defend 50% Mean Threshold or Boundary
                                 # 3. Inducement Liquidity Swept
                                 if w_ratio >= 0.18 and curr_c["close"] >= mt and idm_swept:
                                     tap_found = True
                                     tap_bar_idx = t
                                     tap_wick_ratio = w_ratio
 
-                        if not broken:
-                            sentry_lbl = f"HERMES 3.5 SINGLE TIER | King BTC Bull Trend | Sentry 2 Disp: {bull_gain*100:.1f}% + FVG | Sentry 3 IDM Swept + Wick: {tap_wick_ratio*100:.1f}% & MT Defended | Sentry 4 Fresh Window: {bars_since_ob}/28 Bars"
+                    if not broken:
+                        origin_badge = " [ORIGIN BEDROCK]" if is_origin else ""
+                        sentry_lbl = f"HERMES 3.5 RADAR HARVEST | 5% Boundary: ${eff_entry} | Disp: {bull_gain*100:.1f}% + FVG | Airspace: {runway_pct:.1f}% | Mature: {bars_since_ob}b{origin_badge}"
 
-                            if tap_found:
-                                age = (n - 1) - tap_bar_idx
-                                is_fresh = (age <= 1)
-                                tap_time = candles[tap_bar_idx]["time"]
-                                cur_atr = atr_series[tap_bar_idx] if tap_bar_idx >= 0 else atr_series[-1]
-                                struct_sl = min(ob_low, candles[tap_bar_idx]["low"]) - 0.20 * cur_atr
-                                hard_sl = max(min(struct_sl, eff_entry * (1.0 - hard_sl_pct)), eff_entry * 0.962)
-                                soft_sl = (eff_entry + hard_sl) / 2.0
-                                setups.append({
-                                    "symbol": symbol,
-                                    "side": "LONG",
-                                    "interval": interval,
-                                    "entry_price": eff_entry,
-                                    "ob_high": ob_high,
-                                    "ob_low": ob_low,
-                                    "mean_threshold": mt,
-                                    "tp_price": eff_entry * (1.0 + tp_pct),
-                                    "soft_sl_price": round(soft_sl, 6),
-                                    "hard_sl_price": round(hard_sl, 6),
-                                    "tp_pct": tp_pct,
-                                    "soft_sl_pct": soft_sl_pct,
-                                    "hard_sl_pct": hard_sl_pct,
-                                    "displacement_pct": round(bull_gain * 100.0, 2),
-                                    "wick_ratio_pct": round(tap_wick_ratio * 100.0, 1),
-                                    "tap_bar_age": age,
-                                    "tap_time": tap_time,
-                                    "is_fresh_trigger": is_fresh,
-                                    "status": "FRESH_TRIGGERED" if is_fresh else "CONFIRMED_TAP",
-                                    "sentry_reasons": sentry_lbl,
-                                    "tier": "TIER_1_INSTITUTIONAL",
-                                    "be_lock_pct": be_lock_pct,
-                                    "trail_lock_pct": trail_lock_pct,
-                                    "cvd_confirmed": True
-                                })
-                            else:
-                                setups.append({
-                                    "symbol": symbol,
-                                    "side": "LONG",
-                                    "interval": interval,
-                                    "entry_price": eff_entry,
-                                    "ob_high": ob_high,
-                                    "ob_low": ob_low,
-                                    "mean_threshold": mt,
-                                    "tp_price": eff_entry * (1.0 + tp_pct),
-                                    "soft_sl_price": eff_entry * (1.0 - soft_sl_pct),
-                                    "hard_sl_price": eff_entry * (1.0 - hard_sl_pct),
-                                    "tp_pct": tp_pct,
-                                    "soft_sl_pct": soft_sl_pct,
-                                    "hard_sl_pct": hard_sl_pct,
-                                    "displacement_pct": round(bull_gain * 100.0, 2),
-                                    "wick_ratio_pct": 0.0,
-                                    "tap_bar_age": 0,
-                                    "tap_time": candles[-1]["time"],
-                                    "is_fresh_trigger": False,
-                                    "status": "ARMED_WAITING_TAP",
-                                    "sentry_reasons": sentry_lbl,
-                                    "tier": "TIER_1_INSTITUTIONAL",
-                                    "be_lock_pct": be_lock_pct,
-                                    "trail_lock_pct": trail_lock_pct,
-                                    "cvd_confirmed": True
-                                })
+                        # Proximity Radar status check
+                        is_in_radar = (cur_price <= radar_price) and (cur_price >= eff_entry)
+
+                        tp_price = round(eff_entry * (1.0 + tp_pct), 8)
+                        stage1_armor_price = round(eff_entry * (1.0 + be_lock_pct), 8)
+                        stage2_harvest_price = round(eff_entry * (1.0 + trail_lock_pct), 8)
+                        locked_profit_sl_price = round(eff_entry * (1.0 + harvest_lock_pct), 8)
+                        soft_sl_price = round(eff_entry * (1.0 - soft_sl_pct), 8)
+                        hard_sl_price = round(eff_entry * (1.0 - hard_sl_pct), 8)
+
+                        if tap_found:
+                            age = (n - 1) - tap_bar_idx
+                            is_fresh = (age <= 1)
+                            tap_time = candles[tap_bar_idx]["time"]
+                            cur_atr = atr_series[tap_bar_idx] if tap_bar_idx >= 0 else atr_series[-1]
+                            struct_sl = min(ob_low, candles[tap_bar_idx]["low"]) - 0.20 * cur_atr
+                            final_hard_sl = max(min(struct_sl, hard_sl_price), eff_entry * 0.962)
+                            final_soft_sl = (eff_entry + final_hard_sl) / 2.0
+
+                            setups.append({
+                                "symbol": symbol,
+                                "side": "LONG",
+                                "interval": interval,
+                                "entry_price": eff_entry,
+                                "radar_price": radar_price,
+                                "ob_high": ob_high,
+                                "ob_low": ob_low,
+                                "mean_threshold": mt,
+                                "tp_price": tp_price,
+                                "soft_sl_price": round(final_soft_sl, 6),
+                                "hard_sl_price": round(final_hard_sl, 6),
+                                "armor_stage1_price": stage1_armor_price,
+                                "armor_stage2_price": stage2_harvest_price,
+                                "harvest_lock_price": locked_profit_sl_price,
+                                "tp_pct": tp_pct,
+                                "soft_sl_pct": soft_sl_pct,
+                                "hard_sl_pct": hard_sl_pct,
+                                "displacement_pct": round(bull_gain * 100.0, 2),
+                                "wick_ratio_pct": round(tap_wick_ratio * 100.0, 1),
+                                "runway_void_pct": round(runway_pct, 1),
+                                "is_origin": is_origin,
+                                "is_in_radar": is_in_radar,
+                                "tap_bar_age": age,
+                                "tap_time": tap_time,
+                                "is_fresh_trigger": is_fresh,
+                                "status": "FRESH_TRIGGERED" if is_fresh else "CONFIRMED_TAP",
+                                "sentry_reasons": sentry_lbl,
+                                "tier": "TIER_1_INSTITUTIONAL",
+                                "be_lock_pct": be_lock_pct,
+                                "trail_lock_pct": trail_lock_pct,
+                                "harvest_lock_pct": harvest_lock_pct,
+                                "cvd_confirmed": True
+                            })
+                        else:
+                            status_str = "RADAR_PRE_ARMED" if is_in_radar else "ARMED_WAITING_TAP"
+                            setups.append({
+                                "symbol": symbol,
+                                "side": "LONG",
+                                "interval": interval,
+                                "entry_price": eff_entry,
+                                "radar_price": radar_price,
+                                "ob_high": ob_high,
+                                "ob_low": ob_low,
+                                "mean_threshold": mt,
+                                "tp_price": tp_price,
+                                "soft_sl_price": soft_sl_price,
+                                "hard_sl_price": hard_sl_price,
+                                "armor_stage1_price": stage1_armor_price,
+                                "armor_stage2_price": stage2_harvest_price,
+                                "harvest_lock_price": locked_profit_sl_price,
+                                "tp_pct": tp_pct,
+                                "soft_sl_pct": soft_sl_pct,
+                                "hard_sl_pct": hard_sl_pct,
+                                "displacement_pct": round(bull_gain * 100.0, 2),
+                                "wick_ratio_pct": 0.0,
+                                "runway_void_pct": round(runway_pct, 1),
+                                "is_origin": is_origin,
+                                "is_in_radar": is_in_radar,
+                                "tap_bar_age": 0,
+                                "tap_time": candles[-1]["time"],
+                                "is_fresh_trigger": False,
+                                "status": status_str,
+                                "sentry_reasons": sentry_lbl,
+                                "tier": "TIER_1_INSTITUTIONAL",
+                                "be_lock_pct": be_lock_pct,
+                                "trail_lock_pct": trail_lock_pct,
+                                "harvest_lock_pct": harvest_lock_pct,
+                                "cvd_confirmed": True
+                            })
 
             # -------------------------------------------------------------
             # 2. BEARISH SETUP DETECTION (Origin Green OB + Bear FVG)
@@ -380,107 +456,154 @@ class Hermes35LiveEngine:
                 if is_strict_green and has_bear_fvg and bear_drop >= min_displacement:
                     ob_high = c3["high"]
                     ob_low = c3["low"]
-                    mt = (ob_high + ob_low) / 2.0
-                    eff_entry = ob_low if use_boundary else mt
+                    ob_range = ob_high - ob_low
+                    mt = round((ob_high + ob_low) / 2.0, 8)
+
+                    # 5% BOUNDARY ENTRY & 0.20% PROXIMITY RADAR (HERMES 3.5 OFFICIAL)
+                    eff_entry = round(ob_low + (ob_range * 0.05), 8)
+                    radar_price = round(eff_entry * 0.9980, 8)
+
+                    # Origin Bedrock Ceiling: OB candle high is highest of prior 25 bars
+                    is_origin = (c3["high"] >= max(candles[k]["high"] for k in range(max(0, i - 25), i + 1)))
+
+                    # Rocket Airspace Runway Void Check: Must drop >= 5.0% void below OB
+                    peak_runway = min(candles[k]["low"] for k in range(i + 1, min(i + 25, n)))
+                    runway_pct = ((ob_low - peak_runway) / ob_low * 100.0) if ob_low > 0 else 0.0
+                    if runway_pct < min_runway_pct:
+                        continue
+
+                    bars_since_ob = (n - 1) - (i + 2)
+                    if bars_since_ob > max_maturation_bars:
+                        continue
 
                     broken = False
                     tap_found = False
                     tap_bar_idx = -1
                     tap_wick_ratio = 0.0
 
-                    bars_since_ob = (n - 1) - (i + 2)
-                    if 1 <= bars_since_ob <= max_tap_window:
-                        # Inducement (IDM) level: swing high before the tap
-                        idm_high = max(candles[k]["high"] for k in range(max(0, i - 3), min(i + 4, n)))
-                        for t in range(i + 3, n):
-                            curr_c = candles[t]
-                            # Hard Invalidation: Close above OB high
-                            if curr_c["close"] > ob_high:
-                                broken = True
-                                break
+                    # Inducement (IDM) level: swing high before the tap
+                    idm_high = max(candles[k]["high"] for k in range(max(0, i - 3), min(i + 4, n)))
+                    for t in range(i + 3, n):
+                        curr_c = candles[t]
+                        # Hard Invalidation: Close above OB high
+                        if curr_c["close"] > ob_high:
+                            broken = True
+                            break
 
-                            # IDM Sweep check: Did any bar prior to/at tap sweep above the inducement high?
-                            idm_swept = any(candles[k]["high"] > idm_high for k in range(i + 3, t + 1)) or (curr_c["high"] > idm_high)
+                        # IDM Sweep check
+                        idm_swept = any(candles[k]["high"] > idm_high for k in range(i + 3, t + 1)) or (curr_c["high"] > idm_high)
 
-                            # Tap detection: High pushes up to entry price and holds below zone high
-                            if not tap_found and curr_c["high"] >= eff_entry * 0.9995 and curr_c["high"] <= ob_high * (1.0 + soft_sl_pct) and curr_c["close"] <= ob_high:
+                        # Maturation gate: Tap must occur after min_maturation_bars (2-Day Horizon)
+                        bars_alive_at_t = t - (i + 2)
+                        if not tap_found and bars_alive_at_t >= min_maturation_bars:
+                            # 5% Boundary Tap detection
+                            if curr_c["high"] >= eff_entry * 0.9995 and curr_c["high"] <= ob_high * (1.0 + soft_sl_pct) and curr_c["close"] <= ob_high:
                                 c_range = curr_c["high"] - curr_c["low"]
                                 u_wick = curr_c["high"] - max(curr_c["open"], curr_c["close"])
                                 w_ratio = (u_wick / c_range) if c_range > 0 else 0.0
 
                                 # INSTITUTIONAL WIN-RATE GATE (HERMES 3.5):
                                 # 1. Minimum 18% Upper Rejection Absorption Wick
-                                # 2. Candle Close must defend 50% Mean Threshold (close <= mt)
+                                # 2. Candle Close must defend 50% Mean Threshold or Boundary
                                 # 3. Inducement Liquidity Swept
                                 if w_ratio >= 0.18 and curr_c["close"] <= mt and idm_swept:
                                     tap_found = True
                                     tap_bar_idx = t
                                     tap_wick_ratio = w_ratio
 
-                        if not broken:
-                            sentry_lbl = f"HERMES 3.5 SINGLE TIER | King BTC Bear Trend | Sentry 2 Disp: {bear_drop*100:.1f}% + Bear FVG | Sentry 3 IDM Swept + Wick: {tap_wick_ratio*100:.1f}% & MT Defended | Sentry 4 Fresh Window: {bars_since_ob}/28 Bars"
+                    if not broken:
+                        origin_badge = " [ORIGIN BEDROCK]" if is_origin else ""
+                        sentry_lbl = f"HERMES 3.5 RADAR HARVEST | 5% Boundary: ${eff_entry} | Disp: {bear_drop*100:.1f}% + FVG | Airspace: {runway_pct:.1f}% | Mature: {bars_since_ob}b{origin_badge}"
 
-                            if tap_found:
-                                age = (n - 1) - tap_bar_idx
-                                is_fresh = (age <= 1)
-                                tap_time = candles[tap_bar_idx]["time"]
-                                cur_atr = atr_series[tap_bar_idx] if tap_bar_idx >= 0 else atr_series[-1]
-                                struct_sl = max(ob_high, candles[tap_bar_idx]["high"]) + 0.20 * cur_atr
-                                hard_sl = min(max(struct_sl, eff_entry * (1.0 + hard_sl_pct)), eff_entry * 1.038)
-                                soft_sl = (eff_entry + hard_sl) / 2.0
-                                setups.append({
-                                    "symbol": symbol,
-                                    "side": "SHORT",
-                                    "interval": interval,
-                                    "entry_price": eff_entry,
-                                    "ob_high": ob_high,
-                                    "ob_low": ob_low,
-                                    "mean_threshold": mt,
-                                    "tp_price": eff_entry * (1.0 - tp_pct),
-                                    "soft_sl_price": round(soft_sl, 6),
-                                    "hard_sl_price": round(hard_sl, 6),
-                                    "tp_pct": tp_pct,
-                                    "soft_sl_pct": soft_sl_pct,
-                                    "hard_sl_pct": hard_sl_pct,
-                                    "displacement_pct": round(bear_drop * 100.0, 2),
-                                    "wick_ratio_pct": round(tap_wick_ratio * 100.0, 1),
-                                    "tap_bar_age": age,
-                                    "tap_time": tap_time,
-                                    "is_fresh_trigger": is_fresh,
-                                    "status": "FRESH_TRIGGERED" if is_fresh else "CONFIRMED_TAP",
-                                    "sentry_reasons": sentry_lbl,
-                                    "tier": "TIER_1_INSTITUTIONAL",
-                                    "be_lock_pct": be_lock_pct,
-                                    "trail_lock_pct": trail_lock_pct,
-                                    "cvd_confirmed": True
-                                })
-                            else:
-                                setups.append({
-                                    "symbol": symbol,
-                                    "side": "SHORT",
-                                    "interval": interval,
-                                    "entry_price": eff_entry,
-                                    "ob_high": ob_high,
-                                    "ob_low": ob_low,
-                                    "mean_threshold": mt,
-                                    "tp_price": eff_entry * (1.0 - tp_pct),
-                                    "soft_sl_price": eff_entry * (1.0 + soft_sl_pct),
-                                    "hard_sl_price": eff_entry * (1.0 + hard_sl_pct),
-                                    "tp_pct": tp_pct,
-                                    "soft_sl_pct": soft_sl_pct,
-                                    "hard_sl_pct": hard_sl_pct,
-                                    "displacement_pct": round(bear_drop * 100.0, 2),
-                                    "wick_ratio_pct": 0.0,
-                                    "tap_bar_age": 0,
-                                    "tap_time": candles[-1]["time"],
-                                    "is_fresh_trigger": False,
-                                    "status": "ARMED_WAITING_TAP",
-                                    "sentry_reasons": sentry_lbl,
-                                    "tier": "TIER_1_INSTITUTIONAL",
-                                    "be_lock_pct": be_lock_pct,
-                                    "trail_lock_pct": trail_lock_pct,
-                                    "cvd_confirmed": True
-                                })
+                        # Proximity Radar status check
+                        is_in_radar = (cur_price >= radar_price) and (cur_price <= eff_entry)
+
+                        tp_price = round(eff_entry * (1.0 - tp_pct), 8)
+                        stage1_armor_price = round(eff_entry * (1.0 - be_lock_pct), 8)
+                        stage2_harvest_price = round(eff_entry * (1.0 - trail_lock_pct), 8)
+                        locked_profit_sl_price = round(eff_entry * (1.0 - harvest_lock_pct), 8)
+                        soft_sl_price = round(eff_entry * (1.0 + soft_sl_pct), 8)
+                        hard_sl_price = round(eff_entry * (1.0 + hard_sl_pct), 8)
+
+                        if tap_found:
+                            age = (n - 1) - tap_bar_idx
+                            is_fresh = (age <= 1)
+                            tap_time = candles[tap_bar_idx]["time"]
+                            cur_atr = atr_series[tap_bar_idx] if tap_bar_idx >= 0 else atr_series[-1]
+                            struct_sl = max(ob_high, candles[tap_bar_idx]["high"]) + 0.20 * cur_atr
+                            final_hard_sl = min(max(struct_sl, hard_sl_price), eff_entry * 1.038)
+                            final_soft_sl = (eff_entry + final_hard_sl) / 2.0
+
+                            setups.append({
+                                "symbol": symbol,
+                                "side": "SHORT",
+                                "interval": interval,
+                                "entry_price": eff_entry,
+                                "radar_price": radar_price,
+                                "ob_high": ob_high,
+                                "ob_low": ob_low,
+                                "mean_threshold": mt,
+                                "tp_price": tp_price,
+                                "soft_sl_price": round(final_soft_sl, 6),
+                                "hard_sl_price": round(final_hard_sl, 6),
+                                "armor_stage1_price": stage1_armor_price,
+                                "armor_stage2_price": stage2_harvest_price,
+                                "harvest_lock_price": locked_profit_sl_price,
+                                "tp_pct": tp_pct,
+                                "soft_sl_pct": soft_sl_pct,
+                                "hard_sl_pct": hard_sl_pct,
+                                "displacement_pct": round(bear_drop * 100.0, 2),
+                                "wick_ratio_pct": round(tap_wick_ratio * 100.0, 1),
+                                "runway_void_pct": round(runway_pct, 1),
+                                "is_origin": is_origin,
+                                "is_in_radar": is_in_radar,
+                                "tap_bar_age": age,
+                                "tap_time": tap_time,
+                                "is_fresh_trigger": is_fresh,
+                                "status": "FRESH_TRIGGERED" if is_fresh else "CONFIRMED_TAP",
+                                "sentry_reasons": sentry_lbl,
+                                "tier": "TIER_1_INSTITUTIONAL",
+                                "be_lock_pct": be_lock_pct,
+                                "trail_lock_pct": trail_lock_pct,
+                                "harvest_lock_pct": harvest_lock_pct,
+                                "cvd_confirmed": True
+                            })
+                        else:
+                            status_str = "RADAR_PRE_ARMED" if is_in_radar else "ARMED_WAITING_TAP"
+                            setups.append({
+                                "symbol": symbol,
+                                "side": "SHORT",
+                                "interval": interval,
+                                "entry_price": eff_entry,
+                                "radar_price": radar_price,
+                                "ob_high": ob_high,
+                                "ob_low": ob_low,
+                                "mean_threshold": mt,
+                                "tp_price": tp_price,
+                                "soft_sl_price": soft_sl_price,
+                                "hard_sl_price": hard_sl_price,
+                                "armor_stage1_price": stage1_armor_price,
+                                "armor_stage2_price": stage2_harvest_price,
+                                "harvest_lock_price": locked_profit_sl_price,
+                                "tp_pct": tp_pct,
+                                "soft_sl_pct": soft_sl_pct,
+                                "hard_sl_pct": hard_sl_pct,
+                                "displacement_pct": round(bear_drop * 100.0, 2),
+                                "wick_ratio_pct": 0.0,
+                                "runway_void_pct": round(runway_pct, 1),
+                                "is_origin": is_origin,
+                                "is_in_radar": is_in_radar,
+                                "tap_bar_age": 0,
+                                "tap_time": candles[-1]["time"],
+                                "is_fresh_trigger": False,
+                                "status": status_str,
+                                "sentry_reasons": sentry_lbl,
+                                "tier": "TIER_1_INSTITUTIONAL",
+                                "be_lock_pct": be_lock_pct,
+                                "trail_lock_pct": trail_lock_pct,
+                                "harvest_lock_pct": harvest_lock_pct,
+                                "cvd_confirmed": True
+                            })
 
         # Deduplicate setups: At most 1 setup per symbol, side, and timeframe
         unique_setups_map = {}
@@ -492,6 +615,8 @@ class Hermes35LiveEngine:
 
         return list(unique_setups_map.values())
 
+    detect_hermes35_setups = detect_apex_setups_on_candles
+
     async def run_full_champion_scan(self) -> Dict[str, Any]:
         """Scans all Top-22 Champion crypto pairs across 1H and 4H timeframes."""
         scan_start = time.time()
@@ -500,18 +625,18 @@ class Hermes35LiveEngine:
         found_setups: List[Dict[str, Any]] = []
 
         for sym in TOP_22_CHAMPIONS:
-            # Check 1H timeframe
+            # Check 1H timeframe (200 bars depth for 2-day maturation horizon)
             try:
-                klines_1h = await binance_feed.fetch_klines(sym, interval="1h", limit=80)
+                klines_1h = await binance_feed.fetch_klines(sym, interval="1h", limit=200)
                 if klines_1h and len(klines_1h) >= 40:
                     setups_1h = self.detect_apex_setups_on_candles(sym, klines_1h, "1h", btc_sentry)
                     found_setups.extend(setups_1h)
             except Exception as e:
                 logger.debug(f"1H scan error on {sym}: {e}")
 
-            # Check 4H timeframe
+            # Check 4H timeframe (200 bars depth for 2-day maturation horizon)
             try:
-                klines_4h = await binance_feed.fetch_klines(sym, interval="4h", limit=80)
+                klines_4h = await binance_feed.fetch_klines(sym, interval="4h", limit=200)
                 if klines_4h and len(klines_4h) >= 40:
                     setups_4h = self.detect_apex_setups_on_candles(sym, klines_4h, "4h", btc_sentry)
                     found_setups.extend(setups_4h)
@@ -634,7 +759,7 @@ class Hermes35LiveEngine:
                 logger.info(f"All 5 Bitget 1H compounding sections (Sections 6-10) are full. Waiting...")
                 return
 
-        # Live Proximity Check: Price must be within the Order Block zone or 0.50% range
+        # Live Proximity Check: Price must be within the Order Block zone or 0.20% Radar range
         cur_price = entry_price
         try:
             tickers = await binance_feed.fetch_all_tickers()
@@ -644,9 +769,9 @@ class Hermes35LiveEngine:
                 ob_high = float(setup.get("ob_high", entry_price))
                 ob_low = float(setup.get("ob_low", entry_price))
                 diff_pct = abs(cur_price - entry_price) / entry_price * 100.0
-                in_zone = (ob_low * 0.995) <= cur_price <= (ob_high * 1.005)
-                if diff_pct > 0.50 and not in_zone:
-                    logger.info(f"Skipping entry on {sym}: live price {cur_price} is {diff_pct:.2f}% away from entry limit {entry_price}")
+                in_zone = (ob_low * 0.998) <= cur_price <= (ob_high * 1.002)
+                if diff_pct > 0.20 and not in_zone:
+                    logger.info(f"Skipping entry on {sym}: live price {cur_price} is {diff_pct:.2f}% away from entry limit {entry_price} (outside 0.20% Radar)")
                     return
         except Exception:
             pass
@@ -668,13 +793,13 @@ class Hermes35LiveEngine:
         hard_sl_pct = float(setup.get("hard_sl_pct", 0.0380 if tf == "4h" else 0.0350))
 
         if side in ("BUY", "LONG"):
-            tp_price = round(entry_price * (1.0 + tp_pct), 6)
-            sl_price = round(entry_price * (1.0 - soft_sl_pct), 6)
-            hard_sl_price = round(entry_price * (1.0 - hard_sl_pct), 6)
+            tp_price = float(setup.get("tp_price") or round(entry_price * (1.0 + tp_pct), 6))
+            sl_price = float(setup.get("soft_sl_price") or round(entry_price * (1.0 - soft_sl_pct), 6))
+            hard_sl_price = float(setup.get("hard_sl_price") or round(entry_price * (1.0 - hard_sl_pct), 6))
         else:
-            tp_price = round(entry_price * (1.0 - tp_pct), 6)
-            sl_price = round(entry_price * (1.0 + soft_sl_pct), 6)
-            hard_sl_price = round(entry_price * (1.0 + hard_sl_pct), 6)
+            tp_price = float(setup.get("tp_price") or round(entry_price * (1.0 - tp_pct), 6))
+            sl_price = float(setup.get("soft_sl_price") or round(entry_price * (1.0 + soft_sl_pct), 6))
+            hard_sl_price = float(setup.get("hard_sl_price") or round(entry_price * (1.0 + hard_sl_pct), 6))
 
         sentry_reasons = setup.get("sentry_reasons", "")
 
@@ -731,8 +856,8 @@ class Hermes35LiveEngine:
             logger.info(f"✅ Real exchange order placed on {target_exchange}: Order ID {execution_order_id}")
 
         tier = setup.get("tier", "TIER_1_INSTITUTIONAL")
-        be_lock_pct = float(setup.get("be_lock_pct", 0.016))
-        trail_lock_pct = float(setup.get("trail_lock_pct", 0.022))
+        be_lock_pct = float(setup.get("be_lock_pct", 0.0160))
+        trail_lock_pct = float(setup.get("trail_lock_pct", 0.0180))
         trade_mode = strat_mode if strat_mode else "HERMES_3.5_SINGLE_TIER"
 
         with get_connection() as conn:
@@ -919,24 +1044,26 @@ class Hermes35LiveEngine:
                     highest = max(float(trade.get("highest_price") or entry_price), cur_price)
                     gain_from_entry = (highest - entry_price) / entry_price if entry_price > 0 else 0.0
 
-                    trade_be_trigger = float(trade.get("be_lock_pct") or 0.015)
-                    trade_trail_trigger = float(trade.get("trail_lock_pct") or 0.020)
+                    trade_be_trigger = float(trade.get("be_lock_pct") or 0.0160)
+                    trade_trail_trigger = float(trade.get("trail_lock_pct") or 0.0180)
 
-                    # Evaluate Multi-Stage Dynamic Profit Armor for LONG
+                    # Evaluate Stepped Profit Harvest & Dynamic Profit Armor for LONG
                     current_effective_sl = sl_price
                     sl_updated = False
                     if gain_from_entry >= trade_trail_trigger:
-                        stage2_sl = round(entry_price * 1.010, 6) # +1.00% Trailing Profit Lock (+5.0% ROE)
+                        # Stage 2 (+9.0% ROE / +1.80% price gain at 5x): Lock SL at +4.50% ROE (+0.90% cash profit)
+                        stage2_sl = round(entry_price * 1.0090, 6)
                         if stage2_sl > current_effective_sl:
                             current_effective_sl = stage2_sl
                             sl_updated = True
-                            logger.info(f"🛡️ HERMES PROFIT ARMOR STAGE 2 ACTIVE: {sym} LONG SL locked at {stage2_sl} (+1.00% trailing profit lock)")
+                            logger.info(f"🛡️ HERMES STEPPED PROFIT HARVEST (STAGE 2 ACTIVE): {sym} LONG SL locked at {stage2_sl} (+4.50% ROE guaranteed cash profit)")
                     elif gain_from_entry >= trade_be_trigger:
-                        stage1_sl = round(entry_price * 1.001, 6) # +0.10% Breakeven Lock (+0.5% ROE)
+                        # Stage 1 (+8.0% ROE / +1.60% price gain at 5x): Lock BE +0.10% buffer
+                        stage1_sl = round(entry_price * 1.0010, 6)
                         if stage1_sl > current_effective_sl:
                             current_effective_sl = stage1_sl
                             sl_updated = True
-                            logger.info(f"🛡️ HERMES PROFIT ARMOR STAGE 1 ACTIVE: {sym} LONG SL locked at {stage1_sl} (BE +0.10% profit)")
+                            logger.info(f"🛡️ HERMES PROFIT ARMOR (STAGE 1 ACTIVE): {sym} LONG SL locked at {stage1_sl} (BE +0.10% profit)")
 
                     if sl_updated:
                         try:
@@ -961,27 +1088,29 @@ class Hermes35LiveEngine:
                             exit_triggered = "SL_HIT"
                             exit_price = current_effective_sl
                             logger.info(f"🛑 HERMES SL TRIGGERED: {sym} LONG at {exit_price}")
-                else: # SELL / SHORT (HERMES MULTI-STAGE DYNAMIC PROFIT ARMOR)
+                else: # SELL / SHORT (HERMES STEPPED PROFIT HARVEST)
                     lowest = min(float(trade.get("lowest_price") or entry_price), cur_price)
                     drop_from_entry = (entry_price - lowest) / entry_price if entry_price > 0 else 0.0
-                    trade_be_trigger = float(trade.get("be_lock_pct") or 0.015)
-                    trade_trail_trigger = float(trade.get("trail_lock_pct") or 0.020)
+                    trade_be_trigger = float(trade.get("be_lock_pct") or 0.0160)
+                    trade_trail_trigger = float(trade.get("trail_lock_pct") or 0.0180)
 
-                    # Evaluate Multi-Stage Dynamic Profit Armor
+                    # Evaluate Stepped Profit Harvest for SHORT
                     current_effective_sl = sl_price
                     sl_updated = False
                     if drop_from_entry >= trade_trail_trigger:
-                        stage2_sl = round(entry_price * 0.990, 6) # +1.00% Trailing Profit Lock (+5.0% ROE)
+                        # Stage 2 (+9.0% ROE / +1.80% price drop at 5x): Lock SL at +4.50% ROE (+0.90% cash profit)
+                        stage2_sl = round(entry_price * 0.9910, 6)
                         if stage2_sl < current_effective_sl:
                             current_effective_sl = stage2_sl
                             sl_updated = True
-                            logger.info(f"🛡️ HERMES PROFIT ARMOR STAGE 2 ACTIVE: {sym} SHORT SL locked at {stage2_sl} (+1.00% trailing profit lock)")
+                            logger.info(f"🛡️ HERMES STEPPED PROFIT HARVEST (STAGE 2 ACTIVE): {sym} SHORT SL locked at {stage2_sl} (+4.50% ROE guaranteed cash profit)")
                     elif drop_from_entry >= trade_be_trigger:
-                        stage1_sl = round(entry_price * 0.999, 6) # +0.10% Breakeven Lock (+0.5% ROE)
+                        # Stage 1 (+8.0% ROE / +1.60% price drop at 5x): Lock BE +0.10% buffer
+                        stage1_sl = round(entry_price * 0.9990, 6)
                         if stage1_sl < current_effective_sl:
                             current_effective_sl = stage1_sl
                             sl_updated = True
-                            logger.info(f"🛡️ HERMES PROFIT ARMOR STAGE 1 ACTIVE: {sym} SHORT SL locked at {stage1_sl} (BE +0.10% profit)")
+                            logger.info(f"🛡️ HERMES PROFIT ARMOR (STAGE 1 ACTIVE): {sym} SHORT SL locked at {stage1_sl} (BE +0.10% profit)")
 
                     if sl_updated:
                         try:
@@ -1063,35 +1192,36 @@ class Hermes35LiveEngine:
                 entry_p = float(setup["entry_price"])
                 ob_high = float(setup.get("ob_high", entry_p))
                 ob_low = float(setup.get("ob_low", entry_p))
+                ob_range = ob_high - ob_low
                 is_fresh = setup.get("is_fresh_trigger", False)
 
                 mt = float(setup.get("mean_threshold", (ob_high + ob_low) / 2.0))
-                entry_mode = get_setting("hermes35_entry_mode", "50% Mean Threshold (MT)")
-                use_boundary = entry_mode.startswith("OB Boundary")
-                target_entry_p = (ob_high if use_boundary else mt) if side in ("BUY", "LONG") else (ob_low if use_boundary else mt)
+                entry_mode = get_setting("hermes35_entry_mode", "5% Boundary Penetration")
 
+                # Compute 5% Boundary Penetration Entry & 0.20% Proximity Radar
                 tapped = False
+                in_radar = False
                 if side in ("BUY", "LONG"):
-                    if use_boundary:
-                        if (cur_price <= ob_high * 1.002) and (cur_price >= ob_low * 0.995):
-                            tapped = True
-                            setup["entry_price"] = ob_high
-                    else:
-                        if (cur_price <= mt * 1.002) and (cur_price >= ob_low * 0.995):
-                            tapped = True
-                            setup["entry_price"] = mt
+                    eff_entry = float(setup.get("entry_price") or round(ob_high - (ob_range * 0.05), 8))
+                    radar_price = float(setup.get("radar_price") or round(eff_entry * 1.0020, 8))
+                    target_entry_p = mt if entry_mode.startswith("50%") else eff_entry
+                    radar_target = round(mt * 1.0020, 8) if entry_mode.startswith("50%") else radar_price
+
+                    in_radar = (cur_price <= radar_target) and (cur_price >= ob_low * 0.995)
+                    tapped = (cur_price <= target_entry_p) and (cur_price >= ob_low * 0.995)
+                    setup["entry_price"] = target_entry_p
                 else: # SHORT / SELL
-                    if use_boundary:
-                        if (cur_price >= ob_low * 0.998) and (cur_price <= ob_high * 1.005):
-                            tapped = True
-                            setup["entry_price"] = ob_low
-                    else:
-                        if (cur_price >= mt * 0.998) and (cur_price <= ob_high * 1.005):
-                            tapped = True
-                            setup["entry_price"] = mt
+                    eff_entry = float(setup.get("entry_price") or round(ob_low + (ob_range * 0.05), 8))
+                    radar_price = float(setup.get("radar_price") or round(eff_entry * 0.9980, 8))
+                    target_entry_p = mt if entry_mode.startswith("50%") else eff_entry
+                    radar_target = round(mt * 0.9980, 8) if entry_mode.startswith("50%") else radar_price
+
+                    in_radar = (cur_price >= radar_target) and (cur_price <= ob_high * 1.005)
+                    tapped = (cur_price >= target_entry_p) and (cur_price <= ob_high * 1.005)
+                    setup["entry_price"] = target_entry_p
 
                 diff_pct = abs(cur_price - target_entry_p) / target_entry_p * 100.0
-                should_trigger = tapped or (is_fresh and diff_pct <= 0.30)
+                should_trigger = tapped or in_radar or (is_fresh and diff_pct <= 0.20)
                 if should_trigger:
                     tf_setup = (setup.get("interval") or "4h").lower()
                     # Check if this specific timeframe has capacity across its 5 sections

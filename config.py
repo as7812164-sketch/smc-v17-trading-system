@@ -16,10 +16,16 @@ load_dotenv(BASE_DIR / ".env")
 # --- HERMES STRATEGY OPTIONS (PRODUCTION & EXPERIMENTAL) ---
 STRATEGY_OPTIONS = ["HERMES_3.5_SINGLE_TIER", "HERMES_3.5_DUAL_TIER_SNIPER"]
 STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_3.5_SINGLE_TIER")  # Pure Hermes 3.5 Single Tier Institutional
-HERMES_3_MEAN_THRESHOLD_ENTRY = True # Default to 50% Mean Threshold (MT) Equilibrium Entry per 89.72% Win Rate Audit
+HERMES_3_MEAN_THRESHOLD_ENTRY = False # Overridden by 5% Boundary Penetration Entry
+HERMES_3_5_BOUNDARY_ENTRY = True      # 5% Boundary Entry (ob_high - 0.05*range for Long)
+HERMES_3_5_PROXIMITY_RADAR = True     # 0.20% Proximity Radar Pre-Arm
+HERMES_3_5_STEPPED_HARVEST = True     # +8% -> BE lock, +9% -> +4.5% ROE guaranteed profit
 HERMES_3_MULTI_STAGE_ARMOR = True
 HERMES_3_BTC_EMERGENCY_SHIELD = True
 HERMES_3_DYNAMIC_ATR_BUFFER = True
+HERMES_3_5_MIN_MATURATION_1H = 18     # Next-Day Retest Horizon (18h replaces rigid 48h to boost frequency)
+HERMES_3_5_MIN_MATURATION_4H = 8      # 32-hour Retest Horizon for 4H Macro
+HERMES_3_5_BTC_TREND_FILTER = "EMA20_CROSS_OR_EMA200" # Smooth Macro Trend Anchor
 HERMES_3_5_DUAL_TIER_SIZING = True   # Pillar 1: Full Size Tier 1, Half Size Tier 2 with fast BE
 HERMES_3_5_15M_SNIPER_GATE = True    # Pillar 2: 15m Rejection Gate (rejects runaway knives/rockets)
 HERMES_3_5_CVD_DELTA_FILTER = True   # Pillar 3: Cumulative Volume Delta & OI Alignment
