@@ -42,6 +42,7 @@ max_bars_in = input.int(720, "Max Maturation Window (Bars)", minval=50, maxval=2
 grp_core    = "⚙️ 4. Institutional Displacement & Sentry Core"
 min_disp    = input.float(5.0, "Min Displacement Wave (%)", minval=1.5, maxval=20.0, step=0.5, group=grp_core)
 strict_col  = input.bool(true, "Strict Candle Color Gate (Red for Bull, Green for Bear)", group=grp_core)
+strict_origin = input.bool(true, "Strict Origin Bedrock Only (Lowest/Highest of 20 bars)", group=grp_core, tooltip="When enabled, only extreme Origin Bedrock Floor/Ceiling zones are drawn and traded, eliminating secondary intermediate blocks")
 extend_box  = input.bool(true, "Dynamic Live Alignment Box Extension", group=grp_core)
 future_ext  = input.int(5, "Future Candle Projection Margin (Bars)", minval=1, maxval=30, group=grp_core)
 max_zones   = input.int(35, "Max Active Zones Tracked", minval=5, maxval=80, group=grp_core)
@@ -117,8 +118,8 @@ bear_color_ok = not strict_col or (c3_close > c3_open)
 bool is_origin_bull = (c3_low <= ta.lowest(low, 20)[3])
 bool is_origin_bear = (c3_high >= ta.highest(high, 20)[3])
 
-bull_ob_qual = bull_color_ok and bull_fvg and (bull_disp_pct >= min_disp) and btc_is_bull
-bear_ob_qual = bear_color_ok and bear_fvg and (bear_disp_pct >= min_disp) and btc_is_bear
+bull_ob_qual = bull_color_ok and bull_fvg and (bull_disp_pct >= min_disp) and btc_is_bull and (not strict_origin or is_origin_bull)
+bear_ob_qual = bear_color_ok and bear_fvg and (bear_disp_pct >= min_disp) and btc_is_bear and (not strict_origin or is_origin_bear)
 
 // ------------------------------------------------------------------------------
 // 4. DATA TYPES & ACTIVE ZONES STORAGE

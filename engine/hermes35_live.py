@@ -304,6 +304,8 @@ class Hermes35LiveEngine:
 
                     # Origin Bedrock Floor: OB candle low is the lowest of prior 25 bars
                     is_origin = (c3["low"] <= min(candles[k]["low"] for k in range(max(0, i - 25), i + 1)))
+                    if not is_origin:
+                        continue # STRICT AUDIT GATE: Only extreme Origin Bedrock Floor is permitted!
 
                     # Rocket Airspace Runway Void Check: Must reach >= 5.0% void above OB
                     peak_runway = max(candles[k]["high"] for k in range(i + 1, min(i + 25, n)))
@@ -315,7 +317,7 @@ class Hermes35LiveEngine:
                     if bars_since_ob > max_maturation_bars:
                         continue
 
-                    # Check forward bars from i+3 to current bar for invalidation and tap
+                    # Check forward bars from i+3 to current bar for invalidation and virgin tap
                     broken = False
                     tap_found = False
                     tap_bar_idx = -1
@@ -330,26 +332,32 @@ class Hermes35LiveEngine:
                             broken = True
                             break
 
-                        # IDM Sweep check
-                        idm_swept = any(candles[k]["low"] < idm_low for k in range(i + 3, t + 1)) or (curr_c["low"] < idm_low)
+                        # 5% Boundary Tap detection
+                        if curr_c["low"] <= eff_entry * 1.0005:
+                            bars_alive_at_t = t - (i + 2)
+                            # Premature touch gate: Touched before rocket maturation window -> Mitigated too early!
+                            if bars_alive_at_t < min_maturation_bars:
+                                broken = True
+                                break
 
-                        # Maturation gate: Tap must occur after min_maturation_bars (2-Day Horizon)
-                        bars_alive_at_t = t - (i + 2)
-                        if not tap_found and bars_alive_at_t >= min_maturation_bars:
-                            # 5% Boundary Tap detection
-                            if curr_c["low"] <= eff_entry * 1.0005 and curr_c["low"] >= ob_low * (1.0 - soft_sl_pct) and curr_c["close"] >= ob_low:
-                                c_range = curr_c["high"] - curr_c["low"]
-                                l_wick = min(curr_c["open"], curr_c["close"]) - curr_c["low"]
-                                w_ratio = (l_wick / c_range) if c_range > 0 else 0.0
+                            # This is the FIRST unmitigated re-test after rocket flight maturation!
+                            idm_swept = any(candles[k]["low"] < idm_low for k in range(i + 3, t + 1)) or (curr_c["low"] < idm_low)
+                            c_range = curr_c["high"] - curr_c["low"]
+                            l_wick = min(curr_c["open"], curr_c["close"]) - curr_c["low"]
+                            w_ratio = (l_wick / c_range) if c_range > 0 else 0.0
 
-                                # INSTITUTIONAL WIN-RATE GATE (HERMES 3.5):
-                                # 1. Minimum 18% Rejection Absorption Wick
-                                # 2. Candle Close must defend 50% Mean Threshold or Boundary
-                                # 3. Inducement Liquidity Swept
-                                if w_ratio >= 0.18 and curr_c["close"] >= mt and idm_swept:
-                                    tap_found = True
-                                    tap_bar_idx = t
-                                    tap_wick_ratio = w_ratio
+                            # INSTITUTIONAL WIN-RATE GATE (HERMES 3.5):
+                            # 1. Minimum 18% Rejection Absorption Wick
+                            # 2. Candle Close must defend 50% Mean Threshold or Boundary
+                            # 3. Inducement Liquidity Swept
+                            # 4. Low does not violate stop threshold
+                            if w_ratio >= 0.18 and curr_c["close"] >= mt and idm_swept and curr_c["low"] >= ob_low * (1.0 - soft_sl_pct):
+                                tap_found = True
+                                tap_bar_idx = t
+                                tap_wick_ratio = w_ratio
+                            else:
+                                broken = True # First test failed institutional rejection -> Zone is mitigated/spoiled!
+                            break # STOP! Only the FIRST virgin touch counts! Never re-trade multi-tapped zones!
 
                     if not broken:
                         origin_badge = " [ORIGIN BEDROCK]" if is_origin else ""
@@ -465,6 +473,8 @@ class Hermes35LiveEngine:
 
                     # Origin Bedrock Ceiling: OB candle high is highest of prior 25 bars
                     is_origin = (c3["high"] >= max(candles[k]["high"] for k in range(max(0, i - 25), i + 1)))
+                    if not is_origin:
+                        continue # STRICT AUDIT GATE: Only extreme Origin Bedrock Ceiling is permitted!
 
                     # Rocket Airspace Runway Void Check: Must drop >= 5.0% void below OB
                     peak_runway = min(candles[k]["low"] for k in range(i + 1, min(i + 25, n)))
@@ -490,26 +500,32 @@ class Hermes35LiveEngine:
                             broken = True
                             break
 
-                        # IDM Sweep check
-                        idm_swept = any(candles[k]["high"] > idm_high for k in range(i + 3, t + 1)) or (curr_c["high"] > idm_high)
+                        # 5% Boundary Tap detection
+                        if curr_c["high"] >= eff_entry * 0.9995:
+                            bars_alive_at_t = t - (i + 2)
+                            # Premature touch gate: Touched before rocket maturation window -> Mitigated too early!
+                            if bars_alive_at_t < min_maturation_bars:
+                                broken = True
+                                break
 
-                        # Maturation gate: Tap must occur after min_maturation_bars (2-Day Horizon)
-                        bars_alive_at_t = t - (i + 2)
-                        if not tap_found and bars_alive_at_t >= min_maturation_bars:
-                            # 5% Boundary Tap detection
-                            if curr_c["high"] >= eff_entry * 0.9995 and curr_c["high"] <= ob_high * (1.0 + soft_sl_pct) and curr_c["close"] <= ob_high:
-                                c_range = curr_c["high"] - curr_c["low"]
-                                u_wick = curr_c["high"] - max(curr_c["open"], curr_c["close"])
-                                w_ratio = (u_wick / c_range) if c_range > 0 else 0.0
+                            # This is the FIRST unmitigated re-test after rocket flight maturation!
+                            idm_swept = any(candles[k]["high"] > idm_high for k in range(i + 3, t + 1)) or (curr_c["high"] > idm_high)
+                            c_range = curr_c["high"] - curr_c["low"]
+                            u_wick = curr_c["high"] - max(curr_c["open"], curr_c["close"])
+                            w_ratio = (u_wick / c_range) if c_range > 0 else 0.0
 
-                                # INSTITUTIONAL WIN-RATE GATE (HERMES 3.5):
-                                # 1. Minimum 18% Upper Rejection Absorption Wick
-                                # 2. Candle Close must defend 50% Mean Threshold or Boundary
-                                # 3. Inducement Liquidity Swept
-                                if w_ratio >= 0.18 and curr_c["close"] <= mt and idm_swept:
-                                    tap_found = True
-                                    tap_bar_idx = t
-                                    tap_wick_ratio = w_ratio
+                            # INSTITUTIONAL WIN-RATE GATE (HERMES 3.5):
+                            # 1. Minimum 18% Upper Rejection Absorption Wick
+                            # 2. Candle Close must defend 50% Mean Threshold or Boundary
+                            # 3. Inducement Liquidity Swept
+                            # 4. High does not violate stop threshold
+                            if w_ratio >= 0.18 and curr_c["close"] <= mt and idm_swept and curr_c["high"] <= ob_high * (1.0 + soft_sl_pct):
+                                tap_found = True
+                                tap_bar_idx = t
+                                tap_wick_ratio = w_ratio
+                            else:
+                                broken = True # First test failed institutional rejection -> Zone is mitigated/spoiled!
+                            break # STOP! Only the FIRST virgin touch counts! Never re-trade multi-tapped zones!
 
                     if not broken:
                         origin_badge = " [ORIGIN BEDROCK]" if is_origin else ""
@@ -1221,7 +1237,8 @@ class Hermes35LiveEngine:
                     setup["entry_price"] = target_entry_p
 
                 diff_pct = abs(cur_price - target_entry_p) / target_entry_p * 100.0
-                should_trigger = tapped or in_radar or (is_fresh and diff_pct <= 0.20)
+                # STRICT AUDIT GATE: Trigger ONLY when price actually touches/penetrates entry price (zero false triggers on radar)
+                should_trigger = tapped
                 if should_trigger:
                     tf_setup = (setup.get("interval") or "4h").lower()
                     # Check if this specific timeframe has capacity across its 5 sections
