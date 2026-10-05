@@ -169,6 +169,18 @@ class Hermes35LiveEngine:
            - If prior 4H candle dumped >= 1.5%: Veto longs immediately (prevents catching falling knives).
            - If prior 4H candle pumped >= 2.0%: Veto shorts immediately.
         """
+        filter_mode = get_setting("hermes35_btc_filter", HERMES_3_5_BTC_TREND_FILTER)
+        if filter_mode in ("DISABLED", "OFF", "NONE"):
+            self.last_btc_bias = {
+                "bias": "INDEPENDENT_ASSET_SMC",
+                "change_pct": 0.0,
+                "btc_is_bull": True,
+                "btc_is_bear": True,
+                "long_veto": False,
+                "short_veto": False
+            }
+            return self.last_btc_bias
+
         try:
             btc_candles = await binance_feed.fetch_klines("BTCUSDT", interval="4h", limit=210)
             if len(btc_candles) >= 20:

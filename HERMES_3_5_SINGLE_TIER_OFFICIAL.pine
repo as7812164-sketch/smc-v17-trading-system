@@ -47,11 +47,7 @@ extend_box  = input.bool(true, "Dynamic Live Alignment Box Extension", group=grp
 future_ext  = input.int(5, "Future Candle Projection Margin (Bars)", minval=1, maxval=30, group=grp_core)
 max_zones   = input.int(35, "Max Active Zones Tracked", minval=5, maxval=80, group=grp_core)
 
-grp_sentry  = "🛡️ 5. King BTC 4H Macro Causal Sentry"
-btc_filter  = input.bool(true, "Enable King BTC 4H Trend Alignment", group=grp_sentry)
-btc_symbol  = input.symbol("BINANCE:BTCUSDT", "BTC Benchmark Symbol", group=grp_sentry)
-
-grp_ui      = "🎨 6. Ultra-Clean Visual Styling & HUD"
+grp_ui      = "🎨 5. Ultra-Clean Visual Styling & HUD"
 clean_txt   = input.bool(true, "Clean Text Only (No Solid Green Block Over Candles)", group=grp_ui, tooltip="Eliminates the giant opaque green/red box background so only crisp, readable text is visible on the chart")
 show_table  = input.bool(true, "Show Hermes 3.5 Sentries HUD Table", group=grp_ui)
 show_lines  = input.bool(true, "Draw Entry, Radar, Armor, Harvest & SL Lines Upon Trigger", group=grp_ui)
@@ -79,15 +75,12 @@ int effective_min_bars = tf_mode == "Auto Detect" ? auto_min_bars : (tf_mode == 
 int effective_max_bars = tf_mode == "Auto Detect" ? auto_max_bars : max_bars_in
 
 // ------------------------------------------------------------------------------
-// 2. SENTRY 1: KING BTC 4H MACRO CAUSAL BRAKE & MULTI-EMA TREND ANCHOR
+// 2. INDEPENDENT ASSET STRUCTURE ENGINE (BTC TREND FILTER REMOVED)
 // ------------------------------------------------------------------------------
-btc_4h_c       = request.security(btc_symbol, "240", close[1], lookahead=barmerge.lookahead_off)
-btc_4h_ema20   = request.security(btc_symbol, "240", ta.ema(close, 20)[1], lookahead=barmerge.lookahead_off)
-btc_4h_ema50   = request.security(btc_symbol, "240", ta.ema(close, 50)[1], lookahead=barmerge.lookahead_off)
-btc_4h_ema200  = request.security(btc_symbol, "240", ta.ema(close, 200)[1], lookahead=barmerge.lookahead_off)
-btc_is_bull    = btc_filter ? ((btc_4h_ema20 >= btc_4h_ema50) or (btc_4h_c >= btc_4h_ema200)) : true
-btc_is_bear    = btc_filter ? ((btc_4h_ema20 <= btc_4h_ema50) and (btc_4h_c <= btc_4h_ema50)) : true
-btc_status_str = btc_is_bull ? "🟢 BTC BULLISH (EMA20>=50 / >EMA200)" : "🔴 BTC BEARISH"
+// Trades are evaluated strictly on the individual asset's own institutional SMC structure.
+bool btc_is_bull = true
+bool btc_is_bear = true
+string smc_mode_str = "🟢 PURE ASSET SMC (INDEPENDENT)"
 
 // ------------------------------------------------------------------------------
 // 3. SENTRY 2: DISPLACEMENT & FVG FOOTPRINT QUALIFICATION
@@ -510,8 +503,8 @@ if show_table and barstate.islast
     table.cell(dash, 0, 0, "🏛️ HERMES 3.5 APEX", bgcolor=color.new(#1E293B, 10), text_color=color.white, text_size=size.small)
     table.cell(dash, 1, 0, "RADAR HARVEST 5X", bgcolor=color.new(#1E293B, 10), text_color=#00F59B, text_size=size.small)
     
-    table.cell(dash, 0, 1, "Sentry 1 (King BTC 4H)", text_color=color.white, text_size=size.tiny)
-    table.cell(dash, 1, 1, btc_status_str, text_color=btc_is_bull ? color.green : color.red, text_size=size.tiny)
+    table.cell(dash, 0, 1, "Sentry 1 (SMC Structure)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 1, smc_mode_str, text_color=#00F59B, text_size=size.tiny)
     
     table.cell(dash, 0, 2, "Entry Level (Depth)", text_color=color.white, text_size=size.tiny)
     table.cell(dash, 1, 2, "5% Boundary Rim", text_color=#F59E0B, text_size=size.tiny)
