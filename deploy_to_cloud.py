@@ -9,7 +9,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 GITHUB_REPO = "as7812164-sketch/smc-ai-agent"
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", os.getenv("GH_TOKEN", ""))
 RENDER_KEY = "rnd_IZZkLTzrsSOolykJGGflmGovOuZN"
 RENDER_SRV = "srv-d61q691r0fns73f4p720"
 

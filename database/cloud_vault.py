@@ -18,9 +18,7 @@ from pathlib import Path
 from config import BASE_DIR, DB_PATH, STRATEGY_VERSION
 from database.db import get_connection
 
-logger = logging.getLogger("smc.vault")
-
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "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")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", os.getenv("GH_TOKEN", ""))
 GITHUB_REPO = os.getenv("GITHUB_REPO", "as7812164-sketch/smc-ai-agent")
 VAULT_BRANCH = "data-vault"
 VAULT_FILE = "vault_state.json"
