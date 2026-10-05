@@ -13,8 +13,8 @@ def get_ist_now() -> datetime:
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-# --- HERMES STRATEGY OPTIONS (PRODUCTION & EXPERIMENTAL) ---
-STRATEGY_OPTIONS = ["HERMES_3.5_SINGLE_TIER", "HERMES_3.5_DUAL_TIER_SNIPER"]
+# --- HERMES STRATEGY OPTIONS (LOCKED TO PURE HERMES 3.5 SINGLE TIER) ---
+STRATEGY_OPTIONS = ["HERMES_3.5_SINGLE_TIER"]
 STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_3.5_SINGLE_TIER")  # Pure Hermes 3.5 Single Tier Institutional
 HERMES_3_MEAN_THRESHOLD_ENTRY = False # Overridden by 5% Boundary Penetration Entry
 HERMES_3_5_BOUNDARY_ENTRY = True      # 5% Boundary Entry (ob_high - 0.05*range for Long)

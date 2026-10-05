@@ -650,6 +650,97 @@ class Hermes35LiveEngine:
 
     detect_hermes35_setups = detect_apex_setups_on_candles
 
+    def verify_setup_forensic_lock(self, setup: Dict[str, Any], candles: List[Dict[str, Any]]) -> Tuple[bool, str]:
+        """
+        AUTONOMOUS FORENSIC AGENT VERIFICATION LOCK (MANDATED BY USER):
+        Before ANY trade is executed, this verification agent inspects live Binance candles directly
+        and verifies that a genuine, qualifying, unmitigated institutional Order Block actually exists on the chart.
+        """
+        sym = setup.get("symbol", "").upper()
+        side = setup.get("side", "").upper()
+        tf = (setup.get("interval") or "4h").lower()
+        entry_p = float(setup.get("entry_price", 0.0))
+        ob_high = float(setup.get("ob_high", 0.0))
+        ob_low = float(setup.get("ob_low", 0.0))
+        min_mat = 18 if tf == "1h" else 8
+
+        n = len(candles)
+        if n < 40:
+            return False, f"Insufficient candles ({n} < 40)"
+
+        # 1. Match the exact base OB candle coordinates on chart
+        ob_candle_idx = -1
+        for i in range(max(5, n - 200), n - 3):
+            c = candles[i]
+            if abs(c["high"] - ob_high) / ob_high < 0.003 and abs(c["low"] - ob_low) / ob_low < 0.003:
+                ob_candle_idx = i
+                break
+
+        if ob_candle_idx == -1:
+            return False, f"No matching Order Block found on {tf.upper()} chart at [{ob_low}, {ob_high}]"
+
+        c3 = candles[ob_candle_idx]
+        c2 = candles[ob_candle_idx + 1]
+        c1 = candles[ob_candle_idx + 2]
+
+        # 2. Strict Candle Color Gate, FVG, Displacement, Airspace
+        disp_pct = 0.0
+        airspace_pct = 0.0
+        if side in ("BUY", "LONG"):
+            if c3["close"] >= c3["open"]:
+                return False, f"OB candle is not strict RED (close {c3['close']} >= open {c3['open']})"
+            if c1["low"] <= c3["high"]:
+                return False, f"No Bullish Fair Value Gap (c1 low {c1['low']} <= c3 high {c3['high']})"
+            impulse_h = max(c1["high"], c2["high"])
+            disp_pct = (impulse_h - c3["low"]) / c3["low"] * 100.0
+            if disp_pct < 5.0:
+                return False, f"Displacement wave too weak ({disp_pct:.2f}% < 5.0%)"
+            peak_runway = max(candles[k]["high"] for k in range(ob_candle_idx + 1, min(ob_candle_idx + 25, n)))
+            airspace_pct = (peak_runway - ob_high) / ob_high * 100.0
+            if airspace_pct < 5.0:
+                return False, f"Insufficient Rocket Airspace Void ({airspace_pct:.2f}% < 5.0%)"
+
+        else: # SHORT / SELL
+            if c3["close"] <= c3["open"]:
+                return False, f"OB candle is not strict GREEN (close {c3['close']} <= open {c3['open']})"
+            if c1["high"] >= c3["low"]:
+                return False, f"No Bearish Fair Value Gap (c1 high {c1['high']} >= c3 low {c3['low']})"
+            impulse_l = min(c1["low"], c2["low"])
+            disp_pct = (c3["high"] - impulse_l) / c3["high"] * 100.0
+            if disp_pct < 5.0:
+                return False, f"Displacement drop too weak ({disp_pct:.2f}% < 5.0%)"
+            peak_runway = min(candles[k]["low"] for k in range(ob_candle_idx + 1, min(ob_candle_idx + 25, n)))
+            airspace_pct = (ob_low - peak_runway) / ob_low * 100.0
+            if airspace_pct < 5.0:
+                return False, f"Insufficient Rocket Airspace Void ({airspace_pct:.2f}% < 5.0%)"
+
+        # 3. VIRGIN FIRST-TOUCH GATE: No premature touches and no multi-taps
+        for t in range(ob_candle_idx + 3, n):
+            curr_c = candles[t]
+            bars_alive = t - (ob_candle_idx + 2)
+
+            if side in ("BUY", "LONG"):
+                if curr_c["close"] < ob_low:
+                    return False, f"OB structure invalidated: bar {t} closed below OB low"
+                if curr_c["low"] <= entry_p * 1.0005:
+                    if bars_alive < min_mat:
+                        return False, f"Premature mitigation at bar {t} (alive {bars_alive}b < min {min_mat}b)"
+                    age_from_now = (n - 1) - t
+                    if age_from_now > 1:
+                        return False, f"Zone was already tapped {age_from_now} bars ago (Not a virgin fresh live tap!)"
+
+            else: # SHORT
+                if curr_c["close"] > ob_high:
+                    return False, f"OB structure invalidated: bar {t} closed above OB high"
+                if curr_c["high"] >= entry_p * 0.9995:
+                    if bars_alive < min_mat:
+                        return False, f"Premature mitigation at bar {t} (alive {bars_alive}b < min {min_mat}b)"
+                    age_from_now = (n - 1) - t
+                    if age_from_now > 1:
+                        return False, f"Zone was already tapped {age_from_now} bars ago (Not a virgin fresh live tap!)"
+
+        return True, f"PASS: 100% Certified Virgin OB at [{ob_low}, {ob_high}] | Disp: {disp_pct:.1f}% | Airspace: {airspace_pct:.1f}%"
+
     async def run_full_champion_scan(self) -> Dict[str, Any]:
         """Scans all Top-22 Champion crypto pairs across 1H and 4H timeframes."""
         scan_start = time.time()
@@ -809,6 +900,26 @@ class Hermes35LiveEngine:
         except Exception:
             pass
 
+        # 3. AUTONOMOUS FORENSIC AGENT VERIFICATION LOCK (MANDATED BY USER)
+        # Pull fresh live klines directly from Binance and verify that the target OB genuinely exists,
+        # has strict opposite color, FVG, displacement >= 5%, airspace >= 5%, and is 100% virgin untouched.
+        forensic_reason_str = ""
+        try:
+            live_klines = await binance_feed.fetch_klines(sym, interval=tf, limit=200)
+            if live_klines and len(live_klines) >= 40:
+                is_valid_ob, forensic_reason = self.verify_setup_forensic_lock(setup, live_klines)
+                if not is_valid_ob:
+                    logger.warning(f"🔒 [FORENSIC AGENT LOCK REJECTED] {sym} ({tf.upper()} {side}): {forensic_reason}")
+                    return
+                forensic_reason_str = forensic_reason
+                logger.info(f"🔓 [FORENSIC AGENT LOCK PASSED] {sym} ({tf.upper()} {side}): {forensic_reason}")
+            else:
+                logger.warning(f"🔒 [FORENSIC AGENT LOCK] Insufficient live klines for {sym} {tf}. Aborting entry.")
+                return
+        except Exception as e:
+            logger.error(f"🔒 [FORENSIC AGENT LOCK ERROR] Verification failed for {sym}: {e}. Aborting entry.")
+            return
+
         acc = get_paper_account(account_id=target_account_id)
         current_balance = float(acc.get("current_balance", 50.0) or 50.0)
         # 100% PURE COMPOUNDING RULE (USER MANDATE):
@@ -835,6 +946,8 @@ class Hermes35LiveEngine:
             hard_sl_price = float(setup.get("hard_sl_price") or round(entry_price * (1.0 + hard_sl_pct), 6))
 
         sentry_reasons = setup.get("sentry_reasons", "")
+        if forensic_reason_str:
+            sentry_reasons = f"{sentry_reasons} | 🔒 FORENSIC LOCK: {forensic_reason_str}".strip(" |")
 
         # Check if real exchange auto-trading is active for this target exchange
         exchange_auto_active = False

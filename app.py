@@ -644,11 +644,11 @@ async def get_system_status():
     stats = get_performance_stats()
     metrics = get_all_metrics()
     paper = get_paper_account()
-    active_version = get_setting("strategy_version", STRATEGY_VERSION)
+    active_version = "HERMES_3.5_SINGLE_TIER"
     return {
         "status": "online",
         "version": active_version,
-        "strategy_options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.5_SINGLE_TIER", "HERMES_2.5_APEX_HYBRID"],
+        "strategy_options": ["HERMES_3.5_SINGLE_TIER"],
         "timeframe": TIMEFRAME,
         "performance": stats,
         "metrics": metrics,
@@ -663,28 +663,29 @@ async def trigger_self_healing_endpoint():
 
 @app.get("/api/strategy/mode")
 async def get_strategy_mode():
-    active_version = get_setting("strategy_version", STRATEGY_VERSION)
+    active_version = "HERMES_3.5_SINGLE_TIER"
     return {
         "active_mode": active_version,
-        "options": ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.5_SINGLE_TIER", "HERMES_2.5_APEX_HYBRID"],
+        "options": ["HERMES_3.5_SINGLE_TIER"],
         "features": {
-            "mean_threshold_entry": active_version.startswith("HERMES_3"),
-            "idm_sweep_validation": active_version.startswith("HERMES_3.5"),
-            "rejection_wick_18pct": active_version.startswith("HERMES_3.5"),
+            "mean_threshold_entry": False,
+            "boundary_entry_5pct": True,
+            "proximity_radar_020pct": True,
+            "stepped_profit_harvest": True,
+            "idm_sweep_validation": True,
+            "rejection_wick_18pct": True,
             "multi_stage_profit_armor": True,
-            "btc_emergency_shield": True,
-            "dynamic_atr_buffer": active_version.startswith("HERMES_3"),
-            "micro_sniper_gate_15m": active_version.startswith("HERMES_3.5"),
-            "cvd_delta_absorption": active_version.startswith("HERMES_3.5"),
-            "fast_break_even_armor": active_version.startswith("HERMES_3.5")
+            "btc_emergency_shield": False,
+            "dynamic_atr_buffer": True,
+            "autonomous_forensic_lock": True
         }
     }
 
 @app.post("/api/strategy/switch")
 async def switch_strategy_mode(payload: Dict[str, Any] = Body(...)):
     target_mode = payload.get("mode")
-    if target_mode not in ["HERMES_3.5_DUAL_TIER_SNIPER", "HERMES_3.5_SINGLE_TIER", "HERMES_2.5_APEX_HYBRID"]:
-        return JSONResponse({"status": "error", "message": f"Invalid mode: {target_mode}"}, status_code=400)
+    if target_mode not in ["HERMES_3.5_SINGLE_TIER"]:
+        return JSONResponse({"status": "error", "message": f"Only HERMES_3.5_SINGLE_TIER is supported. Invalid mode: {target_mode}"}, status_code=400)
     set_setting("strategy_version", target_mode)
     with get_connection() as conn:
         conn.execute("UPDATE paper_account SET mode = ?", (target_mode,))
@@ -695,7 +696,7 @@ async def switch_strategy_mode(payload: Dict[str, Any] = Body(...)):
         await ws_broadcast({"type": "STRATEGY_MODE_CHANGED", "data": {"mode": target_mode}})
     except Exception:
         pass
-    return {"status": "success", "mode": target_mode, "message": f"Active engine successfully set to {target_mode}"}
+    return {"status": "success", "mode": target_mode, "message": f"Active engine successfully locked to {target_mode}"}
 
 async def get_live_tickers() -> Dict[str, float]:
     """Returns fresh live tickers cached for max 2.5 seconds across Binance Futures & Spot."""
