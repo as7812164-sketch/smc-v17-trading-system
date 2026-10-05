@@ -304,8 +304,6 @@ class Hermes35LiveEngine:
 
                     # Origin Bedrock Floor: OB candle low is the lowest of prior 25 bars
                     is_origin = (c3["low"] <= min(candles[k]["low"] for k in range(max(0, i - 25), i + 1)))
-                    if not is_origin:
-                        continue # STRICT AUDIT GATE: Only extreme Origin Bedrock Floor is permitted!
 
                     # Rocket Airspace Runway Void Check: Must reach >= 5.0% void above OB
                     peak_runway = max(candles[k]["high"] for k in range(i + 1, min(i + 25, n)))
@@ -473,8 +471,6 @@ class Hermes35LiveEngine:
 
                     # Origin Bedrock Ceiling: OB candle high is highest of prior 25 bars
                     is_origin = (c3["high"] >= max(candles[k]["high"] for k in range(max(0, i - 25), i + 1)))
-                    if not is_origin:
-                        continue # STRICT AUDIT GATE: Only extreme Origin Bedrock Ceiling is permitted!
 
                     # Rocket Airspace Runway Void Check: Must drop >= 5.0% void below OB
                     peak_runway = min(candles[k]["low"] for k in range(i + 1, min(i + 25, n)))
@@ -625,9 +621,18 @@ class Hermes35LiveEngine:
         unique_setups_map = {}
         for s in setups:
             k = (s["symbol"], s["side"], s.get("interval", "4h"))
-            # Prefer fresh trigger or confirmed tap over waiting
-            if k not in unique_setups_map or s.get("is_fresh_trigger") or s.get("status") == "CONFIRMED_TAP":
+            if k not in unique_setups_map:
                 unique_setups_map[k] = s
+            else:
+                existing = unique_setups_map[k]
+                if s.get("is_fresh_trigger"):
+                    unique_setups_map[k] = s
+                elif not existing.get("is_fresh_trigger"):
+                    # Prefer the setup that is closer to current price
+                    dist_s = abs(cur_price - float(s["entry_price"]))
+                    dist_ex = abs(cur_price - float(existing["entry_price"]))
+                    if dist_s < dist_ex:
+                        unique_setups_map[k] = s
 
         return list(unique_setups_map.values())
 
