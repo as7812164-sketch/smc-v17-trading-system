@@ -25,7 +25,7 @@ import time
 import json
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 from database.db import (
     get_connection,
@@ -1757,4 +1757,5 @@ class Hermes35LiveEngine:
         self.is_running = False
 
 hermes35_live_engine = Hermes35LiveEngine()
+hermes35_engine = hermes35_live_engine
 hermes2_apex_engine = hermes35_live_engine
