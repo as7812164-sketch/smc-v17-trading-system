@@ -376,6 +376,20 @@ async def serve_trade_forensics():
         }
     )
 
+@app.get("/pro-charts", response_class=HTMLResponse)
+@app.get("/charts", response_class=HTMLResponse)
+async def serve_pro_charts():
+    file_path = STATIC_DIR / "pro_charts.html"
+    return FileResponse(
+        file_path,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+
 @app.get("/quantum", response_class=HTMLResponse)
 async def serve_quantum():
     file_path = STATIC_DIR / "quantum.html"
