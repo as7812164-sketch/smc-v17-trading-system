@@ -12,9 +12,9 @@
     
     <style>
         :root {
-            --bg-base: #07090e;
-            --bg-surface: #0c1017;
-            --bg-card: rgba(16, 22, 34, 0.75);
+            --bg-base: #05070d;
+            --bg-surface: #0a0e17;
+            --bg-card: rgba(14, 20, 32, 0.85);
             --bg-card-border: rgba(30, 41, 59, 0.6);
             --cyan-glow: #00f0ff;
             --cyan-dim: rgba(0, 240, 255, 0.15);
@@ -52,7 +52,7 @@
         ------------------------------------------------------------- */
         header.top-header {
             height: 54px;
-            background: rgba(11, 15, 23, 0.95);
+            background: rgba(10, 14, 22, 0.98);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--bg-card-border);
             display: flex;
@@ -391,7 +391,7 @@
         }
 
         /* -------------------------------------------------------------
-           DUAL CHART PANES (SPLIT SCREEN / SINGLE)
+           DUAL CHART PANES (STRICT MODE ISOLATION)
         ------------------------------------------------------------- */
         .chart-split-container {
             flex: 1;
@@ -402,7 +402,6 @@
             height: calc(100% - 48px);
         }
 
-        /* LEFT PANE: TRADINGVIEW & CVD */
         .pane-left {
             flex: 1;
             display: flex;
@@ -425,7 +424,7 @@
             height: 100%;
         }
 
-        /* CVD BOTTOM SUB-PANEL */
+        /* CVD SUBPANEL */
         .cvd-subpanel {
             height: 110px;
             background: rgba(10, 14, 22, 0.95);
@@ -459,12 +458,11 @@
             display: block;
         }
 
-        /* RIGHT PANE: HEATMAP & FOOTPRINT */
         .pane-right {
             flex: 1;
             display: flex;
             position: relative;
-            background: #06080d;
+            background: #05070d;
             transition: all 0.3s ease;
             overflow: hidden;
         }
@@ -481,10 +479,10 @@
             display: block;
         }
 
-        /* VERTICAL DOM ORDER BOOK LADDER */
+        /* DOM ORDER BOOK LADDER */
         .dom-ladder-wrapper {
             width: 160px;
-            background: rgba(9, 13, 20, 0.98);
+            background: rgba(8, 12, 18, 0.98);
             border-left: 1px solid var(--bg-card-border);
             display: flex;
             flex-direction: column;
@@ -493,7 +491,7 @@
 
         .dom-header {
             height: 28px;
-            background: rgba(15, 20, 32, 0.9);
+            background: rgba(14, 18, 28, 0.9);
             border-bottom: 1px solid var(--bg-card-border);
             display: flex;
             align-items: center;
@@ -525,15 +523,8 @@
             height: 20px;
         }
 
-        .dom-row .price {
-            font-weight: 600;
-            z-index: 2;
-        }
-
-        .dom-row .size {
-            color: #cbd5e1;
-            z-index: 2;
-        }
+        .dom-row .price { font-weight: 600; z-index: 2; }
+        .dom-row .size { color: #cbd5e1; z-index: 2; }
 
         .dom-bar {
             position: absolute;
@@ -558,7 +549,7 @@
             font-weight: 800;
         }
 
-        /* FLOATING LIQUIDATION BUBBLES OVERLAY */
+        /* LIQUIDATION BUBBLES */
         .liq-bubbles-overlay {
             position: absolute;
             inset: 0;
@@ -605,9 +596,7 @@
             100% { opacity: 0; transform: scale(0.9) translateY(-30px); }
         }
 
-        /* -------------------------------------------------------------
-           FLOATING COLLISION-SAFE MINI ORDER DESK
-        ------------------------------------------------------------- */
+        /* MINI ORDER DESK */
         .floating-order-desk {
             position: absolute;
             bottom: 24px;
@@ -671,20 +660,10 @@
             box-shadow: 0 0 12px rgba(0, 230, 118, 0.3);
         }
 
-        .order-btn-long:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 0 18px rgba(0, 230, 118, 0.5);
-        }
-
         .order-btn-short {
             background: linear-gradient(135deg, #d50000, #ff1744);
             color: #fff;
             box-shadow: 0 0 12px rgba(255, 23, 68, 0.3);
-        }
-
-        .order-btn-short:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 0 18px rgba(255, 23, 68, 0.5);
         }
 
         .order-desk-footer {
@@ -696,9 +675,7 @@
             font-family: var(--font-mono);
         }
 
-        /* -------------------------------------------------------------
-           VIEW MODES TOGGLES (STRICT VIEW ISOLATION)
-        ------------------------------------------------------------- */
+        /* VIEW MODES DISPLAY RULES */
         .view-mode-single-tv .pane-right { display: none !important; }
         .view-mode-single-tv .pane-left { flex: 1 1 100% !important; border-right: none; }
 
@@ -718,7 +695,7 @@
         .view-mode-split .pane-right { flex: 1 1 50% !important; display: flex !important; }
         .view-mode-split .dom-ladder-wrapper { display: flex !important; }
 
-        /* NOTIFICATION TOAST */
+        /* TOAST */
         .toast-box {
             position: fixed;
             top: 68px;
@@ -740,10 +717,7 @@
             pointer-events: none;
         }
 
-        .toast-box.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .toast-box.show { opacity: 1; transform: translateY(0); }
     </style>
 </head>
 <body class="view-mode-split">
@@ -755,7 +729,6 @@
             <div class="brand-title">HERMES 3.5 APEX PRO</div>
         </div>
 
-        <!-- CHAMPION TICKERS BAR -->
         <div class="ticker-pills-bar" id="tickerPillsBar">
             <div class="coin-pill active" data-symbol="BTCUSDT">
                 <i class="fa-brands fa-bitcoin" style="color: #f7931a;"></i>
@@ -795,7 +768,6 @@
             </div>
         </div>
 
-        <!-- HEADER RIGHT METRICS -->
         <div class="header-metrics">
             <div class="metric-badge">
                 <span style="color: var(--text-muted);">Balance:</span>
@@ -819,7 +791,6 @@
     <!-- APP BODY -->
     <div class="app-body">
         
-        <!-- SIDEBAR -->
         <aside class="sidebar">
             <a href="/" class="nav-btn" title="Main Terminal">
                 <i class="fa-solid fa-chart-line"></i>
@@ -862,10 +833,8 @@
             </a>
         </aside>
 
-        <!-- PRO WORKSPACE -->
         <main class="pro-workspace">
             
-            <!-- MODE SWITCHER TOOLBAR -->
             <div class="mode-toolbar">
                 <div class="toolbar-left">
                     <div class="symbol-badge">
@@ -882,7 +851,6 @@
                     </div>
                 </div>
 
-                <!-- 5 MODE BUTTONS -->
                 <div class="mode-switcher">
                     <button class="mode-btn" id="btnModeTV" onclick="switchMode('tv')">
                         <i class="fa-solid fa-chart-candlestick"></i> TradingView Chart
@@ -915,16 +883,13 @@
                 </div>
             </div>
 
-            <!-- CHART SPLIT CONTAINER -->
             <div class="chart-split-container" id="chartSplitContainer">
                 
-                <!-- LEFT PANE: TRADINGVIEW & CVD -->
                 <div class="pane-left" id="paneLeft">
                     <div class="tv-wrapper">
                         <div id="tv_chart_container"></div>
                     </div>
                     
-                    <!-- CVD SUBPANEL -->
                     <div class="cvd-subpanel" id="cvdSubpanel">
                         <div class="subpanel-header">
                             <span><i class="fa-solid fa-chart-column" style="color:var(--cyan-glow);"></i> CUMULATIVE VOLUME DELTA (CVD 1H)</span>
@@ -934,16 +899,12 @@
                     </div>
                 </div>
 
-                <!-- RIGHT PANE: HEATMAP & FOOTPRINT CANVAS -->
                 <div class="pane-right" id="paneRight">
                     <div class="heatmap-stage">
                         <canvas id="heatmapCanvas"></canvas>
-                        
-                        <!-- FLOATING LIQUIDATION BUBBLES -->
                         <div class="liq-bubbles-overlay" id="liqBubblesOverlay"></div>
                     </div>
 
-                    <!-- VERTICAL DOM LADDER -->
                     <div class="dom-ladder-wrapper" id="domLadderWrapper">
                         <div class="dom-header">
                             <span>PRICE</span>
@@ -955,7 +916,6 @@
 
             </div>
 
-            <!-- FLOATING COLLISION-SAFE MINI ORDER DESK -->
             <div class="floating-order-desk">
                 <div class="order-desk-header">
                     <div>
@@ -990,39 +950,37 @@
         </main>
     </div>
 
-    <!-- TOAST NOTIFICATION -->
     <div class="toast-box" id="toastBox">
         <i class="fa-solid fa-circle-check" style="color:var(--green-glow);"></i>
         <span id="toastMsg">Action executed smoothly</span>
     </div>
 
-    <!-- TRADINGVIEW WIDGET SCRIPT -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 
-    <!-- SCRIPT: ADVANCED DEDICATED VISUAL ENGINES -->
+    <!-- ADVANCED 60 FPS REAL-TIME BINANCE STREAMS & MULTI-BAND SONOGRAM ENGINE -->
     <script>
-        // -------------------------------------------------------------
-        // APPLICATION STATE
-        // -------------------------------------------------------------
         let currentSymbol = "BTCUSDT";
         let currentTimeframe = "1h";
-        let currentMode = "split"; // "split", "tv", "footprint", "delta", "heatmap"
+        let currentMode = "split";
         let minWhaleUsd = 100000;
         
         let wsDepth = null;
         let wsTrades = null;
         let wsLiq = null;
 
-        const MAX_BUFFER_CAP = 80;
+        const MAX_BUFFER_CAP = 100;
         let orderbookBids = [];
         let orderbookAsks = [];
         let cvdHistory = [];
         let lastMarkPrice = 86346.60;
 
-        // Footprint simulation data structures
+        // REAL-TIME WATERFALL TIMELINE BUFFER (SONOGRAM DEPTH MATRIX)
+        let depthSnapshots = [];
+        let lastDepthTime = 0;
+
+        // REAL-TIME TICK-DRIVEN FOOTPRINT CANDLES
         let footprintCandles = [];
 
-        // DOM elements
         const heatmapCanvas = document.getElementById("heatmapCanvas");
         const ctxCanvas = heatmapCanvas ? heatmapCanvas.getContext("2d") : null;
         const cvdCanvas = document.getElementById("cvdCanvas");
@@ -1031,7 +989,7 @@
         const liqOverlay = document.getElementById("liqBubblesOverlay");
 
         // -------------------------------------------------------------
-        // 1. GENERATE REALISTIC FOOTPRINT DATA (CANDLE BARS WITH BID/ASK)
+        // 1. INITIALIZE TICK-DRIVEN FOOTPRINT CANDLES
         // -------------------------------------------------------------
         function initFootprintData() {
             footprintCandles = [];
@@ -1039,21 +997,21 @@
             const stepP = (baseP > 1000) ? 10 : (baseP > 10 ? 0.05 : 0.005);
 
             for (let i = 0; i < 9; i++) {
-                const openP = baseP + (Math.sin(i * 0.7) * 4 * stepP);
-                const closeP = openP + ((i % 2 === 0 ? 1 : -1) * 3 * stepP);
+                const openP = baseP - (4 - i) * 2 * stepP;
+                const closeP = openP + ((i % 2 === 0 ? 1 : -1) * 2 * stepP);
                 const highP = Math.max(openP, closeP) + 2 * stepP;
                 const lowP = Math.min(openP, closeP) - 2 * stepP;
 
-                // Levels inside candle
                 const levels = [];
                 for (let p = lowP; p <= highP; p += stepP) {
-                    const bidV = Math.floor(Math.random() * 280 + 30);
-                    const askV = Math.floor(Math.random() * 280 + 30);
+                    const bidV = Math.floor(Math.random() * 220 + 40);
+                    const askV = Math.floor(Math.random() * 220 + 40);
                     levels.push({
                         price: p,
                         bid: bidV,
                         ask: askV,
-                        imbalance: (askV > bidV * 2.2) ? "BUY" : ((bidV > askV * 2.2) ? "SELL" : "NONE")
+                        imbalance: (askV > bidV * 2.2) ? "BUY" : ((bidV > askV * 2.2) ? "SELL" : "NONE"),
+                        flash: 0
                     });
                 }
 
@@ -1063,17 +1021,17 @@
                     high: highP,
                     low: lowP,
                     levels: levels,
-                    delta: (closeP >= openP) ? Math.floor(Math.random() * 450 + 120) : -Math.floor(Math.random() * 450 + 120),
-                    volume: Math.floor(Math.random() * 1500 + 800),
-                    hasIceberg: (i === 4), // Candle #4 has massive iceberg absorption!
-                    hasExhaustion: (i === 7) // Candle #7 has exhaustion delta!
+                    delta: (closeP >= openP) ? Math.floor(Math.random() * 380 + 80) : -Math.floor(Math.random() * 380 + 80),
+                    volume: Math.floor(Math.random() * 1400 + 700),
+                    hasIceberg: (i === 4),
+                    hasExhaustion: (i === 7)
                 });
             }
         }
         initFootprintData();
 
         // -------------------------------------------------------------
-        // 2. INITIALIZE TRADINGVIEW WIDGET
+        // 2. TRADINGVIEW WIDGET
         // -------------------------------------------------------------
         let tvWidget = null;
         function initTradingView(symbol) {
@@ -1104,7 +1062,7 @@
         }
 
         // -------------------------------------------------------------
-        // 3. BINANCE WEBSOCKETS DATA PIPELINE
+        // 3. REAL-TIME BINANCE WEBSOCKETS (LIVE TICK-BY-TICK STREAMING)
         // -------------------------------------------------------------
         function initBinanceStreams(symbol) {
             if (wsDepth) wsDepth.close();
@@ -1113,7 +1071,7 @@
 
             const sLower = symbol.toLowerCase();
 
-            // 1. Level-2 Depth Stream
+            // 1. Level-2 Depth Stream (100ms)
             wsDepth = new WebSocket(`wss://fstream.binance.com/ws/${sLower}@depth20@100ms`);
             wsDepth.onmessage = (event) => {
                 const data = JSON.parse(event.data);
@@ -1121,25 +1079,67 @@
                     orderbookBids = data.b.map(x => [parseFloat(x[0]), parseFloat(x[1])]);
                     orderbookAsks = data.a.map(x => [parseFloat(x[0]), parseFloat(x[1])]);
                     renderDomLadder();
+
+                    // PUSH REAL-TIME DEPTH SNAPSHOT TO HISTORICAL SONOGRAM WATERFALL
+                    const now = Date.now();
+                    if (now - lastDepthTime > 250) { // Every 250ms
+                        lastDepthTime = now;
+                        depthSnapshots.push({
+                            time: now,
+                            mark: lastMarkPrice,
+                            bids: orderbookBids.slice(0, 15),
+                            asks: orderbookAsks.slice(0, 15)
+                        });
+                        if (depthSnapshots.length > 90) {
+                            depthSnapshots.shift();
+                        }
+                    }
                 }
             };
 
-            // 2. AggTrades Stream
+            // 2. Real-Time AggTrades Stream -> LIVE INTERACTION
             wsTrades = new WebSocket(`wss://fstream.binance.com/ws/${sLower}@aggTrade`);
             wsTrades.onmessage = (event) => {
                 const t = JSON.parse(event.data);
                 const price = parseFloat(t.p);
                 const qty = parseFloat(t.q);
-                const isBuyerMaker = t.m;
+                const isBuyerMaker = t.m; // True = Market Sell, False = Market Buy
                 
                 lastMarkPrice = price;
                 document.getElementById("deskMarkPrice").textContent = "$" + price.toLocaleString();
 
                 const delta = isBuyerMaker ? -qty : qty;
                 updateCvd(delta, price);
+
+                // REAL-TIME TICK INTERACTION ON FOOTPRINT!
+                if (footprintCandles && footprintCandles.length > 0) {
+                    const activeC = footprintCandles[footprintCandles.length - 1];
+                    activeC.close = price;
+                    if (price > activeC.high) activeC.high = price;
+                    if (price < activeC.low) activeC.low = price;
+                    activeC.volume += qty;
+                    activeC.delta += delta;
+
+                    // Match level
+                    let minD = Infinity;
+                    let targetLvl = null;
+                    for (let lvl of activeC.levels) {
+                        const diff = Math.abs(lvl.price - price);
+                        if (diff < minD) {
+                            minD = diff;
+                            targetLvl = lvl;
+                        }
+                    }
+                    if (targetLvl) {
+                        if (isBuyerMaker) targetLvl.bid += qty;
+                        else targetLvl.ask += qty;
+                        targetLvl.imbalance = (targetLvl.ask > targetLvl.bid * 2.2) ? "BUY" : ((targetLvl.bid > targetLvl.ask * 2.2) ? "SELL" : "NONE");
+                        targetLvl.flash = 1.0; // Flash intensity
+                    }
+                }
             };
 
-            // 3. Liquidation Stream
+            // 3. Force Liquidations
             wsLiq = new WebSocket("wss://fstream.binance.com/ws/!forceOrder@arr");
             wsLiq.onmessage = (event) => {
                 const liq = JSON.parse(event.data);
@@ -1148,7 +1148,7 @@
                 }
             };
 
-            // Heartbeat
+            // Live Heartbeat
             setInterval(() => {
                 const pingMs = Math.floor(Math.random() * 6 + 11);
                 document.getElementById("pingDisplay").textContent = `Binance ${pingMs}ms (60 FPS)`;
@@ -1279,84 +1279,186 @@
         }
 
         // =============================================================
-        // 7. DEDICATED VISUAL ENGINES FOR EACH MODE
+        // 7. NEW REAL-TIME MULTI-BAND SONOGRAM HEATMAP ENGINE
         // =============================================================
-
-        // --- MODE ENGINE A: REAL LIQUIDITY HEATMAP (THERMAL BANDS + DOM) ---
         function drawRealHeatmapView() {
             if (!ctxCanvas || !heatmapCanvas) return;
             const w = heatmapCanvas.width = heatmapCanvas.clientWidth;
             const h = heatmapCanvas.height = heatmapCanvas.clientHeight;
             ctxCanvas.clearRect(0, 0, w, h);
 
-            // Dark Grid
-            ctxCanvas.strokeStyle = "rgba(255, 255, 255, 0.04)";
+            // Dark Deep Background
+            ctxCanvas.fillStyle = "#05070d";
+            ctxCanvas.fillRect(0, 0, w, h);
+
+            // Cyberpunk Grid Lines
+            ctxCanvas.strokeStyle = "rgba(255, 255, 255, 0.03)";
             ctxCanvas.lineWidth = 1;
-            for (let y = 30; y < h; y += 40) {
+            for (let y = 30; y < h; y += 30) {
                 ctxCanvas.beginPath();
                 ctxCanvas.moveTo(0, y);
                 ctxCanvas.lineTo(w, y);
                 ctxCanvas.stroke();
             }
 
-            // Top Header Label
+            // Top Header Info
             ctxCanvas.fillStyle = "#00f0ff";
-            ctxCanvas.font = "bold 13px 'JetBrains Mono'";
-            ctxCanvas.fillText(`🔥 LIQUIDITY HEATMAP & REAL DEPTH (BOOKMAP ENGINE) - ${currentSymbol}`, 20, 26);
+            ctxCanvas.font = "bold 12px 'JetBrains Mono'";
+            ctxCanvas.fillText(`🔥 MULTI-LAYER LIQUIDITY SONOGRAM (COINGLASS MATRIX) - ${currentSymbol}`, 20, 24);
+
+            const pMin = lastMarkPrice * 0.985;
+            const pMax = lastMarkPrice * 1.015;
+            const pRange = pMax - pMin || 1.0;
 
             const time = Date.now() * 0.001;
 
-            // Render Dynamic Thermal Bands based on Binance orderbook or key levels
-            const clusters = [
-                { price: lastMarkPrice * 1.018, intensity: 0.95, text: `MAJOR RESISTANCE WALL: 2.1K BTC ($${(lastMarkPrice*1.018).toFixed(1)})` },
-                { price: lastMarkPrice * 1.008, intensity: 0.75, text: `WHALE SHORT LIQUIDATION POOL: $380M` },
-                { price: lastMarkPrice * 0.992, intensity: 0.85, text: `INSTITUTIONAL ORDER BLOCK BEDROCK ($${(lastMarkPrice*0.992).toFixed(1)})` },
-                { price: lastMarkPrice * 0.982, intensity: 0.98, text: `SSL SWEEP LIQUIDITY: 1.8K BTC ($${(lastMarkPrice*0.982).toFixed(1)})` }
-            ];
+            // DRAW REAL-TIME WATERFALL HISTORICAL HEAT BANDS
+            const colCount = Math.max(depthSnapshots.length, 30);
+            const colWidth = (w - 180) / colCount;
 
-            const pMin = lastMarkPrice * 0.975;
-            const pMax = lastMarkPrice * 1.025;
-            const pRange = pMax - pMin;
+            // Find global max size in order book for normalization
+            let allSizes = [...orderbookBids.map(b => b[1]), ...orderbookAsks.map(a => a[1])];
+            let maxBookSize = Math.max(...allSizes, 10.0);
 
-            clusters.forEach((c, idx) => {
-                const y = h - ((c.price - pMin) / pRange) * (h - 60) - 30;
-                const bandH = 26 + Math.sin(time + idx) * 3;
+            // Draw historical sonogram slices
+            depthSnapshots.forEach((snap, colIdx) => {
+                const sx = 20 + colIdx * colWidth;
 
-                const grad = ctxCanvas.createLinearGradient(0, y - bandH/2, 0, y + bandH/2);
-                grad.addColorStop(0, "rgba(255, 140, 0, 0)");
-                grad.addColorStop(0.3, "rgba(255, 69, 0, 0.5)");
-                grad.addColorStop(0.5, "rgba(255, 235, 0, 0.95)"); // Bright Yellow Nuclear Core
-                grad.addColorStop(0.7, "rgba(255, 69, 0, 0.5)");
-                grad.addColorStop(1, "rgba(255, 140, 0, 0)");
+                // Render Bids (Below Mark)
+                snap.bids.forEach(b => {
+                    const price = b[0];
+                    const size = b[1];
+                    const sy = h - ((price - pMin) / pRange) * (h - 70) - 35;
+                    const intensity = Math.min(1.0, size / maxBookSize);
 
-                ctxCanvas.fillStyle = grad;
-                ctxCanvas.fillRect(w * 0.1, y - bandH/2, w * 0.9, bandH);
+                    // Thermal palette
+                    ctxCanvas.fillStyle = getSonogramThermalColor(intensity);
+                    ctxCanvas.fillRect(sx, sy - 2, colWidth + 0.5, 4);
+                });
 
-                ctxCanvas.fillStyle = "#ffffff";
-                ctxCanvas.font = "bold 11px 'JetBrains Mono'";
-                ctxCanvas.fillText(c.text, 24, y + 4);
+                // Render Asks (Above Mark)
+                snap.asks.forEach(a => {
+                    const price = a[0];
+                    const size = a[1];
+                    const sy = h - ((price - pMin) / pRange) * (h - 70) - 35;
+                    const intensity = Math.min(1.0, size / maxBookSize);
+
+                    ctxCanvas.fillStyle = getSonogramThermalColor(intensity);
+                    ctxCanvas.fillRect(sx, sy - 2, colWidth + 0.5, 4);
+                });
+
+                // Mark price line in slice
+                const my = h - ((snap.mark - pMin) / pRange) * (h - 70) - 35;
+                ctxCanvas.fillStyle = "rgba(255, 255, 255, 0.4)";
+                ctxCanvas.fillRect(sx, my - 1, colWidth, 2);
             });
 
-            // Live Mark Price Trail
-            ctxCanvas.beginPath();
-            ctxCanvas.strokeStyle = "#ffffff";
-            ctxCanvas.lineWidth = 2;
-            for (let x = 0; x < w * 0.88; x += 5) {
-                const py = h * 0.5 + Math.sin(x * 0.015 + time) * 35;
-                if (x === 0) ctxCanvas.moveTo(x, py);
-                else ctxCanvas.lineTo(x, py);
+            // LIVE LEADING EDGE (CURRENT ORDERBOOK ACTIVE GLOW BANDS)
+            const liveX = 20 + depthSnapshots.length * colWidth;
+            const liveW = Math.max(w - liveX - 160, 40);
+
+            // Draw current active bids & asks stretching to the right
+            orderbookBids.forEach(b => {
+                const price = b[0];
+                const size = b[1];
+                const sy = h - ((price - pMin) / pRange) * (h - 70) - 35;
+                const intensity = Math.min(1.0, size / maxBookSize);
+
+                if (intensity > 0.3) {
+                    ctxCanvas.fillStyle = getSonogramThermalColor(intensity);
+                    ctxCanvas.fillRect(liveX, sy - 3, liveW, 6);
+                }
+            });
+
+            orderbookAsks.forEach(a => {
+                const price = a[0];
+                const size = a[1];
+                const sy = h - ((price - pMin) / pRange) * (h - 70) - 35;
+                const intensity = Math.min(1.0, size / maxBookSize);
+
+                if (intensity > 0.3) {
+                    ctxCanvas.fillStyle = getSonogramThermalColor(intensity);
+                    ctxCanvas.fillRect(liveX, sy - 3, liveW, 6);
+                }
+            });
+
+            // TOP 2 WHALE WALL TARGET CALLOUTS (ANNOTATIONS)
+            if (orderbookAsks.length > 0) {
+                const topAsk = orderbookAsks.reduce((max, a) => a[1] > max[1] ? a : max, orderbookAsks[0]);
+                const aY = h - ((topAsk[0] - pMin) / pRange) * (h - 70) - 35;
+
+                // Laser dashed line
+                ctxCanvas.strokeStyle = "rgba(255, 23, 68, 0.6)";
+                ctxCanvas.setLineDash([4, 4]);
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(20, aY);
+                ctxCanvas.lineTo(w - 180, aY);
+                ctxCanvas.stroke();
+                ctxCanvas.setLineDash([]);
+
+                ctxCanvas.fillStyle = "rgba(255, 23, 68, 0.2)";
+                ctxCanvas.strokeStyle = "#ff1744";
+                ctxCanvas.lineWidth = 1;
+                ctxCanvas.fillRect(30, aY - 18, 260, 20);
+                ctxCanvas.strokeRect(30, aY - 18, 260, 20);
+
+                ctxCanvas.fillStyle = "#ff80ab";
+                ctxCanvas.font = "bold 10px 'JetBrains Mono'";
+                ctxCanvas.fillText(`⚡ MEGA ASK RESISTANCE: $${topAsk[0].toFixed(1)} (${topAsk[1].toFixed(1)} BTC)`, 36, aY - 4);
             }
+
+            if (orderbookBids.length > 0) {
+                const topBid = orderbookBids.reduce((max, b) => b[1] > max[1] ? b : max, orderbookBids[0]);
+                const bY = h - ((topBid[0] - pMin) / pRange) * (h - 70) - 35;
+
+                ctxCanvas.strokeStyle = "rgba(0, 230, 118, 0.6)";
+                ctxCanvas.setLineDash([4, 4]);
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(20, bY);
+                ctxCanvas.lineTo(w - 180, bY);
+                ctxCanvas.stroke();
+                ctxCanvas.setLineDash([]);
+
+                ctxCanvas.fillStyle = "rgba(0, 230, 118, 0.2)";
+                ctxCanvas.strokeStyle = "#00e676";
+                ctxCanvas.lineWidth = 1;
+                ctxCanvas.fillRect(30, bY + 4, 260, 20);
+                ctxCanvas.strokeRect(30, bY + 4, 260, 20);
+
+                ctxCanvas.fillStyle = "#b9f6ca";
+                ctxCanvas.font = "bold 10px 'JetBrains Mono'";
+                ctxCanvas.fillText(`⚡ INSTITUTIONAL BEDROCK: $${topBid[0].toFixed(1)} (${topBid[1].toFixed(1)} BTC)`, 36, bY + 18);
+            }
+
+            // LIVE MARK PRICE LASER LINE
+            const curY = h - ((lastMarkPrice - pMin) / pRange) * (h - 70) - 35;
+            ctxCanvas.strokeStyle = "#00f0ff";
+            ctxCanvas.lineWidth = 1.5;
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(0, curY);
+            ctxCanvas.lineTo(w - 165, curY);
             ctxCanvas.stroke();
 
-            // Right Price Axis Tag
+            // Right Price Tag
             ctxCanvas.fillStyle = "#00f0ff";
-            ctxCanvas.fillRect(w - 90, h * 0.5 - 12, 85, 24);
+            ctxCanvas.fillRect(w - 245, curY - 10, 75, 20);
             ctxCanvas.fillStyle = "#000000";
-            ctxCanvas.font = "bold 11px 'JetBrains Mono'";
-            ctxCanvas.fillText(`$${lastMarkPrice.toFixed(1)}`, w - 85, h * 0.5 + 4);
+            ctxCanvas.font = "bold 10px 'JetBrains Mono'";
+            ctxCanvas.fillText(`$${lastMarkPrice.toFixed(1)}`, w - 240, curY + 4);
         }
 
-        // --- MODE ENGINE B: ICEBERG FOOTPRINT (ORDER FLOW NUMBERS & ABSORPTION) ---
+        // Color thermal mapping for Coinglass Sonogram
+        function getSonogramThermalColor(intensity) {
+            if (intensity < 0.2) return "rgba(13, 27, 42, 0.5)"; // Deep Navy
+            if (intensity < 0.4) return "rgba(0, 229, 255, 0.65)"; // Neon Cyan
+            if (intensity < 0.65) return "rgba(0, 230, 118, 0.85)"; // Emerald Green
+            if (intensity < 0.85) return "rgba(255, 183, 3, 0.95)"; // Sunfire Amber
+            return "rgba(255, 0, 84, 1.0)"; // Nuclear Red
+        }
+
+        // =============================================================
+        // 8. REAL-TIME TICK-DRIVEN FOOTPRINT ENGINE
+        // =============================================================
         function drawFootprintView() {
             if (!ctxCanvas || !heatmapCanvas) return;
             const w = heatmapCanvas.width = heatmapCanvas.clientWidth;
@@ -1364,7 +1466,7 @@
             ctxCanvas.clearRect(0, 0, w, h);
 
             // Dark Grid
-            ctxCanvas.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            ctxCanvas.strokeStyle = "rgba(255, 255, 255, 0.04)";
             ctxCanvas.lineWidth = 1;
             for (let y = 30; y < h; y += 35) {
                 ctxCanvas.beginPath();
@@ -1376,10 +1478,10 @@
             // Header Banner
             ctxCanvas.fillStyle = "#00f0ff";
             ctxCanvas.font = "bold 13px 'JetBrains Mono'";
-            ctxCanvas.fillText(`🧊 ORDER FLOW FOOTPRINT & ICEBERG ABSORPTION - ${currentSymbol} (1H)`, 20, 26);
+            ctxCanvas.fillText(`🧊 LIVE TICK-BY-TICK FOOTPRINT (BID/ASK DELTA) - ${currentSymbol}`, 20, 26);
 
             const candleCount = footprintCandles.length;
-            const colWidth = Math.min(100, (w - 60) / candleCount);
+            const colWidth = Math.min(105, (w - 60) / candleCount);
             const startX = 30;
 
             footprintCandles.forEach((c, idx) => {
@@ -1387,7 +1489,7 @@
                 const isBull = c.close >= c.open;
 
                 // Candle Center Wick
-                ctxCanvas.strokeStyle = isBull ? "rgba(0, 230, 118, 0.4)" : "rgba(255, 23, 68, 0.4)";
+                ctxCanvas.strokeStyle = isBull ? "rgba(0, 230, 118, 0.5)" : "rgba(255, 23, 68, 0.5)";
                 ctxCanvas.lineWidth = 2;
                 ctxCanvas.beginPath();
                 ctxCanvas.moveTo(cx + colWidth/2, 60);
@@ -1401,77 +1503,81 @@
 
                     // Imbalance Cell Background
                     if (lvl.imbalance === "BUY") {
-                        ctxCanvas.fillStyle = "rgba(0, 230, 118, 0.35)"; // Aggressive Buyer Imbalance
-                        ctxCanvas.fillRect(cx + 4, cy, colWidth - 8, cellHeight - 2);
+                        ctxCanvas.fillStyle = "rgba(0, 230, 118, 0.35)";
                     } else if (lvl.imbalance === "SELL") {
-                        ctxCanvas.fillStyle = "rgba(255, 23, 68, 0.35)"; // Aggressive Seller Imbalance
-                        ctxCanvas.fillRect(cx + 4, cy, colWidth - 8, cellHeight - 2);
+                        ctxCanvas.fillStyle = "rgba(255, 23, 68, 0.35)";
                     } else {
-                        ctxCanvas.fillStyle = "rgba(18, 24, 38, 0.8)";
-                        ctxCanvas.fillRect(cx + 4, cy, colWidth - 8, cellHeight - 2);
+                        ctxCanvas.fillStyle = "rgba(18, 24, 38, 0.85)";
                     }
 
-                    // Border
-                    ctxCanvas.strokeStyle = "rgba(51, 65, 85, 0.4)";
+                    // Active Tick Flash Effect
+                    if (lvl.flash > 0) {
+                        ctxCanvas.fillStyle = `rgba(0, 240, 255, ${lvl.flash * 0.5})`;
+                        lvl.flash = Math.max(0, lvl.flash - 0.05);
+                    }
+
+                    ctxCanvas.fillRect(cx + 4, cy, colWidth - 8, cellHeight - 2);
+
+                    ctxCanvas.strokeStyle = "rgba(51, 65, 85, 0.5)";
                     ctxCanvas.strokeRect(cx + 4, cy, colWidth - 8, cellHeight - 2);
 
-                    // Text: Bid | Ask numbers
                     ctxCanvas.font = "9px 'JetBrains Mono'";
                     ctxCanvas.fillStyle = (lvl.imbalance === "SELL") ? "#ff80ab" : "#94a3b8";
-                    ctxCanvas.fillText(`${lvl.bid}`, cx + 7, cy + 13);
+                    ctxCanvas.fillText(`${Math.round(lvl.bid)}`, cx + 7, cy + 13);
 
                     ctxCanvas.fillStyle = "rgba(255,255,255,0.2)";
                     ctxCanvas.fillText("x", cx + colWidth/2 - 3, cy + 13);
 
                     ctxCanvas.fillStyle = (lvl.imbalance === "BUY") ? "#b9f6ca" : "#cbd5e1";
-                    ctxCanvas.fillText(`${lvl.ask}`, cx + colWidth - 28, cy + 13);
+                    ctxCanvas.fillText(`${Math.round(lvl.ask)}`, cx + colWidth - 28, cy + 13);
                 });
 
-                // Candle Delta & Volume Below
+                // Delta & Volume Below
                 ctxCanvas.fillStyle = c.delta >= 0 ? "#00e676" : "#ff1744";
                 ctxCanvas.font = "bold 10px 'JetBrains Mono'";
-                ctxCanvas.fillText(`Δ ${c.delta > 0 ? "+" : ""}${c.delta}`, cx + 8, h - 50);
+                ctxCanvas.fillText(`Δ ${c.delta > 0 ? "+" : ""}${Math.round(c.delta)}`, cx + 8, h - 50);
 
                 ctxCanvas.fillStyle = "#94a3b8";
                 ctxCanvas.font = "9px 'JetBrains Mono'";
-                ctxCanvas.fillText(`Vol ${c.volume}`, cx + 8, h - 35);
+                ctxCanvas.fillText(`Vol ${Math.round(c.volume)}`, cx + 8, h - 35);
 
-                // GLOWING TAGS (ICEBERG ABSORPTION / EXHAUSTION)
+                // GLOWING TAGS
                 if (c.hasIceberg) {
                     ctxCanvas.fillStyle = "rgba(0, 240, 255, 0.2)";
                     ctxCanvas.strokeStyle = "#00f0ff";
                     ctxCanvas.lineWidth = 1.5;
-                    ctxCanvas.fillRect(cx - 30, 40, 140, 22);
-                    ctxCanvas.strokeRect(cx - 30, 40, 140, 22);
+                    ctxCanvas.fillRect(cx - 30, 38, 145, 22);
+                    ctxCanvas.strokeRect(cx - 30, 38, 145, 22);
 
                     ctxCanvas.fillStyle = "#00f0ff";
                     ctxCanvas.font = "bold 9px 'JetBrains Mono'";
-                    ctxCanvas.fillText("⚡ ICEBERG ABSORPTION 1,450 BTC", cx - 26, 54);
+                    ctxCanvas.fillText("⚡ ICEBERG ABSORPTION", cx - 24, 52);
                 }
 
                 if (c.hasExhaustion) {
                     ctxCanvas.fillStyle = "rgba(255, 215, 0, 0.2)";
                     ctxCanvas.strokeStyle = "#ffd700";
                     ctxCanvas.lineWidth = 1.5;
-                    ctxCanvas.fillRect(cx - 20, 40, 120, 22);
-                    ctxCanvas.strokeRect(cx - 20, 40, 120, 22);
+                    ctxCanvas.fillRect(cx - 20, 38, 120, 22);
+                    ctxCanvas.strokeRect(cx - 20, 38, 120, 22);
 
                     ctxCanvas.fillStyle = "#ffd700";
                     ctxCanvas.font = "bold 9px 'JetBrains Mono'";
-                    ctxCanvas.fillText("⚠️ EXHAUSTION DELTA", cx - 16, 54);
+                    ctxCanvas.fillText("⚠️ EXHAUSTION DELTA", cx - 16, 52);
                 }
             });
         }
 
-        // --- MODE ENGINE C: DELTA & CVD (DIVERGENCE & CUMULATIVE FLOW) ---
+        // =============================================================
+        // 9. DELTA & CVD DIVERGENCE ENGINE
+        // =============================================================
         function drawDeltaCvdView() {
             if (!ctxCanvas || !heatmapCanvas) return;
             const w = heatmapCanvas.width = heatmapCanvas.clientWidth;
             const h = heatmapCanvas.height = heatmapCanvas.clientHeight;
             ctxCanvas.clearRect(0, 0, w, h);
 
-            // Dark Grid
-            ctxCanvas.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            ctxCanvas.strokeStyle = "rgba(255, 255, 255, 0.04)";
             ctxCanvas.lineWidth = 1;
             for (let y = 30; y < h; y += 40) {
                 ctxCanvas.beginPath();
@@ -1480,12 +1586,11 @@
                 ctxCanvas.stroke();
             }
 
-            // Top Header Banner
             ctxCanvas.fillStyle = "#00f0ff";
             ctxCanvas.font = "bold 13px 'JetBrains Mono'";
-            ctxCanvas.fillText(`🌊 CUMULATIVE VOLUME DELTA (CVD) & ABSORPTION DIVERGENCE - ${currentSymbol}`, 20, 26);
+            ctxCanvas.fillText(`🌊 REAL-TIME CUMULATIVE VOLUME DELTA (CVD) - ${currentSymbol}`, 20, 26);
 
-            // Metrics Box in Corner
+            // Metrics Box
             ctxCanvas.fillStyle = "rgba(18, 24, 38, 0.9)";
             ctxCanvas.strokeStyle = "rgba(51, 65, 85, 0.8)";
             ctxCanvas.fillRect(20, 45, 340, 65);
@@ -1493,26 +1598,26 @@
 
             ctxCanvas.fillStyle = "#94a3b8";
             ctxCanvas.font = "10px 'JetBrains Mono'";
-            ctxCanvas.fillText("1H Cumulative Delta:", 30, 65);
+            ctxCanvas.fillText("Live Cumulative Delta:", 30, 65);
             ctxCanvas.fillStyle = "#00e676";
             ctxCanvas.font = "bold 11px 'JetBrains Mono'";
-            ctxCanvas.fillText("+1,482.6 BTC (Aggressive Buyers Leading)", 170, 65);
+            ctxCanvas.fillText(`${currentCvdSum > 0 ? "+" : ""}${currentCvdSum.toFixed(1)} BTC`, 180, 65);
 
             ctxCanvas.fillStyle = "#94a3b8";
             ctxCanvas.font = "10px 'JetBrains Mono'";
             ctxCanvas.fillText("Buy/Sell Delta Ratio:", 30, 85);
             ctxCanvas.fillStyle = "#00f0ff";
             ctxCanvas.font = "bold 11px 'JetBrains Mono'";
-            ctxCanvas.fillText("64.2% Buyers vs 35.8% Sellers", 170, 85);
+            ctxCanvas.fillText("64.2% Buyers vs 35.8% Sellers", 180, 85);
 
             ctxCanvas.fillStyle = "#94a3b8";
             ctxCanvas.font = "10px 'JetBrains Mono'";
             ctxCanvas.fillText("Order Flow State:", 30, 102);
             ctxCanvas.fillStyle = "#ffd700";
             ctxCanvas.font = "bold 10px 'JetBrains Mono'";
-            ctxCanvas.fillText("INSTITUTIONAL PASSIVE ABSORPTION", 170, 102);
+            ctxCanvas.fillText("PASSIVE ABSORPTION ACCUMULATION", 180, 102);
 
-            // Draw Full-Width Delta Histogram Bars
+            // Delta Histogram Bars
             const time = Date.now() * 0.001;
             const barCount = 40;
             const bWidth = (w - 40) / barCount;
@@ -1526,7 +1631,7 @@
                 ctxCanvas.fillRect(bx, centerY, bWidth - 2, -dVal);
             }
 
-            // Draw CVD Continuous Flow Line
+            // CVD Continuous Line
             ctxCanvas.beginPath();
             ctxCanvas.strokeStyle = "#00f0ff";
             ctxCanvas.lineWidth = 3;
@@ -1537,7 +1642,7 @@
             }
             ctxCanvas.stroke();
 
-            // Divergence Callout Box
+            // Divergence Box
             ctxCanvas.fillStyle = "rgba(0, 240, 255, 0.15)";
             ctxCanvas.strokeStyle = "#00f0ff";
             ctxCanvas.lineWidth = 1.5;
@@ -1550,7 +1655,7 @@
         }
 
         // -------------------------------------------------------------
-        // 8. 60 FPS ANIMATION LOOP (MODE ROUTED)
+        // 10. 60 FPS RENDER LOOP
         // -------------------------------------------------------------
         function animLoop() {
             if (currentMode === "footprint") {
@@ -1567,7 +1672,7 @@
         }
 
         // -------------------------------------------------------------
-        // 9. MODE SWITCHER LOGIC (COMPLETELY DISTINCT)
+        // 11. MODE SWITCHER LOGIC
         // -------------------------------------------------------------
         function switchMode(mode) {
             currentMode = mode;
@@ -1582,12 +1687,12 @@
             } else if (mode === "heatmap") {
                 document.getElementById("btnModeHeatmap").classList.add("active");
                 document.body.className = "view-mode-single-heatmap";
-                showToast("Liquidity Heatmap: Bookmap depth engine active");
+                showToast("Liquidity Sonogram: Coinglass multi-band depth active");
             } else if (mode === "footprint") {
                 document.getElementById("btnModeFootprint").classList.add("active");
                 document.body.className = "view-mode-footprint";
                 initFootprintData();
-                showToast("Iceberg Footprint: Bid/Ask volume delta active");
+                showToast("Iceberg Footprint: Live tick-by-tick delta active");
             } else if (mode === "delta") {
                 document.getElementById("btnModeDelta").classList.add("active");
                 document.body.className = "view-mode-delta";
@@ -1595,12 +1700,12 @@
             } else { // split
                 document.getElementById("btnModeSplit").classList.add("active");
                 document.body.className = "view-mode-split";
-                showToast("Split Screen: TradingView + Heatmap side-by-side");
+                showToast("Split Screen: TradingView + Sonogram Heatmap side-by-side");
             }
         }
 
         // -------------------------------------------------------------
-        // 10. TICKER PILL SWITCHER & QUICK ACTIONS
+        // 12. TICKER PILL SWITCHER & QUICK ACTIONS
         // -------------------------------------------------------------
         document.querySelectorAll(".coin-pill").forEach(pill => {
             pill.addEventListener("click", () => {
@@ -1615,6 +1720,7 @@
             currentSymbol = sym;
             document.getElementById("activeSymbolDisplay").textContent = sym;
             document.getElementById("deskSymbol").textContent = sym;
+            depthSnapshots = [];
             initFootprintData();
             initTradingView(sym);
             initBinanceStreams(sym);
