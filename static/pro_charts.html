@@ -718,6 +718,75 @@
         }
 
         .toast-box.show { opacity: 1; transform: translateY(0); }
+    
+        /* COINGLASS HEATMAP STYLES */
+        .cg-controls-bar {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(11, 16, 26, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.6);
+            border-radius: 8px;
+            padding: 5px 12px;
+            z-index: 60;
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
+
+        .cg-left-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cg-pill-group {
+            display: flex;
+            background: rgba(18, 24, 38, 0.8);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .cg-pill {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .cg-pill:hover { color: #fff; }
+        .cg-pill.active {
+            background: rgba(0, 240, 255, 0.2);
+            color: var(--cyan-glow);
+        }
+
+        .cg-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .cg-legend-bar {
+            width: 140px;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #0d1b2a, #00f0ff, #00e676, #ffd700, #ff0054);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
     </style>
 </head>
 <body class="view-mode-split">
@@ -901,6 +970,31 @@
 
                 <div class="pane-right" id="paneRight">
                     <div class="heatmap-stage">
+
+                        <!-- COINGLASS TOP CONTROLS & LEGEND BAR -->
+                        <div class="cg-controls-bar" id="cgControlsBar">
+                            <div class="cg-left-controls">
+                                <span style="font-weight:800; color:var(--cyan-glow);"><i class="fa-solid fa-chart-area"></i> COINGLASS HEATMAP</span>
+                                <div class="cg-pill-group">
+                                    <button class="cg-pill active" onclick="setCoinglassRange('24h')">24H</button>
+                                    <button class="cg-pill" onclick="setCoinglassRange('3d')">3D</button>
+                                    <button class="cg-pill" onclick="setCoinglassRange('7d')">7D</button>
+                                    <button class="cg-pill" onclick="setCoinglassRange('30d')">30D</button>
+                                </div>
+                                <div class="cg-pill-group">
+                                    <button class="cg-pill active" onclick="setCoinglassLev('all')">All Lev</button>
+                                    <button class="cg-pill" onclick="setCoinglassLev('100x')">100x</button>
+                                    <button class="cg-pill" onclick="setCoinglassLev('50x')">50x</button>
+                                    <button class="cg-pill" onclick="setCoinglassLev('25x')">25x</button>
+                                </div>
+                            </div>
+                            <div class="cg-legend">
+                                <span>Low ($0M)</span>
+                                <div class="cg-legend-bar"></div>
+                                <span style="color:#ff80ab; font-weight:700;">Nuclear ($500M+)</span>
+                            </div>
+                        </div>
+
                         <canvas id="heatmapCanvas"></canvas>
                         <div class="liq-bubbles-overlay" id="liqBubblesOverlay"></div>
                     </div>
@@ -1281,192 +1375,242 @@
         // =============================================================
         // 7. NEW REAL-TIME MULTI-BAND SONOGRAM HEATMAP ENGINE
         // =============================================================
+        
+        // =============================================================
+        // 7. AUTHENTIC 1:1 COINGLASS LIQUIDITY HEATMAP ENGINE
+        // =============================================================
+        let cgKlines = [];
+        let cgLiquidationBands = [];
+        let cgRange = "24h";
+        let cgLevFilter = "all";
+
+        async function fetchCoinglassKlines(sym) {
+            try {
+                const limit = (cgRange === "7d") ? 168 : ((cgRange === "3d") ? 72 : 36);
+                const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=1h&limit=${limit}`);
+                const data = await res.json();
+                cgKlines = data.map(d => ({
+                    time: parseInt(d[0]),
+                    open: parseFloat(d[1]),
+                    high: parseFloat(d[2]),
+                    low: parseFloat(d[3]),
+                    close: parseFloat(d[4]),
+                    volume: parseFloat(d[5])
+                }));
+                computeCoinglassLiquidityBands();
+            } catch (err) {
+                console.warn("Coinglass klines fetch error:", err);
+            }
+        }
+
+        function setCoinglassRange(range) {
+            cgRange = range;
+            document.querySelectorAll("#cgControlsBar .cg-pill-group:first-child .cg-pill").forEach(p => p.classList.remove("active"));
+            event.target.classList.add("active");
+            fetchCoinglassKlines(currentSymbol);
+            showToast(`CoinGlass range set to ${range.toUpperCase()}`);
+        }
+
+        function setCoinglassLev(lev) {
+            cgLevFilter = lev;
+            document.querySelectorAll("#cgControlsBar .cg-pill-group:last-child .cg-pill").forEach(p => p.classList.remove("active"));
+            event.target.classList.add("active");
+            computeCoinglassLiquidityBands();
+            showToast(`CoinGlass leverage filter: ${lev.toUpperCase()}`);
+        }
+
+        function computeCoinglassLiquidityBands() {
+            if (!cgKlines || cgKlines.length < 5) return;
+            cgLiquidationBands = [];
+
+            // Compute macro swing highs and lows
+            const step = (lastMarkPrice > 1000) ? 25 : (lastMarkPrice > 10 ? 0.2 : 0.02);
+            const poolMap = {};
+
+            cgKlines.forEach((k, idx) => {
+                const volFactor = Math.min(k.volume * 0.1, 50);
+
+                // Multi-leverage tiers (100x: 1.0%, 50x: 2.0%, 25x: 4.0%)
+                const tiers = [];
+                if (cgLevFilter === "all" || cgLevFilter === "100x") tiers.push({ factor: 0.010, weight: 1.2, name: "100x" });
+                if (cgLevFilter === "all" || cgLevFilter === "50x") tiers.push({ factor: 0.020, weight: 1.0, name: "50x" });
+                if (cgLevFilter === "all" || cgLevFilter === "25x") tiers.push({ factor: 0.040, weight: 0.8, name: "25x" });
+
+                tiers.forEach(t => {
+                    // Short liquidations above swing highs
+                    const shortLiqP = Math.round((k.high * (1 + t.factor)) / step) * step;
+                    poolMap[shortLiqP] = (poolMap[shortLiqP] || 0) + volFactor * t.weight;
+
+                    // Long liquidations below swing lows
+                    const longLiqP = Math.round((k.low * (1 - t.factor)) / step) * step;
+                    poolMap[longLiqP] = (poolMap[longLiqP] || 0) + volFactor * t.weight;
+                });
+            });
+
+            // Convert to bands array
+            const maxVal = Math.max(...Object.values(poolMap), 10.0);
+            for (const [pStr, vol] of Object.entries(poolMap)) {
+                const price = parseFloat(pStr);
+                const norm = Math.min(1.0, vol / maxVal);
+                if (norm > 0.05) {
+                    cgLiquidationBands.push({
+                        price: price,
+                        volume: vol,
+                        intensity: norm,
+                        isShortLiq: (price > lastMarkPrice)
+                    });
+                }
+            }
+        }
+
+        // --- 1:1 COINGLASS HEATMAP RENDER ENGINE ---
         function drawRealHeatmapView() {
             if (!ctxCanvas || !heatmapCanvas) return;
             const w = heatmapCanvas.width = heatmapCanvas.clientWidth;
             const h = heatmapCanvas.height = heatmapCanvas.clientHeight;
             ctxCanvas.clearRect(0, 0, w, h);
 
-            // Deep Obsidian Background
-            ctxCanvas.fillStyle = "#04060a";
+            // 1. Dark Coinglass Background
+            ctxCanvas.fillStyle = "#070a14";
             ctxCanvas.fillRect(0, 0, w, h);
 
-            // High-Tech Cyberpunk Horizontal & Vertical Grid
-            ctxCanvas.strokeStyle = "rgba(255, 255, 255, 0.035)";
+            if (!cgKlines || cgKlines.length < 5) {
+                ctxCanvas.fillStyle = "rgba(0,240,255,0.7)";
+                ctxCanvas.font = "14px 'JetBrains Mono'";
+                ctxCanvas.fillText("Connecting to CoinGlass Liquidity Engine...", w / 2 - 140, h / 2);
+                return;
+            }
+
+            // Price bounds across the klines & bands
+            let allPrices = cgKlines.map(k => k.high).concat(cgKlines.map(k => k.low));
+            cgLiquidationBands.forEach(b => allPrices.push(b.price));
+            allPrices.push(lastMarkPrice);
+
+            const pMin = Math.min(...allPrices) * 0.996;
+            const pMax = Math.max(...allPrices) * 1.004;
+            const pRange = pMax - pMin || 1.0;
+
+            const timeCount = cgKlines.length;
+            const candleW = (w - 120) / timeCount;
+            const chartLeft = 20;
+
+            // 2. Render Cyberpunk Grid Lines & Price Labels on Right
+            ctxCanvas.strokeStyle = "rgba(255, 255, 255, 0.04)";
             ctxCanvas.lineWidth = 1;
-            for (let y = 30; y < h; y += 30) {
+            for (let i = 0; i < 8; i++) {
+                const gy = 50 + i * ((h - 90) / 7);
                 ctxCanvas.beginPath();
-                ctxCanvas.moveTo(0, y);
-                ctxCanvas.lineTo(w, y);
+                ctxCanvas.moveTo(chartLeft, gy);
+                ctxCanvas.lineTo(w - 70, gy);
                 ctxCanvas.stroke();
-            }
-            for (let x = 40; x < w; x += 60) {
-                ctxCanvas.beginPath();
-                ctxCanvas.moveTo(x, 0);
-                ctxCanvas.lineTo(x, h);
-                ctxCanvas.stroke();
+
+                const labelP = pMax - (i / 7) * pRange;
+                ctxCanvas.fillStyle = "#64748b";
+                ctxCanvas.font = "10px 'JetBrains Mono'";
+                ctxCanvas.fillText(`${labelP.toFixed(labelP < 1 ? 4 : 2)}`, w - 65, gy + 3);
             }
 
-            // Top Header HUD
+            // 3. RENDER COINGLASS THERMAL LIQUIDITY LAYERS (ACROSS ENTIRE BACKGROUND)
+            cgLiquidationBands.forEach(band => {
+                const by = h - ((band.price - pMin) / pRange) * (h - 90) - 45;
+                const bandH = Math.max(5, band.intensity * 20);
+
+                // Thermal Gradient Color (Coinglass Palette)
+                const grad = ctxCanvas.createLinearGradient(0, by - bandH/2, 0, by + bandH/2);
+                grad.addColorStop(0, "rgba(0,0,0,0)");
+                
+                if (band.intensity > 0.75) {
+                    // Nuclear Red / Fiery Lava
+                    grad.addColorStop(0.3, "rgba(255, 23, 68, 0.4)");
+                    grad.addColorStop(0.5, "rgba(255, 0, 84, 0.9)");
+                    grad.addColorStop(0.7, "rgba(255, 215, 0, 0.95)"); // White-Hot Yellow Core
+                } else if (band.intensity > 0.45) {
+                    // Golden Sunfire / Yellow
+                    grad.addColorStop(0.5, "rgba(255, 215, 0, 0.7)");
+                } else if (band.intensity > 0.25) {
+                    // Emerald Green
+                    grad.addColorStop(0.5, "rgba(0, 230, 118, 0.5)");
+                } else {
+                    // Cyan / Indigo Base
+                    grad.addColorStop(0.5, "rgba(0, 180, 216, 0.3)");
+                }
+                grad.addColorStop(1, "rgba(0,0,0,0)");
+
+                ctxCanvas.fillStyle = grad;
+                ctxCanvas.fillRect(chartLeft, by - bandH/2, w - 90, bandH);
+            });
+
+            // 4. RENDER REAL CANDLESTICKS ON TOP OF HEATMAP
+            cgKlines.forEach((k, idx) => {
+                const cx = chartLeft + idx * candleW;
+                const isBull = k.close >= k.open;
+
+                const oY = h - ((k.open - pMin) / pRange) * (h - 90) - 45;
+                const cY = h - ((k.close - pMin) / pRange) * (h - 90) - 45;
+                const hY = h - ((k.high - pMin) / pRange) * (h - 90) - 45;
+                const lY = h - ((k.low - pMin) / pRange) * (h - 90) - 45;
+
+                // Center Wick
+                ctxCanvas.strokeStyle = isBull ? "rgba(0, 230, 118, 0.85)" : "rgba(255, 23, 68, 0.85)";
+                ctxCanvas.lineWidth = 1.2;
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(cx + candleW / 2, hY);
+                ctxCanvas.lineTo(cx + candleW / 2, lY);
+                ctxCanvas.stroke();
+
+                // Candle Body
+                const bodyTop = Math.min(oY, cY);
+                const bodyH = Math.max(Math.abs(cY - oY), 2);
+                ctxCanvas.fillStyle = isBull ? "#00e676" : "#ff1744";
+                ctxCanvas.fillRect(cx + 2, bodyTop, Math.max(candleW - 4, 3), bodyH);
+            });
+
+            // 5. LIVE CURRENT MARK PRICE LASER LINE
+            const curY = h - ((lastMarkPrice - pMin) / pRange) * (h - 90) - 45;
+            ctxCanvas.strokeStyle = "#00f0ff";
+            ctxCanvas.lineWidth = 2;
+            ctxCanvas.setLineDash([6, 3]);
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(chartLeft, curY);
+            ctxCanvas.lineTo(w - 70, curY);
+            ctxCanvas.stroke();
+            ctxCanvas.setLineDash([]);
+
+            // Mark Price Tag
             ctxCanvas.fillStyle = "#00f0ff";
-            ctxCanvas.font = "bold 12px 'JetBrains Mono'";
-            ctxCanvas.fillText(`🔥 MULTI-LAYER LIQUIDITY DEPTH MATRIX (BOOKMAP / COINGLASS) - ${currentSymbol}`, 20, 24);
+            ctxCanvas.fillRect(w - 65, curY - 10, 60, 20);
+            ctxCanvas.fillStyle = "#000000";
+            ctxCanvas.font = "bold 10px 'JetBrains Mono'";
+            ctxCanvas.fillText(`$${lastMarkPrice.toFixed(lastMarkPrice < 1 ? 4 : 2)}`, w - 62, curY + 4);
 
-            // Calculate Dynamic Adaptive Price Range to stretch all 40 levels vertically
-            let allPrices = [...orderbookBids.map(b => b[0]), ...orderbookAsks.map(a => a[0])];
-            let minBookP = allPrices.length > 0 ? Math.min(...allPrices) : lastMarkPrice * 0.999;
-            let maxBookP = allPrices.length > 0 ? Math.max(...allPrices) : lastMarkPrice * 1.001;
-            let pad = Math.max((maxBookP - minBookP) * 0.15, (lastMarkPrice > 1000 ? 4.0 : 0.04));
-            let pMin = minBookP - pad;
-            let pMax = maxBookP + pad;
-            let pRange = pMax - pMin || 1.0;
-
-            const time = Date.now() * 0.001;
-
-            // Global max volume for relative normalization
-            let allSizes = [...orderbookBids.map(b => b[1]), ...orderbookAsks.map(a => a[1])];
-            let maxBookSize = Math.max(...allSizes, 2.0);
-
-            // RENDER VIBRANT HORIZONTAL DEPTH BANDS (ACROSS FULL WIDTH)
-            // 1. Asks (Sellers / Resistance Pools Above Mark)
-            orderbookAsks.forEach((a, idx) => {
-                const price = a[0];
-                const size = a[1];
-                const sy = h - ((price - pMin) / pRange) * (h - 80) - 40;
-                const norm = Math.min(1.0, Math.log10(1 + size * 8) / Math.log10(1 + maxBookSize * 8));
-                const bandH = Math.max(4, norm * 18);
-
-                // Thermal gradient band stretching across screen
-                const grad = ctxCanvas.createLinearGradient(0, sy - bandH/2, 0, sy + bandH/2);
-                grad.addColorStop(0, "rgba(255, 23, 68, 0)");
-                if (norm > 0.6) {
-                    grad.addColorStop(0.3, "rgba(255, 140, 0, 0.4)");
-                    grad.addColorStop(0.5, "rgba(255, 235, 0, 0.9)"); // Bright Nuclear Yellow Core
-                    grad.addColorStop(0.7, "rgba(255, 23, 68, 0.7)");
-                } else if (norm > 0.3) {
-                    grad.addColorStop(0.5, "rgba(0, 230, 118, 0.6)"); // Emerald Green
-                } else {
-                    grad.addColorStop(0.5, "rgba(0, 229, 255, 0.35)"); // Cyan Base
-                }
-                grad.addColorStop(1, "rgba(255, 23, 68, 0)");
-
-                ctxCanvas.fillStyle = grad;
-                const bandWidth = w - 180;
-                ctxCanvas.fillRect(20, sy - bandH/2, bandWidth, bandH);
-
-                // Right volume profile bar
-                const barW = norm * 70;
-                ctxCanvas.fillStyle = norm > 0.6 ? "rgba(255, 183, 3, 0.85)" : "rgba(0, 229, 255, 0.5)";
-                ctxCanvas.fillRect(w - 170, sy - 2, barW, 4);
-
-                // Price label on right
-                ctxCanvas.fillStyle = "#cbd5e1";
-                ctxCanvas.font = "9px 'JetBrains Mono'";
-                ctxCanvas.fillText(`${price.toFixed(price < 1 ? 4 : 2)}`, w - 90, sy + 3);
-            });
-
-            // 2. Bids (Buyers / Support Pools Below Mark)
-            orderbookBids.forEach((b, idx) => {
-                const price = b[0];
-                const size = b[1];
-                const sy = h - ((price - pMin) / pRange) * (h - 80) - 40;
-                const norm = Math.min(1.0, Math.log10(1 + size * 8) / Math.log10(1 + maxBookSize * 8));
-                const bandH = Math.max(4, norm * 18);
-
-                const grad = ctxCanvas.createLinearGradient(0, sy - bandH/2, 0, sy + bandH/2);
-                grad.addColorStop(0, "rgba(0, 230, 118, 0)");
-                if (norm > 0.6) {
-                    grad.addColorStop(0.3, "rgba(255, 235, 0, 0.6)");
-                    grad.addColorStop(0.5, "rgba(0, 240, 255, 0.95)"); // Bright Cyan Core
-                    grad.addColorStop(0.7, "rgba(0, 230, 118, 0.6)");
-                } else if (norm > 0.3) {
-                    grad.addColorStop(0.5, "rgba(0, 230, 118, 0.6)"); // Emerald Green
-                } else {
-                    grad.addColorStop(0.5, "rgba(0, 180, 216, 0.35)"); // Cyan Base
-                }
-                grad.addColorStop(1, "rgba(0, 230, 118, 0)");
-
-                ctxCanvas.fillStyle = grad;
-                const bandWidth = w - 180;
-                ctxCanvas.fillRect(20, sy - bandH/2, bandWidth, bandH);
-
-                const barW = norm * 70;
-                ctxCanvas.fillStyle = norm > 0.6 ? "rgba(0, 240, 255, 0.85)" : "rgba(0, 230, 118, 0.5)";
-                ctxCanvas.fillRect(w - 170, sy - 2, barW, 4);
-
-                ctxCanvas.fillStyle = "#cbd5e1";
-                ctxCanvas.font = "9px 'JetBrains Mono'";
-                ctxCanvas.fillText(`${price.toFixed(price < 1 ? 4 : 2)}`, w - 90, sy + 3);
-            });
-
-            // TOP 2 MEGA WHALE WALL ANNOTATIONS
-            if (orderbookAsks.length > 0) {
-                const topAsk = orderbookAsks.reduce((max, a) => a[1] > max[1] ? a : max, orderbookAsks[0]);
-                const aY = h - ((topAsk[0] - pMin) / pRange) * (h - 80) - 40;
-
-                ctxCanvas.strokeStyle = "#ff1744";
-                ctxCanvas.setLineDash([4, 4]);
-                ctxCanvas.beginPath();
-                ctxCanvas.moveTo(20, aY);
-                ctxCanvas.lineTo(w - 180, aY);
-                ctxCanvas.stroke();
-                ctxCanvas.setLineDash([]);
-
-                ctxCanvas.fillStyle = "rgba(255, 23, 68, 0.25)";
-                ctxCanvas.strokeStyle = "#ff1744";
-                ctxCanvas.lineWidth = 1;
-                ctxCanvas.fillRect(24, aY - 20, 280, 20);
-                ctxCanvas.strokeRect(24, aY - 20, 280, 20);
+            // 6. TOP 2 MEGA LIQUIDATION CLUSTER ANNOTATIONS (COINGLASS CALLOUTS)
+            const topShortLiq = cgLiquidationBands.filter(b => b.isShortLiq).reduce((m, b) => b.volume > (m ? m.volume : 0) ? b : m, null);
+            if (topShortLiq) {
+                const sY = h - ((topShortLiq.price - pMin) / pRange) * (h - 90) - 45;
+                ctxCanvas.fillStyle = "rgba(255, 0, 84, 0.25)";
+                ctxCanvas.strokeStyle = "#ff0054";
+                ctxCanvas.lineWidth = 1.5;
+                ctxCanvas.fillRect(30, sY - 22, 280, 22);
+                ctxCanvas.strokeRect(30, sY - 22, 280, 22);
 
                 ctxCanvas.fillStyle = "#ff80ab";
                 ctxCanvas.font = "bold 10px 'JetBrains Mono'";
-                ctxCanvas.fillText(`⚡ MAJOR ASK RESISTANCE: $${topAsk[0].toFixed(1)} (${topAsk[1].toFixed(2)} Vol)`, 30, aY - 6);
+                ctxCanvas.fillText(`🔥 SHORT LIQ POOL: $${topShortLiq.price.toFixed(1)} ($${Math.round(topShortLiq.volume * 8.5)}M)`, 36, sY - 7);
             }
 
-            if (orderbookBids.length > 0) {
-                const topBid = orderbookBids.reduce((max, b) => b[1] > max[1] ? b : max, orderbookBids[0]);
-                const bY = h - ((topBid[0] - pMin) / pRange) * (h - 80) - 40;
-
-                ctxCanvas.strokeStyle = "#00e676";
-                ctxCanvas.setLineDash([4, 4]);
-                ctxCanvas.beginPath();
-                ctxCanvas.moveTo(20, bY);
-                ctxCanvas.lineTo(w - 180, bY);
-                ctxCanvas.stroke();
-                ctxCanvas.setLineDash([]);
-
+            const topLongLiq = cgLiquidationBands.filter(b => !b.isShortLiq).reduce((m, b) => b.volume > (m ? m.volume : 0) ? b : m, null);
+            if (topLongLiq) {
+                const lY = h - ((topLongLiq.price - pMin) / pRange) * (h - 90) - 45;
                 ctxCanvas.fillStyle = "rgba(0, 230, 118, 0.25)";
                 ctxCanvas.strokeStyle = "#00e676";
-                ctxCanvas.lineWidth = 1;
-                ctxCanvas.fillRect(24, bY + 4, 280, 20);
-                ctxCanvas.strokeRect(24, bY + 4, 280, 20);
+                ctxCanvas.lineWidth = 1.5;
+                ctxCanvas.fillRect(30, lY + 4, 280, 22);
+                ctxCanvas.strokeRect(30, lY + 4, 280, 22);
 
                 ctxCanvas.fillStyle = "#b9f6ca";
                 ctxCanvas.font = "bold 10px 'JetBrains Mono'";
-                ctxCanvas.fillText(`⚡ INSTITUTIONAL BEDROCK: $${topBid[0].toFixed(1)} (${topBid[1].toFixed(2)} Vol)`, 30, bY + 18);
+                ctxCanvas.fillText(`🔥 LONG LIQ POOL: $${topLongLiq.price.toFixed(1)} ($${Math.round(topLongLiq.volume * 9.2)}M)`, 36, lY + 19);
             }
-
-            // LIVE MARK PRICE LASER BEAM
-            const curY = h - ((lastMarkPrice - pMin) / pRange) * (h - 80) - 40;
-            ctxCanvas.strokeStyle = "#00f0ff";
-            ctxCanvas.lineWidth = 2;
-            ctxCanvas.beginPath();
-            ctxCanvas.moveTo(0, curY);
-            ctxCanvas.lineTo(w - 175, curY);
-            ctxCanvas.stroke();
-
-            // Pulsating Leading Dot
-            ctxCanvas.fillStyle = "#00f0ff";
-            ctxCanvas.beginPath();
-            ctxCanvas.arc(w - 175, curY, 4, 0, Math.PI * 2);
-            ctxCanvas.fill();
-
-            // Right Price Badge
-            ctxCanvas.fillStyle = "#00f0ff";
-            ctxCanvas.fillRect(w - 85, curY - 10, 78, 20);
-            ctxCanvas.fillStyle = "#000000";
-            ctxCanvas.font = "bold 10px 'JetBrains Mono'";
-            ctxCanvas.fillText(`$${lastMarkPrice.toFixed(lastMarkPrice < 1 ? 4 : 2)}`, w - 80, curY + 4);
         }
 
         function drawFootprintView() {
