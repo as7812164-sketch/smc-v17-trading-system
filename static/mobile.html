@@ -1741,6 +1741,15 @@
                         <span>Settings</span>
                     </div>
                 </a>
+
+                <!-- 15. Download Android APK Option -->
+                <a href="/download/apk" download="HERMES_3.5_SINGLE_TIER_Trading_Terminal.apk" class="drawer-nav-item" style="background:linear-gradient(135deg, rgba(0,245,155,0.15), rgba(56,189,248,0.15)); border:1px solid rgba(0,245,155,0.35); margin-top:6px;">
+                    <div class="left-group">
+                        <i class="fa-brands fa-android" style="color:var(--green); font-size:16px;"></i>
+                        <span style="color:#FFF; font-weight:800;">Download Android APK</span>
+                    </div>
+                    <span class="drawer-badge badge-cyan" style="background:#00F59B; color:#080B11; font-weight:900;">APK</span>
+                </a>
             </div>
         </div>
 
@@ -1779,6 +1788,9 @@
             <button onclick="sendTestTelegramAlert(this)" style="width:100%; background:linear-gradient(135deg, #0284C7, #0088cc); color:#FFF; border:none; padding:10px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">
                 <i class="fa-solid fa-paper-plane"></i> Send Test Telegram Pulse
             </button>
+            <a href="/download/apk" download="HERMES_3.5_SINGLE_TIER_Trading_Terminal.apk" style="display:flex; align-items:center; justify-content:center; gap:8px; width:100%; background:linear-gradient(135deg, rgba(0,245,155,0.2), rgba(0,245,155,0.1)); border:1px solid rgba(0,245,155,0.4); color:#00F59B; padding:10px; border-radius:8px; font-weight:800; font-size:12px; text-decoration:none; margin-top:8px; box-sizing:border-box;">
+                <i class="fa-brands fa-android"></i> Download Android APK (.apk)
+            </a>
         </div>
     </div>
 
@@ -1807,15 +1819,16 @@
     </div>
 
 
-    <!-- NATIVE INSTALL APP PROMPT BANNER -->
-    <div id="pwaInstallBanner" style="display:none; background: linear-gradient(90deg, #0284C7, #00F59B); color: #080B11; padding: 10px 14px; align-items: center; justify-content: space-between; font-weight: 800; font-size: 11.5px; border-bottom: 1px solid rgba(255,255,255,0.2); position: sticky; top: 52px; z-index: 99;">
+    <!-- NATIVE INSTALL APP / GET APK BANNER -->
+    <div id="pwaInstallBanner" style="display:flex; background: linear-gradient(90deg, #0284C7, #00F59B); color: #080B11; padding: 10px 14px; align-items: center; justify-content: space-between; font-weight: 800; font-size: 11.5px; border-bottom: 1px solid rgba(255,255,255,0.2); position: sticky; top: 52px; z-index: 99;">
         <div style="display:flex; align-items:center; gap:8px;">
-            <i class="fa-solid fa-mobile-screen-button" style="font-size:16px;"></i>
-            <span>Install Fullscreen App (No URL Bar)</span>
+            <i class="fa-brands fa-android" style="font-size:18px;"></i>
+            <span>HERMES 3.5 APK &amp; App</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-            <button id="btnPwaInstall" style="background:#080B11; color:#00F59B; border:none; padding:5px 12px; border-radius:6px; font-weight:900; font-size:11px; cursor:pointer;">INSTALL</button>
-            <button onclick="document.getElementById('pwaInstallBanner').style.display='none'" style="background:none; border:none; color:#080B11; font-size:16px; font-weight:900; cursor:pointer; padding:0 4px;">&times;</button>
+            <a href="/download/apk" download="HERMES_3.5_SINGLE_TIER_Trading_Terminal.apk" style="background:#080B11; color:#00F59B; text-decoration:none; padding:5px 10px; border-radius:6px; font-weight:900; font-size:11px; cursor:pointer; display:inline-block;"><i class="fa-solid fa-download"></i> GET APK</a>
+            <button id="btnPwaInstall" style="background:rgba(8,11,17,0.85); color:#FFF; border:none; padding:5px 8px; border-radius:6px; font-weight:800; font-size:10.5px; cursor:pointer;">PWA</button>
+            <button onclick="document.getElementById('pwaInstallBanner').style.display='none'" style="background:none; border:none; color:#080B11; font-size:16px; font-weight:900; cursor:pointer; padding:0 3px;">&times;</button>
         </div>
     </div>
 

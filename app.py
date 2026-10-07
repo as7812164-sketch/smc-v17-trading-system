@@ -239,7 +239,7 @@ async def serve_apk():
     if apk_file.exists():
         return FileResponse(
             path=str(apk_file),
-            filename="HERMES_2.5_APEX_Trading_Terminal.apk",
+            filename="HERMES_3.5_SINGLE_TIER_Trading_Terminal.apk",
             media_type="application/vnd.android.package-archive"
         )
     raise HTTPException(status_code=404, detail="APK file not found")

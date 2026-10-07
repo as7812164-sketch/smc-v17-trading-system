@@ -1,7 +1,7 @@
 {
-  "name": "HERMES 2.5 APEX Trading Terminal",
-  "short_name": "Hermes APEX",
-  "description": "Institutional SMC Quantitative Crypto Trading Terminal with 5x Isolated Auto-Execution and Real-Time Compounding.",
+  "name": "HERMES 3.5 SINGLE TIER Trading Terminal",
+  "short_name": "Hermes 3.5",
+  "description": "Institutional SMC Quantitative Crypto Trading Terminal with 10-Section Deca Compounding Desk, Live Setup Radar, and Real-Time Order Block Execution.",
   "start_url": "/?view=mobile",
   "id": "/?view=mobile",
   "scope": "/",
