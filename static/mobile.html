@@ -66,8 +66,8 @@
             background-color: var(--bg-base);
             color: var(--text-primary);
             font-family: var(--font-sans);
-            font-size: 13px;
-            line-height: 1.4;
+            font-size: 15px;
+            line-height: 1.5;
             width: 100%;
             max-width: 100vw;
             overflow-x: hidden;
@@ -87,7 +87,7 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: calc(env(safe-area-inset-top, 6px) + 8px) 12px 10px 12px;
+            padding: calc(env(safe-area-inset-top, 6px) + 10px) 14px 12px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -105,16 +105,13 @@
         }
 
         .header-avatar {
-            width: 34px;
-            height: 34px;
-            min-width: 34px;
-            border-radius: 9px;
+            width: 40px; height: 40px; min-width: 40px; border-radius: 10px;
             background: linear-gradient(135deg, #0284C7, #00F59B);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #080B11;
-            font-size: 16px;
+            font-size: 19px;
             font-weight: 900;
             box-shadow: 0 0 12px rgba(0, 245, 155, 0.4);
             flex-shrink: 0;
@@ -127,7 +124,7 @@
         }
 
         .header-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 900;
             letter-spacing: 0.2px;
             display: flex;
@@ -137,7 +134,7 @@
         }
 
         .header-tag {
-            font-size: 9px;
+            font-size: 10.5px; padding: 2px 6px;
             font-weight: 900;
             background: rgba(0, 245, 155, 0.18);
             color: var(--green);
@@ -147,7 +144,7 @@
         }
 
         .header-status {
-            font-size: 10px;
+            font-size: 11.5px;
             color: var(--text-muted);
             font-family: var(--font-mono);
             display: flex;
@@ -185,8 +182,7 @@
             background: var(--bg-card-subtle);
             border: 1px solid var(--border);
             color: var(--cyan);
-            width: 32px;
-            height: 32px;
+            width: 38px; height: 38px; font-size: 15px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -286,7 +282,7 @@
         }
 
         .hw-label {
-            font-size: 10.5px;
+            font-size: 12px;
             color: var(--text-muted);
             font-weight: 700;
             text-transform: uppercase;
@@ -314,7 +310,7 @@
         }
 
         .hw-balance {
-            font-size: 26px;
+            font-size: 30px;
             font-weight: 900;
             letter-spacing: -0.5px;
             font-family: var(--font-mono);
@@ -349,7 +345,7 @@
         }
 
         .hw-m-label {
-            font-size: 9px;
+            font-size: 11px;
             color: var(--text-muted);
             font-weight: 600;
             margin-bottom: 2px;
@@ -359,7 +355,7 @@
         }
 
         .hw-m-val {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 800;
             font-family: var(--font-mono);
             color: var(--text-secondary);
@@ -382,7 +378,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 700;
             margin-bottom: 5px;
         }
@@ -400,12 +396,12 @@
         .cb-target {
             color: var(--text-muted);
             font-family: var(--font-mono);
-            font-size: 9.5px;
+            font-size: 11.5px;
             white-space: nowrap;
         }
 
         .cb-progress-bar-bg {
-            height: 5px;
+            height: 7px;
             border-radius: 3px;
             background: rgba(255, 255, 255, 0.08);
             overflow: hidden;
@@ -443,7 +439,7 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 9px;
-            padding: 6px 10px;
+            padding: 8px 12px; border-radius: 10px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -453,12 +449,12 @@
 
         .tc-coin {
             font-weight: 800;
-            font-size: 10.5px;
+            font-size: 12.5px;
         }
 
         .tc-price {
             font-family: var(--font-mono);
-            font-size: 10.5px;
+            font-size: 12.5px;
             font-weight: 700;
             color: var(--text-secondary);
         }
@@ -495,7 +491,7 @@
         }
 
         .rc-title {
-            font-size: 11.5px;
+            font-size: 13.5px;
             font-weight: 800;
             display: flex;
             align-items: center;
@@ -513,14 +509,14 @@
         .rc-item {
             background: var(--bg-card-subtle);
             border-radius: 8px;
-            padding: 7px 9px;
+            padding: 10px 12px; border-radius: 9px;
             border: 1px solid rgba(255, 255, 255, 0.04);
             min-width: 0;
             overflow: hidden;
         }
 
         .rc-item-name {
-            font-size: 9px;
+            font-size: 11px; margin-bottom: 3px;
             color: var(--text-muted);
             font-weight: 700;
             margin-bottom: 2px;
@@ -530,7 +526,7 @@
         }
 
         .rc-item-val {
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 800;
             font-family: var(--font-mono);
             display: flex;
@@ -552,13 +548,13 @@
         }
 
         .sh-title {
-            font-size: 12.5px;
+            font-size: 15px;
             font-weight: 800;
             color: #FFFFFF;
         }
 
         .sh-link {
-            font-size: 10.5px;
+            font-size: 12.5px;
             color: var(--cyan);
             font-weight: 700;
             text-decoration: none;
@@ -570,7 +566,7 @@
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 9px 12px;
+            padding: 12px 14px; border-radius: 12px; margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -623,7 +619,7 @@
         }
 
         .cli-symbol {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 800;
             color: #FFFFFF;
             white-space: nowrap;
@@ -632,7 +628,7 @@
         }
 
         .cli-vol {
-            font-size: 9.5px;
+            font-size: 11.5px;
             color: var(--text-muted);
             font-family: var(--font-mono);
             white-space: nowrap;
@@ -650,7 +646,7 @@
         }
 
         .cli-price {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 800;
             font-family: var(--font-mono);
             color: #FFFFFF;
@@ -703,30 +699,30 @@
         .bpc-tag-short {
             background: rgba(255, 77, 106, 0.15);
             color: var(--red);
-            font-size: 9px;
+            font-size: 11px;
             font-weight: 800;
-            padding: 2px 5px;
-            border-radius: 3px;
+            padding: 3px 6px;
+            border-radius: 4px;
             font-family: var(--font-mono);
         }
 
         .bpc-tag-long {
             background: rgba(0, 245, 155, 0.15);
             color: var(--green);
-            font-size: 9px;
+            font-size: 11px;
             font-weight: 800;
-            padding: 2px 5px;
-            border-radius: 3px;
+            padding: 3px 6px;
+            border-radius: 4px;
             font-family: var(--font-mono);
         }
 
         .bpc-tag-isolated {
             background: var(--bg-elevated);
             color: var(--text-secondary);
-            font-size: 9px;
+            font-size: 11px;
             font-weight: 800;
-            padding: 2px 5px;
-            border-radius: 3px;
+            padding: 3px 6px;
+            border-radius: 4px;
             font-family: var(--font-mono);
         }
 
@@ -745,14 +741,14 @@
         }
 
         .bpc-sublabel {
-            font-size: 9px;
+            font-size: 11px;
             color: var(--text-muted);
             text-transform: uppercase;
             font-weight: 700;
         }
 
         .bpc-pnl-val {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: 900;
             font-family: var(--font-mono);
         }
@@ -764,7 +760,7 @@
         }
 
         .bpc-roe-val {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 900;
             font-family: var(--font-mono);
         }
@@ -772,8 +768,8 @@
         .bpc-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            row-gap: 6px;
-            column-gap: 8px;
+            row-gap: 8px;
+            column-gap: 10px;
             margin-bottom: 10px;
             width: 100%;
         }
@@ -786,7 +782,7 @@
         }
 
         .bpc-cell-label {
-            font-size: 8.5px;
+            font-size: 11px;
             color: var(--text-muted);
             font-weight: 700;
             white-space: nowrap;
@@ -840,7 +836,7 @@
             right: 0 !important;
             width: 100% !important;
             max-width: 100vw !important;
-            height: 64px !important;
+            height: 68px !important;
             background: #0B0F17 !important;
             backdrop-filter: blur(24px) !important;
             -webkit-backdrop-filter: blur(24px) !important;
@@ -866,7 +862,7 @@
             background: none;
             border: none;
             color: #94A3B8;
-            font-size: 10.5px;
+            font-size: 11.5px;
             font-weight: 700;
             letter-spacing: 0.1px;
             cursor: pointer;
@@ -877,7 +873,7 @@
         }
 
         .nav-item i {
-            font-size: 20px;
+            font-size: 22px;
             transition: transform 0.15s ease, color 0.15s ease;
         }
 
@@ -956,8 +952,7 @@
             background: var(--bg-card-subtle);
             border: 1px solid var(--border);
             color: var(--cyan);
-            width: 34px;
-            height: 34px;
+            width: 40px; height: 40px; font-size: 18px; border-radius: 10px;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -997,8 +992,7 @@
             top: 0;
             left: 0;
             bottom: 0;
-            width: 320px;
-            max-width: 86vw;
+            width: 85vw; max-width: 390px; min-width: 300px;
             background: #0d121d;
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 99999;
@@ -1013,7 +1007,7 @@
             transform: translateX(0);
         }
         .drawer-header {
-            padding: calc(env(safe-area-inset-top, 6px) + 14px) 16px 14px 16px;
+            padding: calc(env(safe-area-inset-top, 6px) + 14px) 18px 16px 18px;
             background: linear-gradient(180deg, #131a29 0%, #0d121d 100%);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
@@ -1048,7 +1042,7 @@
             gap: 2px;
         }
         .drawer-username {
-            font-size: 14px;
+            font-size: 16.5px;
             font-weight: 800;
             color: #FFFFFF;
             display: flex;
@@ -1056,7 +1050,7 @@
             gap: 6px;
         }
         .drawer-vip-pill {
-            font-size: 9px;
+            font-size: 11px; padding: 2px 7px;
             font-weight: 800;
             background: rgba(255, 215, 0, 0.15);
             color: #FFD700;
@@ -1065,7 +1059,7 @@
             border-radius: 4px;
         }
         .drawer-user-sub {
-            font-size: 10px;
+            font-size: 12px;
             color: var(--text-muted);
             font-family: var(--font-mono);
         }
@@ -1095,7 +1089,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 10.5px;
+            font-size: 12.5px;
         }
         .drawer-comp-title {
             font-weight: 800;
@@ -1110,7 +1104,7 @@
             color: #FFFFFF;
         }
         .drawer-comp-bar {
-            height: 5px;
+            height: 7px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 3px;
             overflow: hidden;
@@ -1124,7 +1118,7 @@
         .drawer-comp-meta {
             display: flex;
             justify-content: space-between;
-            font-size: 9px;
+            font-size: 11px;
             color: var(--text-muted);
         }
         .drawer-nav-content {
@@ -1137,7 +1131,7 @@
             gap: 14px;
         }
         .drawer-section-label {
-            font-size: 9.5px;
+            font-size: 11.5px; padding: 4px 10px;
             font-weight: 800;
             color: #64748B;
             letter-spacing: 0.8px;
@@ -1169,8 +1163,7 @@
             gap: 10px;
         }
         .drawer-nav-item i {
-            width: 18px;
-            font-size: 14px;
+            width: 24px; font-size: 17px;
             color: #64748B;
             text-align: center;
         }
@@ -1216,7 +1209,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 10px;
+            font-size: 12px; padding: 14px 16px;
             color: var(--text-muted);
         }
         .drawer-status-pill {
@@ -1237,21 +1230,36 @@
         .deca-compounding-grid {
             display: grid !important;
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 7px !important;
-            margin-bottom: 12px !important;
-            width: 100%;
-            box-sizing: border-box;
+            gap: 9px !important;
+            margin-bottom: 14px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
         }
-        @media (min-width: 640px) {
+        @media (min-width: 1024px) {
             .deca-compounding-grid {
                 grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
             }
+        }
+        @media (min-width: 640px) {
+            .deca-compounding-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 9px !important;
+            margin-bottom: 14px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        @media (min-width: 1024px) {
+            .deca-compounding-grid {
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            }
+        }
         }
         .deca-section-card {
             background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(11, 15, 25, 0.95) 100%);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 9px;
-            padding: 8px 10px;
+            padding: 12px 12px; border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
@@ -1271,7 +1279,7 @@
             border-left: 3px solid #FFD700;
         }
         .sidebar-badge {
-            font-size: 8.5px;
+            font-size: 10px; padding: 2px 6px;
             font-weight: 800;
             padding: 1px 5px;
             border-radius: 4px;
@@ -1286,8 +1294,7 @@
             color: #FFD700;
         }
         .qtc-status-dot {
-            width: 7px;
-            height: 7px;
+            width: 8px; height: 8px;
             border-radius: 50%;
             background: #64748B;
             flex-shrink: 0;
@@ -1308,7 +1315,7 @@
         .qtc-roi-pill.down { background: rgba(255, 77, 106, 0.15); color: #FF4D6A; }
         .qtc-roi-pill.neutral { background: rgba(148, 163, 184, 0.12); color: #94A3B8; }
         .qtc-pos-status {
-            font-size: 9px;
+            font-size: 11px;
             font-weight: 600;
             color: #94A3B8;
             display: flex;
@@ -1374,7 +1381,7 @@
             gap: 7px;
         }
         .drc-sym {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 800;
             color: #F8FAFC;
             font-family: var(--font-mono);
@@ -1431,10 +1438,10 @@
         .drc-metrics {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 4px;
+            gap: 6px;
             background: rgba(8, 12, 22, 0.6);
-            padding: 5px 8px;
-            border-radius: 6px;
+            padding: 8px 10px;
+            border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .drc-metric-item {
@@ -1442,15 +1449,15 @@
             flex-direction: column;
         }
         .drc-lbl {
-            font-size: 8.5px;
+            font-size: 11px;
             font-weight: 700;
             color: #64748B;
             text-transform: uppercase;
             letter-spacing: 0.3px;
-            margin-bottom: 1px;
+            margin-bottom: 2px;
         }
         .drc-val {
-            font-size: 11px;
+            font-size: 14px;
             font-weight: 800;
             font-family: var(--font-mono);
         }
@@ -1459,10 +1466,11 @@
         .drc-val.tp-val { color: #00F59B; }
         .drc-progress-wrap {
             width: 100%;
-            height: 4px;
+            height: 6px;
             background: rgba(255, 255, 255, 0.08);
-            border-radius: 2px;
+            border-radius: 3px;
             overflow: hidden;
+            margin: 4px 0;
         }
         .drc-progress-bar {
             height: 100%;
@@ -1473,7 +1481,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 9.5px;
+            font-size: 11.5px; padding-top: 3px;
             color: #94A3B8;
             padding-top: 2px;
         }
@@ -1509,12 +1517,13 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            font-size: 11px;
+            gap: 6px;
+            font-size: 13.5px;
             font-weight: 800;
             font-family: var(--font-mono);
-            padding: 7px 10px;
-            border-radius: 6px;
+            padding: 11px 12px;
+            min-height: 44px;
+            border-radius: 9px;
             cursor: pointer;
             border: none;
             transition: all 0.15s ease;
@@ -2478,16 +2487,16 @@
                     <div class="${cardClass}" onclick="switchTab('compounding')">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div style="display:flex; align-items:center; gap:5px;">
-                                <span style="font-size:11px; font-weight:800; color:#FFFFFF;">Sec ${sId}</span>
+                                <span style="font-size:13.5px; font-weight:800; color:#FFFFFF;">Sec ${sId}</span>
                                 <span class="sidebar-badge ${tfBadgeClass}">${tfLabel}</span>
                             </div>
                             <span class="${dotClass}"></span>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:3px;">
-                            <span style="font-family:var(--font-mono); font-size:14px; font-weight:800; color:#FFFFFF;">$${bal.toFixed(2)}</span>
+                            <span style="font-family:var(--font-mono); font-size:17px; font-weight:900; color:#FFFFFF;">$${bal.toFixed(2)}</span>
                             <span class="qtc-roi-pill ${growth > 0 ? 'up' : growth < 0 ? 'down' : 'neutral'}">${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%</span>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; font-family:var(--font-mono); font-size:9px; color:var(--text-secondary);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; font-family:var(--font-mono); font-size:11px; color:var(--text-secondary);">
                             ${posHtml}
                             <span style="color:${wr > 0 ? '#00F59B' : 'var(--text-muted)'}; font-weight:700;">WR: ${wr.toFixed(0)}%</span>
                         </div>
