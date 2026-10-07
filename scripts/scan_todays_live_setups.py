@@ -93,7 +93,7 @@ async def scan_market():
         print("ℹ️ No active qualified setups at this exact moment. All sentries are guarding capital.")
         return
         
-    print(f"\n{'SYM':<10} {'TF':<4} {'SIDE':<5} {'CURR PRICE':<12} {'ENTRY (50% MT)':<14} {'DIST %':<10} {'STATUS':<14} {'TP (+2.8%)':<12} {'SL':<12}")
+    print(f"\n{'SYM':<10} {'TF':<4} {'SIDE':<5} {'CURR PRICE':<12} {'ENTRY (50% MT)':<14} {'DIST %':<10} {'STATUS':<14} {'TP TARGET':<12} {'SL':<12}")
     print("-" * 90)
     
     for s in all_setups[:15]:
@@ -120,12 +120,14 @@ async def scan_market():
         entry_p = s["entry_price"]
         dist = s["dist_pct"]
         reasons = s.get("sentry_reasons", "Standard Hermes 3.5 Sentry confluence")
+        tp_pct_val = s.get("tp_pct", 0.022 if tf == "4H" else 0.018) * 100.0
+        roe_val = tp_pct_val * 5.0
         
         direction_desc = "above entry (waiting to dip to MT)" if dist > 0 else "below entry (mitigating MT)"
         print(f"\n📌 {sym} ({tf}) - {side}")
         print(f"   • Current Price: ${curr_p:,.4f} | Entry Limit (50% MT): ${entry_p:,.4f}")
         print(f"   • Proximity: {abs(dist):.2f}% {direction_desc}")
-        print(f"   • TP: ${s.get('tp_price', 0.0):,.4f} (+2.80% | +14.0% ROE @ 5x)")
+        print(f"   • TP: ${s.get('tp_price', 0.0):,.4f} (+{tp_pct_val:.2f}% | +{roe_val:.1f}% ROE @ 5x)")
         print(f"   • SL: ${s.get('sl_price', 0.0):,.4f} (Dynamic ATR Buffer)")
         print(f"   • Confluence: {reasons[:100]}...")
 
