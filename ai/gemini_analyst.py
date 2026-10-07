@@ -179,9 +179,10 @@ User Query / Request:
 {user_query if user_query else "Provide an institutional Smart Money breakdown of this setup in Hinglish. Cover Confluence Grade, Multi-Timeframe alignment, Liquidity traps/risks, and execution discipline."}
 """
 
-        model_pref = get_setting("gemini_model", GEMINI_MODEL)
+        model_pref = get_setting("gemini_model", getattr(config, "GEMINI_MODEL", "gemini-3.8-flash") if 'config' in globals() else "gemini-3.8-flash")
         models_to_try = [
             model_pref,
+            "gemini-3.8-flash",
             "gemini-2.5-flash-lite",
             "gemini-2.0-flash",
             "gemini-1.5-flash",
