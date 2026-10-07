@@ -183,10 +183,9 @@ User Query / Request:
         models_to_try = [
             model_pref,
             "gemini-3.8-flash",
-            "gemini-2.5-flash-lite",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-8b",
+            "gemini-3.5-flash",
+            "gemini-flash-latest",
+            "gemini-3.7-flash",
             "gemini-2.5-flash"
         ]
         unique_models = []
@@ -208,7 +207,8 @@ User Query / Request:
         for model_name in unique_models:
             url = f"{GEMINI_API_ENDPOINT}/{model_name}:generateContent?key={api_key}"
             try:
-                async with session.post(url, json=payload) as resp:
+                req_timeout = aiohttp.ClientTimeout(total=8.0)
+                async with session.post(url, json=payload, timeout=req_timeout) as resp:
                     if resp.status == 200:
                         result = await resp.json()
                         candidates = result.get("candidates", [])
