@@ -262,13 +262,14 @@ class Hermes35LiveEngine:
         if n < 40:
             return []
 
-        # HERMES 3.5 SINGLE TIER OFFICIAL HARVEST PARAMETERS (100% PINE SCRIPT PARITY)
-        tp_pct = 0.0280          # +14.0% ROE at 5x (+2.80% price move)
-        soft_sl_pct = 0.0280     # -14.0% ROE at 5x (-2.80% price move)
-        hard_sl_pct = 0.0380     # -19.0% ROE at 5x
-        be_lock_pct = 0.0160     # Stage 1: +8.0% ROE (+1.60% price move) -> Locks BE +0.10%
-        trail_lock_pct = 0.0180  # Stage 2: +9.0% ROE (+1.80% price move) -> Locks SL at +4.50% ROE (+0.90% cash profit)
-        harvest_lock_pct = 0.0090# +4.50% ROE guaranteed cash profit lock (+0.90% price buffer)
+        # CALIBRATED QUANT SNIPER HARVEST PARAMETERS (PROMETHEUS HIGH-ACCURACY PARITY)
+        # 4H Macro: +2.20% TP (+11.0% ROE @ 5x) | 1H Intraday: +1.80% TP (+9.0% ROE @ 5x)
+        tp_pct = 0.0180 if interval == "1h" else 0.0220
+        soft_sl_pct = 0.0250 if interval == "1h" else 0.0280
+        hard_sl_pct = 0.0350 if interval == "1h" else 0.0380
+        be_lock_pct = 0.0120 if interval == "1h" else 0.0150   # Stage 1: BE Lock (+0.10% buffer)
+        trail_lock_pct = 0.0150 if interval == "1h" else 0.0180# Stage 2: Trailing Lock
+        harvest_lock_pct = 0.0080 if interval == "1h" else 0.0090 # Guaranteed cash profit lock
         min_displacement = 0.050 # Sentry 2: >= 5.0% displacement
         min_runway_pct = 5.0     # Rocket Airspace Void: >= 5.0% clearance before retest
         min_maturation_bars = HERMES_3_5_MIN_MATURATION_1H if interval == "1h" else HERMES_3_5_MIN_MATURATION_4H  # High-Velocity Retest (18h on 1H / 32h on 4H)
@@ -932,8 +933,8 @@ class Hermes35LiveEngine:
         strat_mode = get_setting("strategy_version", os.getenv("STRATEGY_VERSION", "HERMES_3.5_SINGLE_TIER"))
         entry_price = float(setup.get("entry_price", cur_price))
 
-        tp_pct = float(setup.get("tp_pct", 0.0280 if tf == "4h" else 0.0244))
-        soft_sl_pct = float(setup.get("soft_sl_pct", 0.0280 if tf == "4h" else 0.0240))
+        tp_pct = float(setup.get("tp_pct", 0.0220 if tf == "4h" else 0.0180))
+        soft_sl_pct = float(setup.get("soft_sl_pct", 0.0280 if tf == "4h" else 0.0250))
         hard_sl_pct = float(setup.get("hard_sl_pct", 0.0380 if tf == "4h" else 0.0350))
 
         if side in ("BUY", "LONG"):
@@ -1089,7 +1090,7 @@ class Hermes35LiveEngine:
         try:
             trade_num = get_paper_trade_sequence_num(tf, trade_id)
             date_time_str = format_tg_ist_timestamp(now_ms)
-            tp_dist_pct = float(setup.get("tp_pct", 0.028 if tf == "4h" else 0.022)) * 100.0
+            tp_dist_pct = float(setup.get("tp_pct", 0.022 if tf == "4h" else 0.018)) * 100.0
             sl_dist_pct = -float(setup.get("soft_sl_pct", 0.028 if tf == "4h" else 0.025)) * 100.0
             quantity = round(position_size / entry_price, 4) if entry_price > 0 else 0.0
 

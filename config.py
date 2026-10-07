@@ -43,8 +43,8 @@ ORIGIN_LOOKBACK = 6
 QUALIFICATION_PCT = 0.07  # +7% for BUY, -7% for SELL
 
 # Risk / Reward Rules
-TP_PCT = 0.04  # +4%
-SL_PCT = 0.03  # -3%
+TP_PCT = 0.022  # +2.20% (Calibrated 4H Macro TP)
+SL_PCT = 0.028  # -2.80%
 
 # Active Zone Constraints (Strict 3 OB Sandwich Rule per user specification)
 MAX_ACTIVE_BUY_PER_COIN = 3
@@ -137,7 +137,7 @@ BITGET_STARTING_MARGIN = 50.0  # $50 USDT compounding starting size
 BITGET_COMPOUNDING_TARGET = 2000.0  # $2,000 USDT Milestone Target Goal
 BITGET_ALLOWED_SIDES = ["BUY", "LONG", "SELL", "SHORT"]  # Both BUY & SHORT supported on Bitget
 BITGET_MARGIN_MODE = "ISOLATED"
-BITGET_4H_TP_PCT = 0.0280  # +2.80% price move (+14.00% ROE @ 5x)
+BITGET_4H_TP_PCT = 0.0220  # +2.20% price move (+11.00% ROE @ 5x)
 BITGET_4H_SL_PCT = 0.0280  # -2.80% soft SL on 4H candle close
 BITGET_HARD_DISASTER_SL_PCT = 0.0380  # 3.80% emergency disaster stop on exchange
 BITGET_MIN_CONFLUENCE = int(os.getenv("BITGET_MIN_CONFLUENCE", "80"))
@@ -152,15 +152,15 @@ BINANCE_MARGIN_MODE = "ISOLATED"
 BINANCE_DEFAULT_LEVERAGE = 5
 BINANCE_STARTING_MARGIN = 50.0
 BINANCE_COMPOUNDING_TARGET = 2000.0
-BINANCE_4H_TP_PCT = 0.0280
+BINANCE_4H_TP_PCT = 0.0220
 BINANCE_4H_SL_PCT = 0.0280
 BINANCE_HARD_DISASTER_SL_PCT = 0.0380
-BINANCE_1H_TP_PCT = 0.0160
-BINANCE_1H_SL_PCT = 0.0145
+BINANCE_1H_TP_PCT = 0.0180
+BINANCE_1H_SL_PCT = 0.0250
 
-BITGET_1H_TP_PCT = 0.0160  # +1.60% price move (+8.00% ROE @ 5x)
-BITGET_1H_SL_PCT = 0.0145  # -1.45% soft SL on 1H candle close
-BITGET_1H_HARD_SL_PCT = 0.0300  # 3.00% emergency disaster stop on exchange
+BITGET_1H_TP_PCT = 0.0180  # +1.80% price move (+9.00% ROE @ 5x)
+BITGET_1H_SL_PCT = 0.0250  # -2.50% soft SL on 1H candle close
+BITGET_1H_HARD_SL_PCT = 0.0350  # 3.50% emergency disaster stop on exchange
 
 # --- Bitget Exclusive Quad-Compounding Fortress ($50 x 4 Tracks: 4Hx2, 1Hx2) ---
 QUAD_CHALLENGES = {
@@ -175,7 +175,7 @@ QUAD_CHALLENGES = {
         "target_balance": 2000.0,
         "leverage": 5,
         "margin_mode": "ISOLATED",
-        "tp_pct": 0.0280,  # +2.80% price move (+14.00% ROE @ 5x)
+        "tp_pct": 0.0220,  # +2.20% price move (+11.00% ROE @ 5x)
         "sl_pct": 0.0280,  # -2.80% soft SL on 4H candle close
         "disaster_sl_pct": 0.0380,
         "description": "Bitget 4H Macro Swing (Section A) • 5x ISOLATED ($50 -> $2,000)"
@@ -191,7 +191,7 @@ QUAD_CHALLENGES = {
         "target_balance": 2000.0,
         "leverage": 5,
         "margin_mode": "ISOLATED",
-        "tp_pct": 0.0280,  # +2.80% price move (+14.00% ROE @ 5x)
+        "tp_pct": 0.0220,  # +2.20% price move (+11.00% ROE @ 5x)
         "sl_pct": 0.0280,  # -2.80% soft SL on 4H candle close
         "disaster_sl_pct": 0.0380,
         "description": "Bitget 4H Macro Swing (Section B) • 5x ISOLATED ($50 -> $2,000)"
@@ -207,9 +207,9 @@ QUAD_CHALLENGES = {
         "target_balance": 2000.0,
         "leverage": 5,
         "margin_mode": "ISOLATED",
-        "tp_pct": 0.0160,  # +1.60% price move (+8.00% ROE @ 5x)
-        "sl_pct": 0.0145,  # -1.45% soft SL on 1H candle close
-        "disaster_sl_pct": 0.0300,
+        "tp_pct": 0.0180,  # +1.80% price move (+9.00% ROE @ 5x)
+        "sl_pct": 0.0250,  # -2.50% soft SL on 1H candle close
+        "disaster_sl_pct": 0.0350,
         "description": "Bitget 1H Fast Scalp (Section A) • 5x ISOLATED ($50 -> $2,000)"
     },
     "bitget_1h_2": {
@@ -223,9 +223,9 @@ QUAD_CHALLENGES = {
         "target_balance": 2000.0,
         "leverage": 5,
         "margin_mode": "ISOLATED",
-        "tp_pct": 0.0160,  # +1.60% price move (+8.00% ROE @ 5x)
-        "sl_pct": 0.0145,  # -1.45% soft SL on 1H candle close
-        "disaster_sl_pct": 0.0300,
+        "tp_pct": 0.0180,  # +1.80% price move (+9.00% ROE @ 5x)
+        "sl_pct": 0.0250,  # -2.50% soft SL on 1H candle close
+        "disaster_sl_pct": 0.0350,
         "description": "Bitget 1H Fast Scalp (Section B) • 5x ISOLATED ($50 -> $2,000)"
     }
 }
