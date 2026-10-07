@@ -6,7 +6,7 @@
   "id": "/?view=mobile",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["fullscreen", "standalone", "window-controls-overlay"],
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#080B11",
   "theme_color": "#080B11",

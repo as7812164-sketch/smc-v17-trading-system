@@ -259,14 +259,15 @@ async def serve_mobile():
 @app.get("/", response_class=HTMLResponse)
 async def serve_index(request: Request, view: Optional[str] = Query(None)):
     user_agent = request.headers.get("user-agent", "").lower()
-    is_mobile = any(k in user_agent for k in ["mobile", "android", "iphone", "ipad", "phone", "wv"])
+    sec_mobile = request.headers.get("sec-ch-ua-mobile", "")
+    is_mobile = any(k in user_agent for k in ["mobile", "android", "iphone", "ipad", "phone", "wv", "dalvik", "okhttp", "twa", "cfnetwork", "darwin"]) or ("?1" in sec_mobile)
     
     if view == "desktop":
         target_file = STATIC_DIR / "index.html"
     elif view == "mobile" or is_mobile:
         target_file = STATIC_DIR / "mobile.html"
     else:
-        target_file = STATIC_DIR / "index.html"
+        target_file = STATIC_DIR / "mobile.html"
 
     return FileResponse(
         target_file,
