@@ -32,16 +32,28 @@ def get_vault_headers() -> Dict[str, str]:
     }
 
 CHANNEL_MAP = {
-    1: ("BITGET", "sec_1", "Section 1 (4H Macro)", "4h"),
-    2: ("BITGET", "sec_2", "Section 2 (4H Macro)", "4h"),
-    3: ("BITGET", "sec_3", "Section 3 (4H Macro)", "4h"),
-    4: ("BITGET", "sec_4", "Section 4 (4H Macro)", "4h"),
-    5: ("BITGET", "sec_5", "Section 5 (4H Macro)", "4h"),
-    6: ("BITGET", "sec_6", "Section 6 (1H Intraday)", "1h"),
-    7: ("BITGET", "sec_7", "Section 7 (1H Intraday)", "1h"),
-    8: ("BITGET", "sec_8", "Section 8 (1H Intraday)", "1h"),
-    9: ("BITGET", "sec_9", "Section 9 (1H Intraday)", "1h"),
-    10: ("BITGET", "sec_10", "Section 10 (1H Intraday)", "1h"),
+    # Hermes 3.5 Single Tier (Sections 1-10)
+    1: ("BITGET", "sec_1", "Section 1 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
+    2: ("BITGET", "sec_2", "Section 2 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
+    3: ("BITGET", "sec_3", "Section 3 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
+    4: ("BITGET", "sec_4", "Section 4 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
+    5: ("BITGET", "sec_5", "Section 5 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
+    6: ("BITGET", "sec_6", "Section 6 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
+    7: ("BITGET", "sec_7", "Section 7 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
+    8: ("BITGET", "sec_8", "Section 8 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
+    9: ("BITGET", "sec_9", "Section 9 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
+    10: ("BITGET", "sec_10", "Section 10 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
+    # Hermes 4.0 Balanced Apex (Sections 11-20)
+    11: ("BITGET", "hermes4_sec_1", "Hermes 4.0 - Section 1 (4H Macro)", "4h", "HERMES_4.0_BALANCED_APEX"),
+    12: ("BITGET", "hermes4_sec_2", "Hermes 4.0 - Section 2 (4H Macro)", "4h", "HERMES_4.0_BALANCED_APEX"),
+    13: ("BITGET", "hermes4_sec_3", "Hermes 4.0 - Section 3 (4H Macro)", "4h", "HERMES_4.0_BALANCED_APEX"),
+    14: ("BITGET", "hermes4_sec_4", "Hermes 4.0 - Section 4 (4H Macro)", "4h", "HERMES_4.0_BALANCED_APEX"),
+    15: ("BITGET", "hermes4_sec_5", "Hermes 4.0 - Section 5 (4H Macro)", "4h", "HERMES_4.0_BALANCED_APEX"),
+    16: ("BITGET", "hermes4_sec_6", "Hermes 4.0 - Section 6 (1H Intraday)", "1h", "HERMES_4.0_BALANCED_APEX"),
+    17: ("BITGET", "hermes4_sec_7", "Hermes 4.0 - Section 7 (1H Intraday)", "1h", "HERMES_4.0_BALANCED_APEX"),
+    18: ("BITGET", "hermes4_sec_8", "Hermes 4.0 - Section 8 (1H Intraday)", "1h", "HERMES_4.0_BALANCED_APEX"),
+    19: ("BITGET", "hermes4_sec_9", "Hermes 4.0 - Section 9 (1H Intraday)", "1h", "HERMES_4.0_BALANCED_APEX"),
+    20: ("BITGET", "hermes4_sec_10", "Hermes 4.0 - Section 10 (1H Intraday)", "1h", "HERMES_4.0_BALANCED_APEX"),
 }
 
 def push_vault_state() -> bool:
@@ -83,23 +95,24 @@ def push_vault_state() -> bool:
         conn.close()
 
         channel_map = CHANNEL_MAP
-        active_mode = "HERMES_3.5_SINGLE_TIER"
         for acc in accounts:
             acc_id = acc.get("id")
             if acc_id in channel_map:
-                exch, ch, name, tf = channel_map[acc_id]
-                acc["exchange"] = exch
-                acc["channel"] = ch
-                acc["name"] = name
-                acc["timeframe"] = tf
-            acc["mode"] = active_mode
+                map_tuple = channel_map[acc_id]
+                acc["exchange"] = map_tuple[0]
+                acc["channel"] = map_tuple[1]
+                acc["name"] = map_tuple[2]
+                acc["timeframe"] = map_tuple[3]
+                acc["mode"] = map_tuple[4] if len(map_tuple) > 4 else ("HERMES_4.0_BALANCED_APEX" if acc_id > 10 else "HERMES_3.5_SINGLE_TIER")
+            else:
+                acc["mode"] = "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.5_SINGLE_TIER"
         for pt in paper_trades:
             if not pt.get("mode"):
-                pt["mode"] = active_mode
+                pt_acc = int(pt.get("account_id") or 1)
+                pt["mode"] = "HERMES_4.0_BALANCED_APEX" if pt_acc > 10 else "HERMES_3.5_SINGLE_TIER"
 
-        metrics["hermes_mode"] = active_mode
-        settings["strategy_version"] = active_mode
-        settings["hermes35_entry_mode"] = "5% Boundary Penetration"
+        metrics["hermes_mode"] = "DUAL_ENGINE_3.5_AND_4.0"
+        settings["strategy_version"] = "DUAL_ENGINE_3.5_AND_4.0"
 
         payload_data = {
             "version": "1.0",
@@ -233,20 +246,24 @@ def pull_and_restore_vault_state() -> bool:
             """, (
                 acc_id, acc.get("initial_balance", 50.0), acc.get("current_balance", 50.0),
                 acc.get("vault_balance", 0.0), acc.get("total_pnl", 0.0), acc.get("win_count", 0),
-                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0), "HERMES_3.5_SINGLE_TIER",
+                acc.get("loss_count", 0), acc.get("milestone_target", 2000.0),
+                "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.5_SINGLE_TIER",
                 tf, acc_name, acc.get("win_streak", 0),
-                exch, ch, "HERMES_3.5_SINGLE_TIER"
+                exch, ch,
+                "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.5_SINGLE_TIER"
             ))
 
-        # Ensure any missing sections from 1 to 10 are created
-        for sec_id, (s_exch, s_ch, s_name, s_tf) in channel_map.items():
+        # Ensure all sections from channel_map (1 to 20) are created
+        for sec_id, map_val in channel_map.items():
+            s_exch, s_ch, s_name, s_tf = map_val[0], map_val[1], map_val[2], map_val[3]
+            s_mode = map_val[4] if len(map_val) > 4 else ("HERMES_4.0_BALANCED_APEX" if sec_id > 10 else "HERMES_3.5_SINGLE_TIER")
             sec_exists = conn.execute("SELECT id FROM paper_account WHERE id = ?", (sec_id,)).fetchone()
             if not sec_exists:
                 conn.execute("""
                 INSERT INTO paper_account 
                 (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode)
-                VALUES (?, ?, ?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_SINGLE_TIER');
-                """, (sec_id, s_tf, s_name, s_exch, s_ch))
+                VALUES (?, ?, ?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, ?);
+                """, (sec_id, s_tf, s_name, s_exch, s_ch, s_mode))
 
         # Restore paper_trades
         for pt in vault_data.get("paper_trades", []):

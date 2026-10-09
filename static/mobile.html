@@ -1695,10 +1695,37 @@
                 <a class="drawer-nav-item" onclick="switchTab('compounding'); closeDrawer();">
                     <div class="left-group">
                         <i class="fa-solid fa-trophy"></i>
-                        <span>Compounding ($500 ➔ $20K)</span>
+                        <span>Compounding (Hermes 3.5)</span>
                     </div>
                     <span class="drawer-badge badge-hot">$20K</span>
                 </a>
+            </div>
+
+            <!-- DEDICATED HERMES 4.0 COUNCIL SECTION -->
+            <div class="drawer-section-label" style="color: #10B981; display:flex; justify-content:space-between; align-items:center;">
+                <span>HERMES 4.0 COUNCIL</span>
+                <span style="font-size: 8.5px; padding: 1px 5px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4);">16 AGENTS</span>
+            </div>
+            <div class="drawer-links-group">
+                <a href="/hermes4" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
+                        <span>Hermes 4.0 Deca ($20K)</span>
+                    </div>
+                    <span class="drawer-badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);">$20K</span>
+                </a>
+                <a href="/hermes4#tradeHistoryTable" class="drawer-nav-item">
+                    <div class="left-group">
+                        <i class="fa-solid fa-receipt" style="color: #38BDF8;"></i>
+                        <span>Hermes 4.0 Ledger</span>
+                    </div>
+                    <span class="drawer-badge badge-cyan">FORENSICS</span>
+                </a>
+            </div>
+
+            <!-- GROUP: INTEL & FORENSICS -->
+            <div class="drawer-section-label">AI Intel &amp; Forensics</div>
+            <div class="drawer-links-group">
                 <!-- 9. HERMES AI -->
                 <a href="/hermes-ai" class="drawer-nav-item">
                     <div class="left-group">
@@ -2049,6 +2076,16 @@
          TAB 4: COMPOUNDING (10-SECTION MATRIX $500 ➔ $20,000)
          ========================================== -->
     <main class="tab-panel" id="tab-compounding">
+        <!-- DUAL ENGINE SWITCHER PILL ON MOBILE -->
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <div style="flex:1; padding:7px 10px; background:rgba(56,189,248,0.18); border:1px solid rgba(56,189,248,0.4); border-radius:8px; color:#FFF; font-weight:800; font-size:11.5px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <i class="fa-solid fa-trophy" style="color:#ffd700;"></i> Hermes 3.5 (Active)
+            </div>
+            <a href="/hermes4" style="flex:1; padding:7px 10px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); border-radius:8px; color:#10B981; font-weight:800; font-size:11.5px; display:flex; align-items:center; justify-content:center; gap:6px; text-decoration:none;">
+                <i class="fa-solid fa-shield-halved"></i> Hermes 4.0 ➔
+            </a>
+        </div>
+
         <div class="hero-wallet-card" style="border-color: rgba(255, 215, 0, 0.3); margin-bottom: 12px;">
             <div class="hw-top-row">
                 <span class="hw-label" style="color:var(--gold);"><i class="fa-solid fa-trophy"></i> 10-Section Deca Compounding Matrix</span>
@@ -3069,8 +3106,11 @@
         // Service Worker registration for PWA native offline capability
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('ServiceWorker registered with scope:', reg.scope))
+                navigator.serviceWorker.register('/sw.js?v=hermes40')
+                    .then(reg => {
+                        reg.update();
+                        console.log('ServiceWorker registered & updated with scope:', reg.scope);
+                    })
                     .catch(err => console.log('ServiceWorker registration failed:', err));
             });
         }

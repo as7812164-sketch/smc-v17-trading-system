@@ -54,7 +54,11 @@ from database.db import (
     format_duration_str,
     wipe_legacy_database_clean,
     get_compounding_sections,
-    reset_compounding_sections
+    reset_compounding_sections,
+    get_hermes40_compounding_sections,
+    ensure_hermes40_sections,
+    reset_hermes40_sections,
+    get_open_paper_trades_hermes4
 )
 from feed.binance_feed import binance_feed
 # HERMES 3.5 RADAR HARVEST: Zero legacy SMC v17 dependency
@@ -67,6 +71,7 @@ from engine.order_flow import analyze_order_flow
 from engine.trade_journal import get_all_journal_trades, JOURNAL_CSV_PATH
 from engine.dual_timeframe_sniper import dual_sniper
 from engine.hermes35_live import hermes35_live_engine as hermes2_apex_engine, TOP_22_CHAMPIONS
+from engine.hermes40_live import hermes40_live_engine
 from database.mongo_client import is_mongo_connected
 
 STATIC_DIR = BASE_DIR / "static"
@@ -87,6 +92,7 @@ async def ws_broadcast(message: Dict[str, Any]):
 
 scanner.set_broadcast_callback(ws_broadcast)
 hermes2_apex_engine.set_broadcast_callback(ws_broadcast)
+hermes40_live_engine.set_broadcast_callback(ws_broadcast)
 
 async def keepalive_loop():
     """Pings the public Render URL every 10 minutes to prevent Render free-tier sleep."""
@@ -177,8 +183,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         pass
 
-    # Hermes 3.0 Apex robot, keepalive, self-healing sentinel, and telegram polling in background
+    # Hermes 3.5 & Hermes 4.0 Dual Robots, keepalive, self-healing sentinel, and telegram polling
     hermes2_task = asyncio.create_task(hermes2_apex_engine.start())
+    hermes40_task = asyncio.create_task(hermes40_live_engine.start())
     tg_polling_task = asyncio.create_task(telegram_service.start_polling())
     keepalive_task = asyncio.create_task(keepalive_loop())
     ticker_task = asyncio.create_task(ticker_cache_loop())
@@ -190,6 +197,8 @@ async def lifespan(app: FastAPI):
     # Shutdown
     hermes2_apex_engine.stop()
     hermes2_task.cancel()
+    hermes40_live_engine.stop()
+    hermes40_task.cancel()
     self_healing_sentinel.stop()
     sentinel_task.cancel()
     tg_polling_task.cancel()
@@ -293,6 +302,20 @@ async def serve_positions():
 @app.get("/compounding", response_class=HTMLResponse)
 async def serve_compounding():
     file_path = STATIC_DIR / "compounding.html"
+    return FileResponse(
+        file_path,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+@app.get("/hermes4", response_class=HTMLResponse)
+@app.get("/compounding-v4", response_class=HTMLResponse)
+@app.get("/hermes40", response_class=HTMLResponse)
+async def serve_hermes40_compounding():
+    file_path = STATIC_DIR / "hermes40_compounding.html"
     return FileResponse(
         file_path,
         headers={
@@ -815,6 +838,18 @@ async def reset_paper_sections_route():
     """Resets all 10 Compounding Sections to starting balance ($50.00 each -> $500.00 portfolio total)."""
     return reset_compounding_sections(50.0)
 
+@app.get("/api/compounding/hermes4")
+@app.get("/api/paper/sections/hermes4")
+async def get_hermes40_compounding_route():
+    """Returns independent accounts and live metrics for Hermes 4.0 Council Sections 11 to 20 ($50 -> $2,000 each)."""
+    return get_hermes40_compounding_sections()
+
+@app.post("/api/compounding/hermes4/reset")
+@app.post("/api/paper/sections/hermes4/reset")
+async def reset_hermes40_sections_route():
+    """Resets Hermes 4.0 Compounding Sections 11-20 to starting balance ($50.00 each -> $500.00 total)."""
+    return reset_hermes40_sections(50.0)
+
 @app.get("/api/paper/account")
 async def get_paper_account_route(timeframe: Optional[str] = None):
     acc = get_paper_account(timeframe=timeframe)
@@ -869,9 +904,9 @@ async def get_paper_account_route(timeframe: Optional[str] = None):
     return acc
 
 @app.get("/api/paper/trades")
-async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = None):
-    raw_history = get_paper_trades_history(limit=limit, timeframe=timeframe)
-    open_trades = get_open_paper_trades(timeframe=timeframe)
+async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = None, mode: Optional[str] = None):
+    raw_history = get_paper_trades_history(limit=limit, timeframe=timeframe, mode=mode)
+    open_trades = get_open_paper_trades(timeframe=timeframe, mode=mode)
     perf = get_performance_stats()
     trades = []
 
@@ -986,11 +1021,17 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
     trades.sort(key=lambda x: x.get("raw_timestamp") or x.get("id") or 0, reverse=True)
 
     completed = wins + losses
-    win_rate = round(wins / completed * 100.0, 1) if completed > 0 else perf.get("win_rate", 100.0)
+    if completed > 0:
+        win_rate = round(wins / completed * 100.0, 1)
+    elif mode == "HERMES_4.0_BALANCED_APEX":
+        win_rate = 0.0
+    else:
+        win_rate = perf.get("win_rate", 100.0)
+
     buy_completed = buy_wins + buy_losses
-    buy_wr = round(buy_wins / buy_completed * 100.0, 1) if buy_completed > 0 else perf.get("buy_wr", 100.0)
+    buy_wr = round(buy_wins / buy_completed * 100.0, 1) if buy_completed > 0 else (0.0 if mode == "HERMES_4.0_BALANCED_APEX" else perf.get("buy_wr", 100.0))
     sell_completed = sell_wins + sell_losses
-    sell_wr = round(sell_wins / sell_completed * 100.0, 1) if sell_completed > 0 else perf.get("sell_wr", 100.0)
+    sell_wr = round(sell_wins / sell_completed * 100.0, 1) if sell_completed > 0 else (0.0 if mode == "HERMES_4.0_BALANCED_APEX" else perf.get("sell_wr", 100.0))
 
     return {
         "status": "ok",
@@ -1011,6 +1052,47 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
             "total_realized_pnl": round(total_realized_pnl, 2)
         }
     }
+
+@app.get("/api/paper/trades/hermes4")
+async def get_hermes40_paper_trades_route(limit: int = 100, timeframe: Optional[str] = None):
+    """Returns trade forensics history filtered specifically for Hermes 4.0 Council (Sections 11 to 20)."""
+    return await get_paper_trades_route(limit=limit, timeframe=timeframe, mode="HERMES_4.0_BALANCED_APEX")
+
+@app.get("/api/paper/positions/hermes4")
+async def get_hermes40_positions_route(timeframe: Optional[str] = None):
+    """Returns active open positions exclusively for Hermes 4.0 Council (Sections 11 to 20) with live mark prices."""
+    open_trades = get_open_paper_trades_hermes4(timeframe=timeframe)
+    tickers = await binance_feed.fetch_all_tickers()
+    positions = []
+    for t in open_trades:
+        sym = t["symbol"]
+        side = t["side"].upper()
+        is_buy = side in ("BUY", "LONG")
+        ep = float(t.get("entry_price") or 0.0)
+        mark = float(tickers.get(sym, ep) if tickers else ep)
+        if mark <= 0:
+            mark = ep
+        pos_size = float(t.get("position_size_usdt") or 250.0)
+        margin = float(t.get("margin_usdt") or 50.0)
+        lev = int(t.get("leverage") or 5)
+
+        diff = (mark - ep) if is_buy else (ep - mark)
+        pnl_pct = (diff / ep) if ep > 0 else 0.0
+        pnl_usdt = round(pos_size * pnl_pct, 2)
+        roe_pct = round(pnl_pct * lev * 100.0, 2)
+
+        pos = dict(t)
+        pos["mark_price"] = mark
+        pos["current_price"] = mark
+        pos["unrealized_pnl"] = pnl_usdt
+        pos["unrealized_pnl_usdt"] = pnl_usdt
+        pos["pnl_pct"] = roe_pct
+        pos["roe_pct"] = roe_pct
+        pos["leverage"] = lev
+        pos["margin_usdt"] = margin
+        pos["position_size_usdt"] = pos_size
+        positions.append(pos)
+    return {"positions": positions, "count": len(positions)}
 
 @app.get("/api/performance")
 async def get_performance_route():

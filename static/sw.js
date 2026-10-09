@@ -1,5 +1,5 @@
-// Hermes 3.5 Single Tier - Deca Matrix Service Worker
-const CACHE_NAME = 'hermes-35-deca-v3';
+// Hermes 4.0 Council & Hermes 3.5 Single Tier - Deca Matrix Service Worker
+const CACHE_NAME = 'hermes-40-council-v4';
 const STATIC_ASSETS = [
   '/static/style.css',
   '/static/manifest.json',
@@ -33,9 +33,12 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/ws') || 
     event.request.mode === 'navigate' ||
     event.request.destination === 'document' ||
+    url.pathname.endsWith('.html') ||
     url.pathname === '/' ||
     url.pathname === '/mobile' ||
-    url.pathname === '/compounding'
+    url.pathname === '/compounding' ||
+    url.pathname === '/hermes4' ||
+    url.pathname === '/hermes40'
   ) {
     event.respondWith(fetch(event.request));
     return;

@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Global Design System CSS -->
-    <link rel="stylesheet" href="/static/style.css?v=115">
+    <link rel="stylesheet" href="/static/style.css?v=200">
 </head>
 <body class="dark-theme">
 
@@ -187,9 +187,31 @@
                 <a href="/compounding" class="sidebar-nav-item active" title="$50 ➔ $2,000 Milestone Ladder">
                     <div class="sidebar-item-left">
                         <i class="fa-solid fa-trophy"></i>
-                        <span>Compounding</span>
+                        <span>Compounding (3.5)</span>
                     </div>
                     <span class="sidebar-badge badge-gold">$2K</span>
+                </a>
+
+                <!-- DEDICATED HERMES 4.0 SECTION -->
+                <div class="sidebar-section-title" style="color: #10B981; display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
+                    <span>HERMES 4.0 COUNCIL</span>
+                    <span style="font-size: 8.5px; padding: 1px 5px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4); font-family: var(--font-mono); font-weight: 800;">16 AGENTS</span>
+                </div>
+
+                <a href="/hermes4" class="sidebar-nav-item" title="Hermes 4.0 Council 10-Section Compounding ($50 ➔ $2,000)">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
+                        <span>Hermes 4.0 Deca</span>
+                    </div>
+                    <span class="sidebar-badge badge-green" style="box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);">$20K</span>
+                </a>
+
+                <a href="/hermes4#tradeHistoryTable" class="sidebar-nav-item" title="Hermes 4.0 Executed Trade Details & Forensics">
+                    <div class="sidebar-item-left">
+                        <i class="fa-solid fa-receipt" style="color: #38BDF8;"></i>
+                        <span>Hermes 4.0 Ledger</span>
+                    </div>
+                    <span class="sidebar-badge badge-cyan">FORENSICS</span>
                 </a>
 
                 <!-- 9. HERMES AI -->
@@ -261,6 +283,28 @@
             <!-- SECTION 1 (PANEL 8: COMPOUNDING ROADMAP & CAPITAL ACCELERATION) -->
             <!-- ============================================================ -->
             <section id="sectionCompounding" style="display: flex; flex-direction: column; gap: 16px;">
+
+                <!-- STRATEGY SWITCHER BANNER (PARALLEL DUAL TRADING) -->
+                <div class="strategy-switcher-banner" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; backdrop-filter: blur(12px);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 11px; font-weight: 800; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em;">Active Engine:</span>
+                        <div style="display: inline-flex; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 3px; gap: 4px;">
+                            <a href="/compounding" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; font-size: 11.5px; font-weight: 700; text-decoration: none; background: #38bdf8; color: #020617; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);">
+                                <i class="fa-solid fa-microchip"></i>
+                                <span>HERMES 3.5 (Deca 1-10)</span>
+                            </a>
+                            <a href="/hermes4" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; font-size: 11.5px; font-weight: 700; text-decoration: none; color: #94a3b8; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
+                                <span>HERMES 4.0 (Council 11-20)</span>
+                                <span style="font-size: 9px; padding: 2px 5px; background: rgba(16, 185, 129, 0.2); color: #10b981; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.3);">NEW PAGE</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div style="font-size: 11px; color: #94A3B8; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
+                        <span class="pulse-dot"></span>
+                        <span>Parallel 24/7 Dual Paper Trading Active • Zero Interference</span>
+                    </div>
+                </div>
 
                 <!-- Title & Meta Row -->
                 <div class="compounding-header-row">
@@ -1129,21 +1173,25 @@
                         <table class="panel8-ladder-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 50px; text-align: center;">#</th>
-                                    <th>Time</th>
+                                    <th style="width: 40px; text-align: center;">#</th>
+                                    <th>Section Name</th>
+                                    <th>TF</th>
                                     <th>Symbol</th>
                                     <th>Side</th>
                                     <th>Entry Price</th>
                                     <th>Exit Price</th>
-                                    <th>Position Size</th>
+                                    <th>Entry Time</th>
+                                    <th>Exit Time</th>
+                                    <th>Duration</th>
                                     <th>ROE %</th>
-                                    <th>P&amp;L (USDT)</th>
-                                    <th style="text-align: right;">Status</th>
+                                    <th>Realized P&amp;L</th>
+                                    <th>Result</th>
+                                    <th style="text-align: right;">AI &amp; Auditor Verdict</th>
                                 </tr>
                             </thead>
                             <tbody id="paperTradesTbody">
                                 <tr>
-                                    <td colspan="10" style="text-align: center; padding: 24px; color: #64748B;">
+                                    <td colspan="14" style="text-align: center; padding: 24px; color: #64748B;">
                                         <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 6px; color: #38BDF8;"></i>
                                         Loading Trade Ledger...
                                     </td>
@@ -1619,29 +1667,46 @@
                     const exitPrice = floatVal(t.exit_price, entryPrice);
                     const sizeUsdt = floatVal(t.position_size_usdt, 250);
                     const pnlUsdt = floatVal(t.pnl_usdt, floatVal(t.floating_pnl_usdt, 0));
-                    const roePct = floatVal(t.floating_pnl_pct, (pnlUsdt / (sizeUsdt / 5.0)) * 100);
+                    const roePct = floatVal(t.roi_pct, floatVal(t.floating_pnl_pct, (pnlUsdt / (sizeUsdt / 5.0)) * 100));
                     const status = (t.status || 'OPEN').toUpperCase();
+                    const secName = t.account_name || t.section_name || `Section ${t.account_id || ((idx % 10) + 1)}`;
+                    const tf = (t.timeframe || '4H').toUpperCase();
+                    const tfBadge = tf.includes('4H') ? '<span class="sidebar-badge badge-gold" style="font-size:10px; padding:2px 5px;">4H</span>' : '<span class="sidebar-badge badge-cyan" style="font-size:10px; padding:2px 5px;">1H</span>';
+                    const dur = t.duration_str || t.duration || '--';
+                    const entryT = t.entry_time_str || (t.entry_time ? new Date(t.entry_time).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--');
+                    const exitT = t.exit_time_str || (t.exit_time ? new Date(t.exit_time).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--');
+                    const verdict = t.auditor_verdict || (pnlUsdt > 0 ? 'AUDITED WIN' : (status === 'BREAKEVEN' ? 'BE SHIELD' : 'SL BUFFER EXIT'));
 
                     let statusBadge = '<span class="sidebar-badge badge-cyan">OPEN</span>';
                     if (status === 'TP_HIT' || pnlUsdt > 0) statusBadge = '<span class="sidebar-badge badge-green">TP_HIT</span>';
                     else if (status === 'SL_HIT' || pnlUsdt < 0) statusBadge = '<span class="sidebar-badge" style="background: rgba(255,77,106,0.15); color: #FF4D6A; border: 1px solid rgba(255,77,106,0.3);">SL_HIT</span>';
                     else if (status === 'BREAKEVEN') statusBadge = '<span class="sidebar-badge badge-gold">BREAKEVEN</span>';
 
+                    let verdictBadge = `<span style="font-size: 10px; font-weight: 700; color: #10B981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); padding: 2px 6px; border-radius: 4px;">🛡️ ${verdict}</span>`;
+                    if (verdict.includes('SL') || pnlUsdt < 0) {
+                        verdictBadge = `<span style="font-size: 10px; font-weight: 700; color: #FF4D6A; background: rgba(255,77,106,0.1); border: 1px solid rgba(255,77,106,0.25); padding: 2px 6px; border-radius: 4px;">🛡️ ${verdict}</span>`;
+                    } else if (verdict.includes('BE')) {
+                        verdictBadge = `<span style="font-size: 10px; font-weight: 700; color: #F59E0B; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); padding: 2px 6px; border-radius: 4px;">🛡️ ${verdict}</span>`;
+                    }
+
                     const pnlColor = pnlUsdt >= 0 ? '#00F59B' : '#FF4D6A';
-                    const timeStr = t.entry_time ? new Date(t.entry_time).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
 
                     return `
                         <tr>
                             <td style="text-align: center; color: #64748B;">${idx + 1}</td>
-                            <td style="color: #94A3B8;">${timeStr}</td>
+                            <td style="font-weight: 600; color: #E2E8F0; font-size: 11px;">${secName}</td>
+                            <td>${tfBadge}</td>
                             <td style="font-weight: 700; color: #FFFFFF;">${sym}</td>
                             <td><span class="p2-bias-pill ${isBuy ? 'bull' : 'bear'}">${side}</span></td>
-                            <td>$${entryPrice.toFixed(4)}</td>
-                            <td>${exitPrice > 0 ? '$' + exitPrice.toFixed(4) : '--'}</td>
-                            <td style="color: #38BDF8;">$${sizeUsdt.toFixed(2)}</td>
-                            <td style="color: ${pnlColor}; font-weight: 700;">${roePct >= 0 ? '+' : ''}${roePct.toFixed(2)}%</td>
-                            <td style="color: ${pnlColor}; font-weight: 700;">${pnlUsdt >= 0 ? '+' : ''}$${pnlUsdt.toFixed(2)}</td>
-                            <td style="text-align: right;">${statusBadge}</td>
+                            <td style="font-family: var(--font-mono);">$${entryPrice.toFixed(4)}</td>
+                            <td style="font-family: var(--font-mono);">${exitPrice > 0 ? '$' + exitPrice.toFixed(4) : '--'}</td>
+                            <td style="color: #94A3B8; font-size: 11px;">${entryT}</td>
+                            <td style="color: #94A3B8; font-size: 11px;">${exitT}</td>
+                            <td style="color: #38BDF8; font-size: 11px; font-family: var(--font-mono);">${dur}</td>
+                            <td style="color: ${pnlColor}; font-weight: 700; font-family: var(--font-mono);">${roePct >= 0 ? '+' : ''}${roePct.toFixed(2)}%</td>
+                            <td style="color: ${pnlColor}; font-weight: 700; font-family: var(--font-mono);">${pnlUsdt >= 0 ? '+' : ''}$${pnlUsdt.toFixed(2)}</td>
+                            <td>${statusBadge}</td>
+                            <td style="text-align: right;">${verdictBadge}</td>
                         </tr>
                     `;
                 }).join('');

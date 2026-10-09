@@ -838,7 +838,7 @@ class Hermes35LiveEngine:
 
         # Check all currently open trades across all channels
         with get_connection() as conn:
-            all_open = conn.execute("SELECT * FROM paper_trades WHERE status = 'OPEN'").fetchall()
+            all_open = conn.execute("SELECT * FROM paper_trades WHERE status = 'OPEN' AND (account_id IS NULL OR account_id <= 10)").fetchall()
             all_open_trades = [dict(r) for r in all_open]
 
         # 0. STRICT POST-LOSS / EXIT COOLDOWN CHECK (In-Memory + SQLite Persistent)
