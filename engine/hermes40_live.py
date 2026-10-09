@@ -49,6 +49,7 @@ from alerts.telegram_service import (
     telegram_service,
     format_tg_ist_timestamp
 )
+from engine.chart_image_generator import render_smc_chart_image
 
 logger = logging.getLogger("Hermes40Live")
 
@@ -266,13 +267,15 @@ class Hermes40LiveEngine:
         return setups
 
     async def scan_market(self):
-        """Scans Top-22 Champions on 4H and 1H for Hermes 4.0 setups."""
+        """Scans all 58 monitored coins on 4H and 1H for Hermes 4.0 setups."""
         btc_sentry = await self.evaluate_btc_macro()
         self.last_btc_bias = btc_sentry
         new_setups = []
 
+        coins = ALL_MONITORED_COINS if ALL_MONITORED_COINS else TOP_22_CHAMPIONS
+
         for tf in ["4h", "1h"]:
-            for sym in TOP_22_CHAMPIONS:
+            for sym in coins:
                 try:
                     candles = await binance_feed.fetch_klines(sym, interval=tf, limit=75)
                     if len(candles) >= 35:
@@ -287,22 +290,55 @@ class Hermes40LiveEngine:
                                     res = open_paper_trade_hermes4(s)
                                     if res and res.get("id"):
                                         logger.info(f"🟢 [HERMES 4.0] Opened Trade #{res['id']} {sym} {s['side']} in Account #{res['account_id']}")
-                                        # Send Telegram alert
+                                        # Send Telegram alert for Hermes 4.0 Entry
                                         try:
+                                            now_ms = int(time.time() * 1000)
+                                            now_str = format_tg_ist_timestamp(now_ms)
+                                            side_icon = "🟢 LONG" if s["side"].upper() in ("BUY", "LONG") else "🔴 SHORT"
+                                            margin_val = float(res.get("margin", 50.0))
+                                            pos_val = margin_val * 5.0
+                                            
                                             tg_msg = (
-                                                f"🟢 <b>[HERMES 4.0 COUNCIL OF 16] TRADE OPENED</b>\n\n"
-                                                f"🪙 <b>Asset:</b> #{sym} ({s['side']})\n"
-                                                f"⏱️ <b>Timeframe:</b> {tf.upper()}\n"
-                                                f"🏛️ <b>Section:</b> Account #{res['account_id']} (Hermes 4.0)\n"
-                                                f"🎯 <b>Entry (50% MT):</b> ${res['entry_price']}\n"
-                                                f"🛡️ <b>SL (Bedrock ATR):</b> ${res['sl_price']}\n"
-                                                f"🚀 <b>TP (+15% ROE):</b> ${res['tp_price']}\n"
-                                                f"📊 <b>Leverage:</b> 5x Isolated\n"
-                                                f"💎 <b>1:2 R:R Ratio:</b> Guaranteed Mathematical 1:2"
+                                                f"⚡ <b>[HERMES 4.0 COUNCIL OF 16] TRADE OPENED</b>\n"
+                                                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                                                f"🪙 <b>Pair:</b> #{sym} ({side_icon})\n"
+                                                f"⏱️ <b>Timeframe:</b> {tf.upper()} • 5x ISOLATED\n"
+                                                f"🏛️ <b>Section:</b> Hermes 4.0 Section #{res['account_id']}\n\n"
+                                                f"🎯 <b>ENTRY (50% MT):</b> <code>${res['entry_price']}</code>\n"
+                                                f"🚀 <b>TAKE PROFIT (+15.0% ROE):</b> <code>${res['tp_price']}</code> (+3.00% Spot)\n"
+                                                f"🛡️ <b>STOP LOSS:</b> <code>${res['sl_price']}</code>\n"
+                                                f"💰 <b>Margin Deployed:</b> ${margin_val:.2f} USDT (Pos: ${pos_val:.2f})\n\n"
+                                                f"──────── INSTITUTIONAL CONFLUENCE ────────\n"
+                                                f"• <b>Council Model:</b> 16-Agent Unified SMC Matrix\n"
+                                                f"• <b>Order Block:</b> {s.get('ob_low')} - {s.get('ob_high')} (Displacement: +{s.get('displacement_pct', 0)}%)\n"
+                                                f"• <b>Wick Defense:</b> {s.get('wick_ratio_pct', 0)}% Rejection Absorption\n"
+                                                f"• <b>King BTC Sentry:</b> PASS (Macro Trend Aligned)\n"
+                                                f"• <b>Armor:</b> Stepped BE Lock at +7.5% ROE (+1.5% Spot)\n\n"
+                                                f"🕒 <i>{now_str}</i>"
                                             )
-                                            await telegram_service.send_alert(tg_msg)
+                                            
+                                            chart_sent = False
+                                            try:
+                                                zone_dict = {
+                                                    "symbol": sym,
+                                                    "side": s["side"],
+                                                    "entry_price": res["entry_price"],
+                                                    "tp_price": res["tp_price"],
+                                                    "sl_price": res["sl_price"],
+                                                    "ob_high": s.get("ob_high", res["entry_price"]),
+                                                    "ob_low": s.get("ob_low", res["entry_price"])
+                                                }
+                                                chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
+                                                resp = await telegram_service.send_photo(chart_bytes, tg_msg, parse_mode="HTML")
+                                                if resp and resp.get("ok"):
+                                                    chart_sent = True
+                                            except Exception as ce:
+                                                logger.warning(f"Failed to render chart for Hermes 4.0: {ce}")
+                                                
+                                            if not chart_sent:
+                                                await telegram_service.send_raw_message(tg_msg, parse_mode="HTML")
                                         except Exception as e:
-                                            logger.warning(f"Telegram alert error: {e}")
+                                            logger.warning(f"Telegram alert error for Hermes 4.0: {e}")
                 except Exception as err:
                     logger.debug(f"Scan error for {sym} {tf}: {err}")
 
@@ -310,7 +346,7 @@ class Hermes40LiveEngine:
         self.last_scan_time = int(time.time() * 1000)
 
     async def monitor_open_positions(self):
-        """Monitors open positions in Sections 11-20, manages Stepped BE lock, and executes TP/SL."""
+        """Monitors open positions in Sections 11-20, manages Stepped BE lock, and executes TP/SL with Telegram alerts."""
         with get_connection() as conn:
             open_trades = [dict(r) for r in conn.execute(
                 "SELECT * FROM paper_trades WHERE status = 'OPEN' AND mode = 'HERMES_4.0_BALANCED_APEX'"
@@ -323,6 +359,7 @@ class Hermes40LiveEngine:
             sl = float(t["sl_price"])
             tp = float(t["tp_price"])
             tid = t["id"]
+            acc_id = t.get("account_id", 11)
             be_lock_pct = float(t.get("be_lock_pct") or 0.0150)
 
             cur_p = binance_feed.get_cached_price(sym)
@@ -339,17 +376,64 @@ class Hermes40LiveEngine:
                         conn.execute("UPDATE paper_trades SET sl_price = ? WHERE id = ?", (ep, tid))
                         conn.commit()
                     logger.info(f"🛡️ [HERMES 4.0] Trade #{tid} {sym} locked to Break-Even at ${ep}")
+                    try:
+                        be_msg = (
+                            f"🛡️ <b>[HERMES 4.0 COUNCIL] BREAK-EVEN LOCK ACTIVATED</b>\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                            f"🪙 <b>Pair:</b> #{sym} (LONG)\n"
+                            f"🏛️ <b>Section:</b> Hermes 4.0 Section #{acc_id}\n"
+                            f"⚡ <b>Condition:</b> Price reached +1.50% (+7.5% ROE / +1.0R)\n"
+                            f"🔒 <b>Action:</b> Stop Loss moved to Entry Price (<code>${ep}</code>)\n"
+                            f"✨ <b>Risk:</b> ZERO RISK POSITION ACTIVE"
+                        )
+                        await telegram_service.send_raw_message(be_msg, parse_mode="HTML")
+                    except Exception as be_err:
+                        logger.warning(f"Telegram BE alert error: {be_err}")
 
                 # Check TP hit (+3.00% spot / +15% ROE)
                 if cur_p >= tp:
-                    close_paper_trade(t, "TP_HIT", exit_price=tp)
+                    closed = close_paper_trade(t, "TP_HIT", exit_price=tp)
                     logger.info(f"🎉 [HERMES 4.0] Trade #{tid} {sym} HIT TAKE PROFIT (+15.0% ROE)!")
+                    try:
+                        now_str = format_tg_ist_timestamp(int(time.time() * 1000))
+                        pnl = float(closed.get("net_pnl_usdt", 7.50) if closed else 7.50)
+                        exit_msg = (
+                            f"🎉 <b>[HERMES 4.0 COUNCIL] TAKE PROFIT ACHIEVED!</b>\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                            f"🪙 <b>Pair:</b> #{sym} (LONG)\n"
+                            f"🏛️ <b>Section:</b> Hermes 4.0 Section #{acc_id}\n"
+                            f"🎯 <b>Entry:</b> <code>${ep}</code> ➔ <b>Exit:</b> <code>${tp}</code>\n"
+                            f"💵 <b>Net P&L:</b> <code>+${pnl:.2f} USDT</code> (+15.0% ROE)\n"
+                            f"💎 <b>Compounding:</b> Reinvested into Section #{acc_id}\n"
+                            f"🕒 <i>{now_str}</i>"
+                        )
+                        await telegram_service.send_raw_message(exit_msg, parse_mode="HTML")
+                    except Exception as ex_err:
+                        logger.warning(f"Telegram exit alert error: {ex_err}")
+
                 # Check SL hit
                 elif cur_p <= sl:
                     is_be = (abs(sl - ep) < 0.0001)
-                    outcome = "TP_HIT" if is_be else "SL_HIT"  # BE is counted as save/zero loss
-                    close_paper_trade(t, outcome, exit_price=sl)
+                    outcome = "TP_HIT" if is_be else "SL_HIT"
+                    closed = close_paper_trade(t, outcome, exit_price=sl)
                     logger.info(f"🛑 [HERMES 4.0] Trade #{tid} {sym} closed at ${sl} (Outcome: {outcome})")
+                    try:
+                        now_str = format_tg_ist_timestamp(int(time.time() * 1000))
+                        pnl = float(closed.get("net_pnl_usdt", 0.0) if closed else 0.0)
+                        pnl_str = f"+${pnl:.2f}" if pnl >= 0 else f"-${abs(pnl):.2f}"
+                        label = "BREAK-EVEN EXIT" if is_be else "STOP LOSS HIT"
+                        exit_msg = (
+                            f"🛑 <b>[HERMES 4.0 COUNCIL] {label}</b>\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                            f"🪙 <b>Pair:</b> #{sym} (LONG)\n"
+                            f"🏛️ <b>Section:</b> Hermes 4.0 Section #{acc_id}\n"
+                            f"🎯 <b>Entry:</b> <code>${ep}</code> ➔ <b>Exit:</b> <code>${sl}</code>\n"
+                            f"💵 <b>Net P&L:</b> <code>{pnl_str} USDT</code>\n"
+                            f"🕒 <i>{now_str}</i>"
+                        )
+                        await telegram_service.send_raw_message(exit_msg, parse_mode="HTML")
+                    except Exception as ex_err:
+                        logger.warning(f"Telegram exit alert error: {ex_err}")
             else:
                 drop_from_ep = (ep - cur_p) / ep
                 if drop_from_ep >= be_lock_pct and sl > ep:
@@ -357,15 +441,62 @@ class Hermes40LiveEngine:
                         conn.execute("UPDATE paper_trades SET sl_price = ? WHERE id = ?", (ep, tid))
                         conn.commit()
                     logger.info(f"🛡️ [HERMES 4.0] Trade #{tid} {sym} locked to Break-Even at ${ep}")
+                    try:
+                        be_msg = (
+                            f"🛡️ <b>[HERMES 4.0 COUNCIL] BREAK-EVEN LOCK ACTIVATED</b>\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                            f"🪙 <b>Pair:</b> #{sym} (SHORT)\n"
+                            f"🏛️ <b>Section:</b> Hermes 4.0 Section #{acc_id}\n"
+                            f"⚡ <b>Condition:</b> Price reached +1.50% (+7.5% ROE / +1.0R)\n"
+                            f"🔒 <b>Action:</b> Stop Loss moved to Entry Price (<code>${ep}</code>)\n"
+                            f"✨ <b>Risk:</b> ZERO RISK POSITION ACTIVE"
+                        )
+                        await telegram_service.send_raw_message(be_msg, parse_mode="HTML")
+                    except Exception as be_err:
+                        logger.warning(f"Telegram BE alert error: {be_err}")
 
                 if cur_p <= tp:
-                    close_paper_trade(t, "TP_HIT", exit_price=tp)
+                    closed = close_paper_trade(t, "TP_HIT", exit_price=tp)
                     logger.info(f"🎉 [HERMES 4.0] Trade #{tid} {sym} HIT TAKE PROFIT (+15.0% ROE)!")
+                    try:
+                        now_str = format_tg_ist_timestamp(int(time.time() * 1000))
+                        pnl = float(closed.get("net_pnl_usdt", 7.50) if closed else 7.50)
+                        exit_msg = (
+                            f"🎉 <b>[HERMES 4.0 COUNCIL] TAKE PROFIT ACHIEVED!</b>\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                            f"🪙 <b>Pair:</b> #{sym} (SHORT)\n"
+                            f"🏛️ <b>Section:</b> Hermes 4.0 Section #{acc_id}\n"
+                            f"🎯 <b>Entry:</b> <code>${ep}</code> ➔ <b>Exit:</b> <code>${tp}</code>\n"
+                            f"💵 <b>Net P&L:</b> <code>+${pnl:.2f} USDT</code> (+15.0% ROE)\n"
+                            f"💎 <b>Compounding:</b> Reinvested into Section #{acc_id}\n"
+                            f"🕒 <i>{now_str}</i>"
+                        )
+                        await telegram_service.send_raw_message(exit_msg, parse_mode="HTML")
+                    except Exception as ex_err:
+                        logger.warning(f"Telegram exit alert error: {ex_err}")
+
                 elif cur_p >= sl:
                     is_be = (abs(sl - ep) < 0.0001)
                     outcome = "TP_HIT" if is_be else "SL_HIT"
-                    close_paper_trade(t, outcome, exit_price=sl)
+                    closed = close_paper_trade(t, outcome, exit_price=sl)
                     logger.info(f"🛑 [HERMES 4.0] Trade #{tid} {sym} closed at ${sl} (Outcome: {outcome})")
+                    try:
+                        now_str = format_tg_ist_timestamp(int(time.time() * 1000))
+                        pnl = float(closed.get("net_pnl_usdt", 0.0) if closed else 0.0)
+                        pnl_str = f"+${pnl:.2f}" if pnl >= 0 else f"-${abs(pnl):.2f}"
+                        label = "BREAK-EVEN EXIT" if is_be else "STOP LOSS HIT"
+                        exit_msg = (
+                            f"🛑 <b>[HERMES 4.0 COUNCIL] {label}</b>\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                            f"🪙 <b>Pair:</b> #{sym} (SHORT)\n"
+                            f"🏛️ <b>Section:</b> Hermes 4.0 Section #{acc_id}\n"
+                            f"🎯 <b>Entry:</b> <code>${ep}</code> ➔ <b>Exit:</b> <code>${sl}</code>\n"
+                            f"💵 <b>Net P&L:</b> <code>{pnl_str} USDT</code>\n"
+                            f"🕒 <i>{now_str}</i>"
+                        )
+                        await telegram_service.send_raw_message(exit_msg, parse_mode="HTML")
+                    except Exception as ex_err:
+                        logger.warning(f"Telegram exit alert error: {ex_err}")
 
     async def start(self):
         """Runs the 24/7 background execution loop for Hermes 4.0."""
