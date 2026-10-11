@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Positions &amp; Trade History • HERMES 3.5 SINGLE TIER</title>
+    <title>Positions &amp; Trade History • HERMES 3.0 MODEL 2A</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -669,7 +669,7 @@
                 <a href="#historySection" class="sidebar-nav-item" title="Trade History"><div class="sidebar-item-left"><i class="fa-solid fa-clock-rotate-left"></i><span>Trade History</span></div></a>
 
                 <div class="sidebar-section-title">Quantitative AI</div>
-                <a href="/compounding" class="sidebar-nav-item" title="Compounding Goals (Hermes 3.5)"><div class="sidebar-item-left"><i class="fa-solid fa-trophy"></i><span>Compounding (3.5)</span></div><span class="sidebar-badge badge-gold">$2K</span></a>
+                <a href="/compounding" class="sidebar-nav-item" title="Compounding Goals (Hermes 3.0 Model 2A)"><div class="sidebar-item-left"><i class="fa-solid fa-trophy"></i><span>Compounding (3.5)</span></div><span class="sidebar-badge badge-gold">$2K</span></a>
 
                 <!-- DEDICATED HERMES 4.0 SECTION -->
                 <div class="sidebar-section-title" style="color: #10B981; display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
@@ -803,7 +803,7 @@
                     <div class="bitget-empty-state" id="posEmptyState">
                         <i class="fa-solid fa-satellite-dish"></i>
                         <h4>No Open Positions</h4>
-                        <p>Hermes 3.5 Single Tier 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
+                        <p>Hermes 3.0 Model 2A 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
                     </div>
                 </div>
             </section>
@@ -925,7 +925,7 @@
                     <div style="width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, #1d4ed8, #38bdf8); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px;">
                         <i class="fa-solid fa-feather-pointed"></i>
                     </div>
-                    <span style="font-weight: 800; font-size: 14px; color: #fff;">HERMES 3.5 SINGLE TIER</span>
+                    <span style="font-weight: 800; font-size: 14px; color: #fff;">HERMES 3.0 MODEL 2A</span>
                 </div>
                 <button onclick="toggleDrawer(false)" style="background: transparent; border: none; color: #94A3B8; font-size: 18px; cursor: pointer;">
                     <i class="fa-solid fa-xmark"></i>
@@ -1141,7 +1141,7 @@
                     <div class="bitget-empty-state">
                         <i class="fa-solid fa-satellite-dish"></i>
                         <h4>No Open Positions ${currentTfFilter !== 'all' ? `(${currentTfFilter.toUpperCase()})` : ''}</h4>
-                        <p>Hermes 3.5 Single Tier 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
+                        <p>Hermes 3.0 Model 2A 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
                     </div>
                 `;
                 return;
@@ -1371,7 +1371,7 @@
         }
 
         function sharePosition(sym, side, pnl, roe) {
-            const text = `🎯 HERMES 3.5 SINGLE TIER Position: ${sym} (${side}) | PnL: ${pnl} USDT | ROE: ${roe}`;
+            const text = `🎯 HERMES 3.0 MODEL 2A Position: ${sym} (${side}) | PnL: ${pnl} USDT | ROE: ${roe}`;
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(text);
                 showToast('Position summary copied to clipboard!');

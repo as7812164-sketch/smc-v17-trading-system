@@ -603,7 +603,7 @@ function drawSmcZoneBoxes() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // 1. Render Hermes 3.5 Radar Harvest Unmitigated Order Block Zones
+    // 1. Render Hermes 3.0 Model 2A Radar Harvest Unmitigated Order Block Zones
     if (showSmcZones && mainSeries && tvChart && rawZonesData && rawZonesData.length > 0) {
         const timeScale = tvChart.timeScale();
         const visibleRange = timeScale.getVisibleRange();
@@ -647,7 +647,7 @@ function drawSmcZoneBoxes() {
 
             if (maxY < 0 || minY > height) return;
 
-            // Hermes 3.5 Radar Harvest Order Block Shading
+            // Hermes 3.0 Model 2A Radar Harvest Order Block Shading
             const fillColor = isBuySide ? 'rgba(0, 245, 155, 0.12)' : 'rgba(255, 59, 105, 0.12)';
             const borderColor = isBuySide ? '#00F59B' : '#FF3B69';
             const textColor = isBuySide ? '#00F59B' : '#FF3B69';
@@ -666,14 +666,14 @@ function drawSmcZoneBoxes() {
             ctx.font = "bold 10px 'JetBrains Mono', monospace";
             ctx.fillStyle = textColor;
             
-            const tagTitle = isBuySide ? '🏛️ HERMES 3.5 DEMAND OB' : '🏛️ HERMES 3.5 SUPPLY OB';
+            const tagTitle = isBuySide ? '🏛️ HERMES 3.0 MODEL 2A DEMAND OB' : '🏛️ HERMES 3.0 MODEL 2A SUPPLY OB';
             const statTitle = z.status === 'RADAR_PRE_ARMED' ? ' [📡 0.20% RADAR ARMED]' : (z.status === 'ACTIVE' || z.status === 'FRESH_TRIGGERED' ? ' [⚡ 5% BOUNDARY TAP]' : ' [FRESH UNMITIGATED]');
             const originTitle = z.is_origin ? ' [BEDROCK]' : '';
             const tagText = `${tagTitle}${statTitle}${originTitle} [${formatPrice(z.ob_low)} - ${formatPrice(z.ob_high)}]`;
             const textY = boxHeight >= 16 ? (minY + 12) : (minY - 4);
             ctx.fillText(tagText, x1 + 8, textY);
 
-            // Right Info Tag (5% Boundary Entry & Radar)
+            // Right Info Tag (50% Mean Threshold (MT) Entry & Radar)
             const obRange = Math.abs(z.ob_high - z.ob_low);
             const entPx = z.entry_price || (isBuySide ? (z.ob_high - obRange * 0.05) : (z.ob_low + obRange * 0.05));
             const radPx = z.radar_price || (isBuySide ? entPx * 1.0020 : entPx * 0.9980);
@@ -686,7 +686,7 @@ function drawSmcZoneBoxes() {
             }
             ctx.restore();
 
-            // HERMES 3.5 RADAR HARVEST PROJECTION LINES (STAGGERED ANTI-COLLISION)
+            // HERMES 3.0 MODEL 2A RADAR HARVEST PROJECTION LINES (STAGGERED ANTI-COLLISION)
             const tpPx = z.tp_price || (isBuySide ? entPx * 1.0280 : entPx * 0.9720);
             const harvestPx = z.harvest_lock_price || (isBuySide ? entPx * 1.0090 : entPx * 0.9910);
             const armorPx = z.armor_stage1_price || (isBuySide ? entPx * 1.0160 : entPx * 0.9840);
@@ -1956,7 +1956,7 @@ function calculateBollingerBands(candles, period = 20, mult = 2) {
 }
 
 // --- Update Hermes 2.0 Apex Indicator Live Floating Chart HUD ---
-// --- Update Hermes 3.5 Single Tier Indicator Live Floating Chart HUD ---
+// --- Update Hermes 3.0 Model 2A Indicator Live Floating Chart HUD ---
 function updateSmcChartHud(data) {
     const hud = document.getElementById("smcChartHud");
     if (!hud) return;
@@ -1991,7 +1991,7 @@ function renderActiveZonesStrip(zones, currentPx) {
     if (!container) return;
 
     if (!zones || zones.length === 0) {
-        container.innerHTML = `<span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> No active Hermes 3.5 Single Tier order blocks for ${currentSymbol} on ${currentTimeframe.toUpperCase()} right now. Monitoring live CLOB.</span>`;
+        container.innerHTML = `<span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> No active Hermes 3.0 Model 2A order blocks for ${currentSymbol} on ${currentTimeframe.toUpperCase()} right now. Monitoring live CLOB.</span>`;
         return;
     }
 
@@ -2004,7 +2004,7 @@ function renderActiveZonesStrip(zones, currentPx) {
         const slVal = z.sl_price || (isBuy ? mt * 0.9720 : mt * 1.0280);
 
         const cardClass = isBuy ? 'buy' : 'sell';
-        const titleText = `🏛️ HERMES 3.5 ${z.side} OB (SINGLE TIER) • ${z.status}`;
+        const titleText = `🏛️ HERMES 3.0 MODEL 2A ${z.side} OB (SINGLE TIER) • ${z.status}`;
 
         return `
             <div class="zone-pill-card ${cardClass}">
@@ -2330,7 +2330,7 @@ ${p.last_alert || 'None yet'}
     } catch (e) {}
 }
 
-// --- Live Setup Radar & Pending Executions (HERMES 3.5 SINGLE TIER) ---
+// --- Live Setup Radar & Pending Executions (HERMES 3.0 MODEL 2A) ---
 async function loadRecentSignals() {
     try {
         const resp = await fetch('/api/signals/radar?t=' + Date.now());
@@ -2365,7 +2365,7 @@ async function loadRecentSignals() {
                 <div style="padding:24px 12px; text-align:center; color:var(--text-muted); font-size:11px;">
                     <i class="fa-solid fa-satellite-dish" style="font-size:22px; color:#38BDF8; margin-bottom:10px; display:block;"></i>
                     <strong style="color:#F8FAFC; display:block; margin-bottom:4px;">Scanning 24/7 Order Blocks...</strong>
-                    Hermes 3.5 50% Mean Threshold setups & taps will appear here in real-time.
+                    Hermes 3.0 Model 2A 50% Mean Threshold setups & taps will appear here in real-time.
                 </div>
             `;
             return;
@@ -2411,7 +2411,7 @@ async function loadRecentSignals() {
                         </div>
                         <!-- 2 ACTION POINTS: Chart & Close Position -->
                         <div class="drc-actions">
-                            <button class="drc-action-btn btn-chart" onclick="event.stopPropagation(); openRadarChart('${t.symbol}', '${t.timeframe}');" title="Open ${t.symbol} on Hermes 3.5 Chart">
+                            <button class="drc-action-btn btn-chart" onclick="event.stopPropagation(); openRadarChart('${t.symbol}', '${t.timeframe}');" title="Open ${t.symbol} on Hermes 3.0 Model 2A Chart">
                                 <i class="fa-solid fa-chart-candlestick"></i> 📊 Chart
                             </button>
                             <button class="drc-action-btn btn-close-pos" onclick="event.stopPropagation(); if(typeof manualClosePosition==='function') manualClosePosition('${t.id}');" title="Close Position">
@@ -2460,7 +2460,7 @@ async function loadRecentSignals() {
                         </div>
                         <div class="drc-metrics">
                             <div class="drc-metric-item">
-                                <span class="drc-lbl">5% Boundary</span>
+                                <span class="drc-lbl">50% Mean Threshold (MT)</span>
                                 <span class="drc-val entry-val">$${formatPrice(s.entry_price)}</span>
                             </div>
                             <div class="drc-metric-item">
@@ -2482,7 +2482,7 @@ async function loadRecentSignals() {
                         </div>
                         <!-- 2 ACTION POINTS (Point 1: Chart, Point 2: Position) -->
                         <div class="drc-actions">
-                            <button class="drc-action-btn btn-chart" onclick="event.stopPropagation(); openRadarChart('${s.symbol}', '${s.timeframe}');" title="Open ${s.symbol} on Hermes 3.5 Chart">
+                            <button class="drc-action-btn btn-chart" onclick="event.stopPropagation(); openRadarChart('${s.symbol}', '${s.timeframe}');" title="Open ${s.symbol} on Hermes 3.0 Model 2A Chart">
                                 <i class="fa-solid fa-chart-candlestick"></i> 📊 Chart
                             </button>
                             <button class="drc-action-btn btn-position" onclick="event.stopPropagation(); deployRadarPosition('${s.symbol}', '${s.side}', ${s.entry_price}, '${s.timeframe}', ${s.probability_pct});" title="Deploy 5x Position for ${s.symbol}">
@@ -2501,7 +2501,7 @@ async function loadRecentSignals() {
 }
 
 // ============================================================
-// HERMES 3.5 INTERACTIVE RADAR ACTION POINTS & TELEGRAM MODAL
+// HERMES 3.0 MODEL 2A INTERACTIVE RADAR ACTION POINTS & TELEGRAM MODAL
 // ============================================================
 
 function openRadarChart(symbol, timeframe) {
@@ -2519,7 +2519,7 @@ function openRadarChart(symbol, timeframe) {
     if (chartEl && window.innerWidth <= 1024) {
         chartEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-    showToast(`📊 Loaded ${symbol} ${tf.toUpperCase()} Hermes 3.5 Chart`, "info");
+    showToast(`📊 Loaded ${symbol} ${tf.toUpperCase()} Hermes 3.0 Model 2A Chart`, "info");
 }
 
 let pendingDeploySetup = null;
@@ -3547,7 +3547,7 @@ function setupEventListeners() {
                 const hud = document.getElementById("smcChartHud");
                 if (hud) hud.style.display = showSmcZones ? "block" : "none";
                 scheduleDrawSmcZoneBoxes();
-                showToast(`Hermes 3.5 Radar Harvest Overlay ${showSmcZones ? 'ON' : 'OFF'}`);
+                showToast(`Hermes 3.0 Model 2A Radar Harvest Overlay ${showSmcZones ? 'ON' : 'OFF'}`);
                 return;
             }
             activeIndicators[ind] = !activeIndicators[ind];

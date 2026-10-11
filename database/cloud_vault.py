@@ -32,17 +32,17 @@ def get_vault_headers() -> Dict[str, str]:
     }
 
 CHANNEL_MAP = {
-    # Hermes 3.5 Single Tier (Sections 1-10)
-    1: ("BITGET", "sec_1", "Section 1 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
-    2: ("BITGET", "sec_2", "Section 2 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
-    3: ("BITGET", "sec_3", "Section 3 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
-    4: ("BITGET", "sec_4", "Section 4 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
-    5: ("BITGET", "sec_5", "Section 5 (4H Macro)", "4h", "HERMES_3.5_SINGLE_TIER"),
-    6: ("BITGET", "sec_6", "Section 6 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
-    7: ("BITGET", "sec_7", "Section 7 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
-    8: ("BITGET", "sec_8", "Section 8 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
-    9: ("BITGET", "sec_9", "Section 9 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
-    10: ("BITGET", "sec_10", "Section 10 (1H Intraday)", "1h", "HERMES_3.5_SINGLE_TIER"),
+    # Hermes 3.0 Model 2A (Sections 1-10)
+    1: ("BITGET", "sec_1", "Section 1 (4H Macro)", "4h", "HERMES_3.0_MODEL_2A"),
+    2: ("BITGET", "sec_2", "Section 2 (4H Macro)", "4h", "HERMES_3.0_MODEL_2A"),
+    3: ("BITGET", "sec_3", "Section 3 (4H Macro)", "4h", "HERMES_3.0_MODEL_2A"),
+    4: ("BITGET", "sec_4", "Section 4 (4H Macro)", "4h", "HERMES_3.0_MODEL_2A"),
+    5: ("BITGET", "sec_5", "Section 5 (4H Macro)", "4h", "HERMES_3.0_MODEL_2A"),
+    6: ("BITGET", "sec_6", "Section 6 (1H Intraday)", "1h", "HERMES_3.0_MODEL_2A"),
+    7: ("BITGET", "sec_7", "Section 7 (1H Intraday)", "1h", "HERMES_3.0_MODEL_2A"),
+    8: ("BITGET", "sec_8", "Section 8 (1H Intraday)", "1h", "HERMES_3.0_MODEL_2A"),
+    9: ("BITGET", "sec_9", "Section 9 (1H Intraday)", "1h", "HERMES_3.0_MODEL_2A"),
+    10: ("BITGET", "sec_10", "Section 10 (1H Intraday)", "1h", "HERMES_3.0_MODEL_2A"),
     # Hermes 4.0 Balanced Apex (Sections 11-20)
     11: ("BITGET", "hermes4_sec_1", "Hermes 4.0 - Section 1 (4H Macro)", "4h", "HERMES_4.0_BALANCED_APEX"),
     12: ("BITGET", "hermes4_sec_2", "Hermes 4.0 - Section 2 (4H Macro)", "4h", "HERMES_4.0_BALANCED_APEX"),
@@ -103,13 +103,13 @@ def push_vault_state() -> bool:
                 acc["channel"] = map_tuple[1]
                 acc["name"] = map_tuple[2]
                 acc["timeframe"] = map_tuple[3]
-                acc["mode"] = map_tuple[4] if len(map_tuple) > 4 else ("HERMES_4.0_BALANCED_APEX" if acc_id > 10 else "HERMES_3.5_SINGLE_TIER")
+                acc["mode"] = map_tuple[4] if len(map_tuple) > 4 else ("HERMES_4.0_BALANCED_APEX" if acc_id > 10 else "HERMES_3.0_MODEL_2A")
             else:
-                acc["mode"] = "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.5_SINGLE_TIER"
+                acc["mode"] = "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.0_MODEL_2A"
         for pt in paper_trades:
             if not pt.get("mode"):
                 pt_acc = int(pt.get("account_id") or 1)
-                pt["mode"] = "HERMES_4.0_BALANCED_APEX" if pt_acc > 10 else "HERMES_3.5_SINGLE_TIER"
+                pt["mode"] = "HERMES_4.0_BALANCED_APEX" if pt_acc > 10 else "HERMES_3.0_MODEL_2A"
 
         metrics["hermes_mode"] = "DUAL_ENGINE_3.5_AND_4.0"
         settings["strategy_version"] = "DUAL_ENGINE_3.5_AND_4.0"
@@ -247,16 +247,16 @@ def pull_and_restore_vault_state() -> bool:
                 acc_id, acc.get("initial_balance", 50.0), acc.get("current_balance", 50.0),
                 acc.get("vault_balance", 0.0), acc.get("total_pnl", 0.0), acc.get("win_count", 0),
                 acc.get("loss_count", 0), acc.get("milestone_target", 2000.0),
-                "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.5_SINGLE_TIER",
+                "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.0_MODEL_2A",
                 tf, acc_name, acc.get("win_streak", 0),
                 exch, ch,
-                "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.5_SINGLE_TIER"
+                "HERMES_4.0_BALANCED_APEX" if (acc_id and acc_id > 10) else "HERMES_3.0_MODEL_2A"
             ))
 
         # Ensure all sections from channel_map (1 to 20) are created
         for sec_id, map_val in channel_map.items():
             s_exch, s_ch, s_name, s_tf = map_val[0], map_val[1], map_val[2], map_val[3]
-            s_mode = map_val[4] if len(map_val) > 4 else ("HERMES_4.0_BALANCED_APEX" if sec_id > 10 else "HERMES_3.5_SINGLE_TIER")
+            s_mode = map_val[4] if len(map_val) > 4 else ("HERMES_4.0_BALANCED_APEX" if sec_id > 10 else "HERMES_3.0_MODEL_2A")
             sec_exists = conn.execute("SELECT id FROM paper_account WHERE id = ?", (sec_id,)).fetchone()
             if not sec_exists:
                 conn.execute("""
@@ -339,12 +339,12 @@ def pull_and_restore_vault_state() -> bool:
         except Exception as e:
             logger.warning(f"Error restoring trade_journal from vault: {e}")
 
-        # CRITICAL GUARANTEE: Enforce active HERMES_3.5_SINGLE_TIER on container restart or vault re-pull
-        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_SINGLE_TIER'")
-        conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.5_SINGLE_TIER' WHERE mode IS NULL OR mode = '' OR mode != 'HERMES_3.5_SINGLE_TIER'")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_SINGLE_TIER')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '5% Boundary Penetration')")
-        conn.execute("INSERT OR REPLACE INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.5_SINGLE_TIER')")
+        # CRITICAL GUARANTEE: Enforce active HERMES_3.0_MODEL_2A on container restart or vault re-pull
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_MODEL_2A'")
+        conn.execute("UPDATE paper_trades SET mode = 'HERMES_3.0_MODEL_2A' WHERE mode IS NULL OR mode = '' OR mode != 'HERMES_3.0_MODEL_2A'")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_MODEL_2A')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes35_entry_mode', '50% Mean Threshold (MT)')")
+        conn.execute("INSERT OR REPLACE INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.0_MODEL_2A')")
 
         conn.commit()
         conn.close()

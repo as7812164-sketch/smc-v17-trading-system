@@ -69,8 +69,7 @@ from engine.bitget_trader import bitget_trader
 from engine.binance_trader import binance_trader
 from engine.order_flow import analyze_order_flow
 from engine.trade_journal import get_all_journal_trades, JOURNAL_CSV_PATH
-from engine.dual_timeframe_sniper import dual_sniper
-from engine.hermes35_live import hermes35_live_engine as hermes2_apex_engine, TOP_22_CHAMPIONS
+from engine.hermes30_apex_live import hermes30_live_engine as hermes2_apex_engine, TOP_22_CHAMPIONS
 from engine.hermes40_live import hermes40_live_engine
 from database.mongo_client import is_mongo_connected
 
@@ -183,9 +182,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         pass
 
-    # Hermes 3.5 & Hermes 4.0 Dual Robots, keepalive, self-healing sentinel, and telegram polling
+    # Hermes 3.0 Model 2A Dedicated Engine, keepalive, self-healing sentinel, and telegram polling
     hermes2_task = asyncio.create_task(hermes2_apex_engine.start())
-    hermes40_task = asyncio.create_task(hermes40_live_engine.start())
+    # Hermes 4.0 disabled: pure Hermes 3.0 Model 2A single unified strategy
     tg_polling_task = asyncio.create_task(telegram_service.start_polling())
     keepalive_task = asyncio.create_task(keepalive_loop())
     ticker_task = asyncio.create_task(ticker_cache_loop())
@@ -197,8 +196,6 @@ async def lifespan(app: FastAPI):
     # Shutdown
     hermes2_apex_engine.stop()
     hermes2_task.cancel()
-    hermes40_live_engine.stop()
-    hermes40_task.cancel()
     self_healing_sentinel.stop()
     sentinel_task.cancel()
     tg_polling_task.cancel()
@@ -208,7 +205,7 @@ async def lifespan(app: FastAPI):
     binance_heartbeat_task.cancel()
     await binance_feed.close()
 
-app = FastAPI(title="HERMES 3.5 SINGLE TIER Autonomous Terminal & Quant Engine", lifespan=lifespan)
+app = FastAPI(title="HERMES 3.0 MODEL 2A Autonomous Terminal & Quant Engine", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/manifest.json")
@@ -682,11 +679,11 @@ async def get_system_status():
     stats = get_performance_stats()
     metrics = get_all_metrics()
     paper = get_paper_account()
-    active_version = "HERMES_3.5_SINGLE_TIER"
+    active_version = "HERMES_3.0_MODEL_2A"
     return {
         "status": "online",
         "version": active_version,
-        "strategy_options": ["HERMES_3.5_SINGLE_TIER"],
+        "strategy_options": ["HERMES_3.0_MODEL_2A"],
         "timeframe": TIMEFRAME,
         "performance": stats,
         "metrics": metrics,
@@ -701,19 +698,23 @@ async def trigger_self_healing_endpoint():
 
 @app.get("/api/strategy/mode")
 async def get_strategy_mode():
-    active_version = "HERMES_3.5_SINGLE_TIER"
+    active_version = "HERMES_3.0_MODEL_2A"
     return {
         "active_mode": active_version,
-        "options": ["HERMES_3.5_SINGLE_TIER"],
+        "options": ["HERMES_3.0_MODEL_2A"],
         "features": {
-            "mean_threshold_entry": False,
-            "boundary_entry_5pct": True,
-            "proximity_radar_020pct": True,
-            "stepped_profit_harvest": True,
+            "mean_threshold_entry": True,
+            "boundary_entry_5pct": False,
+            "candle_body_close_sl": True,
+            "dual_threshold_defense": True,
+            "soft_sl_pct": 0.015,
+            "hard_circuit_breaker_pct": 0.030,
+            "tp_pct": 0.030,
+            "be_armor_trigger_pct": 0.015,
             "idm_sweep_validation": True,
             "rejection_wick_18pct": True,
             "multi_stage_profit_armor": True,
-            "btc_emergency_shield": False,
+            "btc_emergency_shield": True,
             "dynamic_atr_buffer": True,
             "autonomous_forensic_lock": True
         }
@@ -722,8 +723,8 @@ async def get_strategy_mode():
 @app.post("/api/strategy/switch")
 async def switch_strategy_mode(payload: Dict[str, Any] = Body(...)):
     target_mode = payload.get("mode")
-    if target_mode not in ["HERMES_3.5_SINGLE_TIER"]:
-        return JSONResponse({"status": "error", "message": f"Only HERMES_3.5_SINGLE_TIER is supported. Invalid mode: {target_mode}"}, status_code=400)
+    if target_mode not in ["HERMES_3.0_MODEL_2A"]:
+        return JSONResponse({"status": "error", "message": f"Only HERMES_3.0_MODEL_2A is supported. Invalid mode: {target_mode}"}, status_code=400)
     set_setting("strategy_version", target_mode)
     with get_connection() as conn:
         conn.execute("UPDATE paper_account SET mode = ?", (target_mode,))
@@ -1014,7 +1015,7 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
         td["timestamp_ist"] = ts_ist or ts_str
         td["timestamp_utc"] = ts_str
         td["raw_timestamp"] = exit_time or entry_time
-        td["mode"] = td.get("mode") or "HERMES_3.5_SINGLE_TIER"
+        td["mode"] = td.get("mode") or "HERMES_3.0_MODEL_2A"
         trades.append(td)
 
     # Sort trades with newest first
@@ -1458,11 +1459,12 @@ async def deploy_paper_position(body: Dict[str, Any] = Body(...)):
     else:
         entry_price = 1.0
 
-    # Hermes 3.5 Single Tier math (+14.0% ROE TP, -14.0% ROE SL, +8.0% Armor Stage 1)
+    # Hermes 3.0 Model 2A math (+15.0% ROE TP, -7.5% ROE Soft SL on Body Close, +7.5% BE Armor)
     is_buy = (side == "BUY")
-    tp_price = round(entry_price * (1.0280 if is_buy else 0.9720), 6)
-    sl_price = round(entry_price * (0.9720 if is_buy else 1.0280), 6)
-    armor_stage1_price = round(entry_price * (1.0160 if is_buy else 0.9840), 6)
+    tp_price = round(entry_price * (1.0300 if is_buy else 0.9700), 6)
+    sl_price = round(entry_price * (0.9850 if is_buy else 1.0150), 6)
+    hard_sl_price = round(entry_price * (0.9700 if is_buy else 1.0300), 6)
+    armor_stage1_price = round(entry_price * (1.0150 if is_buy else 0.9850), 6)
 
     zone_dict = {
         "symbol": sym,
@@ -1471,11 +1473,13 @@ async def deploy_paper_position(body: Dict[str, Any] = Body(...)):
         "mean_threshold": entry_price,
         "tp_price": tp_price,
         "sl_price": sl_price,
+        "soft_sl_price": sl_price,
+        "hard_sl_price": hard_sl_price,
         "armor_stage1_price": armor_stage1_price,
         "timeframe": tf,
         "channel": body.get("channel", ""),
         "leverage": 5,
-        "strategy": "HERMES_3.5_SINGLE_TIER"
+        "strategy": "HERMES_3.0_MODEL_2A"
     }
 
     trade_res = open_paper_trade(zone_dict)
@@ -1495,17 +1499,18 @@ async def deploy_paper_position(body: Dict[str, Any] = Body(...)):
     try:
         acc_num = trade_res.get("account_id") or str(trade_res.get("channel", "sec_1")).replace("sec_", "")
         tg_msg = (
-            f"⚡ <b>HERMES 3.5 EXECUTION DEPLOYED!</b>\n"
+            f"👑 <b>HERMES 3.0 MODEL 2A: EXECUTION DEPLOYED!</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🪙 <b>Pair:</b> #{sym}\n"
             f"⚡ <b>Action:</b> {side} (5x Isolated Perpetual)\n"
             f"🎯 <b>Entry (50% MT):</b> ${entry_price}\n"
-            f"🎯 <b>Target TP (+14% ROE):</b> ${tp_price}\n"
-            f"🛡️ <b>Armor Stage 1 (+8% ROE):</b> ${armor_stage1_price}\n"
-            f"🛑 <b>Dynamic SL (-14% ROE):</b> ${sl_price}\n"
+            f"🎯 <b>Target TP (+15% ROE):</b> ${tp_price}\n"
+            f"🛡️ <b>BE Armor Trigger (+7.5% ROE):</b> ${armor_stage1_price}\n"
+            f"🛑 <b>Soft SL (-7.5% ROE):</b> ${sl_price} (Body Close Only!)\n"
+            f"🛡️ <b>Hard Emergency Stop:</b> ${hard_sl_price} (-15% ROE)\n"
             f"🏛️ <b>Section:</b> Deca Section {acc_num} ($50 Margin)\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🤖 <i>Hermes 3.5 Single Tier Autonomous Engine</i>"
+            f"🤖 <i>Hermes 3.0 Model 2A Dual-Threshold Engine</i>"
         )
         await telegram_service.send_raw_message(tg_msg)
     except Exception:
@@ -1812,7 +1817,7 @@ async def list_zones(symbol: Optional[str] = None, active_only: bool = True):
 @app.get("/api/signals/radar")
 async def get_live_signals_radar():
     """
-    HERMES 3.5 SINGLE TIER - Live Setup Radar & Pending Execution Monitor.
+    HERMES 3.0 MODEL 2A - Live Setup Radar & Pending Execution Monitor.
     Returns:
     - Active running executions (if any)
     - Qualified setups approaching 50% Mean Threshold (MT) entry
@@ -1990,9 +1995,9 @@ async def get_live_signals_radar():
             "displacement_pct": round(disp_pct, 2),
             "tp_price": round(tp_p, 4),
             "sl_price": round(sl_p, 4),
-            "roe_tp": "+14.0% ROE (+2.8%)",
-            "roe_sl": "-14.0% ROE (-2.8%)",
-            "strategy": "HERMES_3.5_SINGLE_TIER"
+            "roe_tp": "+15.0% ROE (+3.0%)",
+            "roe_sl": "-7.5% ROE (-1.5%) Soft SL (Body Close)",
+            "strategy": "HERMES_3.0_MODEL_2A"
         })
 
     # Sort radar items by proximity: closest distance_pct first!
@@ -2003,7 +2008,7 @@ async def get_live_signals_radar():
     return {
         "status": "ok",
         "timestamp": datetime.now().isoformat(),
-        "strategy": "HERMES_3.5_SINGLE_TIER",
+        "strategy": "HERMES_3.0_MODEL_2A",
         "total_setups": len(radar_items),
         "imminent_count": sum(1 for r in radar_items if r["proximity_state"] == "IMMINENT_TAP"),
         "active_executions": active_executions,
@@ -2092,10 +2097,10 @@ async def get_klines_with_analysis(
             "runway_void_pct": s.get("runway_void_pct", 5.0),
             "is_origin": s.get("is_origin", False),
             "is_in_radar": s.get("is_in_radar", False),
-            "tier_type": "SINGLE_TIER",
-            "strategy": "HERMES_3.5_RADAR_HARVEST",
+            "tier_type": "MODEL_2A",
+            "strategy": "HERMES_3.0_MODEL_2A",
             "prob_score": round(base_prob, 1),
-            "rank_label": f"🏛️ HERMES 3.5 RADAR HARVEST [5% Entry: ${ent_p} | Radar: ${rad_p}]"
+            "rank_label": f"🏛️ HERMES 3.0 MODEL 2A [50% MT Entry: ${mt_p}]"
         }
         active_zones.append(zone_dict)
 
@@ -2108,16 +2113,16 @@ async def get_klines_with_analysis(
         "candles": candles,
         "zones": active_zones,
         "indicator_status": {
-            "strategy": "HERMES 3.5 RADAR HARVEST",
-            "entry_method": "5% Boundary Penetration",
+            "strategy": "HERMES 3.0 MODEL 2A",
+            "entry_method": "50% Mean Threshold (MT)",
             "radar_threshold": "0.20% Proximity Pre-Arm Radar",
             "leverage": "5x Isolated",
-            "target_roe": "+14.00% ROE (+2.80% price move)",
-            "armor_stage1_roe": "+8.00% ROE (+1.60% -> BE Lock)",
-            "armor_stage2_roe": "+9.00% ROE (+1.80% -> SL Lock @ +4.5% ROE Cash Profit)",
-            "dynamic_sl_roe": "-14.00% ROE (-2.80% price move)",
-            "maturation": "2-Day Maturation Horizon (48b 1H / 12b 4H)",
-            "airspace": "Rocket Airspace Void (>= 5.0%)",
+            "target_roe": "+15.00% ROE (+3.00% price move)",
+            "armor_stage1_roe": "+7.50% ROE (+1.50% -> BE Lock)",
+            "armor_stage2_roe": "Risk-Free Breakeven Protected",
+            "dynamic_sl_roe": "-7.50% ROE (-1.50% Candle Body Close SL) | -15.0% Emergency Hard Circuit",
+            "maturation": "Freshness <= 28 bars",
+            "airspace": "Displacement >= 5.0% + Fair Value Gap",
             "sentries": "4/4 SENTRIES VERIFIED"
         }
     }
@@ -2404,7 +2409,7 @@ async def get_binance_account_status():
         "allowed_sides": "SHORT",
         "margin_mode": "ISOLATED",
         "timeframe": "4h",
-        "strategy": "HERMES 3.5 SINGLE TIER"
+        "strategy": "HERMES_3.0_MODEL_2A"
     }
 
 @app.get("/api/bitget/status")
@@ -2456,8 +2461,8 @@ async def get_bitget_account_status():
             "side": ot.get("side", "BUY"),
             "entry_price": entry,
             "current_price": cur,
-            "tp_price": float(ot.get("tp_price") or (entry * 1.028 if is_buy else entry * 0.972)),
-            "sl_price": float(ot.get("sl_price") or (entry * 0.972 if is_buy else entry * 1.028)),
+            "tp_price": float(ot.get("tp_price") or (entry * 1.030 if is_buy else entry * 0.970)),
+            "sl_price": float(ot.get("sl_price") or (entry * 0.985 if is_buy else entry * 1.015)),
             "margin_usdt": margin,
             "size_usdt": size_usdt,
             "leverage": "5x Isolated",
@@ -2493,10 +2498,10 @@ async def get_bitget_account_status():
     return {
         "enabled": enabled,
         "balance": bal,
-        "strategy": "HERMES 3.5 SINGLE TIER",
+        "strategy": "HERMES_3.0_MODEL_2A",
         "min_confluence": min_conf,
         "leverage": "5x Isolated",
-        "target": "+2.8% Real (+14.0% ROE)",
+        "target": "+3.0% Real (+15.0% ROE)",
         "compounding_goal": "$50 -> $2,000",
         "starting_margin": 50.0,
         "target_margin": 2000.0,
@@ -2835,7 +2840,7 @@ async def get_hermes_apex_status():
     acc = hermes2_apex_engine.get_hermes_account()
     return {
         "status": "ONLINE_24_7",
-        "engine": "HERMES 3.5 SINGLE TIER Master Unified",
+        "engine": "HERMES 3.0 MODEL 2A Master Unified",
         "account": acc,
         "active_position": hermes2_apex_engine.active_position,
         "btc_macro_sentry": hermes2_apex_engine.last_btc_bias,
@@ -2860,7 +2865,7 @@ async def trigger_hermes_apex_scan():
 async def reset_hermes_apex_run():
     res = reset_paper_account()
     hermes2_apex_engine.active_position = None
-    return {"status": "ok", "message": "Hermes 3.5 Single Tier compounding run reset to $50.00", "account": res}
+    return {"status": "ok", "message": "Hermes 3.0 Model 2A compounding run reset to $50.00", "account": res}
 
 # --- WebSocket for Real-time Streaming ---
 @app.websocket("/ws")

@@ -13,22 +13,21 @@ def get_ist_now() -> datetime:
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-# --- HERMES STRATEGY OPTIONS (LOCKED TO PURE HERMES 3.5 SINGLE TIER) ---
-STRATEGY_OPTIONS = ["HERMES_3.5_SINGLE_TIER"]
-STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_3.5_SINGLE_TIER")  # Pure Hermes 3.5 Single Tier Institutional
-HERMES_3_MEAN_THRESHOLD_ENTRY = False # Overridden by 5% Boundary Penetration Entry
-HERMES_3_5_BOUNDARY_ENTRY = True      # 5% Boundary Entry (ob_high - 0.05*range for Long)
-HERMES_3_5_PROXIMITY_RADAR = True     # 0.20% Proximity Radar Pre-Arm
-HERMES_3_5_STEPPED_HARVEST = True     # +8% -> BE lock, +9% -> +4.5% ROE guaranteed profit
+# --- HERMES STRATEGY OPTIONS (LOCKED TO PURE HERMES 3.0 MODEL 2A) ---
+STRATEGY_OPTIONS = ["HERMES_3.0_MODEL_2A"]
+STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_3.0_MODEL_2A")  # Pure Hermes 3.0 Model 2A Dual-Threshold
+HERMES_3_MEAN_THRESHOLD_ENTRY = True  # Strictly 50% Mean Threshold (MT) Entry
+HERMES_3_5_BOUNDARY_ENTRY = False     # Outer 5% Boundary entry strictly removed
+HERMES_3_CANDLE_BODY_CLOSE_SL = True  # Soft SL invalidation strictly on Candle Body Close
+HERMES_3_SOFT_SL_PCT = 0.015          # 1.50% Soft SL on Candle Close (-7.5% ROE @ 5x)
+HERMES_3_HARD_CIRCUIT_SL_PCT = 0.030  # 3.00% Emergency Hard Circuit Breaker on Exchange (-15.0% ROE @ 5x)
+HERMES_3_TP_PCT = 0.030               # +3.00% Take Profit (+15.0% ROE @ 5x)
+HERMES_3_BE_TRIGGER_PCT = 0.015       # +1.50% Spot Move Locks Break-Even at Entry
+HERMES_3_REJECTION_WICK_MIN = 0.18    # >= 18% Rejection Wick required on tap candle
+HERMES_3_MAX_TAP_BARS = 28            # Retest tap strictly <= 28 bars
 HERMES_3_MULTI_STAGE_ARMOR = True
 HERMES_3_BTC_EMERGENCY_SHIELD = True
 HERMES_3_DYNAMIC_ATR_BUFFER = True
-HERMES_3_5_MIN_MATURATION_1H = 18     # Next-Day Retest Horizon (18h replaces rigid 48h to boost frequency)
-HERMES_3_5_MIN_MATURATION_4H = 8      # 32-hour Retest Horizon for 4H Macro
-HERMES_3_5_BTC_TREND_FILTER = "DISABLED" # Independent Asset SMC Architecture (BTC Trend Filter Removed)
-HERMES_3_5_DUAL_TIER_SIZING = True   # Pillar 1: Full Size Tier 1, Half Size Tier 2 with fast BE
-HERMES_3_5_15M_SNIPER_GATE = True    # Pillar 2: 15m Rejection Gate (rejects runaway knives/rockets)
-HERMES_3_5_CVD_DELTA_FILTER = True   # Pillar 3: Cumulative Volume Delta & OI Alignment
 TIMEFRAME = "4h"
 KLINES_LIMIT = 200
 
@@ -248,10 +247,10 @@ BREAKEVEN_TRIGGER_4H = 0.0102  # Lock entry at +1.02% price gain (+5.10% ROE)
 # --- Real vs Paper Trading Alerts (Active: Broadcasts with Charts to Telegram) ---
 MUTE_PAPER_TRADING_ALERTS = os.getenv("MUTE_PAPER_TRADING_ALERTS", "false").lower() == "true"
 # --- Locked Universal Strategy ---
-CURRENT_STRATEGY_NAME = "HERMES 3.5 SINGLE TIER"
-CURRENT_STRATEGY_MODE = "HERMES_3.5_SINGLE_TIER"
-HERMES_HYBRID_BUY_ENGINE = "HERMES_3.5_SINGLE_TIER"
-HERMES_HYBRID_SELL_ENGINE = "HERMES_3.5_SINGLE_TIER"
+CURRENT_STRATEGY_NAME = "HERMES 3.0 MODEL 2A"
+CURRENT_STRATEGY_MODE = "HERMES_3.0_MODEL_2A"
+HERMES_HYBRID_BUY_ENGINE = "HERMES_3.0_MODEL_2A"
+HERMES_HYBRID_SELL_ENGINE = "HERMES_3.0_MODEL_2A"
 
 # --- Server Config ---
 HOST = "0.0.0.0"

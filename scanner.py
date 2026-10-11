@@ -19,9 +19,9 @@ from alerts.telegram_service import telegram_service
 
 class SMCScanner:
     """
-    Hermes 3.5 Single Tier Radar Harvest Scanner Gateway.
+    Hermes 3.0 Model 2A Radar Harvest Scanner Gateway.
     All scanning, setup detection, orderflow verification, and execution 
-    are handled by hermes35_live_engine.
+    are handled by hermes30_live_engine.
     """
     def __init__(self):
         self.is_running = False
@@ -44,10 +44,10 @@ class SMCScanner:
 
     async def run_full_structure_scan(self) -> Dict[str, Any]:
         """
-        Structure scan delegated completely to HERMES 3.5 SINGLE TIER RADAR HARVEST.
+        Structure scan delegated completely to HERMES 3.0 MODEL 2A.
         """
-        from engine.hermes35_live import hermes35_live_engine
-        return await hermes35_live_engine.run_full_champion_scan()
+        from engine.hermes30_apex_live import hermes30_live_engine
+        return await hermes30_live_engine.run_full_champion_scan()
 
     async def check_live_prices_and_triggers(self):
         """

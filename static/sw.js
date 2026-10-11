@@ -1,4 +1,4 @@
-// Hermes 4.0 Council & Hermes 3.5 Single Tier - Deca Matrix Service Worker
+// Hermes 4.0 Council & Hermes 3.0 Model 2A - Deca Matrix Service Worker
 const CACHE_NAME = 'hermes-40-council-v4';
 const STATIC_ASSETS = [
   '/static/style.css',

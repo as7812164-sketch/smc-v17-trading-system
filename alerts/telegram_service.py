@@ -75,7 +75,7 @@ def get_main_menu_keyboard() -> Dict[str, Any]:
             [{"text": "📱 Open Mobile Terminal", "web_app": {"url": TELEGRAM_WEBAPP_URL}}],
             [{"text": "📊 Live Status"}, {"text": "💰 PnL & Balance"}],
             [{"text": "📈 Open Trades"}, {"text": "📦 Active Zones"}],
-            [{"text": "📜 Trade History"}, {"text": "📜 Hermes 3.5 Indicator"}],
+            [{"text": "📜 Trade History"}, {"text": "📜 Hermes 3.0 Model 2A Indicator"}],
             [{"text": "🧠 Hermes AI Agent"}, {"text": "❓ Help"}]
         ],
         "resize_keyboard": True,
@@ -183,12 +183,12 @@ def format_trade_open_alert(
         date_time_str + "</pre>"
     ])
 
-    armor_name = f"{CURRENT_STRATEGY_NAME} PROFIT ARMOR"
-    armor_desc = "Tier 1: BE +1.6% / Trail +2.2% | Tier 2: BE +1.0% / Trail +1.8%"
+    armor_name = "HERMES 3.0 MODEL 2A DUAL-THRESHOLD ARMOR"
+    armor_desc = "Break-Even: +1.5% Spot | Soft SL: -1.5% Body Close | Hard SL: -3.0% Circuit"
     ai_suggestion_txt = (
-        "Institutional sweep confirmed at OB boundary. High rejection wick detected. Dynamic Profit Armor armed — target +2.8% TP."
+        "50% Mean Threshold (MT) tap validated with >=18% rejection wick. Soft SL armed strictly on candle body close (-7.5% ROE) — target +15.0% ROE (+3.0% TP)."
         if side_raw not in ("BUY", "LONG")
-        else "Institutional discount floor validated with >5% displacement. Sentry 1-4 green. Compounding queue engaged — target +2.8% TP."
+        else "50% Mean Threshold (MT) institutional floor validated with >=18% rejection wick. Soft SL armed on candle body close — target +15.0% ROE (+3.0% TP)."
     )
 
     lines.extend([
@@ -313,7 +313,7 @@ def format_daily_report_alert(
     comb_pnl_sign = "+" if comb_pnl >= 0 else ""
 
     lines = [
-        "<pre>📊 HERMES 3.5 SINGLE TIER • DAILY REPORT",
+        "<pre>📊 HERMES 3.0 MODEL 2A • DAILY REPORT",
         "━━━━━━━━━━━━━━━━━━━━━━",
         "",
         date_str,
@@ -341,7 +341,7 @@ def format_daily_report_alert(
         f"{'COMBINED BALANCE':<24}{comb_bal:.2f} USDT",
         f"{'TODAY NET P&L':<24}{comb_pnl_sign}{comb_pnl:.2f} USDT",
         "",
-        "HERMES 3.5 SINGLE TIER • QUAD COMPOUNDING</pre>"
+        "HERMES 3.0 MODEL 2A • QUAD COMPOUNDING</pre>"
     ]
     return "\n".join(lines)
 
@@ -571,7 +571,7 @@ class TelegramService:
             return False
 
     def build_live_status_text(self) -> str:
-        """Builds the Hermes 3.5 Telegram Live Status Dashboard."""
+        """Builds the Hermes 3.0 Model 2A Telegram Live Status Dashboard."""
         stats = get_performance_stats()
         from database.db import get_compounding_sections
         sec_data = get_compounding_sections()
@@ -601,7 +601,7 @@ class TelegramService:
         last_alert = stats["last_alert"]
 
         msg = (
-            f"🟢 <b>HERMES 3.5 SINGLE TIER LIVE TERMINAL</b>\n\n"
+            f"🟢 <b>HERMES 3.0 MODEL 2A LIVE TERMINAL</b>\n\n"
             f"📡 <b>CONNECTION</b>\n"
             f"🌌 Binance Live: {binance_status}\n"
             f"💓 Heartbeat: 2s ago\n"
@@ -628,7 +628,7 @@ class TelegramService:
             f"✅ TP hits: {stats['tp_hits']}\n"
             f"❌ SL hits: {stats['sl_hits']}\n"
             f"🏆 Win rate: {stats['win_rate']}%\n\n"
-            f"💼 <b>HERMES 3.5 DECA COMPOUNDING ($500.00 USDT)</b>\n"
+            f"💼 <b>HERMES 3.0 MODEL 2A DECA COMPOUNDING ($500.00 USDT)</b>\n"
             f"💰 Portfolio Balance: ${tot_bal:.2f} USDT (10 Sections × $50)\n"
             f"🎯 Matrix Target: $20,000 USDT ($2,000 × 10)\n"
             f"📈 Net Return: {tot_ret:+.2f}%\n"
@@ -698,9 +698,9 @@ class TelegramService:
         curr_bal = float(acc.get("current_balance", 50.0))
         margin = curr_bal
         pos_size = margin * 5.0
-        entry_price = float(zone.get("entry_price") or zone.get("ob_high") or 1.0)
-        tp_target_pct = 2.2 if "1h" in tf else 2.8
-        sl_target_pct = 2.5 if "1h" in tf else 2.8
+        entry_price = float(zone.get("entry_price") or zone.get("mean_threshold") or zone.get("ob_high") or 1.0)
+        tp_target_pct = 3.00   # +15.0% ROE @ 5x (Model 2A Standard)
+        sl_target_pct = 1.50   # -7.5% ROE @ 5x Soft SL (Candle Body Close)
         side = zone.get("side", "BUY").upper()
         if side in ("BUY", "LONG"):
             default_tp = entry_price * (1.0 + tp_target_pct / 100.0)
@@ -710,7 +710,7 @@ class TelegramService:
             default_sl = entry_price * (1.0 + sl_target_pct / 100.0)
 
         tp_price = float(zone.get("tp_price") or default_tp)
-        sl_price = float(zone.get("sl_price") or default_sl)
+        sl_price = float(zone.get("sl_price") or zone.get("soft_sl_price") or default_sl)
         coin = zone["symbol"].replace("USDT", "")
         qty = pos_size / entry_price if entry_price > 0 else 0.0
         tp_dist = abs((tp_price - entry_price) / entry_price) * 100.0 if entry_price > 0 else tp_target_pct
@@ -746,13 +746,13 @@ class TelegramService:
             candles = await binance_feed.fetch_klines(zone["symbol"], interval=tf, limit=50)
             if candles:
                 all_sym_zones = get_active_zones(symbol=zone["symbol"])
-                chart_bytes = render_smc_chart_image(zone["symbol"], candles, zone, zones=all_sym_zones[:3], timeframe=tf.upper())
+                chart_bytes = render_smc_chart_image(zone["symbol"], candles, zone, zones=all_sym_zones[:3] if all_sym_zones else [zone], timeframe=tf.upper())
                 resp = await self.send_photo(chart_bytes, alert_text, parse_mode="HTML", reply_markup=keyboard)
                 if resp and resp.get("ok"):
                     sent_msg_id = resp["result"]["message_id"]
                     sent = True
-        except Exception:
-            pass
+        except Exception as ce:
+            logger.error(f"Error rendering chart photo for {zone['symbol']}: {ce}")
 
         if not sent:
             resp = await self.send_raw_message(alert_text, parse_mode="HTML", reply_markup=keyboard)
@@ -1059,7 +1059,7 @@ class TelegramService:
         entry_level = zone["ob_high"] if zone["side"] == "BUY" else zone["ob_low"]
 
         text = (
-            f"⚠️ <b>HERMES 3.5 SINGLE TIER WATCHLIST</b>\n\n"
+            f"⚠️ <b>HERMES 3.0 MODEL 2A WATCHLIST</b>\n\n"
             f"🪙 <b>Coin:</b> #{zone['symbol']}\n"
             f"🎯 <b>Approaching:</b> {side_emoji} 4H Order Block\n"
             f"📍 <b>Planned Entry:</b> <code>{entry_level}</code>\n"
@@ -1130,9 +1130,9 @@ class TelegramService:
                 side = zone.get("side", "BUY")
                 zone["entry_price"] = mt
                 zone["mean_threshold"] = mt
-                zone["tp_price"] = mt * 1.0280 if side == "BUY" else mt * 0.9720
-                zone["sl_price"] = mt * 0.9720 if side == "BUY" else mt * 1.0280
-                zone["armor_stage1_price"] = mt * 1.0160 if side == "BUY" else mt * 0.9840
+                zone["tp_price"] = mt * 1.0300 if side == "BUY" else mt * 0.9700
+                zone["sl_price"] = mt * 0.9850 if side == "BUY" else mt * 1.0150
+                zone["armor_stage1_price"] = mt * 1.0150 if side == "BUY" else mt * 0.9850
             else:
                 ob_h = float(candles[-1]["high"])
                 ob_l = float(candles[-1]["low"])
@@ -1144,21 +1144,21 @@ class TelegramService:
                     "ob_low": ob_l,
                     "mean_threshold": mt,
                     "entry_price": mt,
-                    "tp_price": mt * 1.0280,
-                    "sl_price": mt * 0.9720,
-                    "armor_stage1_price": mt * 1.0160,
+                    "tp_price": mt * 1.0300,
+                    "sl_price": mt * 0.9850,
+                    "armor_stage1_price": mt * 1.0150,
                     "status": "CHART_VIEW"
                 }
 
             chart_bytes = render_smc_chart_image(sym, candles, zone, zones=zones[:3] if zones else [zone], timeframe="4H")
             ob_count = len(zones[:3]) if zones else 1
             caption = (
-                f"🏛️ <b>HERMES 3.5 SINGLE TIER • #{sym} (4H)</b>\n\n"
+                f"🏛️ <b>HERMES 3.0 MODEL 2A • #{sym} (4H)</b>\n\n"
                 f"📍 <b>Live Market Price:</b> <code>${cur_p:,.4f}</code>\n"
                 f"🎯 <b>50% Mean Threshold (MT):</b> <code>${zone['entry_price']:,.4f}</code>\n"
-                f"🟢 <b>TP (+14.0% ROE):</b> <code>${zone['tp_price']:,.4f}</code>\n"
-                f"🛡️ <b>Profit Armor (+8.0%):</b> <code>${zone['armor_stage1_price']:,.4f}</code>\n"
-                f"🛑 <b>Dynamic SL (-14.0% ROE):</b> <code>${zone['sl_price']:,.4f}</code>\n"
+                f"🟢 <b>TP (+15.0% ROE):</b> <code>${zone['tp_price']:,.4f}</code>\n"
+                f"🛡️ <b>BE Armor (+7.5% ROE):</b> <code>${zone['armor_stage1_price']:,.4f}</code>\n"
+                f"🛑 <b>Soft SL (-7.5% Body Close):</b> <code>${zone['sl_price']:,.4f}</code>\n"
                 f"📦 <b>Active Order Blocks:</b> <b>{ob_count}</b> | Continuous Live Projection"
             )
             keyboard = get_alert_inline_keyboard(sym)
@@ -1169,7 +1169,7 @@ class TelegramService:
             await self.send_raw_message(f"⚠️ Error generating chart for #{sym}: {e}")
 
     async def handle_pinescript_command(self):
-        """Sends the upgraded Hermes 3.5 Single Tier Pine Script v5 directly to Telegram."""
+        """Sends the upgraded Hermes 3.0 Model 2A Pine Script v5 directly to Telegram."""
         from config import BASE_DIR
         pine_file = BASE_DIR / "HERMES_3_5_SINGLE_TIER_OFFICIAL.pine"
         code_str = ""
@@ -1178,7 +1178,7 @@ class TelegramService:
                 code_str = f.read()
 
         summary_msg = (
-            "📜 <b>HERMES 3.5 APEX — OFFICIAL PINE SCRIPT V5</b>\n\n"
+            "📜 <b>HERMES 3.0 MODEL 2A — OFFICIAL PINE SCRIPT V5</b>\n\n"
             "✨ <b>Latest Institutional Upgrades Applied:</b>\n"
             "• 📈 <b>Continuous Live Alignment:</b> Zones dynamically extend alongside running price (+5 future candles margin).\n"
             "• 🎯 <b>50% Mean Threshold (MT) Tap Freeze:</b> Price MT touch karte hi zone wahi instantly freeze aur mitigate ho jata hai.\n"
@@ -1205,7 +1205,7 @@ class TelegramService:
             await self.send_document(
                 doc_bytes=doc_bytes,
                 filename="HERMES_3_5_SINGLE_TIER_OFFICIAL.pine",
-                caption="📜 <b>Hermes 3.5 Single Tier Official TradingView Indicator (.pine)</b>\n<i>TradingView Pine Editor me paste karein ya direct upload karein.</i>",
+                caption="📜 <b>Hermes 3.0 Model 2A Official TradingView Indicator (.pine)</b>\n<i>TradingView Pine Editor me paste karein ya direct upload karein.</i>",
                 reply_markup=keyboard
             )
 
@@ -1331,7 +1331,7 @@ class TelegramService:
         proximity_list.sort(key=lambda x: x["distance_pct"])
         top_zones = proximity_list[:7]
 
-        lines = ["📦 <b>HERMES 3.5 SINGLE TIER Top Order Blocks:</b>\n"]
+        lines = ["📦 <b>HERMES 3.0 MODEL 2A Top Order Blocks:</b>\n"]
         for item in top_zones:
             z = item["zone"]
             side_icon = "🟢 BUY" if z["side"] == "BUY" else "🔴 SELL"
@@ -1353,7 +1353,7 @@ class TelegramService:
         history = get_paper_trades_history(limit=5)
 
         lines = [
-            f"⚡ <b>HERMES 3.5 SINGLE TIER 10-SECTION MATRIX TRADES</b>\n",
+            f"⚡ <b>HERMES 3.0 MODEL 2A 10-SECTION MATRIX TRADES</b>\n",
             f"💰 <b>Combined Portfolio:</b> <code>${tot_bal:.2f} USDT</code> (Goal: $500 ➔ $20,000 across 10 Sections)\n"
         ]
 
@@ -1373,7 +1373,7 @@ class TelegramService:
                 )
         else:
             lines.append("⏳ <b>Active Real Trade:</b> <i>No position open right now. (All 10 sections safe with $50.00 each).</i>\n")
-            lines.append("🎯 <i>Hermes 3.5 Single Tier scanner active across Top-22 champions. Qualified setup hit hote hi auto order place hoga!</i>\n")
+            lines.append("🎯 <i>Hermes 3.0 Model 2A scanner active across Top-22 champions. Qualified setup hit hote hi auto order place hoga!</i>\n")
 
         if history:
             lines.append("📜 <b>RECENT TRADES HISTORY:</b>")
@@ -1402,11 +1402,11 @@ class TelegramService:
         progress_pct = max(0.0, min(100.0, ((tot_bal - 500.0) / (20000.0 - 500.0)) * 100))
 
         lines = [
-            f"🎯 <b>HERMES 3.5 DECA COMPOUNDING MATRIX ($500 ➔ $20,000)</b>",
+            f"🎯 <b>HERMES 3.0 MODEL 2A DECA COMPOUNDING MATRIX ($500 ➔ $20,000)</b>",
             f"━━━━━━━━━━━━━━━━━━━━",
             f"💰 <b>Combined Portfolio Balance:</b> <code>${tot_bal:.2f} USDT</code> (10 × $50)",
             f"📈 <b>Matrix Progress:</b> <code>{progress_pct:.2f}%</code> ({tot_ret:+.2f}% Growth)",
-            f"🛡️ <b>Engine:</b> Hermes 3.5 Single Tier • 5x Isolated • 10 Independent Sections\n"
+            f"🛡️ <b>Engine:</b> Hermes 3.0 Model 2A • 5x Isolated • 10 Independent Sections\n"
         ]
 
         if open_trades:
@@ -1507,11 +1507,11 @@ class TelegramService:
             )
 
         text = (
-            f"⚡ <b>HERMES 3.5 DECA COMPOUNDING STATUS</b>\n\n"
+            f"⚡ <b>HERMES 3.0 MODEL 2A DECA COMPOUNDING STATUS</b>\n\n"
             f"💰 <b>Total Balance:</b> <code>${tot_bal:.2f} USDT</code> (10 Sections × $50)\n"
             f"🎯 <b>Compounding Goal:</b> <code>$500 ➔ $20,000 USDT</code> ($2,000 × 10)\n"
             f"🛡️ <b>Engine Status:</b> 🟢 ACTIVE (10 Sections Live)\n"
-            f"📊 <b>Execution Mode:</b> Hermes 3.5 Single Tier • 5x Isolated\n\n"
+            f"📊 <b>Execution Mode:</b> Hermes 3.0 Model 2A • 5x Isolated\n\n"
             f"🔥 <b>CURRENT REAL TRADE STATUS ({open_sec} Open):</b>\n"
             f"{active_tr_str}\n\n"
             f"💼 <b>10-SECTION MATRIX STATS:</b>\n"
@@ -1735,9 +1735,9 @@ class TelegramService:
                             # Start / Help / Greetings
                             if text in ("/start", "/help", "help", "menu", "❓ help"):
                                 reply = (
-                                    "👑 <b>HERMES 3.5 SINGLE TIER Autonomous Terminal Bot</b>\n\n"
+                                    "👑 <b>HERMES 3.0 MODEL 2A Autonomous Terminal Bot</b>\n\n"
                                     "<b>⚡ Interactive Commands:</b>\n"
-                                    "• <code>/indicator</code> or <code>/pinescript</code> - Download & view Hermes 3.5 Indicator\n"
+                                    "• <code>/indicator</code> or <code>/pinescript</code> - Download & view Hermes 3.0 Model 2A Indicator\n"
                                     "• <code>/chart &lt;coin&gt;</code> - Instant 4H chart with Order Blocks (e.g. <code>/chart BTC</code>)\n"
                                     "• <code>/zones</code> - Top Order Blocks closest to live price (50% MT)\n"
                                     "• <code>/trades</code> or <code>/positions</code> - Active 5x Positions & Pending Limits\n"
@@ -1751,8 +1751,8 @@ class TelegramService:
                                 menu_kb = get_main_menu_keyboard()
                                 await self.send_raw_message(reply, reply_markup=menu_kb)
 
-                            # Pine Script / Hermes 3.5 Indicator Command
-                            elif text in ("/indicator", "/pinescript", "📜 hermes 3.5 indicator", "indicator", "pinescript"):
+                            # Pine Script / Hermes 3.0 Model 2A Indicator Command
+                            elif text in ("/indicator", "/pinescript", "📜 hermes 3.0 model 2a indicator", "indicator", "pinescript"):
                                 await self.handle_pinescript_command()
 
                             # Hermes AI Agent Routing
@@ -1826,7 +1826,7 @@ class TelegramService:
                                 if not signals:
                                     reply = "ℹ️ No signals recorded yet. Scanner is monitoring for First Tap entries."
                                 else:
-                                    lines = ["📊 <b>Recent HERMES 3.5 SINGLE TIER Signals:</b>\n"]
+                                    lines = ["📊 <b>Recent HERMES 3.0 MODEL 2A Signals:</b>\n"]
                                     for s in signals:
                                         lines.append(f"• <b>{s['symbol']}</b> ({s['side']}): {s['signal_type']} @ {s['price']}")
                                     reply = "\n".join(lines)
@@ -1846,7 +1846,7 @@ class TelegramService:
                                 )
                                 await self.send_raw_message(reply)
 
-                            # Autonomous Hermes 3.5 AI Cognitive Brain Catch-All
+                            # Autonomous Hermes 3.0 Model 2A AI Cognitive Brain Catch-All
                             else:
                                 await self.handle_user_chat_message(raw_text)
 
@@ -1857,7 +1857,7 @@ class TelegramService:
 
     async def handle_user_chat_message(self, prompt: str):
         """
-        AUTONOMOUS HERMES 3.5 AI COGNITIVE BRAIN:
+        AUTONOMOUS HERMES 3.0 MODEL 2A AI COGNITIVE BRAIN:
         When the user sends any text message, question, or inquiry on Telegram,
         Hermes AI gathers live market data, BTC macro context, active open positions,
         and provides an authoritative, intelligent Hinglish quant consultation.
@@ -1885,7 +1885,7 @@ class TelegramService:
             pos_str = "; ".join(pos_lines) if pos_lines else "0 active trades. Scanner monitoring Top-28 for First Tap."
 
             context = {
-                "strategy": "HERMES_3.5_DUAL_TIER_SNIPER",
+                "strategy": "HERMES_3.0_MODEL_2A",
                 "btc_price": btc_price,
                 "open_positions": pos_str,
                 "active_zones_count": len(active_zones),
@@ -1903,7 +1903,7 @@ class TelegramService:
             menu_kb = get_main_menu_keyboard()
             await self.send_raw_message(resp, reply_markup=menu_kb)
         except Exception as e:
-            fallback = f"🤖 <b>Hermes 3.5 AI:</b>\n\nBhai, aapka message mila. Market live scan chal raha hai. Aap specific coin check karne ke liye <code>/chart BTC</code> ya <code>/status</code> use kar sakte hain."
+            fallback = f"🤖 <b>Hermes 3.0 Model 2A AI:</b>\n\nBhai, aapka message mila. Market live scan chal raha hai. Aap specific coin check karne ke liye <code>/chart BTC</code> ya <code>/status</code> use kar sakte hain."
             await self.send_raw_message(fallback)
 
 telegram_service = TelegramService()
