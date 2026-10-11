@@ -31,6 +31,7 @@ from database.db import (
     get_connection,
     get_paper_account,
     get_dual_paper_accounts,
+    get_compounding_sections,
     get_open_paper_trades,
     update_paper_trade_mark_price,
     format_duration_str,
@@ -40,7 +41,8 @@ from database.db import (
     set_metric,
     is_alert_sent,
     record_sent_alert,
-    open_paper_trade
+    open_paper_trade,
+    close_paper_trade
 )
 from feed.binance_feed import binance_feed
 from alerts.telegram_service import (
@@ -75,7 +77,6 @@ class Hermes30Model2ALiveEngine:
         self.tick_interval_seconds = 5    # Live ticker watchdog every 5 seconds
         self.last_scan_time = 0
         self.last_btc_bias = {"bias": "NEUTRAL", "pct": 0.0, "time": 0}
-        self.active_position: Optional[Dict[str, Any]] = None
         self.detected_setups: List[Dict[str, Any]] = []
         self.last_tickers: Dict[str, float] = {}
         self.last_ticker_time: float = 0.0
@@ -84,6 +85,16 @@ class Hermes30Model2ALiveEngine:
         self._in_flight_symbols = set()
         self.ws_broadcast_callback = None
         self._ensure_db_schema()
+
+    @property
+    def active_position(self) -> Optional[Dict[str, Any]]:
+        """Returns the first active position or None, for backwards compatibility."""
+        open_trades = get_open_paper_trades()
+        return open_trades[0] if open_trades else None
+
+    @active_position.setter
+    def active_position(self, val):
+        pass  # Backwards compatibility
 
     def set_broadcast_callback(self, callback):
         self.ws_broadcast_callback = callback
@@ -119,33 +130,23 @@ class Hermes30Model2ALiveEngine:
                 conn.execute("ALTER TABLE paper_trades ADD COLUMN sentry_reasons TEXT DEFAULT ''")
 
             # Update account mode to HERMES_3.0_MODEL_2A
-            conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_MODEL_2A' WHERE id = 1")
+            conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_MODEL_2A' WHERE id <= 10")
             conn.commit()
 
-    def get_hermes_account(self) -> Dict[str, Any]:
-        """Retrieves live Hermes account state with compounding metrics."""
-        with get_connection() as conn:
-            row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
-            if not row:
-                self._ensure_db_schema()
+    def get_hermes_account(self, account_id: Optional[int] = None) -> Dict[str, Any]:
+        """Retrieves live Hermes Deca Compounding account state ($500 total equity across 10 sections)."""
+        if account_id:
+            return get_paper_account(account_id=account_id)
+        try:
+            deca = get_compounding_sections()
+            combined = deca.get("combined", {})
+            combined["total_sections"] = 10
+            combined["sections"] = deca.get("sections", [])
+            return combined
+        except Exception:
+            with get_connection() as conn:
                 row = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
-            acc = dict(row)
-            open_count = conn.execute("SELECT COUNT(*) FROM paper_trades WHERE status = 'OPEN'").fetchone()[0]
-            acc["open_trades_count"] = open_count
-            wins = acc.get("win_count", 0) or 0
-            losses = acc.get("loss_count", 0) or 0
-            total_closed = wins + losses
-            acc["win_rate"] = round((wins / total_closed * 100), 1) if total_closed > 0 else 0.0
-            init_b = float(acc.get("initial_balance", 50.0) or 50.0)
-            curr_b = float(acc.get("current_balance", 50.0) or 50.0)
-            vault_b = float(acc.get("vault_balance", 0.0) or 0.0)
-            target = float(acc.get("milestone_target", 2000.0) or 2000.0)
-            equity = curr_b + vault_b
-            acc["equity"] = round(equity, 2)
-            acc["return_pct"] = round(((equity - init_b) / init_b * 100), 2)
-            acc["milestone_progress_pct"] = round(min(100.0, (equity / target) * 100.0), 2)
-            acc["mode"] = "HERMES_3.0_MODEL_2A"
-            return acc
+                return dict(row) if row else {}
 
     async def evaluate_btc_macro_sentry(self) -> Dict[str, Any]:
         """Sentry 1: Macro BTC Causal Brake (Vetoes if BTC 4H dumped/pumped >= 2.0%)."""
@@ -374,15 +375,42 @@ class Hermes30Model2ALiveEngine:
 
         # Master Emergency Kill Switch Check
         if self.is_kill_switch_active():
-            return
+            return {
+                "timestamp": time.time(),
+                "btc_sentry": btc_sentry,
+                "total_detected": len(all_setups),
+                "fresh_triggers": 0,
+                "kill_switch_active": True,
+                "setups": all_setups[:20]
+            }
 
-        # Check for immediate fresh trigger execution
+        # Check for immediate fresh trigger execution across Deca Compounding Sections (1-10)
         fresh = [s for s in all_setups if s.get("is_fresh_trigger")]
-        if fresh and not self.active_position:
-            # Check sequential queue
+        if fresh:
             open_trades = get_open_paper_trades()
-            if not open_trades:
-                asyncio.create_task(self.execute_apex_entry(fresh[0]))
+            busy_sec_ids = {int(t["account_id"]) for t in open_trades if t.get("account_id")}
+            busy_symbols = {t.get("symbol") for t in open_trades if t.get("symbol")}
+
+            for setup in fresh:
+                sym = setup.get("symbol")
+                if sym in busy_symbols:
+                    continue  # Zero coin duplication across sections
+
+                tf = setup.get("interval", "4h").lower()
+                target_sec_ids = list(range(1, 6)) if "4h" in tf else list(range(6, 11))
+                available_sec = next((sid for sid in target_sec_ids if sid not in busy_sec_ids), None)
+
+                if available_sec is not None:
+                    # Allocate this slot
+                    busy_sec_ids.add(available_sec)
+                    busy_symbols.add(sym)
+                    setup_to_run = dict(setup)
+                    setup_to_run["account_id"] = available_sec
+                    setup_to_run["channel"] = f"sec_{available_sec}"
+                    logger.info(f"⚡ DECA COMPOUNDING: Deploying {sym} {tf.upper()} into Section {available_sec}")
+                    asyncio.create_task(self.execute_apex_entry(setup_to_run))
+                else:
+                    logger.info(f"⏳ All {tf.upper()} Deca Compounding sections are currently busy for {sym}.")
 
         return {
             "timestamp": time.time(),
@@ -404,19 +432,36 @@ class Hermes30Model2ALiveEngine:
         return enabled
 
     async def execute_apex_entry(self, setup: Dict[str, Any]):
-        """Executes a qualified Model 2A trade under strict sequential compounding queue."""
+        """Executes a qualified Model 2A trade under Deca Compounding (10 independent slots)."""
         async with self._order_execution_lock:
             if self.is_kill_switch_active():
                 logger.warning("🚨 EMERGENCY KILL SWITCH ACTIVE: Suppressing new trade entry.")
                 return
 
-            open_trades = get_open_paper_trades()
-            if open_trades:
-                return  # Strict sequential trade queue (0 margin contagion)
-
             symbol = setup["symbol"]
             side = setup["side"].upper()
+            timeframe = setup.get("interval", setup.get("timeframe", "4h")).lower()
             now_ts = time.time()
+
+            # Prevent duplicate position on same symbol
+            open_trades = get_open_paper_trades()
+            if any(t.get("symbol") == symbol for t in open_trades):
+                logger.info(f"⚠️ Position already open for {symbol}. Suppressing duplicate.")
+                return
+
+            # Determine Deca Compounding Section ID (1-5 for 4H Macro, 6-10 for 1H Intraday)
+            target_sec_ids = list(range(1, 6)) if "4h" in timeframe else list(range(6, 11))
+            busy_sec_ids = {int(t["account_id"]) for t in open_trades if t.get("account_id")}
+
+            req_sec_id = setup.get("account_id")
+            if req_sec_id and req_sec_id in target_sec_ids and req_sec_id not in busy_sec_ids:
+                sec_id = req_sec_id
+            else:
+                sec_id = next((i for i in target_sec_ids if i not in busy_sec_ids), None)
+
+            if not sec_id:
+                logger.info(f"⏳ All {timeframe.upper()} compounding sections (IDs {target_sec_ids}) are currently busy. Queue full.")
+                return
 
             # Cooldown guard: In-memory & Persistent DB check (Prevents rapid machine-gun re-entries!)
             cd_db = float(get_setting(f"cooldown_{symbol}", 0) or 0)
@@ -430,9 +475,11 @@ class Hermes30Model2ALiveEngine:
                 logger.info(f"⚠️ Duplicate entry alert prevented for {symbol} {side}")
                 return
 
-            acc = self.get_hermes_account()
-            curr_balance = acc["current_balance"]
+            # Fetch account balance for this specific section
+            acc = get_paper_account(account_id=sec_id)
+            curr_balance = float(acc.get("current_balance", 50.0) or 50.0)
             if curr_balance < 5.0:
+                logger.warning(f"⚠️ Section {sec_id} balance too low (${curr_balance}). Suppressing entry.")
                 return
 
             # Arm 1-hour cooldown immediately so coin cannot re-enter in a rapid loop
@@ -440,7 +487,7 @@ class Hermes30Model2ALiveEngine:
             set_setting(f"cooldown_{symbol}", str(now_ts + 3600))
             record_sent_alert(alert_key, symbol, side, "ENTRY", setup.get("tap_time", 0), None)
 
-            # 5x Leverage Compounding
+            # 5x Leverage Compounding isolated to this section
             leverage = 5
             margin = round(curr_balance, 2)
             position_size = round(margin * leverage, 2)
@@ -449,9 +496,18 @@ class Hermes30Model2ALiveEngine:
             tp = float(setup["tp_price"])
             soft_sl = float(setup["soft_sl_price"])
             hard_sl = float(setup["hard_sl_price"])
-            timeframe = setup.get("interval", "4h")
+
+            setup["account_id"] = sec_id
+            setup["channel"] = f"sec_{sec_id}"
+            setup["timeframe"] = timeframe
+            setup["margin_usdt"] = margin
+            setup["position_size_usdt"] = position_size
 
             trade_record = open_paper_trade(setup)
+            if not trade_record or "error" in trade_record:
+                logger.error(f"Failed to open paper trade for {symbol}: {trade_record}")
+                return
+
             trade_id = trade_record.get("id")
 
             # Real exchange auto-trading execution (Bitget / Binance)
@@ -479,13 +535,15 @@ class Hermes30Model2ALiveEngine:
             except Exception as bne:
                 logger.error(f"Error executing real Binance trade: {bne}")
 
-            logger.info(f"🚀 HERMES 3.0 MODEL 2A TRADE OPENED: {symbol} {side} @ {ep} | TP: {tp} | Soft SL: {soft_sl} (Body Close) | Hard SL: {hard_sl}")
+            sec_type_str = "4H Macro Swing" if sec_id <= 5 else "1H Intraday Scalp"
+            logger.info(f"🚀 HERMES 3.0 MODEL 2A TRADE OPENED [Section {sec_id}]: {symbol} {side} @ {ep} | TP: {tp} | Soft SL: {soft_sl} (Body Close) | Hard SL: {hard_sl}")
 
             # Send Telegram Alert with Live Chart Image
             try:
                 alert_text = (
                     f"👑 <b>HERMES 3.0 MODEL 2A: NEW TRADE EXECUTED</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"📦 <b>Compounding Slot</b>: <b>Section {sec_id} ({sec_type_str})</b>\n"
                     f"🪙 <b>Pair</b>: #{symbol} ({timeframe.upper()})\n"
                     f"📈 <b>Action</b>: {'🟢 BUY (LONG)' if side == 'LONG' else '🔴 SELL (SHORT)'}\n"
                     f"🎯 <b>Entry Price</b>: {ep:.6f} (50% Mean Threshold)\n"
@@ -496,7 +554,7 @@ class Hermes30Model2ALiveEngine:
                     f"🕯️ <b>Rejection Wick</b>: {setup.get('wick_ratio_pct', 24.5):.1f}% (Confirmed ≥ 18.0% Absorption)\n"
                     f"⚡ <b>Leverage</b>: {leverage}x Isolated | Margin: ${margin:.2f} USDT\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔬 <i>Wick sweeps below soft SL are absorbed! Position exits only on Bar Close confirmation.</i>"
+                    f"🔬 <i>Deca Compounding Slot {sec_id}/10 Active | 0 Margin Contagion</i>"
                 )
                 keyboard = telegram_service.get_alert_inline_keyboard(symbol)
                 sent_msg_id = None
@@ -644,51 +702,23 @@ class Hermes30Model2ALiveEngine:
                 await self.resolve_trade_exit(trade, exit_triggered, exit_price)
 
     async def resolve_trade_exit(self, trade: Dict[str, Any], outcome: str, exit_price: float):
-        """Resolves trade exit, compounds balance, and dispatches alert."""
+        """Resolves trade exit, compounds balance into specific Deca section, and dispatches alert."""
         trade_id = trade["id"]
         sym = trade["symbol"]
         side = trade["side"].upper()
-        entry_price = float(trade["entry_price"])
-        margin = float(trade["margin"])
-        leverage = int(trade["leverage"])
+        sec_id = trade.get("account_id") or 1
+        tf = str(trade.get("timeframe", "4h")).lower()
 
-        if side in ("BUY", "LONG"):
-            pnl_pct = (exit_price - entry_price) / entry_price * leverage
-        else:
-            pnl_pct = (entry_price - exit_price) / entry_price * leverage
+        # Atomic exit settlement using database engine
+        close_res = close_paper_trade(trade, outcome, exit_price)
+        if not close_res:
+            logger.warning(f"Trade #{trade_id} ({sym}) was already closed or not found.")
+            return
 
-        pnl_usdt = round(margin * pnl_pct, 2)
-        close_time_ms = int(time.time() * 1000)
-
-        with get_connection() as conn:
-            conn.execute("""
-            UPDATE paper_trades SET
-                exit_price = ?,
-                closed_at = ?,
-                realized_pnl = ?,
-                pnl_pct = ?,
-                status = 'CLOSED',
-                exit_reason = ?
-            WHERE id = ?
-            """, (exit_price, close_time_ms, pnl_usdt, pnl_pct * 100.0, outcome, trade_id))
-
-            # Update paper account compounding balance
-            acc = conn.execute("SELECT * FROM paper_account WHERE id = 1").fetchone()
-            curr_b = float(acc["current_balance"])
-            new_b = max(5.0, round(curr_b + pnl_usdt, 2))
-
-            win_inc = 1 if outcome == "TP_HIT" else 0
-            loss_inc = 1 if outcome in ("STRUCTURAL_BODY_CLOSE_SL", "EMERGENCY_HARD_SL_HIT") else 0
-
-            conn.execute("""
-            UPDATE paper_account SET
-                current_balance = ?,
-                total_pnl = total_pnl + ?,
-                win_count = win_count + ?,
-                loss_count = loss_count + ?
-            WHERE id = 1
-            """, (new_b, pnl_usdt, win_inc, loss_inc))
-            conn.commit()
+        pnl_usdt = close_res.get("pnl_usdt", 0.0)
+        pnl_pct = close_res.get("pnl_pct", 0.0)
+        new_b = close_res.get("new_balance", 50.0)
+        duration_str = close_res.get("duration", "")
 
         # Real exchange position close (Bitget / Binance)
         try:
@@ -707,21 +737,24 @@ class Hermes30Model2ALiveEngine:
 
         # Set 30m cooldown
         self.trade_cooldowns[sym] = time.time() + 1800
-        logger.info(f"🏁 HERMES 3.0 TRADE CLOSED: {sym} {outcome} | PnL: ${pnl_usdt:+.2f} USDT ({pnl_pct*100:+.2f}%) | New Balance: ${new_b:.2f}")
+        logger.info(f"🏁 HERMES 3.0 TRADE CLOSED [Section {sec_id}]: {sym} {outcome} | PnL: ${pnl_usdt:+.2f} USDT ({pnl_pct:+.2f}%) | Slot Balance: ${new_b:.2f}")
 
         # Send Telegram notification
         try:
+            sec_type = "4H Macro Swing" if int(sec_id) <= 5 else "1H Intraday Scalp"
             tg_text = (
                 f"{'🏆' if outcome == 'TP_HIT' else ('🛡️' if outcome == 'BE_SAVE' else '🛑')} "
                 f"<b>HERMES 3.0 MODEL 2A: POSITION CLOSED</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"🪙 <b>Pair</b>: #{sym}\n"
+                f"📦 <b>Compounding Slot</b>: <b>Section {sec_id} ({sec_type})</b>\n"
+                f"🪙 <b>Pair</b>: #{sym} ({tf.upper()})\n"
                 f"📋 <b>Result</b>: <b>{outcome}</b>\n"
-                f"💵 <b>Realized PnL</b>: <b>{pnl_usdt:+.2f} USDT ({pnl_pct*100:+.2f}%)</b>\n"
+                f"💵 <b>Realized PnL</b>: <b>{pnl_usdt:+.2f} USDT ({pnl_pct:+.2f}%)</b>\n"
                 f"🚪 <b>Exit Price</b>: {exit_price:.6f}\n"
-                f"💰 <b>Updated Compounding Equity</b>: <b>${new_b:.2f} USDT</b>\n"
+                f"⏱️ <b>Duration</b>: {duration_str}\n"
+                f"💰 <b>Updated Slot Equity</b>: <b>${new_b:.2f} USDT</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"🤖 <i>Hermes 3.0 Model 2A Scanning 24/7 for next setup.</i>"
+                f"🤖 <i>Section {sec_id} is now IDLE and armed for next setup.</i>"
             )
             await telegram_service.send_raw_message(tg_text)
         except Exception as e:
