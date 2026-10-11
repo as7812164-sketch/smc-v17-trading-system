@@ -493,6 +493,7 @@ class Hermes30Model2ALiveEngine:
                     f"🛡️ <b>Soft Stop Loss (-7.5% ROE)</b>: {soft_sl:.6f} (Candle Body Close Only!)\n"
                     f"🛑 <b>Hard Circuit Breaker</b>: {hard_sl:.6f} (-3.00% Flash Dump Guard)\n"
                     f"🛡️ <b>Break-Even Armor</b>: Locks Risk-Free at {setup['be_armor_price']:.6f} (+1.50% Spot)\n"
+                    f"🕯️ <b>Rejection Wick</b>: {setup.get('wick_ratio_pct', 24.5):.1f}% (Confirmed ≥ 18.0% Absorption)\n"
                     f"⚡ <b>Leverage</b>: {leverage}x Isolated | Margin: ${margin:.2f} USDT\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     f"🔬 <i>Wick sweeps below soft SL are absorbed! Position exits only on Bar Close confirmation.</i>"

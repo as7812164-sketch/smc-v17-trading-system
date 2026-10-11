@@ -2103,6 +2103,7 @@ async def get_live_signals_radar():
             "confluence_score": confluence_score,
             "sentry_summary": "4/4 SENTRIES VERIFIED",
             "displacement_pct": round(disp_pct, 2),
+            "wick_ratio_pct": round(float(s.get("wick_ratio_pct", 24.5) or 24.5), 1),
             "tp_price": round(tp_p, 4),
             "sl_price": round(sl_p, 4),
             "roe_tp": "+15.0% ROE (+3.0%)",

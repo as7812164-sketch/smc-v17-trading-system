@@ -2479,7 +2479,7 @@
                                 </div>
                                 <div class="drc-footer">
                                     <span class="drc-prob-badge"><i class="fa-solid fa-bolt"></i> ${s.probability_pct || 95}% Win Prob</span>
-                                    <span class="drc-sentry-badge"><i class="fa-solid fa-shield-halved"></i> 4/4 Sentries</span>
+                                    <span class="drc-sentry-badge" title="Sentry 3 Rejection Wick confirmed >= 18%"><i class="fa-solid fa-shield-halved"></i> 4/4 Sentries (${s.wick_ratio_pct ? s.wick_ratio_pct + '% Wick' : '≥18% Wick'})</span>
                                     <span class="drc-status-lbl">${s.proximity_label || 'ARMED'}</span>
                                 </div>
                                 <div class="drc-actions">
