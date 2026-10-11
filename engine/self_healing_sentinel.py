@@ -89,6 +89,11 @@ class HermesSelfHealingSentinel:
         if pos_repairs:
             repairs_applied.extend(pos_repairs)
 
+        # 7. AUTO-HEAL: Scanner Engine Liveness & Permanent 24/7 Lock
+        engine_repairs = await self.auto_heal_engine_liveness()
+        if engine_repairs:
+            repairs_applied.extend(engine_repairs)
+
         if repairs_applied:
             self.total_repairs_count += len(repairs_applied)
             self.last_repair_action = "; ".join(repairs_applied)
@@ -716,6 +721,29 @@ class HermesSelfHealingSentinel:
 
         return fixes
 
+    async def auto_heal_engine_liveness(self) -> List[str]:
+        """
+        Guarantees the autonomous scanning & execution engine is PERMANENTLY LOCKED ON.
+        If the engine is stopped, crashed, or has not scanned within 7 minutes,
+        it automatically revives the engine and executes a fresh scan!
+        """
+        fixes = []
+        try:
+            from engine.hermes30_apex_live import hermes30_live_engine
+            now = time.time()
+            if not hermes30_live_engine.is_running:
+                logger.warning("🚨 [SENTINEL REPAIR] hermes30_live_engine was NOT running! Reviving engine now...")
+                asyncio.create_task(hermes30_live_engine.start())
+                fixes.append("Auto-restarted halted Hermes 3.0 Live Engine")
+            elif hermes30_live_engine.last_scan_time > 0 and (now - hermes30_live_engine.last_scan_time) > 420:
+                logger.warning(f"⚠️ [SENTINEL REPAIR] Scanner stale ({int(now - hermes30_live_engine.last_scan_time)}s ago). Triggering forced scan...")
+                asyncio.create_task(hermes30_live_engine.run_full_champion_scan())
+                fixes.append("Triggered auto-revival scan for Hermes 3.0 Engine")
+        except Exception as e:
+            logger.error(f"Error checking engine liveness: {e}")
+        return fixes
+
 
 # Global Singleton Instance
 self_healing_sentinel = HermesSelfHealingSentinel()
+

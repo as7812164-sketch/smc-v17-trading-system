@@ -761,9 +761,16 @@ class Hermes30Model2ALiveEngine:
             logger.warning(f"Telegram exit alert error: {e}")
 
     async def start(self):
-        """Starts the 24/7 autonomous live loop for Model 2A."""
+        """Starts the 24/7 autonomous live loop for Model 2A with infinite resilience."""
         self.is_running = True
-        logger.info("👑 HERMES 3.0 MODEL 2A LIVE ENGINE ACTIVATED (24/7 AUTONOMOUS)")
+        logger.info("👑 HERMES 3.0 MODEL 2A LIVE ENGINE ACTIVATED (24/7 AUTONOMOUS & LOCKED)")
+        
+        # Immediate initial scan on startup so no setups are missed
+        try:
+            await self.run_full_champion_scan()
+        except Exception as se:
+            logger.error(f"Initial scan error: {se}")
+
         scan_timer = 0
         while self.is_running:
             try:
@@ -780,6 +787,7 @@ class Hermes30Model2ALiveEngine:
                 break
             except Exception as e:
                 logger.error(f"Error in Hermes 3.0 loop: {e}")
+                await asyncio.sleep(2)
 
             await asyncio.sleep(self.tick_interval_seconds)
 
