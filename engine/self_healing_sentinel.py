@@ -141,7 +141,7 @@ class HermesSelfHealingSentinel:
         return fixes
 
     def auto_heal_strategy_consistency(self) -> List[str]:
-        """Ensures valid strategy version (HERMES_3.5_DUAL_TIER_SNIPER or HERMES_3.0_QUANTUM) is set."""
+        """Ensures valid strategy version (HERMES_3.0_MODEL_2A) is set."""
         fixes = []
         from config import STRATEGY_OPTIONS, STRATEGY_VERSION
         current_ver = get_setting("strategy_version", "")
@@ -154,7 +154,7 @@ class HermesSelfHealingSentinel:
             accs = conn.execute("SELECT id, mode, milestone_target FROM paper_account").fetchall()
             for row in accs:
                 acc_id, mode, target = row[0], row[1], row[2]
-                active_ver = get_setting("strategy_version", "HERMES_3.5_DUAL_TIER_SNIPER")
+                active_ver = get_setting("strategy_version", STRATEGY_VERSION)
                 if mode != active_ver:
                     conn.execute("UPDATE paper_account SET mode = ? WHERE id = ?", (active_ver, acc_id))
                     fixes.append(f"Auto-healed account #{acc_id} mode to {active_ver}")
@@ -282,7 +282,7 @@ class HermesSelfHealingSentinel:
 
                 # CRITICAL SAFETY: Impose 2-hour post-exit cooldown on this symbol and purge broken setups
                 try:
-                    from engine.hermes35_live import hermes35_live_engine as hermes2_apex_engine
+                    from engine.hermes30_apex_live import hermes30_live_engine as hermes2_apex_engine
                     hermes2_apex_engine.trade_cooldowns[sym] = time.time() + 7200
                     hermes2_apex_engine.detected_setups = [s for s in hermes2_apex_engine.detected_setups if s.get("symbol") != sym]
                     logger.info(f"🛑 [POST-EXIT COOLDOWN] Locked {sym} for 2 hours to prevent immediate re-entry!")
@@ -345,7 +345,7 @@ class HermesSelfHealingSentinel:
                                 symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
                                 hard_sl_price, timeframe, channel, exchange, account_id, status,
                                 entry_time, sentry_reasons, mode, duration_str, roi_pct
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'BITGET', ?, 'OPEN', ?, 'Hermes 3.0 Live Bitget Synced', 'HERMES_3.0_QUANTUM', 'Live', 0.0)
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'BITGET', ?, 'OPEN', ?, 'Hermes 3.0 Live Bitget Synced', 'HERMES_3.0_MODEL_2A', 'Live', 0.0)
                         """, (sym, side, entry_p, round(notional, 2), tp_p, sl_p, sl_p, target_tf, target_ch, target_acc_id, now_ms))
                         fixes.append(f"Auto-imported live Bitget position {sym} into DB & UI (Track {target_acc_id})")
                     conn.commit()
@@ -387,7 +387,7 @@ class HermesSelfHealingSentinel:
                                 symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
                                 hard_sl_price, timeframe, channel, exchange, account_id, status,
                                 entry_time, sentry_reasons, mode, duration_str, roi_pct
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, '1h', 'binance_1h', 'BINANCE', 2, 'OPEN', ?, 'Hermes 3.0 Live Binance Synced', 'HERMES_3.0_QUANTUM', 'Live', 0.0)
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, '1h', 'binance_1h', 'BINANCE', 2, 'OPEN', ?, 'Hermes 3.0 Live Binance Synced', 'HERMES_3.0_MODEL_2A', 'Live', 0.0)
                         """, (sym, side, entry_p, round(notional, 2), tp_p, sl_p, sl_p, now_ms))
                         fixes.append(f"Auto-imported live Binance position {sym} into DB & UI")
                     conn.commit()
@@ -655,17 +655,22 @@ class HermesSelfHealingSentinel:
             sym = str(trade.get("symbol", "")).upper()
             side = str(trade.get("side", "")).upper()
             tf = str(trade.get("timeframe") or "4h").lower()
+            mode = str(trade.get("mode") or "").upper()
+
+            # CRITICAL: Hermes 3.0 Model 2A trades are autonomously managed by hermes30_live_engine!
+            # Never interfere or prematurely close them via sentinel doctor.
+            if "HERMES_3" in mode or "MODEL_2A" in mode:
+                continue
+
             entry_p = float(trade.get("entry_price") or 0.0)
             tp_p = float(trade.get("tp_price") or 0.0)
             sl_p = float(trade.get("sl_price") or 0.0)
             hard_sl_p = float(trade.get("hard_sl_price") or sl_p)
-            highest_p = float(trade.get("highest_price") or entry_p)
-            lowest_p = float(trade.get("lowest_price") or entry_p)
             entry_time = trade.get("entry_time") or now_ms
             age_hours = (now_ms - entry_time) / (1000.0 * 3600.0)
 
             # Fetch live ticker
-            cur_price = entry_p
+            cur_price = None
             try:
                 t = await binance_feed.fetch_ticker(sym)
                 if t and float(t.get("price", 0)) > 0:
@@ -673,30 +678,27 @@ class HermesSelfHealingSentinel:
             except Exception:
                 pass
 
+            if not cur_price:
+                continue  # Never trigger exit on ticker failure or fallback
+
             should_close = False
             close_reason = ""
 
-            # Check 1: Exceeded SL / TP
+            # Check 1: Exceeded SL / TP (Strict price breach on valid mark price)
             if side in ("BUY", "LONG"):
-                if cur_price <= hard_sl_p or cur_price <= sl_p:
+                if cur_price < hard_sl_p:
                     should_close = True
-                    close_reason = f"SL Breached (Cur Price {cur_price} <= SL {sl_p})"
+                    close_reason = f"Hard Circuit SL Breached (Cur Price {cur_price} < Hard SL {hard_sl_p})"
                 elif tp_p > 0 and cur_price >= tp_p:
                     should_close = True
                     close_reason = f"TP Reached (Cur Price {cur_price} >= TP {tp_p})"
-                elif lowest_p > 0 and lowest_p <= sl_p and cur_price <= entry_p:
-                    should_close = True
-                    close_reason = f"Past Wick Breached SL (Low {lowest_p} <= SL {sl_p})"
             else: # SELL / SHORT
-                if cur_price >= hard_sl_p or cur_price >= sl_p:
+                if cur_price > hard_sl_p:
                     should_close = True
-                    close_reason = f"SL Breached (Cur Price {cur_price} >= SL {sl_p})"
+                    close_reason = f"Hard Circuit SL Breached (Cur Price {cur_price} > Hard SL {hard_sl_p})"
                 elif tp_p > 0 and cur_price <= tp_p:
                     should_close = True
                     close_reason = f"TP Reached (Cur Price {cur_price} <= TP {tp_p})"
-                elif highest_p > 0 and highest_p >= sl_p and cur_price >= entry_p:
-                    should_close = True
-                    close_reason = f"Past Wick Breached SL (High {highest_p} >= SL {sl_p})"
 
             # Check 2: Max Hold Time-Stop (48 hours for 4H, 16 hours for 1H)
             max_hold = 48.0 if tf == "4h" else 16.0

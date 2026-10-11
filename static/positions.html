@@ -756,6 +756,17 @@
                 </div>
             </div>
 
+            <!-- MASTER EMERGENCY KILL SWITCH ALERT BANNER -->
+            <div id="killSwitchBannerDesk" style="display:none; background:#EF4444; color:#FFFFFF; padding:12px 18px; align-items:center; justify-content:space-between; font-weight:800; font-size:13.5px; border-radius:10px; margin-bottom:20px; box-shadow:0 6px 20px rgba(239,68,68,0.45); border:1px solid #B91C1C;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size:20px; color:#FEF08A;"></i>
+                    <span><strong>🚨 MASTER EMERGENCY KILL SWITCH ACTIVE:</strong> All algorithmic trading and setup entries are halted. The engine will not enter any trade until manually resumed.</span>
+                </div>
+                <button onclick="toggleKillSwitch()" style="background:#FFFFFF; color:#DC2626; border:none; padding:7px 16px; border-radius:6px; font-weight:900; font-size:12.5px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+                    RESUME TRADING
+                </button>
+            </div>
+
             <!-- SECTION 1: BITGET EXACT OPEN POSITIONS -->
             <section class="pos-section-card" id="openPositionsSection" style="margin-bottom: 24px;">
                 <!-- Header Tabs matching Screenshot -->
@@ -787,6 +798,12 @@
                         <button class="bg-tf-pill" data-tf="1h" onclick="filterPositionsByTf('1h')">1H Scalp ($50)</button>
                     </div>
                     <div class="bitget-right-actions">
+                        <button class="bg-btn-kill-switch" id="btnDeskKillSwitch" onclick="toggleKillSwitch()" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#EF4444; font-size:12px; font-weight:800; padding:5px 12px; border-radius:16px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-power-off"></i> <span id="deskKillSwitchText">KILL SWITCH</span>
+                        </button>
+                        <button onclick="runSystemHealthAudit(this)" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38BDF8; font-size:12px; font-weight:800; padding:5px 12px; border-radius:16px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-stethoscope"></i> Auto-Diagnose &amp; Self-Fix
+                        </button>
                         <label class="bg-checkbox-label">
                             <input type="checkbox" id="chkShowCurrent" onchange="renderOpenPositions()">
                             <span>Show current</span>
@@ -1539,18 +1556,133 @@
                         <td><span class="${pnlClass}">${pnlFormatted}</span></td>
                         <td><span class="${roeClass}">${roeFormatted}</span></td>
                         <td><span class="font-mono" style="color: #38BDF8; font-weight: 600;">${accBal}</span></td>
-                        <td><span class="font-mono" style="color: #38BDF8; font-size: 11px;">${duration}</span></td>
-                        <td><span class="${resultClass}">${resultText}</span></td>
-                        <td style="text-align: right; color: #64748B; font-family: var(--font-mono); font-size: 11px;">${tsDisplay}</td>
+                        <td>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <span class="font-mono" style="color: #38BDF8; font-size: 11.5px; font-weight:700;">⏱️ ${duration}</span>
+                                <span style="font-size:10px; color:#94A3B8;">${t.be_status_str || 'BE: OFF'}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <span class="${resultClass}">${resultText}</span>
+                                ${t.mfe_pct ? `<span style="font-size:9.5px; color:#10B981; font-weight:700;">Peak MFE: ${t.mfe_pct}</span>` : ''}
+                            </div>
+                        </td>
+                        <td style="text-align: right; color: #94A3B8; font-family: var(--font-mono); font-size: 10.5px;">
+                            <div style="color:#CBD5E1;">In: ${t.entry_time_str || tsDisplay}</div>
+                            ${t.exit_time_str ? `<div style="color:#64748B;">Out: ${t.exit_time_str}</div>` : ''}
+                        </td>
                     </tr>
                 `;
             }).join('');
         }
 
         // ==========================================
+        // MASTER EMERGENCY KILL SWITCH & HEALTH AUDIT
+        // ==========================================
+        let isKillSwitchActive = false;
+
+        async function checkKillSwitchStatus() {
+            try {
+                const res = await fetch('/api/system/kill-switch');
+                if (!res.ok) return;
+                const data = await res.json();
+                isKillSwitchActive = !!data.kill_switch_active;
+                updateKillSwitchUI(isKillSwitchActive);
+            } catch (e) {
+                console.error("Kill switch fetch error:", e);
+            }
+        }
+
+        function updateKillSwitchUI(active) {
+            const btn = document.getElementById('btnDeskKillSwitch');
+            const txt = document.getElementById('deskKillSwitchText');
+            const banner = document.getElementById('killSwitchBannerDesk');
+            if (active) {
+                if (btn) {
+                    btn.classList.add('active');
+                    btn.style.background = '#EF4444';
+                    btn.style.color = '#FFFFFF';
+                    btn.style.borderColor = '#B91C1C';
+                }
+                if (txt) txt.textContent = 'TRADING HALTED';
+                if (banner) banner.style.display = 'flex';
+            } else {
+                if (btn) {
+                    btn.classList.remove('active');
+                    btn.style.background = 'rgba(239, 68, 68, 0.15)';
+                    btn.style.color = '#EF4444';
+                    btn.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                }
+                if (txt) txt.textContent = 'KILL SWITCH';
+                if (banner) banner.style.display = 'none';
+            }
+        }
+
+        async function toggleKillSwitch() {
+            const targetState = !isKillSwitchActive;
+            const confirmMsg = targetState 
+                ? "⚠️ MASTER EMERGENCY KILL SWITCH ON KARNA CHAHTE HO?\n\nSare new trades turant ruk jayenge jab tak aap manually resume nahi karte!"
+                : "✅ TRADING RESUME KARNA CHAHTE HO?\n\nEngine dobara active ho jayega aur scanner trades execute karega.";
+            
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch('/api/system/kill-switch', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ active: targetState })
+                });
+                const data = await res.json();
+                if (data.success !== false) {
+                    isKillSwitchActive = targetState;
+                    updateKillSwitchUI(isKillSwitchActive);
+                    showToast(targetState ? "🚨 TRADING HALTED! Kill Switch Activated." : "🚀 RESUMED! Trading Engine Active.");
+                }
+            } catch (e) {
+                alert("Kill switch toggle failed: " + e.message);
+            }
+        }
+
+        async function runSystemHealthAudit(btn) {
+            if (btn) {
+                const icon = btn.querySelector('i');
+                if (icon) icon.classList.add('fa-spin');
+                btn.disabled = true;
+            }
+            try {
+                const res = await fetch('/api/system/health-audit', { method: 'POST' });
+                const data = await res.json();
+                let report = `🩺 SYSTEM HEALTH & DIAGNOSTIC REPORT:\nStatus: ${data.status}\n\n`;
+                if (data.fixes_applied && data.fixes_applied.length > 0) {
+                    report += `🔧 SELF-FIXES APPLIED:\n` + data.fixes_applied.map(f => `• ${f}`).join('\n') + `\n\n`;
+                } else {
+                    report += `🔧 Self-Fixes: No anomalies detected.\n\n`;
+                }
+                if (data.warnings && data.warnings.length > 0) {
+                    report += `⚠️ WARNINGS:\n` + data.warnings.map(w => `• ${w}`).join('\n') + `\n\n`;
+                }
+                if (data.quarantined_coins && data.quarantined_coins.length > 0) {
+                    report += `🛡️ QUARANTINED COINS (Loop Protected):\n` + data.quarantined_coins.join(', ');
+                }
+                alert(report);
+                await Promise.all([fetchPositions(), fetchTradeHistory(), checkKillSwitchStatus()]);
+            } catch (e) {
+                alert("Health Audit failed: " + e.message);
+            } finally {
+                if (btn) {
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.classList.remove('fa-spin');
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        // ==========================================
         // INITIALIZATION & REAL-TIME POLLING
         // ==========================================
         async function initPage() {
+            checkKillSwitchStatus();
             await fetchDualAccounts();
             await fetchPositions();
             await fetchTradeHistory();
@@ -1561,7 +1693,8 @@
                 await fetchPositions();
             }, 2500);
 
-            // History refresh every 8 seconds
+            // History & Kill switch refresh every 5 seconds
+            setInterval(checkKillSwitchStatus, 4000);
             setInterval(fetchTradeHistory, 8000);
         }
 

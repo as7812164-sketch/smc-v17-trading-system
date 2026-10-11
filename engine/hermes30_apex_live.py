@@ -372,6 +372,10 @@ class Hermes30Model2ALiveEngine:
         all_setups.sort(key=lambda x: (not x.get("is_fresh_trigger", False), x.get("tap_bar_age", 99)))
         self.detected_setups = all_setups
 
+        # Master Emergency Kill Switch Check
+        if self.is_kill_switch_active():
+            return
+
         # Check for immediate fresh trigger execution
         fresh = [s for s in all_setups if s.get("is_fresh_trigger")]
         if fresh and not self.active_position:
@@ -385,12 +389,27 @@ class Hermes30Model2ALiveEngine:
             "btc_sentry": btc_sentry,
             "total_detected": len(all_setups),
             "fresh_triggers": len(fresh),
+            "kill_switch_active": self.is_kill_switch_active(),
             "setups": all_setups[:20]
         }
+
+    def is_kill_switch_active(self) -> bool:
+        """Returns True if the Master Emergency Kill Switch is enabled."""
+        return get_setting("trading_kill_switch", "false").lower() == "true"
+
+    def set_kill_switch(self, enabled: bool) -> bool:
+        """Enables or disables the Master Emergency Kill Switch."""
+        set_setting("trading_kill_switch", "true" if enabled else "false")
+        logger.warning(f"🚨 MASTER EMERGENCY KILL SWITCH: {'ACTIVATED (ALL TRADES HALTED)' if enabled else 'DEACTIVATED (TRADING RESUMED)'}")
+        return enabled
 
     async def execute_apex_entry(self, setup: Dict[str, Any]):
         """Executes a qualified Model 2A trade under strict sequential compounding queue."""
         async with self._order_execution_lock:
+            if self.is_kill_switch_active():
+                logger.warning("🚨 EMERGENCY KILL SWITCH ACTIVE: Suppressing new trade entry.")
+                return
+
             open_trades = get_open_paper_trades()
             if open_trades:
                 return  # Strict sequential trade queue (0 margin contagion)
@@ -399,13 +418,27 @@ class Hermes30Model2ALiveEngine:
             side = setup["side"].upper()
             now_ts = time.time()
 
-            if self.trade_cooldowns.get(symbol, 0) > now_ts:
+            # Cooldown guard: In-memory & Persistent DB check (Prevents rapid machine-gun re-entries!)
+            cd_db = float(get_setting(f"cooldown_{symbol}", 0) or 0)
+            if self.trade_cooldowns.get(symbol, 0) > now_ts or cd_db > now_ts:
+                logger.info(f"⏳ Cooldown active for {symbol}. Suppressing entry.")
+                return
+
+            # Dedup guard: Prevent multiple alerts for the same candle tap
+            alert_key = f"{symbol}_{side}_{setup.get('tap_time', int(now_ts // 14400))}_ENTRY"
+            if is_alert_sent(alert_key):
+                logger.info(f"⚠️ Duplicate entry alert prevented for {symbol} {side}")
                 return
 
             acc = self.get_hermes_account()
             curr_balance = acc["current_balance"]
             if curr_balance < 5.0:
                 return
+
+            # Arm 1-hour cooldown immediately so coin cannot re-enter in a rapid loop
+            self.trade_cooldowns[symbol] = now_ts + 3600
+            set_setting(f"cooldown_{symbol}", str(now_ts + 3600))
+            record_sent_alert(alert_key, symbol, side, "ENTRY", setup.get("tap_time", 0), None)
 
             # 5x Leverage Compounding
             leverage = 5

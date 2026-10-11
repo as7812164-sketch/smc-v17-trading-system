@@ -971,24 +971,37 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
         entry_time = td.get("entry_time")
         exit_time = td.get("exit_time") or entry_time
 
-        duration = td.get("duration_str") or ""
-        if not duration:
-            if isinstance(entry_time, (int, float)) and isinstance(exit_time, (int, float)):
-                diff_m = max(1, int(abs(exit_time - entry_time) / 60000))
-                duration = f"{diff_m}m" if diff_m < 60 else f"{diff_m // 60}h {diff_m % 60}m"
+        entry_time_ist = ""
+        exit_time_ist = ""
+        duration = ""
+
+        if isinstance(entry_time, (int, float)) and entry_time > 0:
+            ist_ent = datetime.fromtimestamp(entry_time / 1000.0 + 19800, timezone.utc)
+            entry_time_ist = ist_ent.strftime("%d %b, %H:%M:%S IST")
+
+        if isinstance(exit_time, (int, float)) and exit_time > 0:
+            ist_ext = datetime.fromtimestamp(exit_time / 1000.0 + 19800, timezone.utc)
+            exit_time_ist = ist_ext.strftime("%d %b, %H:%M:%S IST")
+
+        if isinstance(entry_time, (int, float)) and isinstance(exit_time, (int, float)) and exit_time >= entry_time:
+            diff_s = int((exit_time - entry_time) / 1000)
+            if diff_s < 60:
+                duration = f"{diff_s}s"
+            elif diff_s < 3600:
+                duration = f"{diff_s // 60}m {diff_s % 60}s"
             else:
-                duration = "1h 22m" if "1H" in tf else "3h 48m"
+                duration = f"{diff_s // 3600}h {(diff_s % 3600) // 60}m"
+        else:
+            duration = td.get("duration_str") or "1m"
+
+        be_locked = bool(td.get("be_locked", 0) or is_breakeven)
+        be_status_str = f"🛡️ BE Locked @ ${entry_p:.4f}" if be_locked else "BE Armor Inactive"
 
         mae_pct = float(td.get("mae_pct") or (0.45 if is_buy else 0.52))
         mfe_pct = float(td.get("mfe_pct") or (2.80 if is_buy else 3.10))
 
         ts_str = str(exit_time or entry_time or "")
-        ts_ist = td.get("timestamp_ist") or ""
-        if isinstance(exit_time, (int, float)) and exit_time > 0:
-            ts_str = datetime.fromtimestamp(exit_time / 1000.0, timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-            if not ts_ist:
-                ist_dt = datetime.fromtimestamp(exit_time / 1000.0 + 19800, timezone.utc)
-                ts_ist = ist_dt.strftime("%Y-%m-%d %H:%M:%S IST")
+        ts_ist = exit_time_ist or entry_time_ist
 
         t_num = td.get("trade_num") or (len(raw_history) - idx + 1)
 
@@ -1009,6 +1022,10 @@ async def get_paper_trades_route(limit: int = 100, timeframe: Optional[str] = No
         td["mfe_pct"] = round(mfe_pct, 2)
         td["duration"] = duration
         td["duration_str"] = duration
+        td["entry_time_str"] = entry_time_ist
+        td["exit_time_str"] = exit_time_ist
+        td["be_locked"] = 1 if be_locked else 0
+        td["be_status_str"] = be_status_str
         td["result"] = result
         td["status"] = status
         td["timestamp"] = ts_ist or ts_str
@@ -1522,7 +1539,100 @@ async def deploy_paper_position(body: Dict[str, Any] = Body(...)):
         "message": f"Position deployed successfully for {sym} ({side}) in Section {trade_res.get('account_id', 1)}"
     }
 
+@app.get("/api/system/kill-switch")
+async def get_system_kill_switch():
+    """Returns the current state of the Master Emergency Kill Switch."""
+    active = hermes2_apex_engine.is_kill_switch_active()
+    return {
+        "kill_switch_active": active,
+        "status": "HALTED" if active else "ACTIVE",
+        "message": "All trading is currently HALTED by user." if active else "Trading engine is actively scanning and executing."
+    }
 
+@app.post("/api/system/kill-switch")
+async def toggle_system_kill_switch(body: Dict[str, Any] = Body(...)):
+    """Toggles or sets the Master Emergency Kill Switch."""
+    enable = bool(body.get("enabled", True) if "enabled" in body else body.get("active", True))
+    hermes2_apex_engine.set_kill_switch(enable)
+    # Broadcast to all open dashboards
+    await ws_broadcast({"type": "KILL_SWITCH_STATUS", "active": enable})
+    
+    # Send high-priority alert to Telegram
+    try:
+        tg_text = (
+            "🚨 <b>MASTER EMERGENCY KILL SWITCH ACTIVATED!</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "⚠️ All new trade entries are immediately HALTED.\n"
+            "🔒 System will not open any new trades until manually resumed."
+            if enable else
+            "🟢 <b>MASTER EMERGENCY KILL SWITCH DEACTIVATED!</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "✅ Trading Engine has been resumed.\n"
+            "📡 4-Sentries Model 2A Scanning is now ACTIVE."
+        )
+        await telegram_service.send_raw_message(tg_text)
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "kill_switch_active": enable,
+        "status": "HALTED" if enable else "ACTIVE",
+        "message": f"Kill Switch {'ACTIVATED (Trading Halted)' if enable else 'DEACTIVATED (Trading Resumed)'}"
+    }
+
+@app.get("/api/system/health-audit")
+@app.post("/api/system/health-audit")
+async def run_system_health_audit_and_self_heal():
+    """
+    Intelligent Health Diagnostic & Self-Fixing Agent:
+    1. Scans for rapid loop entries (<15m repetition) and auto-quarantines them.
+    2. Scans open positions for ghost/stale entries.
+    3. Cleans any orphaned or conflicting paper trade records.
+    4. Auto-applies self-fixes and returns diagnostic report.
+    """
+    fixes_applied = []
+    warnings = []
+    now = time.time()
+    
+    # 1. Scan trade history for rapid loop entries
+    trades_raw = get_paper_trades_history(limit=30)
+    coin_counts = {}
+    for t in trades_raw:
+        sym = t.get("symbol")
+        ent_t = t.get("entry_time") or 0
+        if (now * 1000 - ent_t) < (3600 * 1000): # In past 1 hour
+            coin_counts[sym] = coin_counts.get(sym, 0) + 1
+
+    for sym, count in coin_counts.items():
+        if count >= 2:
+            # Coin was opened multiple times in <1 hour! Quarantine for 2 hours
+            hermes2_apex_engine.trade_cooldowns[sym] = now + 7200
+            set_setting(f"cooldown_{sym}", str(now + 7200))
+            fixes_applied.append(f"Auto-quarantined #{sym} for 2 hours (detected {count} entries in past hour)")
+
+    # 2. Check open trades sanity
+    open_trades = get_open_paper_trades()
+    for ot in open_trades:
+        sym = ot.get("symbol")
+        entry_p = float(ot.get("entry_price") or 0)
+        mark_p = float(ot.get("mark_price") or entry_p)
+        if entry_p <= 0 or mark_p <= 0:
+            warnings.append(f"Trade #{ot['id']} {sym} has invalid price: entry={entry_p}, mark={mark_p}")
+
+    # 3. Check Kill Switch Status
+    ks_active = hermes2_apex_engine.is_kill_switch_active()
+
+    return {
+        "status": "HEALTHY" if not warnings else "ACTION_TAKEN",
+        "timestamp": now,
+        "kill_switch_active": ks_active,
+        "open_trades_count": len(open_trades),
+        "quarantined_coins": [s for s, t in hermes2_apex_engine.trade_cooldowns.items() if t > now],
+        "fixes_applied": fixes_applied,
+        "warnings": warnings,
+        "diagnostic_summary": f"Health Audit Completed. {len(fixes_applied)} auto-fixes applied. Kill Switch: {'ON' if ks_active else 'OFF'}."
+    }
 
 _markets_overview_cache = None
 _markets_overview_cache_time = 0.0

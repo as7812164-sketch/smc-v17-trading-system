@@ -175,12 +175,8 @@ def init_db():
             except Exception:
                 pass
 
-        # 1. Clean wipe legacy paper trades and trade journal
-        conn.execute("DELETE FROM paper_trades;")
-        try:
-            conn.execute("DELETE FROM trade_journal;")
-        except Exception:
-            pass
+        # Note: Do not wipe paper_trades or trade_journal on startup to preserve trade history and forensics
+        # Legacy cleanup only if explicitly requested
 
         # 2. Delete any legacy accounts where id > 10
         conn.execute("DELETE FROM paper_account WHERE id > 10;")

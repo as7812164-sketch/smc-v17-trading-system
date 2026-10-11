@@ -232,6 +232,37 @@
             background: rgba(255, 215, 0, 0.1);
         }
 
+        .kill-switch-btn {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #EF4444;
+            padding: 8px 11px;
+            min-height: 44px;
+            border-radius: 18px;
+            font-size: 12.5px;
+            font-weight: 900;
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            flex-shrink: 0;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        .kill-switch-btn.active {
+            background: #DC2626 !important;
+            border-color: #EF4444 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 0 14px rgba(220, 38, 38, 0.7);
+            animation: pulse-red 1.5s infinite;
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
         /* TAB PANELS */
         .tab-panel {
             display: none;
@@ -1575,14 +1606,28 @@
             </div>
         </div>
         <div class="header-actions">
+            <button class="kill-switch-btn" id="btnHeaderKillSwitch" onclick="toggleKillSwitch()" title="Master Emergency Kill Switch">
+                <i class="fa-solid fa-power-off"></i> <span id="hdrKillSwitchText">KILL SWITCH</span>
+            </button>
             <button class="refresh-btn" id="btnHeaderRefresh" onclick="refreshAllDataManual(this)" title="Refresh Live Data">
                 <i class="fa-solid fa-arrows-rotate"></i>
             </button>
             <button class="account-toggle-btn binance" id="btnToggleAccount" onclick="toggleAccountMode()">
-                <i class="fa-solid fa-layer-group"></i> <span id="hdrModeLabel">Deca Matrix ($500)</span>
+                <i class="fa-solid fa-layer-group"></i> <span id="hdrModeLabel">Deca ($500)</span>
             </button>
         </div>
     </header>
+
+    <!-- EMERGENCY KILL SWITCH ACTIVE STICKY BANNER -->
+    <div id="killSwitchBanner" style="display:none; background:#EF4444; color:#FFFFFF; padding:10px 14px; align-items:center; justify-content:space-between; font-weight:900; font-size:12.5px; border-bottom:2px solid #B91C1C; position:sticky; top:52px; z-index:1000; box-shadow:0 4px 15px rgba(239,68,68,0.5);">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size:16px;"></i>
+            <span>🚨 EMERGENCY KILL SWITCH ON &bull; ALL TRADING HALTED</span>
+        </div>
+        <button onclick="toggleKillSwitch()" style="background:#FFFFFF; color:#DC2626; border:none; padding:5px 10px; border-radius:6px; font-weight:900; font-size:12px; cursor:pointer;">
+            RESUME
+        </button>
+    </div>
 
     <!-- SLIDE-OUT MOBILE NAVIGATION DRAWER OVERLAY -->
     <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
@@ -2134,8 +2179,11 @@
             <!-- Dynamically injected -->
         </div>
 
-        <div class="section-header" style="margin-top:20px;">
-            <span class="sh-title">Executed Trade History</span>
+        <div class="section-header" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+            <span class="sh-title"><i class="fa-solid fa-clock-rotate-left"></i> Executed Trade History</span>
+            <button onclick="runSystemHealthAudit(this)" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:var(--cyan); padding:5px 10px; border-radius:6px; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-stethoscope"></i> Auto-Diagnose &amp; Self-Fix
+            </button>
         </div>
         <div id="tradesHistoryContainer">
             <!-- Dynamically injected -->
@@ -2991,33 +3039,69 @@
                     return;
                 }
 
-                const recent = data.trades.slice(0, 15);
+                const recent = data.trades.slice(0, 20);
                 container.innerHTML = recent.map(t => {
                     const pnl = Number(t.pnl_usdt || t.realized_pnl || 0);
-                    const isPos = pnl >= 0;
-                    const sign = isPos ? '+' : '';
-                    const color = isPos ? 'var(--green)' : 'var(--red)';
-                    const badge = isPos ? 'badge-green' : 'badge-red';
+                    const isPos = pnl > 0.001;
+                    const isNeg = pnl < -0.001;
+                    const sign = isPos ? '+' : (isNeg ? '-' : '');
+                    const color = isPos ? 'var(--green)' : (isNeg ? 'var(--red)' : '#38BDF8');
+                    const badge = isPos ? 'badge-green' : (isNeg ? 'badge-red' : 'badge-cyan');
                     const shortSym = (t.symbol || 'USDT').replace('USDT','');
                     const exitP = Number(t.exit_price || 0).toFixed(4);
                     const entryP = Number(t.entry_price || 0).toFixed(4);
+                    const entryTime = t.entry_time_str || (t.entry_time ? new Date(t.entry_time).toLocaleTimeString() : 'N/A');
+                    const exitTime = t.exit_time_str || (t.exit_time ? new Date(t.exit_time).toLocaleTimeString() : 'N/A');
+                    const duration = t.duration_str || t.duration || 'N/A';
+                    const beStatus = t.be_status_str || (t.be_locked ? `🛡️ BE Locked @ $${entryP}` : 'BE Inactive');
+                    const resultText = t.result || (isPos ? 'Take Profit (+15% ROE)' : (isNeg ? 'Stop Loss Hit' : 'Break-Even'));
+
                     return `
-                        <div class="coin-list-item" style="border-left: 4px solid ${color};">
-                            <div class="cli-left">
-                                <div class="cli-coin-badge" style="color:${color};">${shortSym.slice(0,3)}</div>
-                                <div class="cli-name-group">
-                                    <span class="cli-symbol">${t.symbol} &bull; <b style="color:${color}">${t.side || 'SHORT'}</b></span>
-                                    <span class="cli-vol">${t.result || 'TP Hit'} &bull; In: $${entryP} Out: $${exitP}</span>
-                                    <!-- MAE & MFE Forensics Display -->
-                                    <div style="display:flex; gap:8px; margin-top:4px; font-size:12.5px; font-family:var(--font-mono); flex-wrap:wrap;">
-                                        <span style="background:rgba(255,77,106,0.12); color:var(--red); padding:1px 5px; border-radius:3px; font-weight:800;">MAE: -${Number(t.mae_pct || 0).toFixed(2)}%</span>
-                                        <span style="background:rgba(0,245,155,0.12); color:var(--green); padding:1px 5px; border-radius:3px; font-weight:800;">MFE: +${Number(t.mfe_pct || 0).toFixed(2)}%</span>
+                        <div class="coin-list-item" style="border-left: 4px solid ${color}; flex-direction:column; align-items:stretch; padding:12px 14px; gap:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div class="cli-coin-badge" style="color:${color}; font-weight:900;">${shortSym.slice(0,4)}</div>
+                                    <div style="display:flex; flex-direction:column;">
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <span style="font-size:15px; font-weight:800; color:#FFF;">${t.symbol}</span>
+                                            <span style="background:${t.side === 'BUY' || t.side === 'LONG' ? 'rgba(0,245,155,0.15)' : 'rgba(255,77,106,0.15)'}; color:${t.side === 'BUY' || t.side === 'LONG' ? 'var(--green)' : 'var(--red)'}; font-size:11px; font-weight:800; padding:2px 6px; border-radius:4px;">${t.side || 'BUY'} 5x</span>
+                                        </div>
+                                        <span style="font-size:11.5px; color:${color}; font-weight:700;">${resultText}</span>
                                     </div>
                                 </div>
+                                <div style="text-align:right;">
+                                    <span style="color:${color}; font-weight:900; font-size:16px;">${sign}$${Math.abs(pnl).toFixed(2)}</span>
+                                    <div class="cli-change-pill ${badge}" style="margin-top:2px; font-size:11.5px; font-weight:800;">${sign}${Number(t.roi_pct || t.pnl_pct || 0).toFixed(2)}% ROE</div>
+                                </div>
                             </div>
-                            <div class="cli-right">
-                                <span class="cli-price" style="color:${color}; font-weight:900;">${sign}$${pnl.toFixed(2)}</span>
-                                <span class="cli-change-pill ${badge}">${sign}${Number(t.roi_pct || t.pnl_pct || 0).toFixed(2)}%</span>
+
+                            <!-- Granular Execution Timestamps & Duration -->
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; background:rgba(0,0,0,0.25); padding:8px 10px; border-radius:6px; font-family:var(--font-mono); font-size:11.5px; border:1px solid rgba(255,255,255,0.05);">
+                                <div style="display:flex; flex-direction:column;">
+                                    <span style="color:#64748B;">🕒 Entry Time:</span>
+                                    <span style="color:#CBD5E1; font-weight:700;">${entryTime}</span>
+                                </div>
+                                <div style="display:flex; flex-direction:column;">
+                                    <span style="color:#64748B;">🏁 Exit Time:</span>
+                                    <span style="color:#CBD5E1; font-weight:700;">${exitTime}</span>
+                                </div>
+                                <div style="display:flex; flex-direction:column; margin-top:2px;">
+                                    <span style="color:#64748B;">⏳ Open Duration:</span>
+                                    <span style="color:var(--gold); font-weight:800;">${duration}</span>
+                                </div>
+                                <div style="display:flex; flex-direction:column; margin-top:2px;">
+                                    <span style="color:#64748B;">🛡️ Break-Even Armor:</span>
+                                    <span style="color:#38BDF8; font-weight:800;">${beStatus}</span>
+                                </div>
+                            </div>
+
+                            <!-- Price Execution & MAE / MFE Forensics -->
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:11.5px; color:#94A3B8; border-top:1px dashed rgba(255,255,255,0.08); padding-top:6px;">
+                                <span>In: <b style="color:#FFF;">$${entryP}</b> &rarr; Out: <b style="color:#FFF;">$${exitP}</b></span>
+                                <div style="display:flex; gap:6px;">
+                                    <span style="background:rgba(255,77,106,0.12); color:var(--red); padding:1px 5px; border-radius:3px; font-weight:800;">MAE: -${Number(t.mae_pct || 0).toFixed(2)}%</span>
+                                    <span style="background:rgba(0,245,155,0.12); color:var(--green); padding:1px 5px; border-radius:3px; font-weight:800;">MFE: +${Number(t.mfe_pct || 0).toFixed(2)}%</span>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -3038,6 +3122,105 @@
             }
         }
 
+        // Master Emergency Kill Switch & System Health Diagnostic Agent
+        let isKillSwitchActive = false;
+
+        async function checkKillSwitchStatus() {
+            try {
+                const res = await fetch('/api/system/kill-switch');
+                if (!res.ok) return;
+                const data = await res.json();
+                isKillSwitchActive = !!data.kill_switch_active;
+                updateKillSwitchUI(isKillSwitchActive);
+            } catch (e) {
+                console.error("Kill switch fetch error:", e);
+            }
+        }
+
+        function updateKillSwitchUI(active) {
+            const btn = document.getElementById('btnHeaderKillSwitch');
+            const txt = document.getElementById('hdrKillSwitchText');
+            const banner = document.getElementById('killSwitchBanner');
+            if (active) {
+                if (btn) {
+                    btn.classList.add('active');
+                    btn.style.background = '#EF4444';
+                    btn.style.color = '#FFFFFF';
+                    btn.style.borderColor = '#B91C1C';
+                }
+                if (txt) txt.textContent = 'TRADING HALTED';
+                if (banner) banner.style.display = 'flex';
+            } else {
+                if (btn) {
+                    btn.classList.remove('active');
+                    btn.style.background = 'rgba(239, 68, 68, 0.15)';
+                    btn.style.color = '#EF4444';
+                    btn.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                }
+                if (txt) txt.textContent = 'KILL SWITCH';
+                if (banner) banner.style.display = 'none';
+            }
+        }
+
+        async function toggleKillSwitch() {
+            const targetState = !isKillSwitchActive;
+            const confirmMsg = targetState 
+                ? "⚠️ MASTER EMERGENCY KILL SWITCH ON KARNA CHAHTE HO?\n\nSare new trades turant ruk jayenge jab tak aap manually resume nahi karte!"
+                : "✅ TRADING RESUME KARNA CHAHTE HO?\n\nEngine dobara active ho jayega aur scanner trades execute karega.";
+            
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch('/api/system/kill-switch', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ active: targetState })
+                });
+                const data = await res.json();
+                if (data.success !== false) {
+                    isKillSwitchActive = targetState;
+                    updateKillSwitchUI(isKillSwitchActive);
+                    alert(targetState ? "🚨 TRADING HALTED! Master Emergency Kill Switch Activated." : "🚀 RESUMED! Trading Engine Active.");
+                }
+            } catch (e) {
+                alert("Kill switch toggle failed: " + e.message);
+            }
+        }
+
+        async function runSystemHealthAudit(btn) {
+            if (btn) {
+                const icon = btn.querySelector('i');
+                if (icon) icon.classList.add('spin-fast');
+                btn.disabled = true;
+            }
+            try {
+                const res = await fetch('/api/system/health-audit', { method: 'POST' });
+                const data = await res.json();
+                let report = `🩺 SYSTEM HEALTH & DIAGNOSTIC REPORT:\nStatus: ${data.status}\n\n`;
+                if (data.fixes_applied && data.fixes_applied.length > 0) {
+                    report += `🔧 SELF-FIXES APPLIED:\n` + data.fixes_applied.map(f => `• ${f}`).join('\n') + `\n\n`;
+                } else {
+                    report += `🔧 Self-Fixes: No anomalies detected.\n\n`;
+                }
+                if (data.warnings && data.warnings.length > 0) {
+                    report += `⚠️ WARNINGS:\n` + data.warnings.map(w => `• ${w}`).join('\n') + `\n\n`;
+                }
+                if (data.quarantined_coins && data.quarantined_coins.length > 0) {
+                    report += `🛡️ QUARANTINED COINS (Loop Protected):\n` + data.quarantined_coins.join(', ');
+                }
+                alert(report);
+                await Promise.all([fetchPositions(), fetchTradesHistory(), checkKillSwitchStatus()]);
+            } catch (e) {
+                alert("Health Audit failed: " + e.message);
+            } finally {
+                if (btn) {
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.classList.remove('spin-fast');
+                    btn.disabled = false;
+                }
+            }
+        }
+
         async function refreshAllDataManual(btn) {
             if (btn) {
                 const icon = btn.querySelector('i');
@@ -3045,6 +3228,7 @@
             }
             try {
                 await Promise.all([
+                    checkKillSwitchStatus(),
                     fetchAccountData(),
                     fetchMarketsData(),
                     fetchPositions(),
@@ -3116,12 +3300,14 @@
         }
 
         // Initialize and Start Live Polling
+        checkKillSwitchStatus();
         fetchAccountData();
         loadRecentSignals();
         fetchMarketsData();
         fetchPositions();
         fetchTradesHistory();
 
+        setInterval(checkKillSwitchStatus, 4000);
         setInterval(fetchAccountData, 4000);
         setInterval(loadRecentSignals, 3500);
         setInterval(fetchMarketsData, 5000);
