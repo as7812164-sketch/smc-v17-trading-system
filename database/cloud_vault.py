@@ -18,6 +18,8 @@ from pathlib import Path
 from config import BASE_DIR, DB_PATH, STRATEGY_VERSION
 from database.db import get_connection
 
+logger = logging.getLogger("CloudVault")
+
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", os.getenv("GH_TOKEN", ""))
 GITHUB_REPO = os.getenv("GITHUB_REPO", "as7812164-sketch/smc-ai-agent")
 VAULT_BRANCH = "data-vault"
@@ -133,6 +135,9 @@ def push_vault_state() -> bool:
         except Exception as e:
             logger.warning(f"Local backup error: {e}")
 
+        if not GITHUB_TOKEN:
+            return True
+
         # Push to GitHub branch data-vault
         content_bytes = json.dumps(payload_data, indent=2).encode("utf-8")
         b64_content = base64.b64encode(content_bytes).decode("utf-8")
@@ -224,7 +229,8 @@ def pull_and_restore_vault_state() -> bool:
             acc_id = acc.get("id", 1)
             if acc_id not in channel_map:
                 continue
-            exch, ch, acc_name, tf = channel_map[acc_id]
+            map_entry = channel_map[acc_id]
+            exch, ch, acc_name, tf = map_entry[0], map_entry[1], map_entry[2], map_entry[3]
             conn.execute("""
             INSERT INTO paper_account (
                 id, initial_balance, current_balance, vault_balance, total_pnl, win_count,
