@@ -55,6 +55,48 @@ logger = logging.getLogger("Hermes40Live")
 
 from config import TOP_22_CHAMPIONS, ALL_MONITORED_COINS
 
+async def send_hermes40_telegram_alert(text: str, photo_bytes: Optional[bytes] = None) -> bool:
+    """Sends alert via dedicated Hermes 4.0 bot (@SMCTrigger24Bot) if configured, else fallback."""
+    token = get_setting("hermes40_telegram_bot_token") or os.getenv("HERMES40_TELEGRAM_BOT_TOKEN")
+    chat_id = get_setting("telegram_chat_id") or os.getenv("TELEGRAM_CHAT_ID", "752247227")
+    
+    if token:
+        try:
+            import aiohttp
+            api_url = f"https://api.telegram.org/bot{token}"
+            async with aiohttp.ClientSession() as session:
+                if photo_bytes:
+                    data = aiohttp.FormData()
+                    data.add_field("chat_id", str(chat_id))
+                    data.add_field("caption", text)
+                    data.add_field("parse_mode", "HTML")
+                    data.add_field("photo", photo_bytes, filename="chart.png", content_type="image/png")
+                    async with session.post(f"{api_url}/sendPhoto", data=data, timeout=15) as resp:
+                        res = await resp.json()
+                        if res.get("ok"):
+                            return True
+                else:
+                    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+                    async with session.post(f"{api_url}/sendMessage", json=payload, timeout=15) as resp:
+                        res = await resp.json()
+                        if res.get("ok"):
+                            return True
+        except Exception as e:
+            logger.warning(f"Error sending alert via dedicated Hermes 4.0 bot: {e}")
+
+    # Fallback to default telegram service
+    try:
+        if photo_bytes:
+            r = await telegram_service.send_photo(photo_bytes, text, parse_mode="HTML")
+            return bool(r and r.get("ok"))
+        else:
+            await telegram_service.send_raw_message(text, parse_mode="HTML")
+            return True
+    except Exception as e:
+        logger.warning(f"Fallback telegram error for Hermes 4.0: {e}")
+        return False
+
+
 def calculate_atr_series(candles: List[Dict[str, Any]], period: int = 14) -> List[float]:
     if not candles:
         return []
@@ -328,15 +370,12 @@ class Hermes40LiveEngine:
                                                     "ob_high": s.get("ob_high", res["entry_price"]),
                                                     "ob_low": s.get("ob_low", res["entry_price"])
                                                 }
-                                                chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
-                                                resp = await telegram_service.send_photo(chart_bytes, tg_msg, parse_mode="HTML")
-                                                if resp and resp.get("ok"):
-                                                    chart_sent = True
+                                                chart_sent = await send_hermes40_telegram_alert(tg_msg, photo_bytes=chart_bytes)
                                             except Exception as ce:
                                                 logger.warning(f"Failed to render chart for Hermes 4.0: {ce}")
                                                 
                                             if not chart_sent:
-                                                await telegram_service.send_raw_message(tg_msg, parse_mode="HTML")
+                                                await send_hermes40_telegram_alert(tg_msg)
                                         except Exception as e:
                                             logger.warning(f"Telegram alert error for Hermes 4.0: {e}")
                 except Exception as err:
@@ -386,7 +425,7 @@ class Hermes40LiveEngine:
                             f"🔒 <b>Action:</b> Stop Loss moved to Entry Price (<code>${ep}</code>)\n"
                             f"✨ <b>Risk:</b> ZERO RISK POSITION ACTIVE"
                         )
-                        await telegram_service.send_raw_message(be_msg, parse_mode="HTML")
+                        await send_hermes40_telegram_alert(be_msg)
                     except Exception as be_err:
                         logger.warning(f"Telegram BE alert error: {be_err}")
 
@@ -407,7 +446,7 @@ class Hermes40LiveEngine:
                             f"💎 <b>Compounding:</b> Reinvested into Section #{acc_id}\n"
                             f"🕒 <i>{now_str}</i>"
                         )
-                        await telegram_service.send_raw_message(exit_msg, parse_mode="HTML")
+                        await send_hermes40_telegram_alert(exit_msg)
                     except Exception as ex_err:
                         logger.warning(f"Telegram exit alert error: {ex_err}")
 
@@ -431,7 +470,7 @@ class Hermes40LiveEngine:
                             f"💵 <b>Net P&L:</b> <code>{pnl_str} USDT</code>\n"
                             f"🕒 <i>{now_str}</i>"
                         )
-                        await telegram_service.send_raw_message(exit_msg, parse_mode="HTML")
+                        await send_hermes40_telegram_alert(exit_msg)
                     except Exception as ex_err:
                         logger.warning(f"Telegram exit alert error: {ex_err}")
             else:
@@ -451,7 +490,7 @@ class Hermes40LiveEngine:
                             f"🔒 <b>Action:</b> Stop Loss moved to Entry Price (<code>${ep}</code>)\n"
                             f"✨ <b>Risk:</b> ZERO RISK POSITION ACTIVE"
                         )
-                        await telegram_service.send_raw_message(be_msg, parse_mode="HTML")
+                        await send_hermes40_telegram_alert(be_msg)
                     except Exception as be_err:
                         logger.warning(f"Telegram BE alert error: {be_err}")
 
@@ -471,7 +510,7 @@ class Hermes40LiveEngine:
                             f"💎 <b>Compounding:</b> Reinvested into Section #{acc_id}\n"
                             f"🕒 <i>{now_str}</i>"
                         )
-                        await telegram_service.send_raw_message(exit_msg, parse_mode="HTML")
+                        await send_hermes40_telegram_alert(exit_msg)
                     except Exception as ex_err:
                         logger.warning(f"Telegram exit alert error: {ex_err}")
 
@@ -494,7 +533,7 @@ class Hermes40LiveEngine:
                             f"💵 <b>Net P&L:</b> <code>{pnl_str} USDT</code>\n"
                             f"🕒 <i>{now_str}</i>"
                         )
-                        await telegram_service.send_raw_message(exit_msg, parse_mode="HTML")
+                        await send_hermes40_telegram_alert(exit_msg)
                     except Exception as ex_err:
                         logger.warning(f"Telegram exit alert error: {ex_err}")
 

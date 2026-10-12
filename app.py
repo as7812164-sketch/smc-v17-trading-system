@@ -182,9 +182,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         pass
 
-    # Hermes 3.0 Model 2A Dedicated Engine, keepalive, self-healing sentinel, and telegram polling
+    # Hermes 3.0 Model 2A Dedicated Engine (Sections 1-10) and Hermes 4.0 Live Engine (Sections 11-20)
     hermes2_task = asyncio.create_task(hermes2_apex_engine.start())
-    # Hermes 4.0 disabled: pure Hermes 3.0 Model 2A single unified strategy
+    hermes40_task = asyncio.create_task(hermes40_live_engine.start())
     tg_polling_task = asyncio.create_task(telegram_service.start_polling())
     keepalive_task = asyncio.create_task(keepalive_loop())
     ticker_task = asyncio.create_task(ticker_cache_loop())
@@ -196,6 +196,8 @@ async def lifespan(app: FastAPI):
     # Shutdown
     hermes2_apex_engine.stop()
     hermes2_task.cancel()
+    hermes40_live_engine.stop()
+    hermes40_task.cancel()
     self_healing_sentinel.stop()
     sentinel_task.cancel()
     tg_polling_task.cancel()
