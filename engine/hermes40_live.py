@@ -53,18 +53,19 @@ from engine.chart_image_generator import render_smc_chart_image
 
 logger = logging.getLogger("Hermes40Live")
 
-from config import TOP_22_CHAMPIONS, ALL_MONITORED_COINS
+from config import TOP_22_CHAMPIONS, ALL_MONITORED_COINS, HERMES40_TELEGRAM_BOT_TOKEN
 
 async def send_hermes40_telegram_alert(text: str, photo_bytes: Optional[bytes] = None) -> bool:
     """Sends alert via dedicated Hermes 4.0 bot (@SMCTrigger24Bot) if configured, else fallback."""
-    token = get_setting("hermes40_telegram_bot_token") or os.getenv("HERMES40_TELEGRAM_BOT_TOKEN")
+    token = get_setting("hermes40_telegram_bot_token") or HERMES40_TELEGRAM_BOT_TOKEN or os.getenv("HERMES40_TELEGRAM_BOT_TOKEN")
     chat_id = get_setting("telegram_chat_id") or os.getenv("TELEGRAM_CHAT_ID", "752247227")
     
     if token:
         try:
             import aiohttp
             api_url = f"https://api.telegram.org/bot{token}"
-            async with aiohttp.ClientSession() as session:
+            connector = aiohttp.TCPConnector(ssl=False)
+            async with aiohttp.ClientSession(connector=connector) as session:
                 if photo_bytes:
                     data = aiohttp.FormData()
                     data.add_field("chat_id", str(chat_id))
