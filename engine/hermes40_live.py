@@ -374,6 +374,7 @@ class Hermes40LiveEngine:
                                                     "ob_high": s.get("ob_high", res["entry_price"]),
                                                     "ob_low": s.get("ob_low", res["entry_price"])
                                                 }
+                                                chart_bytes = render_smc_chart_image(sym, candles, zone_dict, timeframe=tf.upper())
                                                 chart_sent = await send_hermes40_telegram_alert(tg_msg, photo_bytes=chart_bytes)
                                             except Exception as ce:
                                                 logger.warning(f"Failed to render chart for Hermes 4.0: {ce}")

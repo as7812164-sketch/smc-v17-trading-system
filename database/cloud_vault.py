@@ -221,9 +221,8 @@ def pull_and_restore_vault_state() -> bool:
     try:
         conn = get_connection()
 
-        # Restore accounts for all 10 compounding sections
+        # Restore accounts for all compounding sections (Hermes 3.0: 1-10, Hermes 4.0: 11-20)
         channel_map = CHANNEL_MAP
-        conn.execute("DELETE FROM paper_account WHERE id > 10;")
 
         for acc in vault_data.get("accounts", []):
             acc_id = acc.get("id", 1)
