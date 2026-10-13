@@ -56,46 +56,49 @@ logger = logging.getLogger("Hermes40Live")
 from config import TOP_22_CHAMPIONS, ALL_MONITORED_COINS, HERMES40_TELEGRAM_BOT_TOKEN
 
 async def send_hermes40_telegram_alert(text: str, photo_bytes: Optional[bytes] = None) -> bool:
-    """Sends alert via dedicated Hermes 4.0 bot (@SMCTrigger24Bot) if configured, else fallback."""
-    token = get_setting("hermes40_telegram_bot_token") or HERMES40_TELEGRAM_BOT_TOKEN or os.getenv("HERMES40_TELEGRAM_BOT_TOKEN")
-    chat_id = get_setting("telegram_chat_id") or os.getenv("TELEGRAM_CHAT_ID", "752247227")
+    """Sends alert EXCLUSIVELY via dedicated Hermes 4.0 bot (@SMCTrigger24Bot) to prevent any crossover into Hermes 3.0/3.5 channels."""
+    token = get_setting("hermes40_telegram_bot_token") or HERMES40_TELEGRAM_BOT_TOKEN or os.getenv("HERMES40_TELEGRAM_BOT_TOKEN", "8946124868:AAGlempLJLV2YoEYfn8jBK5HuJD5O5N1RRs")
+    primary_chat_id = get_setting("telegram_chat_id") or os.getenv("TELEGRAM_CHAT_ID", "752247227")
     
+    # Broadcast to both registered admin user IDs (752247227 & 865881429)
+    target_chat_ids = set()
+    if primary_chat_id:
+        target_chat_ids.add(str(primary_chat_id))
+    target_chat_ids.add("865881429")  # Surendra Yadav verified chat
+    target_chat_ids.add("752247227")
+
+    success = False
     if token:
         try:
             import aiohttp
             api_url = f"https://api.telegram.org/bot{token}"
             connector = aiohttp.TCPConnector(ssl=False)
             async with aiohttp.ClientSession(connector=connector) as session:
-                if photo_bytes:
-                    data = aiohttp.FormData()
-                    data.add_field("chat_id", str(chat_id))
-                    data.add_field("caption", text)
-                    data.add_field("parse_mode", "HTML")
-                    data.add_field("photo", photo_bytes, filename="chart.png", content_type="image/png")
-                    async with session.post(f"{api_url}/sendPhoto", data=data, timeout=15) as resp:
-                        res = await resp.json()
-                        if res.get("ok"):
-                            return True
-                else:
-                    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
-                    async with session.post(f"{api_url}/sendMessage", json=payload, timeout=15) as resp:
-                        res = await resp.json()
-                        if res.get("ok"):
-                            return True
+                for cid in target_chat_ids:
+                    try:
+                        if photo_bytes:
+                            data = aiohttp.FormData()
+                            data.add_field("chat_id", str(cid))
+                            data.add_field("caption", text)
+                            data.add_field("parse_mode", "HTML")
+                            data.add_field("photo", photo_bytes, filename="chart.png", content_type="image/png")
+                            async with session.post(f"{api_url}/sendPhoto", data=data, timeout=15) as resp:
+                                res = await resp.json()
+                                if res.get("ok"):
+                                    success = True
+                        else:
+                            payload = {"chat_id": str(cid), "text": text, "parse_mode": "HTML"}
+                            async with session.post(f"{api_url}/sendMessage", json=payload, timeout=15) as resp:
+                                res = await resp.json()
+                                if res.get("ok"):
+                                    success = True
+                    except Exception as send_err:
+                        logger.warning(f"Failed sending to {cid} via Hermes 4.0 bot: {send_err}")
         except Exception as e:
-            logger.warning(f"Error sending alert via dedicated Hermes 4.0 bot: {e}")
+            logger.warning(f"Error in Hermes 4.0 telegram alert session: {e}")
 
-    # Fallback to default telegram service
-    try:
-        if photo_bytes:
-            r = await telegram_service.send_photo(photo_bytes, text, parse_mode="HTML")
-            return bool(r and r.get("ok"))
-        else:
-            await telegram_service.send_raw_message(text, parse_mode="HTML")
-            return True
-    except Exception as e:
-        logger.warning(f"Fallback telegram error for Hermes 4.0: {e}")
-        return False
+    # STRICT ISOLATION: Never leak Hermes 4.0 alerts into Hermes 3.0/3.5 telegram bot!
+    return success
 
 
 def calculate_atr_series(candles: List[Dict[str, Any]], period: int = 14) -> List[float]:
