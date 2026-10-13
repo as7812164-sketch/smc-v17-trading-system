@@ -169,6 +169,10 @@ def init_db():
             ("paper_trades", "be_lock_pct", "REAL DEFAULT 0.016"),
             ("paper_trades", "trail_lock_pct", "REAL DEFAULT 0.022"),
             ("paper_trades", "autopsy_diagnosis", "TEXT DEFAULT ''"),
+            ("paper_trades", "trailing_sl_price", "REAL DEFAULT 0.0"),
+            ("paper_trades", "locked_roi_pct", "REAL DEFAULT 0.0"),
+            ("paper_trades", "trailing_step", "INTEGER DEFAULT 0"),
+            ("paper_trades", "order_type", "TEXT DEFAULT 'LIMIT'"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE {col_def[0]} ADD COLUMN {col_def[1]} {col_def[2]}")
@@ -1204,6 +1208,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
         sl_price = float(zone.get("soft_sl_price") or (entry_price * (1.0 - sl_pct) if side in ("BUY", "LONG") else entry_price * (1.0 + sl_pct)))
         hard_sl_price = float(zone.get("hard_sl_price") or (entry_price * (1.0 - hard_sl_pct) if side in ("BUY", "LONG") else entry_price * (1.0 + hard_sl_pct)))
 
+        order_type = str(zone.get("order_type", "LIMIT")).upper()
         now = int(time.time() * 1000)
         cursor = conn.execute("""
         INSERT INTO paper_trades (
@@ -1211,14 +1216,15 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             tp_price, sl_price, hard_sl_price, timeframe, channel, exchange, account_id,
             status, entry_time, mode,
             highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct,
-            be_lock_pct, trail_lock_pct
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.0_MODEL_2A', ?, ?, 0.0, 0.0, '', 0.0, 0.0150, 0.0180)
+            be_lock_pct, trail_lock_pct, order_type, trailing_sl_price, locked_roi_pct, trailing_step
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.0_MODEL_2A', ?, ?, 0.0, 0.0, '', 0.0, 0.0150, 0.0180, ?, 0.0, 0.0, 0)
         """, (
             zone.get("id"), zone["symbol"], side, entry_price,
             position_size, tp_price, sl_price, hard_sl_price, tf,
             channel_name, exchange_name, allocated_acc_id,
             now,
-            entry_price, entry_price
+            entry_price, entry_price,
+            order_type
         ))
         conn.commit()
         trade_id = cursor.lastrowid
@@ -1232,12 +1238,16 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             "exchange": exchange_name,
             "account_id": allocated_acc_id,
             "mode": "HERMES_3.0_MODEL_2A",
+            "order_type": order_type,
             "entry_price": entry_price,
             "position_size_usdt": position_size,
             "margin_usdt": margin,
             "tp_price": tp_price,
             "sl_price": sl_price,
             "hard_sl_price": hard_sl_price,
+            "trailing_sl_price": 0.0,
+            "locked_roi_pct": 0.0,
+            "trailing_step": 0,
             "balance_at_entry": balance,
             "expected_tp_usdt": round(position_size * tp_pct, 2),
             "max_sl_usdt": round(position_size * sl_pct, 2)

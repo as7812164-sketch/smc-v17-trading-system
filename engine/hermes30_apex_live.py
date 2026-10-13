@@ -65,7 +65,11 @@ from config import (
     HERMES_3_TP_PCT,
     HERMES_3_BE_TRIGGER_PCT,
     HERMES_3_REJECTION_WICK_MIN,
-    HERMES_3_MAX_TAP_BARS
+    HERMES_3_MAX_TAP_BARS,
+    HERMES_3_LIMIT_PROXIMITY_PCT,
+    HERMES_3_ENABLE_STEPPED_TRAILING,
+    HERMES_3_INFINITE_TRAILING_RIDER,
+    HERMES_3_STEPPED_TRAILING_LADDER
 )
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -128,6 +132,14 @@ class Hermes30Model2ALiveEngine:
                 conn.execute("ALTER TABLE paper_trades ADD COLUMN vault_stashed_usdt REAL DEFAULT 0.0")
             if "sentry_reasons" not in trade_cols:
                 conn.execute("ALTER TABLE paper_trades ADD COLUMN sentry_reasons TEXT DEFAULT ''")
+            if "trailing_sl_price" not in trade_cols:
+                conn.execute("ALTER TABLE paper_trades ADD COLUMN trailing_sl_price REAL DEFAULT 0.0")
+            if "locked_roi_pct" not in trade_cols:
+                conn.execute("ALTER TABLE paper_trades ADD COLUMN locked_roi_pct REAL DEFAULT 0.0")
+            if "trailing_step" not in trade_cols:
+                conn.execute("ALTER TABLE paper_trades ADD COLUMN trailing_step INTEGER DEFAULT 0")
+            if "order_type" not in trade_cols:
+                conn.execute("ALTER TABLE paper_trades ADD COLUMN order_type TEXT DEFAULT 'LIMIT'")
 
             # Update account mode to HERMES_3.0_MODEL_2A
             conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_MODEL_2A' WHERE id <= 10")
@@ -237,8 +249,9 @@ class Hermes30Model2ALiveEngine:
                                         tap_c = candles[t]
                                         t_l, t_h, t_o, t_c = float(tap_c["low"]), float(tap_c["high"]), float(tap_c["open"]), float(tap_c["close"])
 
-                                        # First Tap Check at 50% MT
-                                        if t_l <= mt and t_c >= mt:
+                                        # First Tap or 0.20% Proximity Limit Check at 50% MT
+                                        is_limit_proximity = (t_l <= mt * (1.0 + HERMES_3_LIMIT_PROXIMITY_PCT))
+                                        if is_limit_proximity and t_c >= mt * 0.995:
                                             c_range = t_h - t_l
                                             swept = any(float(candles[k]["low"]) < idm_low for k in range(high_idx, t + 1))
                                             l_wick = min(t_o, t_c) - t_l
@@ -250,6 +263,7 @@ class Hermes30Model2ALiveEngine:
                                                     "symbol": symbol,
                                                     "side": "LONG",
                                                     "interval": interval,
+                                                    "order_type": "LIMIT",
                                                     "entry_price": mt,
                                                     "mean_threshold": mt,
                                                     "ob_high": dec_top,
@@ -257,6 +271,10 @@ class Hermes30Model2ALiveEngine:
                                                     "tp_price": tp_price,
                                                     "soft_sl_price": soft_sl_price,
                                                     "hard_sl_price": hard_sl_price,
+                                                    "trailing_sl_price": 0.0,
+                                                    "locked_roi_pct": 0.0,
+                                                    "trailing_step": 0,
+                                                    "stepped_trailing_active": True,
                                                     "be_armor_price": be_armor_price,
                                                     "tp_pct": HERMES_3_TP_PCT,
                                                     "soft_sl_pct": HERMES_3_SOFT_SL_PCT,
@@ -267,7 +285,7 @@ class Hermes30Model2ALiveEngine:
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh,
                                                     "status": "FRESH_TRIGGERED" if is_fresh else "ARMED_TAP",
-                                                    "sentry_reasons": "Hermes 3.0 Model 2A | 50% MT Deep Entry | Rejection Wick >= 18% | Body Close SL"
+                                                    "sentry_reasons": "Hermes 3.0 Model 2A | 50% MT Limit Entry | Rejection Wick >= 18% | Stepped Trailing Active"
                                                 })
                                             break
 
@@ -313,7 +331,9 @@ class Hermes30Model2ALiveEngine:
                                         tap_c = candles[t]
                                         t_l, t_h, t_o, t_c = float(tap_c["low"]), float(tap_c["high"]), float(tap_c["open"]), float(tap_c["close"])
 
-                                        if t_h >= mt and t_c <= mt:
+                                        # First Tap or 0.20% Proximity Limit Check at 50% MT
+                                        is_limit_proximity = (t_h >= mt * (1.0 - HERMES_3_LIMIT_PROXIMITY_PCT))
+                                        if is_limit_proximity and t_c <= mt * 1.005:
                                             c_range = t_h - t_l
                                             swept = any(float(candles[k]["high"]) > idm_high for k in range(low_idx, t + 1))
                                             w_ratio = (t_h - max(t_o, t_c)) / c_range if c_range > 0 else 0.0
@@ -324,6 +344,7 @@ class Hermes30Model2ALiveEngine:
                                                     "symbol": symbol,
                                                     "side": "SHORT",
                                                     "interval": interval,
+                                                    "order_type": "LIMIT",
                                                     "entry_price": mt,
                                                     "mean_threshold": mt,
                                                     "ob_high": dec_top,
@@ -331,6 +352,10 @@ class Hermes30Model2ALiveEngine:
                                                     "tp_price": tp_price,
                                                     "soft_sl_price": soft_sl_price,
                                                     "hard_sl_price": hard_sl_price,
+                                                    "trailing_sl_price": 0.0,
+                                                    "locked_roi_pct": 0.0,
+                                                    "trailing_step": 0,
+                                                    "stepped_trailing_active": True,
                                                     "be_armor_price": be_armor_price,
                                                     "tp_pct": HERMES_3_TP_PCT,
                                                     "soft_sl_pct": HERMES_3_SOFT_SL_PCT,
@@ -341,7 +366,7 @@ class Hermes30Model2ALiveEngine:
                                                     "tap_time": tap_c["time"],
                                                     "is_fresh_trigger": is_fresh,
                                                     "status": "FRESH_TRIGGERED" if is_fresh else "ARMED_TAP",
-                                                    "sentry_reasons": "Hermes 3.0 Model 2A | 50% MT Deep Entry | Rejection Wick >= 18% | Body Close SL"
+                                                    "sentry_reasons": "Hermes 3.0 Model 2A | 50% MT Limit Entry | Rejection Wick >= 18% | Stepped Trailing Active"
                                                 })
                                             break
 
@@ -502,6 +527,10 @@ class Hermes30Model2ALiveEngine:
             setup["timeframe"] = timeframe
             setup["margin_usdt"] = margin
             setup["position_size_usdt"] = position_size
+            setup["order_type"] = "LIMIT"
+            setup["trailing_sl_price"] = 0.0
+            setup["locked_roi_pct"] = 0.0
+            setup["trailing_step"] = 0
 
             trade_record = open_paper_trade(setup)
             if not trade_record or "error" in trade_record:
@@ -536,25 +565,24 @@ class Hermes30Model2ALiveEngine:
                 logger.error(f"Error executing real Binance trade: {bne}")
 
             sec_type_str = "4H Macro Swing" if sec_id <= 5 else "1H Intraday Scalp"
-            logger.info(f"🚀 HERMES 3.0 MODEL 2A TRADE OPENED [Section {sec_id}]: {symbol} {side} @ {ep} | TP: {tp} | Soft SL: {soft_sl} (Body Close) | Hard SL: {hard_sl}")
+            logger.info(f"🚀 HERMES 3.0 LIMIT ORDER ARMED [Section {sec_id}]: {symbol} {side} LIMIT @ {ep} | Initial Hard SL: {hard_sl} | Stepped Trailing Active")
 
             # Send Telegram Alert with Live Chart Image
             try:
                 alert_text = (
-                    f"👑 <b>HERMES 3.0 MODEL 2A: NEW TRADE EXECUTED</b>\n"
+                    f"👑 <b>HERMES 3.0: NEW LIMIT ORDER ARMED</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     f"📦 <b>Compounding Slot</b>: <b>Section {sec_id} ({sec_type_str})</b>\n"
                     f"🪙 <b>Pair</b>: #{symbol} ({timeframe.upper()})\n"
-                    f"📈 <b>Action</b>: {'🟢 BUY (LONG)' if side == 'LONG' else '🔴 SELL (SHORT)'}\n"
-                    f"🎯 <b>Entry Price</b>: {ep:.6f} (50% Mean Threshold)\n"
-                    f"🏆 <b>Take Profit (+15% ROE)</b>: {tp:.6f}\n"
-                    f"🛡️ <b>Soft Stop Loss (-7.5% ROE)</b>: {soft_sl:.6f} (Candle Body Close Only!)\n"
-                    f"🛑 <b>Hard Circuit Breaker</b>: {hard_sl:.6f} (-3.00% Flash Dump Guard)\n"
-                    f"🛡️ <b>Break-Even Armor</b>: Locks Risk-Free at {setup['be_armor_price']:.6f} (+1.50% Spot)\n"
+                    f"📈 <b>Action</b>: {'🟢 BUY (LONG)' if side == 'LONG' else '🔴 SELL (SHORT)'} (LIMIT ORDER)\n"
+                    f"🎯 <b>Entry Price</b>: {ep:.6f} (50% Mean Threshold | 0.20% Proximity)\n"
+                    f"🛑 <b>Initial Hard SL</b>: {hard_sl:.6f} (-3.00% Disaster Shield)\n"
+                    f"🛡️ <b>Soft Stop Loss</b>: {soft_sl:.6f} (Candle Body Close Defense)\n"
+                    f"📈 <b>Stepped Trailing SL</b>: +5% ROI ➔ +1% | +10% ROI ➔ +5% | +15% ROI ➔ +10%\n"
                     f"🕯️ <b>Rejection Wick</b>: {setup.get('wick_ratio_pct', 24.5):.1f}% (Confirmed ≥ 18.0% Absorption)\n"
                     f"⚡ <b>Leverage</b>: {leverage}x Isolated | Margin: ${margin:.2f} USDT\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔬 <i>Deca Compounding Slot {sec_id}/10 Active | 0 Margin Contagion</i>"
+                    f"🔬 <i>Deca Compounding Slot {sec_id}/10 Active | Infinite Trend Runner</i>"
                 )
                 keyboard = telegram_service.get_alert_inline_keyboard(symbol)
                 sent_msg_id = None
@@ -596,10 +624,10 @@ class Hermes30Model2ALiveEngine:
     async def check_live_price_and_exits(self):
         """
         Monitors active positions against live Binance ticker feed every few seconds:
-        - Layer 1: +3.00% TP Hit -> Instant Exit
-        - Layer 2: +1.50% Spot Move -> Break-Even Armor Lock (SL moved to entry)
-        - Layer 3: -3.00% Hard Circuit Breaker -> Instant Emergency Exit
-        - Layer 4: Soft -1.50% SL -> Checked ONLY on Candle Body Close!
+        - Layer 1: Stepped Trailing SL Ladder (5% ROI -> +1% ROI, 10% -> +5%, 15% -> +10%, 20% -> +15%... Infinite Trend Rider)
+        - Layer 2: Trailing SL Hit -> Instant Profit Exit on limit/touch
+        - Layer 3: Initial Hard Circuit Breaker (-3.00% Disaster SL on Exchange)
+        - Layer 4: Structural Soft SL (-1.50% on Candle Body Close if trailing not yet armed)
         """
         open_trades = get_open_paper_trades()
         if not open_trades:
@@ -609,14 +637,13 @@ class Hermes30Model2ALiveEngine:
         if not tickers:
             return
 
+        leverage = 5.0
+
         for trade in list(open_trades):
             sym = trade["symbol"]
             side = trade["side"].upper()
             entry_price = float(trade["entry_price"])
-            tp_price = float(trade["tp_price"])
-            soft_sl_price = float(trade["sl_price"])
-            hard_sl_price = float(trade.get("hard_sl_price", 0.0) or (entry_price * 0.970 if side == "LONG" else entry_price * 1.030))
-            be_locked = bool(trade.get("be_locked", 0))
+            hard_sl_price = float(trade.get("hard_sl_price", 0.0) or (entry_price * 0.970 if side in ("BUY", "LONG") else entry_price * 1.030))
             trade_id = trade["id"]
             tf = trade.get("timeframe", "4h")
 
@@ -626,75 +653,164 @@ class Hermes30Model2ALiveEngine:
 
             update_paper_trade_mark_price(trade_id, cur_price)
 
+            highest_p = max(float(trade.get("highest_price") or entry_price), cur_price)
+            lowest_p = min(float(trade.get("lowest_price") or entry_price), cur_price)
+
+            # Calculate current peak ROI achieved so far
+            if side in ("BUY", "LONG"):
+                peak_roi = ((highest_p - entry_price) / entry_price) * 100.0 * leverage
+            else:
+                peak_roi = ((entry_price - lowest_p) / entry_price) * 100.0 * leverage
+
+            current_locked_roi = float(trade.get("locked_roi_pct", 0.0) or 0.0)
+            current_step = int(trade.get("trailing_step", 0) or 0)
+            active_sl_price = float(trade.get("sl_price") or (entry_price * 0.985 if side in ("BUY", "LONG") else entry_price * 1.015))
+            be_locked = bool(trade.get("be_locked", 0))
+
+            # -------------------------------------------------------------
+            # STEPPED TRAILING SL LADDER EVALUATION
+            # -------------------------------------------------------------
+            target_locked_roi = current_locked_roi
+            target_step = current_step
+
+            if peak_roi >= 5.0 and target_locked_roi < 1.0:
+                target_locked_roi = 1.0
+                target_step = 1
+            if peak_roi >= 10.0 and target_locked_roi < 5.0:
+                target_locked_roi = 5.0
+                target_step = 2
+            if peak_roi >= 15.0 and target_locked_roi < 10.0:
+                target_locked_roi = 10.0
+                target_step = 3
+            if peak_roi >= 20.0 and target_locked_roi < 15.0:
+                target_locked_roi = 15.0
+                target_step = 4
+            if peak_roi >= 25.0:
+                step_k = int(peak_roi // 5) * 5
+                target_k = float(step_k - 5)
+                if target_k > target_locked_roi:
+                    target_locked_roi = target_k
+                    target_step = int((step_k - 5) // 5) + 1
+
+            # Upgrade Trailing SL if a new step is reached!
+            if target_locked_roi > current_locked_roi:
+                spot_gain_pct = (target_locked_roi / 100.0) / leverage
+                if side in ("BUY", "LONG"):
+                    new_sl_price = round(entry_price * (1.0 + spot_gain_pct), 8)
+                else:
+                    new_sl_price = round(entry_price * (1.0 - spot_gain_pct), 8)
+
+                with get_connection() as conn:
+                    conn.execute("""
+                    UPDATE paper_trades SET
+                        sl_price = ?,
+                        trailing_sl_price = ?,
+                        locked_roi_pct = ?,
+                        trailing_step = ?,
+                        be_locked = 1
+                    WHERE id = ?
+                    """, (new_sl_price, new_sl_price, target_locked_roi, target_step, trade_id))
+                    conn.commit()
+
+                trade["sl_price"] = new_sl_price
+                trade["trailing_sl_price"] = new_sl_price
+                trade["locked_roi_pct"] = target_locked_roi
+                trade["trailing_step"] = target_step
+                trade["be_locked"] = 1
+                active_sl_price = new_sl_price
+                current_locked_roi = target_locked_roi
+                be_locked = True
+
+                logger.info(
+                    f"🛡️ STEPPED TRAILING SL UPGRADE: {sym} {side} Step {target_step} | "
+                    f"Peak ROI: {peak_roi:.1f}% -> Locked SL @ +{target_locked_roi:.1f}% ROI ({new_sl_price:.6f})"
+                )
+
+                # Broadcast upgrade via WebSocket to frontend
+                await self.broadcast("TRADE_TRAILING_UPDATE", {
+                    "trade_id": trade_id,
+                    "symbol": sym,
+                    "side": side,
+                    "step": target_step,
+                    "locked_roi": target_locked_roi,
+                    "sl_price": new_sl_price,
+                    "peak_roi": round(peak_roi, 1)
+                })
+
+                # Dispatch Telegram alert for Trailing SL upgrade
+                try:
+                    sec_id = trade.get("account_id") or 1
+                    trail_text = (
+                        f"🛡️ <b>HERMES 3.0: STEPPED TRAILING SL UPGRADED</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"📦 <b>Compounding Slot</b>: Section {sec_id}\n"
+                        f"🪙 <b>Pair</b>: #{sym} ({tf.upper()}) | Side: {'🟢 LONG' if side in ('BUY', 'LONG') else '🔴 SHORT'}\n"
+                        f"📈 <b>Peak Move Achieved</b>: <b>+{peak_roi:.1f}% ROI</b> (+{peak_roi/leverage:.2f}% Spot)\n"
+                        f"🔒 <b>Trailing Ladder</b>: <b>Step {target_step}</b>\n"
+                        f"💰 <b>Guaranteed Locked Profit</b>: <b>+{target_locked_roi:.1f}% ROI</b>\n"
+                        f"🛑 <b>New Stop Loss Price</b>: <code>{new_sl_price:.6f}</code>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"⚡ <i>Capital secured in profit. Trend runner active without TP ceiling!</i>"
+                    )
+                    asyncio.create_task(telegram_service.send_raw_message(trail_text))
+                except Exception:
+                    pass
+
             exit_triggered = None
             exit_price = cur_price
 
+            # -------------------------------------------------------------
+            # EXIT TRIGGER CHECKS
+            # -------------------------------------------------------------
             if side in ("BUY", "LONG"):
-                # Break-Even Armor Trigger (+1.50% Spot Gain)
-                if not be_locked and cur_price >= entry_price * (1.0 + HERMES_3_BE_TRIGGER_PCT):
-                    be_locked = True
-                    with get_connection() as conn:
-                        conn.execute("UPDATE paper_trades SET be_locked = 1, sl_price = ? WHERE id = ?", (entry_price, trade_id))
-                        conn.commit()
-                    logger.info(f"🛡️ HERMES 3.0 BE ARMOR ACTIVE: {sym} LONG SL locked at {entry_price} (Risk-Free!)")
+                # 1. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
+                if be_locked and current_locked_roi >= 1.0 and cur_price <= active_sl_price:
+                    exit_triggered = "TRAILING_SL_HIT"
+                    exit_price = active_sl_price
+                    logger.info(f"💎 HERMES 3.0 TRAILING SL EXIT: {sym} LONG hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
 
-                # 1. Take Profit Touch
-                if cur_price >= tp_price:
-                    exit_triggered = "TP_HIT"
-                    exit_price = tp_price
                 # 2. Emergency Hard Circuit Breaker Touch (-3.00%)
                 elif cur_price <= hard_sl_price:
                     exit_triggered = "EMERGENCY_HARD_SL_HIT"
                     exit_price = hard_sl_price
-                # 3. Break-Even Touch if locked
-                elif be_locked and cur_price <= entry_price:
-                    exit_triggered = "BE_SAVE"
-                    exit_price = entry_price
-                # 4. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close!
-                else:
-                    # Fetch latest completed candle to check body close
+                    logger.info(f"🛑 HERMES 3.0 EMERGENCY HARD SL: {sym} LONG hit hard circuit @ {hard_sl_price}")
+
+                # 3. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close before trailing is locked
+                elif not be_locked:
                     try:
                         k = await binance_feed.fetch_klines(sym, interval=tf, limit=2)
                         if k and len(k) >= 2:
                             last_closed_candle = k[-2]
-                            if float(last_closed_candle["close"]) <= soft_sl_price:
+                            if float(last_closed_candle["close"]) <= active_sl_price:
                                 exit_triggered = "STRUCTURAL_BODY_CLOSE_SL"
                                 exit_price = float(last_closed_candle["close"])
-                                logger.info(f"🛑 HERMES 3.0 STRUCTURAL BODY CLOSE SL: {sym} LONG closed below {soft_sl_price}")
+                                logger.info(f"🛑 HERMES 3.0 STRUCTURAL BODY CLOSE SL: {sym} LONG closed below {active_sl_price}")
                     except Exception:
                         pass
 
             else: # SELL / SHORT
-                # Break-Even Armor Trigger (+1.50% Spot Drop)
-                if not be_locked and cur_price <= entry_price * (1.0 - HERMES_3_BE_TRIGGER_PCT):
-                    be_locked = True
-                    with get_connection() as conn:
-                        conn.execute("UPDATE paper_trades SET be_locked = 1, sl_price = ? WHERE id = ?", (entry_price, trade_id))
-                        conn.commit()
-                    logger.info(f"🛡️ HERMES 3.0 BE ARMOR ACTIVE: {sym} SHORT SL locked at {entry_price} (Risk-Free!)")
+                # 1. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
+                if be_locked and current_locked_roi >= 1.0 and cur_price >= active_sl_price:
+                    exit_triggered = "TRAILING_SL_HIT"
+                    exit_price = active_sl_price
+                    logger.info(f"💎 HERMES 3.0 TRAILING SL EXIT: {sym} SHORT hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
 
-                # 1. Take Profit Touch
-                if cur_price <= tp_price:
-                    exit_triggered = "TP_HIT"
-                    exit_price = tp_price
                 # 2. Emergency Hard Circuit Breaker Touch (-3.00%)
                 elif cur_price >= hard_sl_price:
                     exit_triggered = "EMERGENCY_HARD_SL_HIT"
                     exit_price = hard_sl_price
-                # 3. Break-Even Touch if locked
-                elif be_locked and cur_price >= entry_price:
-                    exit_triggered = "BE_SAVE"
-                    exit_price = entry_price
-                # 4. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close!
-                else:
+                    logger.info(f"🛑 HERMES 3.0 EMERGENCY HARD SL: {sym} SHORT hit hard circuit @ {hard_sl_price}")
+
+                # 3. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close before trailing is locked
+                elif not be_locked:
                     try:
                         k = await binance_feed.fetch_klines(sym, interval=tf, limit=2)
                         if k and len(k) >= 2:
                             last_closed_candle = k[-2]
-                            if float(last_closed_candle["close"]) >= soft_sl_price:
+                            if float(last_closed_candle["close"]) >= active_sl_price:
                                 exit_triggered = "STRUCTURAL_BODY_CLOSE_SL"
                                 exit_price = float(last_closed_candle["close"])
-                                logger.info(f"🛑 HERMES 3.0 STRUCTURAL BODY CLOSE SL: {sym} SHORT closed above {soft_sl_price}")
+                                logger.info(f"🛑 HERMES 3.0 STRUCTURAL BODY CLOSE SL: {sym} SHORT closed above {active_sl_price}")
                     except Exception:
                         pass
 
@@ -743,12 +859,12 @@ class Hermes30Model2ALiveEngine:
         try:
             sec_type = "4H Macro Swing" if int(sec_id) <= 5 else "1H Intraday Scalp"
             tg_text = (
-                f"{'🏆' if outcome == 'TP_HIT' else ('🛡️' if outcome == 'BE_SAVE' else '🛑')} "
-                f"<b>HERMES 3.0 MODEL 2A: POSITION CLOSED</b>\n"
+                f"{'🏆' if outcome in ('TP_HIT', 'TRAILING_SL_HIT') else ('🛡️' if outcome in ('BE_SAVE', 'BE_FEE_SAVE') else '🛑')} "
+                f"<b>HERMES 3.0: POSITION CLOSED</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"📦 <b>Compounding Slot</b>: <b>Section {sec_id} ({sec_type})</b>\n"
                 f"🪙 <b>Pair</b>: #{sym} ({tf.upper()})\n"
-                f"📋 <b>Result</b>: <b>{outcome}</b>\n"
+                f"📋 <b>Result</b>: <b>{'💎 TRAILING SL PROFIT BANK' if outcome == 'TRAILING_SL_HIT' else outcome}</b>\n"
                 f"💵 <b>Realized PnL</b>: <b>{pnl_usdt:+.2f} USDT ({pnl_pct:+.2f}%)</b>\n"
                 f"🚪 <b>Exit Price</b>: {exit_price:.6f}\n"
                 f"⏱️ <b>Duration</b>: {duration_str}\n"

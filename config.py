@@ -21,13 +21,27 @@ HERMES_3_5_BOUNDARY_ENTRY = False     # Outer 5% Boundary entry strictly removed
 HERMES_3_CANDLE_BODY_CLOSE_SL = True  # Soft SL invalidation strictly on Candle Body Close
 HERMES_3_SOFT_SL_PCT = 0.015          # 1.50% Soft SL on Candle Close (-7.5% ROE @ 5x)
 HERMES_3_HARD_CIRCUIT_SL_PCT = 0.030  # 3.00% Emergency Hard Circuit Breaker on Exchange (-15.0% ROE @ 5x)
-HERMES_3_TP_PCT = 0.030               # +3.00% Take Profit (+15.0% ROE @ 5x)
-HERMES_3_BE_TRIGGER_PCT = 0.015       # +1.50% Spot Move Locks Break-Even at Entry
+HERMES_3_TP_PCT = 0.030               # +3.00% Take Profit baseline reference
+HERMES_3_BE_TRIGGER_PCT = 0.010       # Replaced by Stepped Trailing SL
 HERMES_3_REJECTION_WICK_MIN = 0.18    # >= 18% Rejection Wick required on tap candle
 HERMES_3_MAX_TAP_BARS = 28            # Retest tap strictly <= 28 bars
 HERMES_3_MULTI_STAGE_ARMOR = True
 HERMES_3_BTC_EMERGENCY_SHIELD = True
 HERMES_3_DYNAMIC_ATR_BUFFER = True
+
+# --- STEPPED TRAILING SL & PROXIMITY LIMIT ORDER ARCHITECTURE ---
+HERMES_3_LIMIT_PROXIMITY_PCT = 0.0020     # 0.20% proximity triggers Limit Order pre-placement
+HERMES_3_ENABLE_STEPPED_TRAILING = True   # Replaces static break-even with Stepped Trailing SL
+HERMES_3_INFINITE_TRAILING_RIDER = True   # No fixed TP ceiling; rides until trailing SL hit
+HERMES_3_STEPPED_TRAILING_LADDER = [
+    # (Trigger ROI %, Locked SL ROI %)
+    (5.0, 1.0),    # Touch +5% ROI -> Shift SL to +1% ROI (+0.2% spot move fee-saver)
+    (10.0, 5.0),   # Touch +10% ROI -> Shift SL to +5% ROI (+1.0% spot move)
+    (15.0, 10.0),  # Touch +15% ROI -> Shift SL to +10% ROI (+2.0% spot move)
+    (20.0, 15.0),  # Touch +20% ROI -> Shift SL to +15% ROI (+3.0% spot move)
+    (25.0, 20.0),  # Touch +25% ROI -> Shift SL to +20% ROI (+4.0% spot move)
+    (30.0, 25.0),  # Touch +30% ROI -> Shift SL to +25% ROI (+5.0% spot move)
+]
 TIMEFRAME = "4h"
 KLINES_LIMIT = 200
 
