@@ -182,6 +182,14 @@ class BB20LiveSniper:
                 self._check_pending_setup_fill(setup_key, candles_15m)
                 continue
 
+            # If this section is already busy with an active trade on another coin, skip arming a new setup
+            if sec.get("status") != "IDLE" and pos_key not in self.ledger.data["active_positions"]:
+                continue
+
+            # If another coin in this same section already has a pending limit setup, skip to prevent double margin allocation
+            if any(s.get("section_id") == sec_id and s_sym != symbol for s_sym, s in self.ledger.data.get("active_setups", {}).items()):
+                continue
+
             # 5. Scan for new Extreme OBs
             # Inspect candle[-3] as base, candle[-2] as displacement, candle[-1] as FVG confirmation
             c_base = candles_15m[-3]
@@ -279,6 +287,18 @@ class BB20LiveSniper:
         side = setup["side"]
         entry = setup["mt_entry"]
         sl = setup["sl"]
+
+        # Check Setup Expiration (max 8 hours without tap)
+        armed_str = setup.get("armed_at")
+        if armed_str:
+            try:
+                armed_dt = datetime.fromisoformat(armed_str)
+                if (datetime.now(timezone.utc) - armed_dt).total_seconds() >= 8 * 3600:
+                    del self.ledger.data["active_setups"][symbol]
+                    print(f"⌛ Setup {symbol} Expired (8 hours without mitigation)")
+                    return
+            except Exception:
+                pass
 
         # Check Invalidation
         if side == "LONG" and last_c["low"] <= sl:

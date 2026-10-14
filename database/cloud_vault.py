@@ -127,6 +127,15 @@ def push_vault_state() -> bool:
             "settings": settings
         }
 
+        # 6. BB 2.0 Shadow Ledger
+        bb20_file = BASE_DIR / "bb20_shadow_ledger.json"
+        if bb20_file.exists():
+            try:
+                with open(bb20_file, "r", encoding="utf-8") as f:
+                    payload_data["bb20_shadow_ledger"] = json.load(f)
+            except Exception:
+                pass
+
         # Save local disk backup first
         try:
             LOCAL_VAULT_BACKUP.parent.mkdir(parents=True, exist_ok=True)
@@ -353,6 +362,18 @@ def pull_and_restore_vault_state() -> bool:
 
         conn.commit()
         conn.close()
+
+        # Restore BB 2.0 Shadow Ledger if present in vault
+        bb20_ledger_data = vault_data.get("bb20_shadow_ledger")
+        if bb20_ledger_data:
+            try:
+                bb20_file = BASE_DIR / "bb20_shadow_ledger.json"
+                with open(bb20_file, "w", encoding="utf-8") as f:
+                    json.dump(bb20_ledger_data, f, indent=2)
+                logger.info("Restored BB 2.0 Shadow Ledger from Cloud Vault!")
+            except Exception as e:
+                logger.warning(f"Error restoring BB 2.0 Shadow Ledger: {e}")
+
         logger.info(f"Cloud Vault successfully restored into SQLite database ({STRATEGY_VERSION} active)!")
         return True
 
