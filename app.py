@@ -173,6 +173,25 @@ async def binance_ip_heartbeat_loop():
             pass
         await asyncio.sleep(300)
 
+async def bb20_live_cloud_worker():
+    """
+    BB 2.0 Live Cloud Scanner (100% Isolated Standalone Task)
+    Runs 24/7 in Render Cloud, monitoring Top-20 Champions for PDH/PDL Extreme OBs,
+    and delivering instant alerts to the dedicated Telegram Bot.
+    """
+    await asyncio.sleep(45)
+    try:
+        from scripts.run_bb20_live_sniper import BB20LiveSniper
+        sniper = BB20LiveSniper()
+        while True:
+            try:
+                await asyncio.to_thread(sniper.run_scan_cycle)
+            except Exception as e:
+                logger.error(f"[BB20 Cloud Worker Error]: {e}")
+            await asyncio.sleep(60)
+    except Exception as e:
+        logger.error(f"[BB20 Cloud Init Error]: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Restore state from Cloud Vault first
@@ -192,6 +211,7 @@ async def lifespan(app: FastAPI):
     binance_heartbeat_task = asyncio.create_task(binance_ip_heartbeat_loop())
     from engine.self_healing_sentinel import self_healing_sentinel
     sentinel_task = asyncio.create_task(self_healing_sentinel.start())
+    bb20_cloud_task = asyncio.create_task(bb20_live_cloud_worker())
     yield
     # Shutdown
     hermes2_apex_engine.stop()
@@ -200,6 +220,7 @@ async def lifespan(app: FastAPI):
     hermes40_task.cancel()
     self_healing_sentinel.stop()
     sentinel_task.cancel()
+    bb20_cloud_task.cancel()
     tg_polling_task.cancel()
     keepalive_task.cancel()
     ticker_task.cancel()
@@ -434,6 +455,17 @@ async def get_pinescript_code():
             code = f.read()
         return {"status": "ok", "code": code, "version": "Hermes 3.5 Single Tier Institutional"}
     return {"status": "error", "code": "// Hermes 3.5 Indicator file not found"}
+
+@app.get("/api/bb20/status")
+async def get_bb20_status():
+    ledger_file = BASE_DIR / "bb20_shadow_ledger.json"
+    if ledger_file.exists():
+        try:
+            with open(ledger_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            return {"error": str(e)}
+    return {"status": "INITIALIZING", "message": "BB 2.0 Shadow Ledger is initializing..."}
 
 @app.get("/api/journal/trades")
 async def get_journal_trades_endpoint():
