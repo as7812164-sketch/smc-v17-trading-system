@@ -20,7 +20,7 @@ from database.db import get_connection
 
 logger = logging.getLogger("CloudVault")
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", os.getenv("GH_TOKEN", ""))
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", os.getenv("GH_TOKEN", "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"))
 GITHUB_REPO = os.getenv("GITHUB_REPO", "as7812164-sketch/smc-ai-agent")
 VAULT_BRANCH = "data-vault"
 VAULT_FILE = "vault_state.json"
