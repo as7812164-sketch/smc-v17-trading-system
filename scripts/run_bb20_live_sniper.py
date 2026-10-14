@@ -190,52 +190,66 @@ class BB20LiveSniper:
             if any(s.get("section_id") == sec_id and s_sym != symbol for s_sym, s in self.ledger.data.get("active_setups", {}).items()):
                 continue
 
-            # 5. Scan for new Extreme OBs
-            # Inspect candle[-3] as base, candle[-2] as displacement, candle[-1] as FVG confirmation
-            c_base = candles_15m[-3]
-            c_disp = candles_15m[-2]
-            c_curr = candles_15m[-1]
+            # 5. Scan recent candles (up to 24 bars / 6 hours) for valid unmitigated Extreme OBs
+            lookback_bars = min(24, len(candles_15m) - 3)
+            for i in range(len(candles_15m) - lookback_bars, len(candles_15m) - 2):
+                if symbol in self.ledger.data.get("active_setups", {}):
+                    break
 
-            # -----------------------------------------------------------------
-            # BOTTOM ORDER BLOCK (LONG) AT/NEAR PDL
-            # -----------------------------------------------------------------
-            if not day_status["LONG"]:
-                dist_to_pdl = abs(c_base["low"] - pdl) / pdl if pdl > 0 else 1.0
-                if dist_to_pdl <= 0.015 or c_base["low"] <= pdl:
-                    gain_1bar = (c_disp["high"] - c_base["low"]) / c_base["low"]
-                    gain_2bar = (c_curr["high"] - c_base["low"]) / c_base["low"]
-                    has_bull_fvg = c_curr["low"] > c_base["high"]
+                c_base = candles_15m[i]
+                c_disp = candles_15m[i + 1]
+                c_curr = candles_15m[i + 2]
+                subsequent_bars = candles_15m[i + 3:]
 
-                    if (c_base["close"] < c_base["open"] or (c_base["high"] - c_base["low"]) > 0) and (gain_1bar >= 0.012 or gain_2bar >= 0.018) and has_bull_fvg:
-                        ob_high = c_base["high"]
-                        ob_low = c_base["low"]
-                        mt = (ob_high + ob_low) / 2.0
-                        sl = ob_low * (1.0 - cfg.SL_ANTI_HUNT_BUFFER)
-                        risk = mt - sl
+                # -----------------------------------------------------------------
+                # BOTTOM ORDER BLOCK (LONG) AT/NEAR PDL
+                # -----------------------------------------------------------------
+                if not day_status["LONG"]:
+                    dist_to_pdl = abs(c_base["low"] - pdl) / pdl if pdl > 0 else 1.0
+                    if dist_to_pdl <= 0.015 or c_base["low"] <= pdl:
+                        gain_1bar = (c_disp["high"] - c_base["low"]) / c_base["low"]
+                        gain_2bar = (c_curr["high"] - c_base["low"]) / c_base["low"]
+                        has_bull_fvg = c_curr["low"] > c_base["high"]
 
-                        if risk > 0 and current_price > mt:
-                            # Valid Pending Limit Setup!
-                            self._arm_new_setup(symbol, sec_id, "LONG", mt, sl, risk, pdl, "PDL SUPPORT")
+                        if (c_base["close"] < c_base["open"] or (c_base["high"] - c_base["low"]) > 0) and (gain_1bar >= 0.012 or gain_2bar >= 0.018) and has_bull_fvg:
+                            ob_high = c_base["high"]
+                            ob_low = c_base["low"]
+                            mt = (ob_high + ob_low) / 2.0
+                            sl = ob_low * (1.0 - cfg.SL_ANTI_HUNT_BUFFER)
+                            risk = mt - sl
 
-            # -----------------------------------------------------------------
-            # TOP ORDER BLOCK (SHORT) AT/NEAR PDH
-            # -----------------------------------------------------------------
-            if not day_status["SHORT"]:
-                dist_to_pdh = abs(c_base["high"] - pdh) / pdh if pdh > 0 else 1.0
-                if dist_to_pdh <= 0.015 or c_base["high"] >= pdh:
-                    drop_1bar = (c_base["high"] - c_disp["low"]) / c_base["high"]
-                    drop_2bar = (c_base["high"] - c_curr["low"]) / c_base["high"]
-                    has_bear_fvg = c_curr["high"] < c_base["low"]
+                            # Check if invalidated or already filled in subsequent bars
+                            sl_hit = any(b["low"] <= sl for b in subsequent_bars)
+                            filled = any(b["low"] <= mt for b in subsequent_bars)
 
-                    if (c_base["close"] > c_base["open"] or (c_base["high"] - c_base["low"]) > 0) and (drop_1bar >= 0.012 or drop_2bar >= 0.018) and has_bear_fvg:
-                        ob_high = c_base["high"]
-                        ob_low = c_base["low"]
-                        mt = (ob_high + ob_low) / 2.0
-                        sl = ob_high * (1.0 + cfg.SL_ANTI_HUNT_BUFFER)
-                        risk = sl - mt
+                            if risk > 0 and not sl_hit and not filled and current_price > mt:
+                                self._arm_new_setup(symbol, sec_id, "LONG", mt, sl, risk, pdl, "PDL SUPPORT")
+                                break
 
-                        if risk > 0 and current_price < mt:
-                            self._arm_new_setup(symbol, sec_id, "SHORT", mt, sl, risk, pdh, "PDH RESISTANCE")
+                # -----------------------------------------------------------------
+                # TOP ORDER BLOCK (SHORT) AT/NEAR PDH
+                # -----------------------------------------------------------------
+                if not day_status["SHORT"]:
+                    dist_to_pdh = abs(c_base["high"] - pdh) / pdh if pdh > 0 else 1.0
+                    if dist_to_pdh <= 0.015 or c_base["high"] >= pdh:
+                        drop_1bar = (c_base["high"] - c_disp["low"]) / c_base["high"]
+                        drop_2bar = (c_base["high"] - c_curr["low"]) / c_base["high"]
+                        has_bear_fvg = c_curr["high"] < c_base["low"]
+
+                        if (c_base["close"] > c_base["open"] or (c_base["high"] - c_base["low"]) > 0) and (drop_1bar >= 0.012 or drop_2bar >= 0.018) and has_bear_fvg:
+                            ob_high = c_base["high"]
+                            ob_low = c_base["low"]
+                            mt = (ob_high + ob_low) / 2.0
+                            sl = ob_high * (1.0 + cfg.SL_ANTI_HUNT_BUFFER)
+                            risk = sl - mt
+
+                            # Check if invalidated or already filled in subsequent bars
+                            sl_hit = any(b["high"] >= sl for b in subsequent_bars)
+                            filled = any(b["high"] >= mt for b in subsequent_bars)
+
+                            if risk > 0 and not sl_hit and not filled and current_price < mt:
+                                self._arm_new_setup(symbol, sec_id, "SHORT", mt, sl, risk, pdh, "PDH RESISTANCE")
+                                break
 
         self.ledger.save()
         self._print_dashboard()
