@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Markets Overview • NexusPro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/nexus.css">
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="top-header">
+        <div class="brand-section">
+            <button class="hamburger-btn" onclick="toggleDrawer()" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer; padding:6px; display:inline-flex;">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+            <a href="/trade" class="brand-logo">
+                <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+                <div class="brand-name">
+                    <span>NEXUS</span><span style="color:var(--brand-teal);">PRO</span>
+                    <span class="brand-pro-pill">MARKETS</span>
+                </div>
+            </a>
+            <nav class="nav-links">
+                <a href="/trade" class="nav-link"><i class="fa-solid fa-chart-line"></i> Futures</a>
+                <a href="/nexus/markets" class="nav-link active"><i class="fa-solid fa-layer-group"></i> Markets</a>
+                <a href="/nexus/deca" class="nav-link"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca $47k Hub</a>
+                <a href="/nexus/assets" class="nav-link"><i class="fa-solid fa-wallet"></i> Assets</a>
+            </nav>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="top-stats-pill">
+                <div class="stat-item">
+                    <span class="stat-label">Total Equity</span>
+                    <span class="stat-val green" id="topTotalEquity">$500.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Deca P&L</span>
+                    <span class="stat-val green" id="topTotalPnl">+$0.00</span>
+                </div>
+            </div>
+            <a href="/trade" style="text-decoration:none; background:var(--brand-teal); color:#080B11; font-weight:800; font-size:11px; padding:6px 12px; border-radius:6px;">
+                <i class="fa-solid fa-bolt"></i> Open Terminal
+            </a>
+        </div>
+    </header>
+
+    <!-- MARKETS CONTENT -->
+    <main style="max-width:1280px; margin:0 auto; padding:24px 16px; padding-bottom:90px;">
+        
+        <!-- GLOBAL INDEX CARDS (BITGET STYLE) -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:24px;" id="indexCardsGrid">
+            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); padding:16px; border-radius:10px;">
+                <div style="color:var(--text-muted); font-size:11px; font-weight:700;">BTC/USDT</div>
+                <div style="font-size:18px; font-weight:800; font-family:var(--font-mono); margin:4px 0;" id="cardBtcPrice">--</div>
+                <span class="pair-change-pill pill-green" id="cardBtcChange">+0.00%</span>
+            </div>
+            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); padding:16px; border-radius:10px;">
+                <div style="color:var(--text-muted); font-size:11px; font-weight:700;">ETH/USDT</div>
+                <div style="font-size:18px; font-weight:800; font-family:var(--font-mono); margin:4px 0;" id="cardEthPrice">--</div>
+                <span class="pair-change-pill pill-green" id="cardEthChange">+0.00%</span>
+            </div>
+            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); padding:16px; border-radius:10px;">
+                <div style="color:var(--text-muted); font-size:11px; font-weight:700;">SOL/USDT</div>
+                <div style="font-size:18px; font-weight:800; font-family:var(--font-mono); margin:4px 0;" id="cardSolPrice">--</div>
+                <span class="pair-change-pill pill-green" id="cardSolChange">+0.00%</span>
+            </div>
+            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); padding:16px; border-radius:10px;">
+                <div style="color:var(--text-muted); font-size:11px; font-weight:700;">XRP/USDT</div>
+                <div style="font-size:18px; font-weight:800; font-family:var(--font-mono); margin:4px 0;" id="cardXrpPrice">--</div>
+                <span class="pair-change-pill pill-green" id="cardXrpChange">+0.00%</span>
+            </div>
+        </div>
+
+        <!-- FILTER PILLS & SEARCH BAR -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+            <div style="display:flex; gap:8px; overflow-x:auto;">
+                <button class="type-tab active" onclick="filterMarkets('champions', this)" style="padding:6px 14px; border-radius:20px;">Top-20 Champions</button>
+                <button class="type-tab" onclick="filterMarkets('gainers', this)" style="padding:6px 14px; border-radius:20px;">Top Gainers</button>
+                <button class="type-tab" onclick="filterMarkets('losers', this)" style="padding:6px 14px; border-radius:20px;">Top Losers</button>
+                <button class="type-tab" onclick="filterMarkets('volume', this)" style="padding:6px 14px; border-radius:20px;">24h Volume</button>
+            </div>
+            <div class="input-wrapper" style="width:260px; padding:6px 12px;">
+                <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted); margin-right:8px;"></i>
+                <input type="text" id="marketSearchInput" placeholder="Search Coins..." oninput="handleSearch(this.value)">
+            </div>
+        </div>
+
+        <!-- MARKETS TABLE -->
+        <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:10px; overflow-x:auto;">
+            <table class="terminal-table" style="min-width:700px;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Pair</th>
+                        <th>Last Price</th>
+                        <th>24h Change</th>
+                        <th>24h High</th>
+                        <th>24h Low</th>
+                        <th>24h Turnover (USDT)</th>
+                        <th>Deca Section</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="marketsTableBody">
+                    <tr><td colspan="9" style="text-align:center; padding:40px; color:var(--text-muted);">Loading Markets Data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- MOBILE BOTTOM 5-TAB BAR -->
+    <div class="mobile-bottom-bar">
+        <a href="/trade" class="mobile-tab-btn"><i class="fa-solid fa-chart-line" style="font-size:16px;"></i><span>Futures</span></a>
+        <a href="/nexus/markets" class="mobile-tab-btn active"><i class="fa-solid fa-layer-group" style="font-size:16px;"></i><span>Markets</span></a>
+        <a href="/nexus/deca" class="mobile-tab-btn"><i class="fa-solid fa-trophy" style="font-size:16px; color:var(--gold);"></i><span>Deca 47k</span></a>
+        <a href="/nexus/assets" class="mobile-tab-btn"><i class="fa-solid fa-wallet" style="font-size:16px;"></i><span>Assets</span></a>
+    </div>
+
+    <!-- MOBILE DRAWER -->
+    <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="toggleDrawer()"></div>
+    <div class="mobile-drawer" id="mobileDrawer">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border-subtle);">
+            <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+            <div>
+                <div style="font-weight:800; font-size:15px;">NEXUSPRO</div>
+                <div style="font-size:10px; color:var(--brand-teal);">BITGET PRO EDITION</div>
+            </div>
+        </div>
+        <nav style="display:flex; flex-direction:column; gap:12px;">
+            <a href="/trade" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-chart-line"></i> Futures Terminal
+            </a>
+            <a href="/nexus/markets" style="display:flex; align-items:center; gap:12px; color:#fff; text-decoration:none; font-weight:700; padding:10px; border-radius:6px; background:var(--bg-surface-elevated);">
+                <i class="fa-solid fa-layer-group" style="color:var(--brand-teal);"></i> Markets Overview
+            </a>
+            <a href="/nexus/deca" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-trophy" style="color:var(--gold);"></i> BB 2.0 Deca Hub ($47k)
+            </a>
+            <a href="/nexus/assets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-wallet"></i> Assets & Wallet
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        let allMarketsData = [];
+        let currentFilter = 'champions';
+        let searchQuery = '';
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadMarkets();
+            setInterval(loadMarkets, 3000);
+            pollTopSummary();
+        });
+
+        async function pollTopSummary() {
+            try {
+                const res = await fetch("/api/deca/summary");
+                const s = await res.json();
+                document.getElementById("topTotalEquity").innerText = `$${s.total_equity.toFixed(2)}`;
+                const sign = s.total_pnl >= 0 ? '+' : '';
+                document.getElementById("topTotalPnl").innerText = `${sign}$${s.total_pnl.toFixed(2)}`;
+            } catch(e){}
+        }
+
+        async function loadMarkets() {
+            try {
+                const res = await fetch("/api/markets");
+                const data = await res.json();
+                allMarketsData = data.all_markets;
+
+                // Update index cards
+                updateCard("cardBtcPrice", "cardBtcChange", "BTCUSDT");
+                updateCard("cardEthPrice", "cardEthChange", "ETHUSDT");
+                updateCard("cardSolPrice", "cardSolChange", "SOLUSDT");
+                updateCard("cardXrpPrice", "cardXrpChange", "XRPUSDT");
+
+                renderTable();
+            } catch(e) {
+                console.error("Markets load error:", e);
+            }
+        }
+
+        function updateCard(priceId, changeId, sym) {
+            const item = allMarketsData.find(x => x.symbol === sym);
+            if (item) {
+                const pEl = document.getElementById(priceId);
+                const cEl = document.getElementById(changeId);
+                if (pEl) pEl.innerText = item.last_price.toLocaleString();
+                if (cEl) {
+                    const sign = item.price_change_pct >= 0 ? '+' : '';
+                    cEl.innerText = `${sign}${item.price_change_pct.toFixed(2)}%`;
+                    cEl.className = `pair-change-pill ${item.price_change_pct >= 0 ? 'pill-green' : 'pill-red'}`;
+                }
+            }
+        }
+
+        function filterMarkets(type, btn) {
+            currentFilter = type;
+            document.querySelectorAll('.type-tab').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderTable();
+        }
+
+        function handleSearch(q) {
+            searchQuery = q.toUpperCase();
+            renderTable();
+        }
+
+        function renderTable() {
+            let list = [...allMarketsData];
+            if (currentFilter === 'champions') {
+                list = list.filter(x => x.is_champion);
+            } else if (currentFilter === 'gainers') {
+                list.sort((a,b) => b.price_change_pct - a.price_change_pct);
+            } else if (currentFilter === 'losers') {
+                list.sort((a,b) => a.price_change_pct - b.price_change_pct);
+            } else if (currentFilter === 'volume') {
+                list.sort((a,b) => b.volume_24h - a.volume_24h);
+            }
+
+            if (searchQuery) {
+                list = list.filter(x => x.symbol.includes(searchQuery));
+            }
+
+            const tbody = document.getElementById("marketsTableBody");
+            if (!tbody) return;
+
+            tbody.innerHTML = list.map((item, idx) => {
+                const isPos = item.price_change_pct >= 0;
+                const sign = isPos ? '+' : '';
+                const secBadge = item.section_id ? `<span class="sec-badge">Section ${item.section_id}</span>` : `<span style="color:var(--text-muted);">-</span>`;
+                return `
+                    <tr>
+                        <td style="color:var(--text-muted); font-size:11px;">${idx + 1}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="font-weight:800; color:#fff; font-size:13px;">${item.symbol}</div>
+                                <span style="font-size:9px; background:var(--bg-surface-elevated); padding:1px 4px; border-radius:3px; color:var(--text-muted);">FUTURES</span>
+                            </div>
+                        </td>
+                        <td style="font-weight:800; font-size:13px; color:#fff;">${item.last_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
+                        <td>
+                            <span class="pair-change-pill ${isPos ? 'pill-green' : 'pill-red'}">
+                                ${sign}${item.price_change_pct.toFixed(2)}%
+                            </span>
+                        </td>
+                        <td style="color:var(--text-muted);">${item.high_24h.toLocaleString()}</td>
+                        <td style="color:var(--text-muted);">${item.low_24h.toLocaleString()}</td>
+                        <td style="color:var(--text-secondary);">$${(item.volume_24h / 1e6).toFixed(2)}M</td>
+                        <td>${secBadge}</td>
+                        <td>
+                            <button onclick="location.href='/trade?symbol=${item.symbol}'" style="background:var(--brand-teal); color:#080B11; border:none; padding:4px 10px; border-radius:4px; font-weight:800; cursor:pointer;">
+                                Trade
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        function toggleDrawer() {
+            const drawer = document.getElementById("mobileDrawer");
+            const overlay = document.getElementById("mobileDrawerOverlay");
+            if (drawer.classList.contains("open")) {
+                drawer.classList.remove("open");
+                overlay.style.display = "none";
+            } else {
+                drawer.classList.add("open");
+                overlay.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BB 2.0 Deca Compounding ($47k Target) • NexusPro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/nexus.css">
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="top-header">
+        <div class="brand-section">
+            <button class="hamburger-btn" onclick="toggleDrawer()" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer; padding:6px; display:inline-flex;">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+            <a href="/trade" class="brand-logo">
+                <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+                <div class="brand-name">
+                    <span>NEXUS</span><span style="color:var(--brand-teal);">PRO</span>
+                    <span class="brand-pro-pill">DECA $47K</span>
+                </div>
+            </a>
+            <nav class="nav-links">
+                <a href="/trade" class="nav-link"><i class="fa-solid fa-chart-line"></i> Futures</a>
+                <a href="/nexus/markets" class="nav-link"><i class="fa-solid fa-layer-group"></i> Markets</a>
+                <a href="/nexus/deca" class="nav-link active"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca $47k Hub</a>
+                <a href="/nexus/assets" class="nav-link"><i class="fa-solid fa-wallet"></i> Assets</a>
+            </nav>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="top-stats-pill">
+                <div class="stat-item">
+                    <span class="stat-label">Total Equity</span>
+                    <span class="stat-val green" id="topTotalEquity">$500.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Target Milestone</span>
+                    <span class="stat-val gold">$47,389.77</span>
+                </div>
+            </div>
+            <button onclick="resetPaperTrading()" style="background:var(--bg-surface-elevated); color:var(--text-muted); border:1px solid var(--border-subtle); font-weight:700; font-size:11px; padding:6px 12px; border-radius:6px; cursor:pointer;">
+                <i class="fa-solid fa-rotate-left"></i> Reset $500
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN DECA HUB CONTENT -->
+    <main class="deca-container" style="padding-bottom:100px;">
+        
+        <!-- HERO BANNER: THE $47K HISTORIC MILESTONE -->
+        <div class="hero-banner">
+            <div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="background:rgba(255, 184, 0, 0.15); color:var(--gold); font-size:10px; font-weight:800; padding:2px 8px; border-radius:4px; text-transform:uppercase;">
+                        Institutional Liquidity Architecture
+                    </span>
+                    <span style="color:var(--brand-teal); font-size:11px; font-weight:700;">
+                        10 Isolated Sections • 0% Cross Contamination
+                    </span>
+                </div>
+                <h1 style="font-size:24px; font-weight:900; letter-spacing:-0.5px; color:#fff; margin-bottom:6px;">
+                    BB 2.0 Deca Compounding Engine
+                </h1>
+                <p style="color:var(--text-secondary); font-size:12px; max-width:600px;">
+                    Simulating the verified 6-month model: $500.00 initial capital distributed into 10 independent sections of $50.00 each, targeting the historic <b style="color:var(--gold);">$47,389.77 USDT (+9,378%)</b> milestone with zero cross-account liquidation risk.
+                </p>
+            </div>
+
+            <div class="hero-stats">
+                <div>
+                    <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Total Capital</div>
+                    <div style="font-size:24px; font-weight:900; font-family:var(--font-mono); color:var(--buy-green);" id="heroTotalEquity">$500.00</div>
+                    <div style="font-size:11px; color:var(--buy-green); font-weight:700;" id="heroPnlPct">+0.00% Net Return</div>
+                </div>
+                <div>
+                    <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Target Wealth</div>
+                    <div style="font-size:24px; font-weight:900; font-family:var(--font-mono); color:var(--gold);">$47,389.77</div>
+                    <div style="font-size:11px; color:var(--text-muted);" id="heroProgressPct">1.05% Progress</div>
+                </div>
+                <div>
+                    <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Deca Win Rate</div>
+                    <div style="font-size:24px; font-weight:900; font-family:var(--font-mono); color:#fff;" id="heroWinRate">0.0%</div>
+                    <div style="font-size:11px; color:var(--text-muted);" id="heroTradesCount">0 Total Trades</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STRATEGY BLUEPRINT SUMMARY -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:24px;">
+            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
+                <div style="font-size:10px; color:var(--brand-teal); font-weight:800; text-transform:uppercase;">Rule 1: Liquidity Sweep</div>
+                <div style="font-size:12px; font-weight:700; color:#fff; margin-top:2px;">PDH / PDL Rejection Wick</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Hunts retail stop-losses above PDH or below PDL before reversing.</div>
+            </div>
+            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
+                <div style="font-size:10px; color:var(--brand-teal); font-weight:800; text-transform:uppercase;">Rule 2: 15m Extreme OB</div>
+                <div style="font-size:12px; font-weight:700; color:#fff; margin-top:2px;">Displacement + FVG Imbalance</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Requires >=1.2% institutional move leaving an open Fair Value Gap.</div>
+            </div>
+            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
+                <div style="font-size:10px; color:var(--brand-teal); font-weight:800; text-transform:uppercase;">Rule 3: 50% MT Retest</div>
+                <div style="font-size:12px; font-weight:700; color:#fff; margin-top:2px;">Mean Threshold Limit Entry</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Zero chasing. Waits patiently for exact 50% midpoint pullback fill.</div>
+            </div>
+            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
+                <div style="font-size:10px; color:var(--brand-teal); font-weight:800; text-transform:uppercase;">Rule 4: Stepped Trailing</div>
+                <div style="font-size:12px; font-weight:700; color:#fff; margin-top:2px;">Profit Armor Lock Ladders</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">+1.0R moves SL to +0.2R (BE Lock), +1.5R locks +1.0R pure profit.</div>
+            </div>
+        </div>
+
+        <!-- 10 DECA ISOLATED SECTIONS GRID -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div style="font-size:16px; font-weight:800; color:#fff;">
+                <i class="fa-solid fa-cubes" style="color:var(--brand-teal); margin-right:6px;"></i> 10 Isolated Deca Compounding Sections
+            </div>
+            <span style="font-size:11px; color:var(--text-muted);">
+                2 Champions per Section • 5x Leverage • 5% Geometric Scaling
+            </span>
+        </div>
+
+        <div class="sections-grid" id="sectionsGrid">
+            <!-- Rendered dynamically -->
+        </div>
+
+        <!-- LIVE RADAR SCANNER FEED -->
+        <div style="margin-top:32px; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:10px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="font-size:14px; font-weight:800; color:#fff;">
+                    <i class="fa-solid fa-radar" style="color:var(--brand-teal); margin-right:6px;"></i> BB 2.0 Real-Time Setup Radar
+                </div>
+                <span style="font-size:10px; background:var(--bg-surface-elevated); color:var(--brand-teal); font-weight:800; padding:2px 8px; border-radius:4px;">
+                    LIVE 15M SCANNER
+                </span>
+            </div>
+            <table class="terminal-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type / Side</th>
+                        <th>Assigned Section</th>
+                        <th>Entry (50% MT)</th>
+                        <th>Stop Loss</th>
+                        <th>Take Profit</th>
+                        <th>Proximity to Entry</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="setupsTableBody">
+                    <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">Scanning Top-20 Champions for PDH/PDL sweeps...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- MOBILE BOTTOM 5-TAB BAR -->
+    <div class="mobile-bottom-bar">
+        <a href="/trade" class="mobile-tab-btn"><i class="fa-solid fa-chart-line" style="font-size:16px;"></i><span>Futures</span></a>
+        <a href="/nexus/markets" class="mobile-tab-btn"><i class="fa-solid fa-layer-group" style="font-size:16px;"></i><span>Markets</span></a>
+        <a href="/nexus/deca" class="mobile-tab-btn active"><i class="fa-solid fa-trophy" style="font-size:16px; color:var(--gold);"></i><span>Deca 47k</span></a>
+        <a href="/nexus/assets" class="mobile-tab-btn"><i class="fa-solid fa-wallet" style="font-size:16px;"></i><span>Assets</span></a>
+    </div>
+
+    <!-- MOBILE DRAWER -->
+    <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="toggleDrawer()"></div>
+    <div class="mobile-drawer" id="mobileDrawer">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border-subtle);">
+            <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+            <div>
+                <div style="font-weight:800; font-size:15px;">NEXUSPRO</div>
+                <div style="font-size:10px; color:var(--brand-teal);">BITGET PRO EDITION</div>
+            </div>
+        </div>
+        <nav style="display:flex; flex-direction:column; gap:12px;">
+            <a href="/trade" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-chart-line"></i> Futures Terminal
+            </a>
+            <a href="/nexus/markets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-layer-group"></i> Markets Overview
+            </a>
+            <a href="/nexus/deca" style="display:flex; align-items:center; gap:12px; color:#fff; text-decoration:none; font-weight:700; padding:10px; border-radius:6px; background:var(--bg-surface-elevated);">
+                <i class="fa-solid fa-trophy" style="color:var(--gold);"></i> BB 2.0 Deca Hub ($47k)
+            </a>
+            <a href="/nexus/assets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-wallet"></i> Assets & Wallet
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadDecaData();
+            setInterval(loadDecaData, 3000);
+        });
+
+        async function loadDecaData() {
+            try {
+                // Summary
+                const sumRes = await fetch("/api/deca/summary");
+                const s = await sumRes.json();
+                document.getElementById("topTotalEquity").innerText = `$${s.total_equity.toFixed(2)}`;
+                document.getElementById("heroTotalEquity").innerText = `$${s.total_equity.toFixed(2)}`;
+                const sign = s.total_pnl >= 0 ? '+' : '';
+                document.getElementById("heroPnlPct").innerText = `${sign}$${s.total_pnl.toFixed(2)} (${sign}${s.pnl_pct.toFixed(2)}%)`;
+                document.getElementById("heroWinRate").innerText = `${s.win_rate.toFixed(1)}%`;
+                document.getElementById("heroTradesCount").innerText = `${s.total_trades} Trades (${s.total_wins}W / ${s.total_losses}L)`;
+                document.getElementById("heroProgressPct").innerText = `${s.progress_pct.toFixed(2)}% of $47k Target`;
+
+                // Sections
+                const secRes = await fetch("/api/deca/sections");
+                const secData = await secRes.json();
+                renderSections(secData.sections);
+
+                // Setups
+                const setRes = await fetch("/api/deca/setups");
+                const setData = await setRes.json();
+                renderSetups(setData.setups);
+            } catch(e) {
+                console.error("Deca load error:", e);
+            }
+        }
+
+        function renderSections(sections) {
+            const grid = document.getElementById("sectionsGrid");
+            if (!grid) return;
+
+            grid.innerHTML = sections.map(s => {
+                const isIdle = s.status === 'IDLE';
+                const statusColor = isIdle ? 'var(--text-muted)' : 'var(--buy-green)';
+                const sign = s.total_pnl >= 0 ? '+' : '';
+                const pnlColor = s.total_pnl >= 0 ? 'var(--buy-green)' : 'var(--sell-red)';
+                return `
+                    <div class="section-card">
+                        <div class="sec-card-header">
+                            <div>
+                                <div style="font-weight:800; font-size:13px; color:#fff;">Section ${s.id}</div>
+                                <div style="font-size:10px; color:var(--text-secondary); font-family:var(--font-mono);">${s.assigned_coins}</div>
+                            </div>
+                            <span class="sec-badge" style="color:${statusColor};">
+                                <i class="fa-solid fa-circle" style="font-size:7px; margin-right:4px;"></i>${s.status}
+                            </span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin:4px 0;">
+                            <div style="font-size:18px; font-weight:900; font-family:var(--font-mono); color:#fff;">
+                                $${s.current_balance.toFixed(2)}
+                            </div>
+                            <div style="font-size:11px; font-weight:700; color:${pnlColor}; font-family:var(--font-mono);">
+                                ${sign}$${s.total_pnl.toFixed(2)} (${sign}${s.pnl_pct.toFixed(2)}%)
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); border-top:1px solid var(--border-subtle); padding-top:8px;">
+                            <span>Initial: $${s.initial_balance.toFixed(2)}</span>
+                            <span>Win: ${s.win_rate.toFixed(1)}% (${s.win_count}W/${s.loss_count}L)</span>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderSetups(setups) {
+            const tbody = document.getElementById("setupsTableBody");
+            if (!tbody) return;
+
+            if (!setups || setups.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No Armed Sweeps Detected In Latest 15m Window • Scanner Active</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = setups.map(s => {
+                const isLong = s.side === 'LONG';
+                return `
+                    <tr>
+                        <td style="font-weight:800; color:#fff;">${s.symbol}</td>
+                        <td>
+                            <span style="font-size:10px; font-weight:800; padding:2px 6px; border-radius:3px; background:${isLong ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isLong ? 'var(--buy-green)' : 'var(--sell-red)'}">
+                                ${s.side}
+                            </span>
+                        </td>
+                        <td>Section ${s.section_id}</td>
+                        <td style="font-family:var(--font-mono); font-weight:700;">${s.entry_price.toFixed(4)}</td>
+                        <td style="color:var(--sell-red); font-family:var(--font-mono);">${s.sl_price.toFixed(4)}</td>
+                        <td style="color:var(--buy-green); font-family:var(--font-mono);">${s.tp_price.toFixed(4)}</td>
+                        <td style="font-weight:700; color:${s.proximity_pct <= 0.25 ? 'var(--brand-teal)' : 'var(--text-muted)'}">${s.proximity_pct}%</td>
+                        <td><span class="sec-badge">${s.status}</span></td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        async function resetPaperTrading() {
+            if (!confirm("Reset all 10 Deca sections back to $50.00 each ($500.00 total)?")) return;
+            try {
+                const res = await fetch("/api/deca/reset", { method: 'POST' });
+                const d = await res.json();
+                alert(d.message);
+                loadDecaData();
+            } catch(e) {
+                alert("Reset error: " + e);
+            }
+        }
+
+        function toggleDrawer() {
+            const drawer = document.getElementById("mobileDrawer");
+            const overlay = document.getElementById("mobileDrawerOverlay");
+            if (drawer.classList.contains("open")) {
+                drawer.classList.remove("open");
+                overlay.style.display = "none";
+            } else {
+                drawer.classList.add("open");
+                overlay.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>

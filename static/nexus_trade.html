@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>NexusPro • Institutional Futures & BB 2.0 Deca Terminal</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- TradingView Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    
+    <link rel="stylesheet" href="/static/css/nexus.css">
+</head>
+<body>
+
+    <!-- TOP HEADER (BITGET PRO STYLE) -->
+    <header class="top-header">
+        <div class="brand-section">
+            <button class="hamburger-btn" onclick="toggleDrawer()" style="background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer; padding:6px; display:inline-flex;">
+                <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+            <a href="/trade" class="brand-logo">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                </div>
+                <div class="brand-name">
+                    <span>NEXUS</span><span style="color:var(--brand-teal);">PRO</span>
+                    <span class="brand-pro-pill">FUTURES</span>
+                </div>
+            </a>
+            <nav class="nav-links">
+                <a href="/trade" class="nav-link active"><i class="fa-solid fa-chart-line"></i> Futures</a>
+                <a href="/nexus/markets" class="nav-link"><i class="fa-solid fa-layer-group"></i> Markets</a>
+                <a href="/nexus/deca" class="nav-link"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca $47k Hub</a>
+                <a href="/nexus/assets" class="nav-link"><i class="fa-solid fa-wallet"></i> Assets</a>
+            </nav>
+        </div>
+
+        <!-- CENTER / RIGHT STATS PILL ($500 STARTING EQUITY) -->
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="top-stats-pill">
+                <div class="stat-item">
+                    <span class="stat-label">Total Equity</span>
+                    <span class="stat-val green" id="topTotalEquity">$500.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Deca P&L</span>
+                    <span class="stat-val green" id="topTotalPnl">+$0.00 (0.00%)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Win Rate</span>
+                    <span class="stat-val gold" id="topWinRate">0.0%</span>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+                <a href="/nexus/assets" style="text-decoration:none; background:var(--brand-teal); color:#080B11; font-weight:800; font-size:11px; padding:6px 12px; border-radius:6px;">
+                    <i class="fa-solid fa-wallet"></i> Deposit
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN TERMINAL GRID -->
+    <main class="terminal-layout">
+        
+        <!-- TICKER SUB-BAR -->
+        <div class="ticker-sub-bar">
+            <div class="pair-picker" onclick="document.getElementById('pairModal').style.display='block'">
+                <span class="pair-symbol" id="displayPairSymbol">BTCUSDT</span>
+                <span style="color:var(--text-muted); font-size:10px;"><i class="fa-solid fa-chevron-down"></i></span>
+                <span class="pair-price" id="displayPrice">--</span>
+                <span class="pair-change-pill pill-green" id="displayChangePill">+0.00%</span>
+            </div>
+            <div style="display:flex; gap:16px; font-family:var(--font-mono); font-size:11px;">
+                <div><span style="color:var(--text-muted)">24h High: </span><span id="displayHigh24">--</span></div>
+                <div><span style="color:var(--text-muted)">24h Low: </span><span id="displayLow24">--</span></div>
+                <div><span style="color:var(--text-muted)">24h Vol: </span><span id="displayVol24">--</span></div>
+                <div><span style="color:var(--text-muted)">Strategy: </span><span style="color:var(--brand-teal); font-weight:700;">BB 2.0 (PDH/PDL 50% MT)</span></div>
+            </div>
+        </div>
+
+        <!-- 1. CHART CONTAINER (LEFT/CENTER) -->
+        <section class="chart-container">
+            <div class="chart-controls">
+                <button class="tf-btn" onclick="setTimeframe('1m', this)">1m</button>
+                <button class="tf-btn" onclick="setTimeframe('5m', this)">5m</button>
+                <button class="tf-btn active" onclick="setTimeframe('15m', this)">15m</button>
+                <button class="tf-btn" onclick="setTimeframe('1h', this)">1H</button>
+                <button class="tf-btn" onclick="setTimeframe('4h', this)">4H</button>
+                <button class="tf-btn" onclick="setTimeframe('1d', this)">1D</button>
+                <span style="color:var(--border-subtle); margin:0 4px;">|</span>
+                <span style="font-size:11px; color:var(--text-muted); font-weight:600;"><i class="fa-solid fa-chart-simple"></i> Candlesticks</span>
+            </div>
+            <div id="tradingview_chart"></div>
+        </section>
+
+        <!-- 2. ORDER BOOK (MIDDLE) -->
+        <section class="orderbook-container">
+            <div class="ob-header">
+                <span>Price (USDT)</span>
+                <span>Size</span>
+            </div>
+            <div class="ob-list" id="obAsks"></div>
+            <div class="ob-mid-price" id="obMidPrice">--</div>
+            <div class="ob-list" id="obBids" style="justify-content:flex-start;"></div>
+        </section>
+
+        <!-- 3. ORDER DESK (RIGHT) -->
+        <section class="order-desk">
+            <div class="desk-header">
+                <span style="font-weight:800; font-size:12px;">Order Desk</span>
+                <span class="leverage-badge" id="deskLeverageBadge">5x ISOLATED</span>
+            </div>
+
+            <div class="type-tabs">
+                <button class="type-tab active">Limit</button>
+                <button class="type-tab">Market</button>
+            </div>
+
+            <div class="input-group">
+                <span class="input-label">Order Price</span>
+                <div class="input-wrapper">
+                    <input type="number" id="inputPrice" step="any" placeholder="0.00">
+                    <span class="input-unit">USDT</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted);">
+                    <span>Margin Amount</span>
+                    <span>Avail: <b id="availMarginDesk" style="color:#fff;">$50.00 USDT</b></span>
+                </div>
+                <div class="input-wrapper">
+                    <input type="number" id="inputAmount" step="any" value="25.0">
+                    <span class="input-unit">USDT</span>
+                </div>
+            </div>
+
+            <div class="percent-slider">
+                <button class="pct-btn" data-pct="25">25%</button>
+                <button class="pct-btn" data-pct="50">50%</button>
+                <button class="pct-btn" data-pct="75">75%</button>
+                <button class="pct-btn" data-pct="100">100%</button>
+            </div>
+
+            <div style="background:var(--bg-base); padding:8px; border-radius:6px; font-size:10px; display:flex; flex-direction:column; gap:4px; font-family:var(--font-mono);">
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:var(--text-muted)">Take Profit (1:2 RRR)</span>
+                    <span style="color:var(--buy-green)">Automatic</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:var(--text-muted)">Stop Loss (Anti-Hunt)</span>
+                    <span style="color:var(--sell-red)">0.15% Buffer</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:var(--text-muted)">Stepped Trailing</span>
+                    <span style="color:var(--brand-teal)">+1.0R ➔ +0.2R BE Lock</span>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-trade btn-buy" onclick="placeOrder('LONG')">
+                    <i class="fa-solid fa-arrow-up"></i> Buy / Long
+                </button>
+                <button class="btn-trade btn-sell" onclick="placeOrder('SHORT')">
+                    <i class="fa-solid fa-arrow-down"></i> Sell / Short
+                </button>
+            </div>
+        </section>
+
+        <!-- 4. BOTTOM DOCK (POSITIONS & TRADE HISTORY) -->
+        <section class="bottom-dock">
+            <div class="dock-tabs">
+                <button class="dock-tab active">
+                    Positions (<span id="posCountBadge">0</span>)
+                </button>
+                <button class="dock-tab" onclick="location.href='/nexus/deca'">
+                    BB 2.0 Deca Compounding ($47k Target)
+                </button>
+            </div>
+            <div class="dock-content">
+                <table class="terminal-table">
+                    <thead>
+                        <tr>
+                            <th>Contract / Side</th>
+                            <th>Section</th>
+                            <th>Size (Margin)</th>
+                            <th>Entry Price</th>
+                            <th>Mark Price</th>
+                            <th>Stop Loss</th>
+                            <th>Take Profit</th>
+                            <th>Unrealized P&L</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsTableBody">
+                        <tr>
+                            <td colspan="9" style="text-align:center; color:var(--text-muted); padding:30px;">
+                                Loading Active Positions...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MOBILE SLIDE-OUT DRAWER -->
+    <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="toggleDrawer()"></div>
+    <div class="mobile-drawer" id="mobileDrawer">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border-subtle);">
+            <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+            <div>
+                <div style="font-weight:800; font-size:15px;">NEXUSPRO</div>
+                <div style="font-size:10px; color:var(--brand-teal);">BITGET PRO EDITION</div>
+            </div>
+        </div>
+
+        <nav style="display:flex; flex-direction:column; gap:12px;">
+            <a href="/trade" style="display:flex; align-items:center; gap:12px; color:#fff; text-decoration:none; font-weight:700; padding:10px; border-radius:6px; background:var(--bg-surface-elevated);">
+                <i class="fa-solid fa-chart-line" style="color:var(--brand-teal);"></i> Futures Terminal
+            </a>
+            <a href="/nexus/markets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-layer-group"></i> Markets Overview
+            </a>
+            <a href="/nexus/deca" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-trophy" style="color:var(--gold);"></i> BB 2.0 Deca Hub ($47k)
+            </a>
+            <a href="/nexus/assets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
+                <i class="fa-solid fa-wallet"></i> Assets & Wallet
+            </a>
+        </nav>
+
+        <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border-subtle); font-size:11px; color:var(--text-muted);">
+            <div>Starting Capital: <b>$500.00 USDT</b></div>
+            <div>Strategy: <b>BB 2.0 Liquidity Sniper</b></div>
+        </div>
+    </div>
+
+    <!-- MOBILE BOTTOM 5-TAB BAR -->
+    <div class="mobile-bottom-bar">
+        <a href="/trade" class="mobile-tab-btn active">
+            <i class="fa-solid fa-chart-line" style="font-size:16px;"></i>
+            <span>Futures</span>
+        </a>
+        <a href="/nexus/markets" class="mobile-tab-btn">
+            <i class="fa-solid fa-layer-group" style="font-size:16px;"></i>
+            <span>Markets</span>
+        </a>
+        <a href="/nexus/deca" class="mobile-tab-btn">
+            <i class="fa-solid fa-trophy" style="font-size:16px; color:var(--gold);"></i>
+            <span>Deca 47k</span>
+        </a>
+        <a href="/nexus/assets" class="mobile-tab-btn">
+            <i class="fa-solid fa-wallet" style="font-size:16px;"></i>
+            <span>Assets</span>
+        </a>
+    </div>
+
+    <script src="/static/js/nexus.js"></script>
+</body>
+</html>

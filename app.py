@@ -467,6 +467,184 @@ async def get_bb20_status():
             return {"error": str(e)}
     return {"status": "INITIALIZING", "message": "BB 2.0 Shadow Ledger is initializing..."}
 
+# -----------------------------------------------------------------------------
+# NEXUSPRO 100% BITGET PRO PLATFORM & BB 2.0 DECA COMPOUNDING ($47K MODEL)
+# -----------------------------------------------------------------------------
+@app.get("/nexus", response_class=HTMLResponse)
+@app.get("/trade", response_class=HTMLResponse)
+async def serve_nexus_trade():
+    file_path = STATIC_DIR / "nexus_trade.html"
+    return FileResponse(file_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+@app.get("/nexus/markets", response_class=HTMLResponse)
+async def serve_nexus_markets():
+    file_path = STATIC_DIR / "nexus_markets.html"
+    return FileResponse(file_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+@app.get("/nexus/deca", response_class=HTMLResponse)
+async def serve_nexus_deca():
+    file_path = STATIC_DIR / "nexus_deca.html"
+    return FileResponse(file_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+@app.get("/nexus/assets", response_class=HTMLResponse)
+async def serve_nexus_assets():
+    file_path = STATIC_DIR / "nexus_assets.html"
+    return FileResponse(file_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+@app.get("/api/ticker/{symbol}")
+async def get_nexus_ticker(symbol: str):
+    sym = symbol.upper()
+    t24 = binance_feed.last_24h_tickers or scanner.last_tickers or {}
+    t = t24.get(sym)
+    if not t:
+        try:
+            import urllib.request
+            url = f"https://fapi.binance.com/fapi/v1/ticker/24hr?symbol={sym}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode())
+                return {
+                    "symbol": sym,
+                    "last_price": float(data["lastPrice"]),
+                    "price_change_pct": float(data["priceChangePercent"]),
+                    "high_24h": float(data["highPrice"]),
+                    "low_24h": float(data["lowPrice"]),
+                    "volume_24h": float(data["quoteVolume"])
+                }
+        except Exception:
+            return {"symbol": sym, "last_price": 0.0, "price_change_pct": 0.0, "high_24h": 0.0, "low_24h": 0.0, "volume_24h": 0.0}
+    return {
+        "symbol": sym,
+        "last_price": float(t.get("lastPrice", t.get("last_price", 0.0))),
+        "price_change_pct": float(t.get("priceChangePercent", t.get("price_change_percent", 0.0))),
+        "high_24h": float(t.get("highPrice", t.get("high_24h", 0.0))),
+        "low_24h": float(t.get("lowPrice", t.get("low_24h", 0.0))),
+        "volume_24h": float(t.get("quoteVolume", t.get("volume_24h", 0.0)))
+    }
+
+@app.get("/api/orderbook/{symbol}")
+async def get_nexus_orderbook(symbol: str, depth: int = 10):
+    sym = symbol.upper()
+    try:
+        import urllib.request
+        url = f"https://fapi.binance.com/fapi/v1/depth?symbol={sym}&limit={depth}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode())
+            bids = [[float(p), float(q)] for p, q in data.get("bids", [])]
+            asks = [[float(p), float(q)] for p, q in data.get("asks", [])]
+            return {"symbol": sym, "bids": bids, "asks": asks, "spread": round(asks[0][0] - bids[0][0], 4) if asks and bids else 0.0}
+    except Exception:
+        ticker = await get_nexus_ticker(sym)
+        p = ticker["last_price"] if ticker["last_price"] > 0 else 100.0
+        tick = p * 0.0001
+        asks = [[round(p + i * tick, 4), round(0.5 + i * 0.2, 2)] for i in range(1, depth + 1)]
+        bids = [[round(p - i * tick, 4), round(0.5 + i * 0.2, 2)] for i in range(1, depth + 1)]
+        return {"symbol": sym, "bids": bids, "asks": asks, "spread": round(tick * 2, 4)}
+
+@app.get("/api/deca/summary")
+async def get_nexus_deca_summary():
+    ledger_file = BASE_DIR / "bb20_shadow_ledger.json"
+    if ledger_file.exists():
+        try:
+            with open(ledger_file, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            sections = list(d.get("sections", {}).values())
+            tot_init = float(d.get("total_initial_capital", 500.0))
+            tot_curr = float(d.get("total_current_equity", 500.0))
+            tot_pnl = tot_curr - tot_init
+            pnl_pct = round((tot_pnl / tot_init) * 100.0, 2) if tot_init > 0 else 0.0
+            tot_wins = sum(s.get("wins", 0) for s in sections)
+            tot_losses = sum(s.get("losses", 0) for s in sections)
+            tot_trades = tot_wins + tot_losses
+            wr = round((tot_wins / tot_trades) * 100.0, 1) if tot_trades > 0 else 0.0
+            return {
+                "starting_capital": tot_init,
+                "total_balance": round(tot_curr, 2),
+                "total_equity": round(tot_curr, 2),
+                "unrealized_pnl": 0.0,
+                "total_pnl": round(tot_pnl, 2),
+                "pnl_pct": pnl_pct,
+                "total_trades": tot_trades,
+                "total_wins": tot_wins,
+                "total_losses": tot_losses,
+                "win_rate": wr,
+                "target_capital": 47389.77,
+                "progress_pct": round((tot_curr / 47389.77) * 100.0, 2)
+            }
+        except Exception:
+            pass
+    return {
+        "starting_capital": 500.0, "total_balance": 500.0, "total_equity": 500.0,
+        "unrealized_pnl": 0.0, "total_pnl": 0.0, "pnl_pct": 0.0,
+        "total_trades": 0, "total_wins": 0, "total_losses": 0, "win_rate": 0.0,
+        "target_capital": 47389.77, "progress_pct": 1.05
+    }
+
+@app.get("/api/deca/sections")
+async def get_nexus_deca_sections():
+    ledger_file = BASE_DIR / "bb20_shadow_ledger.json"
+    if ledger_file.exists():
+        try:
+            with open(ledger_file, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            sections_dict = d.get("sections", {})
+            result = []
+            for sid, s in sorted(sections_dict.items(), key=lambda x: int(x[0])):
+                coins = s.get("assigned_coins", [])
+                coins_str = ", ".join(coins) if isinstance(coins, list) else str(coins)
+                init_b = float(s.get("initial_balance", 50.0))
+                curr_b = float(s.get("balance", 50.0))
+                pnl = curr_b - init_b
+                pnl_pct = round((pnl / init_b) * 100.0, 2) if init_b > 0 else 0.0
+                wins = int(s.get("wins", 0))
+                losses = int(s.get("losses", 0))
+                tot = wins + losses
+                wr = round((wins / tot) * 100.0, 1) if tot > 0 else 0.0
+                result.append({
+                    "id": int(sid),
+                    "name": f"Section {sid} ({coins_str})",
+                    "assigned_coins": coins_str,
+                    "initial_balance": init_b,
+                    "current_balance": curr_b,
+                    "total_pnl": round(pnl, 2),
+                    "pnl_pct": pnl_pct,
+                    "win_count": wins,
+                    "loss_count": losses,
+                    "win_rate": wr,
+                    "status": s.get("status", "IDLE")
+                })
+            return {"sections": result}
+        except Exception as e:
+            return {"error": str(e), "sections": []}
+    return {"sections": []}
+
+@app.get("/api/deca/setups")
+async def get_nexus_deca_setups():
+    return {"count": 0, "setups": []}
+
+@app.post("/api/deca/reset")
+async def reset_nexus_deca():
+    ledger_file = BASE_DIR / "bb20_shadow_ledger.json"
+    if ledger_file.exists():
+        try:
+            with open(ledger_file, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            d["total_current_equity"] = 500.0
+            for sid in d.get("sections", {}):
+                d["sections"][sid]["balance"] = 50.0
+                d["sections"][sid]["wins"] = 0
+                d["sections"][sid]["losses"] = 0
+                d["sections"][sid]["pnl_usd"] = 0.0
+                d["sections"][sid]["status"] = "IDLE"
+            with open(ledger_file, "w", encoding="utf-8") as f:
+                json.dump(d, f, indent=2)
+            return {"status": "SUCCESS", "message": "All 10 Deca sections reset to $50.00 ($500.00 total equity)."}
+        except Exception as e:
+            return {"status": "ERROR", "message": str(e)}
+    return {"status": "ERROR", "message": "Ledger file not found"}
+
+
 @app.get("/api/journal/trades")
 async def get_journal_trades_endpoint():
     trades = get_all_journal_trades()
