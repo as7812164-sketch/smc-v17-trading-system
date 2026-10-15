@@ -624,7 +624,7 @@ class Hermes30Model2ALiveEngine:
     async def check_live_price_and_exits(self):
         """
         Monitors active positions against live Binance ticker feed every few seconds:
-        - Layer 1: Stepped Trailing SL Ladder (5% ROI -> +1% ROI, 10% -> +5%, 15% -> +10%, 20% -> +15%... Infinite Trend Rider)
+        - Layer 1: Stepped Trailing SL Ladder (5% ROI -> +1% ROI, 9.5% -> +5%, 14.5% -> +10%, 19.5% -> +15%, 24.5% -> +20%, 29.5% -> +25%, 34.5% -> +30%... Infinite Trend Rider)
         - Layer 2: Trailing SL Hit -> Instant Profit Exit on limit/touch
         - Layer 3: Initial Hard Circuit Breaker (-3.00% Disaster SL on Exchange)
         - Layer 4: Structural Soft SL (-1.50% on Candle Body Close if trailing not yet armed)
@@ -668,29 +668,46 @@ class Hermes30Model2ALiveEngine:
             be_locked = bool(trade.get("be_locked", 0))
 
             # -------------------------------------------------------------
-            # STEPPED TRAILING SL LADDER EVALUATION
+            # STEPPED TRAILING SL LADDER EVALUATION (USER-DEFINED 9.5% CADENCE)
             # -------------------------------------------------------------
             target_locked_roi = current_locked_roi
             target_step = current_step
 
-            if peak_roi >= 5.0 and target_locked_roi < 1.0:
+            # Tier 1: 5.00% ROI -> SL shifts to +1.00% (Fee Shield / BE Lock)
+            if peak_roi >= 5.00 and target_locked_roi < 1.0:
                 target_locked_roi = 1.0
                 target_step = 1
-            if peak_roi >= 10.0 and target_locked_roi < 5.0:
+            # Tier 2: 9.50% ROI -> SL shifts to +5.00%
+            if peak_roi >= 9.50 and target_locked_roi < 5.0:
                 target_locked_roi = 5.0
                 target_step = 2
-            if peak_roi >= 15.0 and target_locked_roi < 10.0:
+            # Tier 3: 14.50% ROI -> SL shifts to +10.00%
+            if peak_roi >= 14.50 and target_locked_roi < 10.0:
                 target_locked_roi = 10.0
                 target_step = 3
-            if peak_roi >= 20.0 and target_locked_roi < 15.0:
+            # Tier 4: 19.50% ROI -> SL shifts to +15.00%
+            if peak_roi >= 19.50 and target_locked_roi < 15.0:
                 target_locked_roi = 15.0
                 target_step = 4
-            if peak_roi >= 25.0:
-                step_k = int(peak_roi // 5) * 5
-                target_k = float(step_k - 5)
-                if target_k > target_locked_roi:
-                    target_locked_roi = target_k
-                    target_step = int((step_k - 5) // 5) + 1
+            # Tier 5: 24.50% ROI -> SL shifts to +20.00%
+            if peak_roi >= 24.50 and target_locked_roi < 20.0:
+                target_locked_roi = 20.0
+                target_step = 5
+            # Tier 6: 29.50% ROI -> SL shifts to +25.00%
+            if peak_roi >= 29.50 and target_locked_roi < 25.0:
+                target_locked_roi = 25.0
+                target_step = 6
+            # Tier 7: 34.50% ROI -> SL shifts to +30.00%
+            if peak_roi >= 34.50 and target_locked_roi < 30.0:
+                target_locked_roi = 30.0
+                target_step = 7
+            # Tier 8+: Infinite Trend Runner continuation beyond 34.50%
+            if peak_roi >= 39.50:
+                extra_steps = int((peak_roi - 34.50) // 5.0)
+                extended_target = 30.0 + (extra_steps * 5.0)
+                if extended_target > target_locked_roi:
+                    target_locked_roi = extended_target
+                    target_step = 7 + extra_steps
 
             # Upgrade Trailing SL if a new step is reached!
             if target_locked_roi > current_locked_roi:
