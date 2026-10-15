@@ -186,6 +186,9 @@
                 <button class="dock-tab active" id="tabBtnPositions" onclick="switchDockTab('positions')">
                     <i class="fa-solid fa-crosshairs"></i> Positions (<span id="posCountBadge">0</span>)
                 </button>
+                <button class="dock-tab" id="tabBtnHistory" onclick="switchDockTab('history')">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-teal);"></i> Trade History (<span id="historyCountBadge">0</span>)
+                </button>
                 <button class="dock-tab" id="tabBtnRadar" onclick="switchDockTab('radar')">
                     <i class="fa-solid fa-satellite-dish" style="color:var(--brand-teal);"></i> BB 2.0 Setups Radar (<span id="radarCountBadge">10</span>)
                 </button>
@@ -220,6 +223,31 @@
                         <tr>
                             <td colspan="9" style="text-align:center; color:var(--text-muted); padding:30px;">
                                 Loading Active Positions...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB: TRADE HISTORY -->
+            <div class="dock-content" id="dockPaneHistory" style="display:none;">
+                <table class="terminal-table">
+                    <thead>
+                        <tr>
+                            <th>Contract / Side</th>
+                            <th>Timeframe</th>
+                            <th>Entry Price</th>
+                            <th>Exit Price</th>
+                            <th>Realized P&L</th>
+                            <th>ROE %</th>
+                            <th>Result / Exit Reason</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align:center; color:var(--text-muted); padding:30px;">
+                                Loading Executed Trade History...
                             </td>
                         </tr>
                     </tbody>

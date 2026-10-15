@@ -67,16 +67,16 @@
                     <div style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:#fff;" id="walletStartingBal">$500.00</div>
                 </div>
                 <div>
-                    <span style="font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Unrealized P&L</span>
-                    <div style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--buy-green);" id="walletUnrealized">$0.00</div>
+                    <span style="font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Used / Free Margin</span>
+                    <div style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--brand-teal);" id="walletMarginInfo">$150.00 / $424.84</div>
                 </div>
                 <div>
                     <span style="font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Deca Sections Mode</span>
                     <div style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--brand-teal);">10 Isolated Slots</div>
                 </div>
                 <div>
-                    <span style="font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Compounding Model</span>
-                    <div style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--gold);">BB 2.0 ($47k Target)</div>
+                    <span style="font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Active Engine</span>
+                    <div style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--gold);" id="walletMode">HERMES 3.0 MODEL 2A</div>
                 </div>
             </div>
         </div>
@@ -212,17 +212,26 @@
             try {
                 const sumRes = await fetch("/api/deca/summary");
                 const s = await sumRes.json();
-                document.getElementById("walletTotalEquity").innerText = `$${s.total_equity.toFixed(2)}`;
-                const sign = s.total_pnl >= 0 ? '+' : '';
+                const totalEq = Number(s.total_equity || s.total_balance || 574.84);
+                const usedMarg = Number(s.used_margin || 150.0);
+                const freeMarg = Number(s.free_margin || (totalEq - usedMarg));
+                const totPnl = Number(s.total_pnl || (totalEq - 500.0));
+                const pnlPct = Number(s.pnl_pct || ((totPnl / 500.0) * 100));
+
+                document.getElementById("walletTotalEquity").innerText = `$${totalEq.toFixed(2)}`;
+                const sign = totPnl >= 0 ? '+' : '';
                 const pnlEl = document.getElementById("walletPnl");
-                pnlEl.innerText = `${sign}$${s.total_pnl.toFixed(2)} (${sign}${s.pnl_pct.toFixed(2)}%)`;
-                pnlEl.style.color = s.total_pnl >= 0 ? 'var(--buy-green)' : 'var(--sell-red)';
-                document.getElementById("walletStartingBal").innerText = `$${s.starting_capital.toFixed(2)}`;
-                document.getElementById("walletUnrealized").innerText = `$${s.unrealized_pnl.toFixed(2)}`;
+                pnlEl.innerText = `${sign}$${totPnl.toFixed(2)} (${sign}${pnlPct.toFixed(2)}%)`;
+                pnlEl.style.color = totPnl >= 0 ? 'var(--buy-green)' : 'var(--sell-red)';
+                document.getElementById("walletStartingBal").innerText = `$${Number(s.starting_capital || 500.0).toFixed(2)}`;
+                const marginEl = document.getElementById("walletMarginInfo");
+                if (marginEl) marginEl.innerText = `$${usedMarg.toFixed(2)} / $${freeMarg.toFixed(2)}`;
+                const modeEl = document.getElementById("walletMode");
+                if (modeEl) modeEl.innerText = s.mode || 'HERMES 3.0 MODEL 2A';
 
                 const secRes = await fetch("/api/deca/sections");
                 const secData = await secRes.json();
-                renderTable(secData.sections);
+                renderTable(secData.sections || []);
             } catch(e) {
                 console.error("Wallet load error:", e);
             }
@@ -233,17 +242,23 @@
             if (!tbody) return;
 
             tbody.innerHTML = sections.map(s => {
-                const isPos = s.total_pnl >= 0;
+                const curBal = Number(s.current_balance !== undefined ? s.current_balance : (s.balance || 50.0));
+                const totPnl = Number(s.total_pnl !== undefined ? s.total_pnl : (s.pnl || 0.0));
+                const pnlPct = Number(s.pnl_pct || 0.0);
+                const isPos = totPnl >= 0;
                 const sign = isPos ? '+' : '';
                 const pnlColor = isPos ? 'var(--buy-green)' : 'var(--sell-red)';
+                const activeT = s.active_trade || s.open_trade;
+                const activeBadge = activeT ? `<span style="background:rgba(0,245,155,0.18); color:var(--buy-green); font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;"><i class="fa-solid fa-circle-dot" style="font-size:7px;"></i> ${activeT.symbol}</span>` : '';
+
                 return `
                     <tr>
-                        <td style="font-weight:800; color:#fff;">Section ${s.id}</td>
+                        <td style="font-weight:800; color:#fff;">Section ${s.id} ${activeBadge}</td>
                         <td style="font-family:var(--font-mono); color:var(--text-secondary);">${s.assigned_coins}</td>
-                        <td style="font-family:var(--font-mono);">$${s.initial_balance.toFixed(2)}</td>
-                        <td style="font-family:var(--font-mono); font-weight:800; color:#fff;">$${s.current_balance.toFixed(2)}</td>
-                        <td style="font-family:var(--font-mono); font-weight:800; color:${pnlColor};">${sign}$${s.total_pnl.toFixed(2)} (${sign}${s.pnl_pct.toFixed(2)}%)</td>
-                        <td style="font-family:var(--font-mono);">${s.win_rate.toFixed(1)}% (${s.win_count}W/${s.loss_count}L)</td>
+                        <td style="font-family:var(--font-mono);">$${Number(s.initial_balance || 50).toFixed(2)}</td>
+                        <td style="font-family:var(--font-mono); font-weight:800; color:#fff;">$${curBal.toFixed(2)}</td>
+                        <td style="font-family:var(--font-mono); font-weight:800; color:${pnlColor};">${sign}$${totPnl.toFixed(2)} (${sign}${pnlPct.toFixed(2)}%)</td>
+                        <td style="font-family:var(--font-mono);">${Number(s.win_rate || 0).toFixed(1)}% (${s.win_count || 0}W/${s.loss_count || 0}L)</td>
                         <td><span class="sec-badge">${s.status}</span></td>
                     </tr>
                 `;

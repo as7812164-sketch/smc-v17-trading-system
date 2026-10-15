@@ -150,6 +150,7 @@ function startDataPollers() {
     pollTicker();
     pollOrderBook();
     pollPositions();
+    pollTradeHistory();
     pollSummary();
     pollDockRadar();
     pollSentries();
@@ -157,6 +158,7 @@ function startDataPollers() {
     setInterval(pollTicker, 2500);
     setInterval(pollOrderBook, 2500);
     setInterval(pollPositions, 3000);
+    setInterval(pollTradeHistory, 4000);
     setInterval(pollSummary, 5000);
     setInterval(pollDockRadar, 6000);
     setInterval(pollSentries, 10000);
@@ -285,7 +287,10 @@ async function pollSummary() {
             pnlEl.className = `stat-val ${s.total_pnl >= 0 ? 'green' : 'pill-red'}`;
         }
         if (wrEl) wrEl.innerText = `${s.win_rate.toFixed(1)}% (${s.total_wins}W/${s.total_losses}L)`;
-        if (capEl) capEl.innerText = `$${(s.total_balance / 10).toFixed(2)} USDT`;
+        if (capEl) {
+            const free = s.free_margin !== undefined ? s.free_margin : (s.total_balance / 10);
+            capEl.innerText = `$${free.toFixed(2)} USDT`;
+        }
     } catch (e) {
         console.error("Summary poll error:", e);
     }
@@ -304,26 +309,39 @@ async function pollPositions() {
         if (countBadge) countBadge.innerText = data.count;
 
         if (tbody) {
-            if (data.positions.length === 0) {
+            if (!data.positions || data.positions.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:30px;">No Open Positions • BB 2.0 Autonomous Scanner Standing By</td></tr>`;
             } else {
                 tbody.innerHTML = data.positions.map(p => {
-                    const isLong = p.side === 'LONG';
-                    const sign = p.unrealized_pnl >= 0 ? '+' : '';
-                    const pnlColor = p.unrealized_pnl >= 0 ? 'var(--buy-green)' : 'var(--sell-red)';
+                    const isLong = (p.side_raw || p.side || '').toUpperCase() === 'LONG' || (p.side_raw || p.side || '').toUpperCase() === 'BUY';
+                    const sideStr = isLong ? 'LONG' : 'SHORT';
+                    const lev = (p.leverage || '5x').toString().replace('x', '') + 'x';
+                    const posSize = Number(p.position_size_usdt || p.size_usdt || 250.0);
+                    const margin = Number(p.margin_usdt || (posSize / 5.0));
+                    const roe = p.roi_pct !== undefined ? Number(p.roi_pct) : Number(p.pnl_pct || 0);
+                    const uPnl = p.unrealized_pnl !== undefined ? Number(p.unrealized_pnl) : Number(p.unrealized_pnl_usdt || 0);
+                    const sign = uPnl >= 0 ? '+' : '';
+                    const pnlColor = uPnl >= 0 ? 'var(--buy-green)' : 'var(--sell-red)';
+                    const secId = p.section_id || p.account_id || 1;
+                    const entryP = Number(p.entry_price || 0);
+                    const markP = Number(p.mark_price || p.current_price || entryP);
+                    const slP = Number(p.trailing_sl_price > 0 ? p.trailing_sl_price : p.sl_price || 0);
+                    const tpP = Number(p.tp_price || 0);
+
                     return `
                         <tr>
                             <td>
                                 <span style="font-weight:800; color:#fff;">${p.symbol}</span>
-                                <span style="font-size:10px; padding:2px 4px; border-radius:3px; background:${isLong ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isLong ? 'var(--buy-green)' : 'var(--sell-red)'}; font-weight:800; margin-left:4px;">${p.side} ${p.leverage}x</span>
+                                <span style="font-size:10px; padding:2px 4px; border-radius:3px; background:${isLong ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isLong ? 'var(--buy-green)' : 'var(--sell-red)'}; font-weight:800; margin-left:4px;">${sideStr} ${lev}</span>
+                                <span style="font-size:10px; color:var(--text-muted); margin-left:4px;">${p.timeframe || '4H'}</span>
                             </td>
-                            <td>Section ${p.section_id}</td>
-                            <td>$${p.position_size_usdt.toFixed(2)} ($${p.margin_usdt.toFixed(2)})</td>
-                            <td>${p.entry_price.toFixed(4)}</td>
-                            <td>${p.mark_price.toFixed(4)}</td>
-                            <td><span style="color:${p.sl_price > p.entry_price ? 'var(--buy-green)' : 'var(--sell-red)'}">${p.trailing_sl_price > 0 ? p.trailing_sl_price.toFixed(4) : p.sl_price.toFixed(4)}</span></td>
-                            <td><span style="color:var(--buy-green)">${p.tp_price.toFixed(4)}</span></td>
-                            <td style="color:${pnlColor}; font-weight:800;">${sign}$${p.unrealized_pnl.toFixed(2)} (${sign}${p.pnl_pct.toFixed(2)}%)</td>
+                            <td><span style="color:var(--brand-teal); font-weight:700;">Section ${secId}</span></td>
+                            <td style="font-family:var(--font-mono);">$${posSize.toFixed(2)} <span style="color:var(--text-muted); font-size:11px;">($${margin.toFixed(2)})</span></td>
+                            <td style="font-family:var(--font-mono); font-weight:700;">${entryP.toFixed(4)}</td>
+                            <td style="font-family:var(--font-mono);">${markP.toFixed(4)}</td>
+                            <td style="font-family:var(--font-mono); color:${slP > entryP ? 'var(--buy-green)' : 'var(--sell-red)'}; font-weight:700;">${slP.toFixed(4)}</td>
+                            <td style="font-family:var(--font-mono); color:var(--buy-green); font-weight:700;">${tpP.toFixed(4)}</td>
+                            <td style="color:${pnlColor}; font-weight:800; font-family:var(--font-mono);">${sign}$${uPnl.toFixed(2)} (${sign}${roe.toFixed(2)}%)</td>
                             <td>
                                 <button class="btn-close-pos" onclick="closePosition(${p.id})">Close</button>
                             </td>
@@ -334,6 +352,56 @@ async function pollPositions() {
         }
     } catch (e) {
         console.error("Positions poll error:", e);
+    }
+}
+
+async function pollTradeHistory() {
+    try {
+        const res = await fetch("/api/trade/history?limit=30");
+        if (!res.ok) return;
+        const data = await res.json();
+        const trades = data.trades || [];
+
+        const tbody = document.getElementById("historyTableBody");
+        const countBadge = document.getElementById("historyCountBadge");
+        if (countBadge) countBadge.innerText = trades.length;
+
+        if (tbody) {
+            if (trades.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:30px;">No Executed Trades Found</td></tr>`;
+            } else {
+                tbody.innerHTML = trades.map(t => {
+                    const isLong = (t.side || "").toUpperCase() === "LONG" || (t.side || "").toUpperCase() === "BUY";
+                    const pnl = Number(t.pnl_usdt || 0);
+                    const isWin = pnl >= 0;
+                    const sign = isWin ? "+" : "";
+                    const pnlColor = isWin ? "var(--buy-green)" : "var(--sell-red)";
+                    const roe = t.roi_pct !== undefined ? t.roi_pct : (t.pnl_pct || 0);
+                    const exitReason = t.exit_reason || t.result || (isWin ? "TP Hit" : "SL Hit");
+                    return `
+                        <tr>
+                            <td>
+                                <span style="font-weight:800; color:#fff;">${t.symbol}</span>
+                                <span style="font-size:10px; padding:2px 4px; border-radius:3px; background:${isLong ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isLong ? 'var(--buy-green)' : 'var(--sell-red)'}; font-weight:800; margin-left:4px;">${isLong ? 'LONG' : 'SHORT'}</span>
+                            </td>
+                            <td><span style="font-size:11px; color:var(--text-secondary);">${t.timeframe || '4H'}</span></td>
+                            <td style="font-family:var(--font-mono);">${Number(t.entry_price || 0).toFixed(4)}</td>
+                            <td style="font-family:var(--font-mono);">${Number(t.exit_price || t.entry_price || 0).toFixed(4)}</td>
+                            <td style="color:${pnlColor}; font-weight:800; font-family:var(--font-mono);">${sign}$${pnl.toFixed(2)}</td>
+                            <td style="color:${pnlColor}; font-weight:800; font-family:var(--font-mono);">${sign}${Number(roe).toFixed(2)}%</td>
+                            <td>
+                                <span style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; background:${isWin ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isWin ? 'var(--buy-green)' : 'var(--sell-red)'};">
+                                    ${exitReason}
+                                </span>
+                            </td>
+                            <td style="font-size:11px; color:var(--text-muted);">${t.exit_time_str || t.duration || t.duration_str || '--'}</td>
+                        </tr>
+                    `;
+                }).join("");
+            }
+        }
+    } catch (e) {
+        console.error("Trade history poll error:", e);
     }
 }
 
@@ -418,7 +486,7 @@ function toggleDrawer() {
 // ----------------- DOCK TAB SWITCHER & HERMES INTEGRATIONS -----------------
 
 function switchDockTab(tab) {
-    const tabs = ['positions', 'radar', 'sentries', 'ai'];
+    const tabs = ['positions', 'history', 'radar', 'sentries', 'ai'];
     tabs.forEach(t => {
         const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
         const pane = document.getElementById('dockPane' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -426,6 +494,8 @@ function switchDockTab(tab) {
         if (pane) pane.style.display = (t === tab) ? 'block' : 'none';
     });
 
+    if (tab === 'positions') pollPositions();
+    if (tab === 'history') pollTradeHistory();
     if (tab === 'radar') pollDockRadar();
     if (tab === 'sentries') pollSentries();
 }
@@ -445,20 +515,55 @@ async function pollDockRadar() {
             tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">No active setups • Autonomous Scanner Scanning 20 Champions</td></tr>`;
         } else {
             tbody.innerHTML = setups.map(s => {
-                const isLong = s.side === 'LONG';
+                const isLong = (s.side || '').toUpperCase() === 'LONG' || (s.side || '').toUpperCase() === 'BUY';
+                const isAct = s.is_active || s.status === 'LIVE POSITION';
+                const dist = s.distance_pct !== undefined ? Number(s.distance_pct) : Number(s.proximity_pct || 0.0);
+                const pctClamped = Math.min(2.5, Math.max(0.0, dist));
+                const progressWidth = Math.round(((2.5 - pctClamped) / 2.5) * 100);
+                const barColor = dist <= 0.25 ? '#F59E0B' : (dist <= 0.6 ? 'var(--buy-green)' : 'var(--brand-teal)');
+
+                if (isAct) {
+                    const roe = Number(s.roe_pct || 0);
+                    const roeSign = roe >= 0 ? '+' : '';
+                    const roeColor = roe >= 0 ? 'var(--buy-green)' : 'var(--sell-red)';
+                    return `
+                        <tr style="cursor:pointer; background:rgba(0,245,155,0.04);" onclick="changePair('${s.symbol}')">
+                            <td>
+                                <span style="font-weight:800; color:var(--buy-green);"><i class="fa-solid fa-circle-dot" style="font-size:8px; margin-right:4px;"></i>${s.symbol}</span>
+                            </td>
+                            <td>
+                                <span style="font-size:10px; padding:2px 6px; border-radius:3px; background:${isLong ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isLong ? 'var(--buy-green)' : 'var(--sell-red)'}; font-weight:800;">${isLong ? 'LONG' : 'SHORT'} ${s.timeframe || '4H'}</span>
+                            </td>
+                            <td><span style="color:var(--brand-teal); font-weight:700;">Section ${s.section_id}</span></td>
+                            <td><b style="color:#fff;">$${Number(s.entry_price).toFixed(4)}</b></td>
+                            <td><span style="color:var(--sell-red);">$${Number(s.sl_price).toFixed(4)}</span></td>
+                            <td><span style="color:var(--buy-green);">$${Number(s.tp_price).toFixed(4)}</span></td>
+                            <td><b style="color:${roeColor};">${roeSign}${roe.toFixed(2)}% ROE</b></td>
+                            <td><span style="font-size:10px; background:rgba(0,245,155,0.2); color:var(--buy-green); border:1px solid rgba(0,245,155,0.4); padding:2px 6px; border-radius:4px; font-weight:800;">🔴 LIVE POSITION</span></td>
+                        </tr>
+                    `;
+                }
+
                 return `
                     <tr style="cursor:pointer;" onclick="changePair('${s.symbol}')">
                         <td>
                             <span style="font-weight:800; color:#fff;">${s.symbol}</span>
                         </td>
                         <td>
-                            <span style="font-size:10px; padding:2px 6px; border-radius:3px; background:${isLong ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isLong ? 'var(--buy-green)' : 'var(--sell-red)'}; font-weight:800;">${s.side}</span>
+                            <span style="font-size:10px; padding:2px 6px; border-radius:3px; background:${isLong ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isLong ? 'var(--buy-green)' : 'var(--sell-red)'}; font-weight:800;">${isLong ? 'LONG' : 'SHORT'} ${s.timeframe || '4H'}</span>
                         </td>
                         <td><span style="color:var(--brand-teal); font-weight:700;">Section ${s.section_id}</span></td>
                         <td><b style="color:#fff;">$${Number(s.entry_price).toFixed(4)}</b></td>
                         <td><span style="color:var(--sell-red);">$${Number(s.sl_price).toFixed(4)}</span></td>
                         <td><span style="color:var(--buy-green);">$${Number(s.tp_price).toFixed(4)}</span></td>
-                        <td><b style="color:var(--gold);">${s.proximity_pct != null ? s.proximity_pct.toFixed(2) + '%' : '--'}</b></td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div style="flex:1; height:4px; background:var(--bg-surface-elevated); border-radius:2px; overflow:hidden; min-width:35px;">
+                                    <div style="width:${progressWidth}%; height:100%; background:${barColor};"></div>
+                                </div>
+                                <span style="font-size:11px; font-weight:800; color:${barColor};">${dist.toFixed(2)}% away</span>
+                            </div>
+                        </td>
                         <td><span style="font-size:10px; background:rgba(0,192,135,0.1); color:var(--buy-green); padding:2px 6px; border-radius:4px; font-weight:700;">${s.status}</span></td>
                     </tr>
                 `;
