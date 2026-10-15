@@ -14,8 +14,55 @@ let currentLeverage = 5;
 let chart = null;
 let candleSeries = null;
 
+// Parse symbol from URL (e.g. /trade?symbol=SOLUSDT)
+const urlParams = new URLSearchParams(window.location.search);
+const symParam = urlParams.get('symbol');
+if (symParam) currentSymbol = symParam.toUpperCase();
+
+const ALL_CHAMPIONS = [
+    { s: "BTCUSDT", sec: 1 }, { s: "ETHUSDT", sec: 1 },
+    { s: "SOLUSDT", sec: 2 }, { s: "BNBUSDT", sec: 2 },
+    { s: "AVAXUSDT", sec: 3 }, { s: "DOGEUSDT", sec: 3 },
+    { s: "DOTUSDT", sec: 4 }, { s: "LINKUSDT", sec: 4 },
+    { s: "LTCUSDT", sec: 5 }, { s: "NEARUSDT", sec: 5 },
+    { s: "OPUSDT", sec: 6 }, { s: "RENDERUSDT", sec: 6 },
+    { s: "SUIUSDT", sec: 7 }, { s: "TIAUSDT", sec: 7 },
+    { s: "UNIUSDT", sec: 8 }, { s: "XRPUSDT", sec: 8 },
+    { s: "1000PEPEUSDT", sec: 9 }, { s: "APTUSDT", sec: 9 },
+    { s: "ARBUSDT", sec: 10 }, { s: "FETUSDT", sec: 10 }
+];
+
+function renderPairModalList(filter = "") {
+    const listEl = document.getElementById("pairModalList");
+    if (!listEl) return;
+    const q = filter.toUpperCase();
+    const filtered = ALL_CHAMPIONS.filter(x => x.s.includes(q));
+    listEl.innerHTML = filtered.map(x => `
+        <div onclick="selectPair('${x.s}')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:6px; cursor:pointer; margin-bottom:4px; background:var(--bg-base); border:1px solid var(--border-subtle); transition:border-color 0.2s;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:800; color:#fff; font-size:13px;">${x.s}</span>
+                <span style="font-size:9px; background:var(--bg-surface-elevated); padding:2px 4px; border-radius:3px; color:var(--text-muted);">PERP</span>
+            </div>
+            <span style="font-size:10px; font-weight:800; color:var(--brand-teal);">Section ${x.sec}</span>
+        </div>
+    `).join("");
+}
+
+function filterPairModal(q) {
+    renderPairModalList(q);
+}
+
+function selectPair(sym) {
+    changePair(sym);
+    const modal = document.getElementById("pairModal");
+    if (modal) modal.style.display = "none";
+}
+
 // Initialize on DOM Ready
 document.addEventListener("DOMContentLoaded", () => {
+    const symEl = document.getElementById("displayPairSymbol");
+    if (symEl) symEl.innerText = currentSymbol;
+    renderPairModalList();
     initChart();
     loadKlines();
     startDataPollers();
@@ -74,6 +121,7 @@ async function loadKlines() {
         const data = await res.json();
         if (data.candles && data.candles.length > 0) {
             candleSeries.setData(data.candles);
+            if (chart) chart.timeScale().fitContent();
         }
     } catch (e) {
         console.error("Failed to load klines:", e);
@@ -123,7 +171,7 @@ async function pollTicker() {
         const volEl = document.getElementById("displayVol24");
         const orderPriceInput = document.getElementById("inputPrice");
 
-        if (pEl) {
+        if (pEl && t.last_price > 0) {
             pEl.innerText = t.last_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
             pEl.style.color = t.price_change_pct >= 0 ? 'var(--buy-green)' : 'var(--sell-red)';
         }
@@ -136,12 +184,12 @@ async function pollTicker() {
         if (lowEl) lowEl.innerText = t.low_24h.toLocaleString();
         if (volEl) volEl.innerText = `${(t.volume_24h / 1e6).toFixed(2)}M`;
 
-        if (orderPriceInput && !orderPriceInput.dataset.manual) {
+        if (orderPriceInput && !orderPriceInput.dataset.manual && t.last_price > 0) {
             orderPriceInput.value = t.last_price;
         }
 
         // Live chart tick update
-        if (candleSeries) {
+        if (candleSeries && t.last_price > 0) {
             candleSeries.update({
                 time: Math.floor(Date.now() / 1000),
                 open: t.last_price,

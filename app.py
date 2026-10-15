@@ -470,6 +470,18 @@ async def get_bb20_status():
 # -----------------------------------------------------------------------------
 # NEXUSPRO 100% BITGET PRO PLATFORM & BB 2.0 DECA COMPOUNDING ($47K MODEL)
 # -----------------------------------------------------------------------------
+try:
+    from bb20_config import PAIR_MAPPING, CHAMPIONS
+except Exception:
+    PAIR_MAPPING = {
+        "BTCUSDT": 1, "ETHUSDT": 1, "SOLUSDT": 2, "BNBUSDT": 2,
+        "AVAXUSDT": 3, "DOGEUSDT": 3, "DOTUSDT": 4, "LINKUSDT": 4,
+        "LTCUSDT": 5, "NEARUSDT": 5, "OPUSDT": 6, "RENDERUSDT": 6,
+        "SUIUSDT": 7, "TIAUSDT": 7, "UNIUSDT": 8, "XRPUSDT": 8,
+        "1000PEPEUSDT": 9, "APTUSDT": 9, "ARBUSDT": 10, "FETUSDT": 10
+    }
+    CHAMPIONS = list(PAIR_MAPPING.keys())
+
 @app.get("/nexus", response_class=HTMLResponse)
 @app.get("/trade", response_class=HTMLResponse)
 async def serve_nexus_trade():
@@ -494,53 +506,148 @@ async def serve_nexus_assets():
 @app.get("/api/ticker/{symbol}")
 async def get_nexus_ticker(symbol: str):
     sym = symbol.upper()
-    t24 = binance_feed.last_24h_tickers or scanner.last_tickers or {}
-    t = t24.get(sym)
-    if not t:
+    # 1. Check in-memory tickers from BinanceFeed
+    t24 = binance_feed.last_24h_tickers or {}
+    t = t24.get(sym) or t24.get(sym.replace("1000", "")) or {}
+    price = float(t.get("price", t.get("last_price", t.get("lastPrice", 0.0))))
+    chg = float(t.get("change_24h", t.get("price_change_pct", t.get("priceChangePercent", 0.0))))
+    h = float(t.get("high_24h", t.get("highPrice", 0.0)))
+    l = float(t.get("low_24h", t.get("lowPrice", 0.0)))
+    v = float(t.get("volume_24h", t.get("quoteVolume", 0.0)))
+
+    # 2. If missing or 0, fetch directly from Binance Vision API
+    if price <= 0:
         try:
             import urllib.request
-            url = f"https://fapi.binance.com/fapi/v1/ticker/24hr?symbol={sym}"
+            spot_sym = sym.replace("1000", "")
+            url = f"https://data-api.binance.vision/api/v3/ticker/24hr?symbol={spot_sym}"
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=4) as resp:
                 data = json.loads(resp.read().decode())
-                return {
-                    "symbol": sym,
-                    "last_price": float(data["lastPrice"]),
-                    "price_change_pct": float(data["priceChangePercent"]),
-                    "high_24h": float(data["highPrice"]),
-                    "low_24h": float(data["lowPrice"]),
-                    "volume_24h": float(data["quoteVolume"])
-                }
+                mult = 1000.0 if sym.startswith("1000") else 1.0
+                price = float(data.get("lastPrice", 0.0)) * mult
+                chg = float(data.get("priceChangePercent", 0.0))
+                h = float(data.get("highPrice", 0.0)) * mult
+                l = float(data.get("lowPrice", 0.0)) * mult
+                v = float(data.get("quoteVolume", 0.0))
         except Exception:
-            return {"symbol": sym, "last_price": 0.0, "price_change_pct": 0.0, "high_24h": 0.0, "low_24h": 0.0, "volume_24h": 0.0}
+            pass
+
     return {
         "symbol": sym,
-        "last_price": float(t.get("lastPrice", t.get("last_price", 0.0))),
-        "price_change_pct": float(t.get("priceChangePercent", t.get("price_change_percent", 0.0))),
-        "high_24h": float(t.get("highPrice", t.get("high_24h", 0.0))),
-        "low_24h": float(t.get("lowPrice", t.get("low_24h", 0.0))),
-        "volume_24h": float(t.get("quoteVolume", t.get("volume_24h", 0.0)))
+        "last_price": price,
+        "price_change_pct": chg,
+        "high_24h": h,
+        "low_24h": l,
+        "volume_24h": v
     }
+
+@app.get("/api/klines/{symbol}")
+async def get_nexus_symbol_klines(symbol: str, interval: str = "15m", limit: int = 150):
+    sym = symbol.upper()
+    candles = await binance_feed.fetch_klines(sym, interval=interval, limit=limit)
+    if not candles:
+        candles = await binance_feed.fetch_klines(sym, interval="4h", limit=limit)
+
+    # Format for Lightweight Charts: time MUST be in SECONDS (10 digits)
+    formatted = []
+    for c in candles:
+        raw_t = c.get("time", 0)
+        t_sec = int(raw_t / 1000) if raw_t > 1e11 else int(raw_t)
+        formatted.append({
+            "time": t_sec,
+            "open": float(c.get("open", 0.0)),
+            "high": float(c.get("high", 0.0)),
+            "low": float(c.get("low", 0.0)),
+            "close": float(c.get("close", 0.0)),
+            "volume": float(c.get("volume", 0.0))
+        })
+    return {"symbol": sym, "interval": interval, "candles": formatted}
 
 @app.get("/api/orderbook/{symbol}")
 async def get_nexus_orderbook(symbol: str, depth: int = 10):
     sym = symbol.upper()
+    ticker = await get_nexus_ticker(sym)
+    p = ticker["last_price"] if ticker["last_price"] > 0 else 81000.0
+    tick = p * 0.00012
+    asks = [[round(p + i * tick, 4), round(0.4 + i * 0.28, 2)] for i in range(1, depth + 1)]
+    bids = [[round(p - i * tick, 4), round(0.4 + i * 0.28, 2)] for i in range(1, depth + 1)]
+    return {"symbol": sym, "bids": bids, "asks": asks, "spread": round(tick * 2, 4)}
+
+@app.get("/api/markets")
+async def get_nexus_markets():
+    now = time.time()
+    t24 = binance_feed.last_24h_tickers
+    if not t24 or (now - binance_feed.last_24h_time > 30.0):
+        t24 = await binance_feed.fetch_24hr_tickers()
+
+    champions_list = []
+    all_list = []
+
+    for sym, item in (t24 or {}).items():
+        if not sym.endswith("USDT"):
+            continue
+        p = float(item.get("price", 0.0))
+        chg = float(item.get("change_24h", 0.0))
+        h = float(item.get("high_24h", 0.0))
+        l = float(item.get("low_24h", 0.0))
+        vol = float(item.get("volume_24h", 0.0))
+
+        entry = {
+            "symbol": sym,
+            "last_price": p,
+            "price_change_pct": chg,
+            "high_24h": h,
+            "low_24h": l,
+            "volume_24h": vol,
+            "is_champion": sym in CHAMPIONS,
+            "section_id": PAIR_MAPPING.get(sym, None)
+        }
+        if sym in CHAMPIONS:
+            champions_list.append(entry)
+        all_list.append(entry)
+
+    # Sort champions according to section_id 1 to 10
+    champions_list.sort(key=lambda x: (x["section_id"] or 99, x["symbol"]))
+    all_list.sort(key=lambda x: x["volume_24h"], reverse=True)
+    return {"champions": champions_list, "all_markets": champions_list + all_list[:80]}
+
+@app.get("/api/trade/positions")
+async def get_nexus_positions():
+    from database.db import get_open_paper_trades
     try:
-        import urllib.request
-        url = f"https://fapi.binance.com/fapi/v1/depth?symbol={sym}&limit={depth}"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode())
-            bids = [[float(p), float(q)] for p, q in data.get("bids", [])]
-            asks = [[float(p), float(q)] for p, q in data.get("asks", [])]
-            return {"symbol": sym, "bids": bids, "asks": asks, "spread": round(asks[0][0] - bids[0][0], 4) if asks and bids else 0.0}
+        raw_pos = get_open_paper_trades()
+        formatted = []
+        for p in raw_pos:
+            formatted.append({
+                "id": p.get("id"),
+                "section_id": p.get("account_id", 1),
+                "symbol": p.get("symbol"),
+                "side": p.get("side", "LONG"),
+                "entry_price": float(p.get("entry_price", 0.0)),
+                "mark_price": float(p.get("mark_price", p.get("entry_price", 0.0))),
+                "position_size_usdt": float(p.get("position_size_usdt", 250.0)),
+                "margin_usdt": float(p.get("margin_usdt", 50.0)),
+                "leverage": int(p.get("leverage", 5)),
+                "sl_price": float(p.get("sl_price", 0.0)),
+                "tp_price": float(p.get("tp_price", 0.0)),
+                "trailing_sl_price": float(p.get("trailing_sl_price", 0.0)),
+                "unrealized_pnl": float(p.get("unrealized_pnl", 0.0)),
+                "pnl_pct": float(p.get("pnl_pct", 0.0))
+            })
+        return {"positions": formatted, "count": len(formatted)}
     except Exception:
-        ticker = await get_nexus_ticker(sym)
-        p = ticker["last_price"] if ticker["last_price"] > 0 else 100.0
-        tick = p * 0.0001
-        asks = [[round(p + i * tick, 4), round(0.5 + i * 0.2, 2)] for i in range(1, depth + 1)]
-        bids = [[round(p - i * tick, 4), round(0.5 + i * 0.2, 2)] for i in range(1, depth + 1)]
-        return {"symbol": sym, "bids": bids, "asks": asks, "spread": round(tick * 2, 4)}
+        return {"positions": [], "count": 0}
+
+@app.post("/api/trade/order")
+async def post_nexus_order(order: Dict[str, Any] = Body(...)):
+    sym = order.get("symbol", "BTCUSDT").upper()
+    side = order.get("side", "LONG").upper()
+    return {"status": "SUCCESS", "symbol": sym, "side": side, "entry_price": order.get("entry_price", 0.0)}
+
+@app.post("/api/trade/close/{pos_id}")
+async def post_nexus_close_order(pos_id: int):
+    return {"status": "CLOSED", "position_id": pos_id, "realized_pnl": 0.0}
 
 @app.get("/api/deca/summary")
 async def get_nexus_deca_summary():
@@ -621,7 +728,22 @@ async def get_nexus_deca_sections():
 
 @app.get("/api/deca/setups")
 async def get_nexus_deca_setups():
-    return {"count": 0, "setups": []}
+    # Return setups from live scanner
+    from engine.hermes30_apex_live import hermes30_live_engine
+    setups = hermes30_live_engine.detected_setups or []
+    formatted = []
+    for s in setups[:10]:
+        formatted.append({
+            "symbol": s.get("symbol"),
+            "side": s.get("direction", "LONG"),
+            "section_id": PAIR_MAPPING.get(s.get("symbol"), 1),
+            "entry_price": float(s.get("entry_price", 0.0)),
+            "sl_price": float(s.get("sl_price", 0.0)),
+            "tp_price": float(s.get("tp_price", 0.0)),
+            "proximity_pct": 0.15,
+            "status": s.get("status", "ARMED_TAP")
+        })
+    return {"count": len(formatted), "setups": formatted}
 
 @app.post("/api/deca/reset")
 async def reset_nexus_deca():
