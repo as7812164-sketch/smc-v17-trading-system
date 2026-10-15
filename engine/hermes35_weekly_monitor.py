@@ -26,7 +26,7 @@ ARTIFACT_DIR = r"C:\Users\power\.gemini\antigravity\brain\53360a5d-0399-4fb3-95c
 
 class Hermes35WeeklyMonitor:
     def __init__(self):
-        self.version = "HERMES_3.5_DUAL_TIER_SNIPER"
+        self.version = "HERMES_3.0_MODEL_2A"
 
     def backfill_missing_autopsies(self) -> int:
         """

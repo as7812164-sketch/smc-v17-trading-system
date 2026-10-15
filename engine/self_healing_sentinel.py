@@ -232,7 +232,10 @@ class HermesSelfHealingSentinel:
             sym = t["symbol"].upper()
             exchange = (t.get("exchange") or "BINANCE").upper()
             entry_time = t.get("entry_time") or 0
-            age_seconds = (now_ms - entry_time) / 1000.0
+            # CRITICAL MANDATE: Hermes 3.0 Model 2A trades are strictly preserved (never orphan-cleared)
+            trade_mode = str(t.get("mode") or "").upper()
+            if "HERMES_3" in trade_mode or "MODEL_2A" in trade_mode:
+                continue
 
             # Check presence across both exchanges
             is_on_binance = sym in real_binance_symbols
