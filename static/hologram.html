@@ -1416,11 +1416,11 @@
             </div>
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <div style="background:rgba(0,192,135,0.1); border:1px solid rgba(0,192,135,0.3); border-radius:6px; padding:8px; font-size:11px;">
-                    <div style="font-weight:700; color:var(--green-glow);">Section 1: OPUSDT In Profit</div>
+                    <div style="font-weight:700; color:var(--green-glow);">Section 1: BTCUSDT In Profit</div>
                     <div style="color:var(--text-muted); font-size:10px;">Trailing SL active &bull; 100% win rate maintained (12W 0L)</div>
                 </div>
                 <div style="background:rgba(0,240,255,0.1); border:1px solid rgba(0,240,255,0.3); border-radius:6px; padding:8px; font-size:11px;">
-                    <div style="font-weight:700; color:var(--cyan-glow);">Section 2: CRVUSDT Tap Confirmed</div>
+                    <div style="font-weight:700; color:var(--cyan-glow);">Section 2: ETHUSDT Tap Confirmed</div>
                     <div style="color:var(--text-muted); font-size:10px;">50% MT tapped with 22% rejection wick &bull; ROE +7.28%</div>
                 </div>
                 <div style="background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3); border-radius:6px; padding:8px; font-size:11px;">
@@ -1474,14 +1474,14 @@
                         <span class="ticker-chg down">-2.17%</span>
                     </a>
                     <a href="/trade" class="ticker-item">
-                        <span class="ticker-sym">OPUSDT</span>
-                        <span class="ticker-price" id="tapeOpPrice">$0.1399</span>
-                        <span class="ticker-chg up">+3.44%</span>
+                        <span class="ticker-sym">AVAXUSDT</span>
+                        <span class="ticker-price">$28.40</span>
+                        <span class="ticker-chg up">+4.12%</span>
                     </a>
                     <a href="/trade" class="ticker-item">
-                        <span class="ticker-sym">CRVUSDT</span>
-                        <span class="ticker-price" id="tapeCrvPrice">$0.3587</span>
-                        <span class="ticker-chg up">+7.28%</span>
+                        <span class="ticker-sym">LINKUSDT</span>
+                        <span class="ticker-price">$11.85</span>
+                        <span class="ticker-chg up">+3.20%</span>
                     </a>
 
                     <!-- Duplicate for infinite marquee scrolling -->
@@ -1518,14 +1518,14 @@
                         <span class="ticker-chg down">-2.17%</span>
                     </a>
                     <a href="/trade" class="ticker-item">
-                        <span class="ticker-sym">OPUSDT</span>
-                        <span class="ticker-price">$0.1399</span>
-                        <span class="ticker-chg up">+3.44%</span>
+                        <span class="ticker-sym">AVAXUSDT</span>
+                        <span class="ticker-price">$28.40</span>
+                        <span class="ticker-chg up">+4.12%</span>
                     </a>
                     <a href="/trade" class="ticker-item">
-                        <span class="ticker-sym">CRVUSDT</span>
-                        <span class="ticker-price">$0.3587</span>
-                        <span class="ticker-chg up">+7.28%</span>
+                        <span class="ticker-sym">LINKUSDT</span>
+                        <span class="ticker-price">$11.85</span>
+                        <span class="ticker-chg up">+3.20%</span>
                     </a>
                 </div>
             </div>
@@ -2212,8 +2212,8 @@
         // 4. REAL-TIME API DATA ENGINE
         // -------------------------------------------------------------------------
         const DEFAULT_DECA_SECTIONS = [
-            { id: 1, name: "Section 1", balance: 119.61, initial_balance: 50.0, status: "IN POSITION", symbol: "OPUSDT", wins: 12, losses: 0, tf: "4H Macro", wr: 100 },
-            { id: 2, name: "Section 2", balance: 55.33, initial_balance: 50.0, status: "IN POSITION", symbol: "CRVUSDT", wins: 7, losses: 1, tf: "4H Macro", wr: 87.5 },
+            { id: 1, name: "Section 1", balance: 119.61, initial_balance: 50.0, status: "IN POSITION", symbol: "BTCUSDT", wins: 12, losses: 0, tf: "4H Macro", wr: 100 },
+            { id: 2, name: "Section 2", balance: 55.33, initial_balance: 50.0, status: "IN POSITION", symbol: "ETHUSDT", wins: 7, losses: 1, tf: "4H Macro", wr: 87.5 },
             { id: 3, name: "Section 3", balance: 50.20, initial_balance: 50.0, status: "IDLE", symbol: null, wins: 0, losses: 0, tf: "4H Macro", wr: 100 },
             { id: 4, name: "Section 4", balance: 50.13, initial_balance: 50.0, status: "IDLE", symbol: null, wins: 0, losses: 0, tf: "4H Macro", wr: 100 },
             { id: 5, name: "Section 5", balance: 50.00, initial_balance: 50.0, status: "IDLE", symbol: null, wins: 0, losses: 0, tf: "4H Macro", wr: 100 },
@@ -2336,8 +2336,8 @@
             // High-fidelity fallback if setups are empty
             if (setups.length === 0) {
                 setups = [
-                    { symbol: "OPUSDT", side: "SELL", section_id: 1, timeframe: "4H", entry_price: 0.1409, mark_price: 0.1399, sl_price: 0.1450, tp_price: 0.1320, distance_pct: 0.0, probability_pct: 95.8, status: "LIVE POSITION", is_active: true },
-                    { symbol: "CRVUSDT", side: "SELL", section_id: 2, timeframe: "4H", entry_price: 0.3640, mark_price: 0.3587, sl_price: 0.3780, tp_price: 0.3360, distance_pct: 0.0, probability_pct: 94.2, status: "LIVE POSITION", is_active: true },
+                    { symbol: "BTCUSDT", side: "BUY", section_id: 1, timeframe: "4H", entry_price: 67200.0, mark_price: 67850.2, sl_price: 66100.0, tp_price: 69400.0, distance_pct: 0.0, probability_pct: 96.8, status: "LIVE POSITION", is_active: true },
+                    { symbol: "ETHUSDT", side: "BUY", section_id: 2, timeframe: "4H", entry_price: 2610.0, mark_price: 2642.8, sl_price: 2560.0, tp_price: 2710.0, distance_pct: 0.0, probability_pct: 95.2, status: "LIVE POSITION", is_active: true },
                     { symbol: "FETUSDT", side: "SELL", section_id: 6, timeframe: "1H", entry_price: 0.2073, mark_price: 0.2082, sl_price: 0.2150, tp_price: 0.1910, distance_pct: 0.0, probability_pct: 91.5, status: "LIVE POSITION", is_active: true },
                     { symbol: "BTCUSDT", side: "BUY", section_id: 1, timeframe: "4H", entry_price: 67200.0, mark_price: 67850.2, sl_price: 66100.0, tp_price: 69400.0, distance_pct: 0.42, probability_pct: 96.4, status: "ARMED (50% MT)", is_active: false },
                     { symbol: "ETHUSDT", side: "BUY", section_id: 1, timeframe: "4H", entry_price: 2610.0, mark_price: 2642.8, sl_price: 2560.0, tp_price: 2710.0, distance_pct: 0.58, probability_pct: 95.0, status: "ARMED (50% MT)", is_active: false }
