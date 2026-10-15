@@ -1,0 +1,477 @@
+{
+  "created_at": "2026-10-14T08:11:07.723719+00:00",
+  "total_initial_capital": 500.0,
+  "total_current_equity": 500.0,
+  "sections": {
+    "1": {
+      "section_id": 1,
+      "assigned_coins": [
+        "BTCUSDT",
+        "ETHUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "2": {
+      "section_id": 2,
+      "assigned_coins": [
+        "SOLUSDT",
+        "BNBUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "3": {
+      "section_id": 3,
+      "assigned_coins": [
+        "AVAXUSDT",
+        "DOGEUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "4": {
+      "section_id": 4,
+      "assigned_coins": [
+        "DOTUSDT",
+        "LINKUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "5": {
+      "section_id": 5,
+      "assigned_coins": [
+        "LTCUSDT",
+        "NEARUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "6": {
+      "section_id": 6,
+      "assigned_coins": [
+        "OPUSDT",
+        "RENDERUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "7": {
+      "section_id": 7,
+      "assigned_coins": [
+        "SUIUSDT",
+        "TIAUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "8": {
+      "section_id": 8,
+      "assigned_coins": [
+        "UNIUSDT",
+        "XRPUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "9": {
+      "section_id": 9,
+      "assigned_coins": [
+        "1000PEPEUSDT",
+        "APTUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    },
+    "10": {
+      "section_id": 10,
+      "assigned_coins": [
+        "ARBUSDT",
+        "FETUSDT"
+      ],
+      "initial_balance": 50.0,
+      "balance": 50.0,
+      "trades_count": 0,
+      "wins": 0,
+      "saves": 0,
+      "losses": 0,
+      "pnl_usd": 0.0,
+      "status": "IDLE"
+    }
+  },
+  "active_setups": {
+    "BTCUSDT": {
+      "symbol": "BTCUSDT",
+      "section_id": "1",
+      "side": "LONG",
+      "mt_entry": 80286.49,
+      "sl": 79680.3,
+      "risk": 606.19,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 81444.42,
+      "armed_at": "2026-10-15T14:43:33.265817+00:00",
+      "target_1r": 80892.68,
+      "target_15r": 81195.775,
+      "target_3r": 82105.06
+    },
+    "SOLUSDT": {
+      "symbol": "SOLUSDT",
+      "section_id": "2",
+      "side": "LONG",
+      "mt_entry": 101.585,
+      "sl": 100.7586,
+      "risk": 0.8264,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 103.52,
+      "armed_at": "2026-10-15T14:43:37.987216+00:00",
+      "target_1r": 102.4114,
+      "target_15r": 102.8245,
+      "target_3r": 104.0641
+    },
+    "AVAXUSDT": {
+      "symbol": "AVAXUSDT",
+      "section_id": "3",
+      "side": "LONG",
+      "mt_entry": 9.557,
+      "sl": 9.4887,
+      "risk": 0.0683,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 9.771,
+      "armed_at": "2026-10-15T14:43:43.102633+00:00",
+      "target_1r": 9.6253,
+      "target_15r": 9.6594,
+      "target_3r": 9.7618
+    },
+    "DOTUSDT": {
+      "symbol": "DOTUSDT",
+      "section_id": "4",
+      "side": "LONG",
+      "mt_entry": 1.058,
+      "sl": 1.0474,
+      "risk": 0.0106,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 1.113,
+      "armed_at": "2026-10-15T14:43:47.862115+00:00",
+      "target_1r": 1.0686,
+      "target_15r": 1.0739,
+      "target_3r": 1.0897
+    },
+    "LTCUSDT": {
+      "symbol": "LTCUSDT",
+      "section_id": "5",
+      "side": "LONG",
+      "mt_entry": 58.185,
+      "sl": 57.7632,
+      "risk": 0.4218,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 58.7,
+      "armed_at": "2026-10-15T14:43:52.744149+00:00",
+      "target_1r": 58.6068,
+      "target_15r": 58.8177,
+      "target_3r": 59.4503
+    },
+    "OPUSDT": {
+      "symbol": "OPUSDT",
+      "section_id": "6",
+      "side": "LONG",
+      "mt_entry": 0.129,
+      "sl": 0.1277,
+      "risk": 0.0013,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.1369,
+      "armed_at": "2026-10-15T14:43:57.403538+00:00",
+      "target_1r": 0.1303,
+      "target_15r": 0.1309,
+      "target_3r": 0.1329
+    },
+    "SUIUSDT": {
+      "symbol": "SUIUSDT",
+      "section_id": "7",
+      "side": "LONG",
+      "mt_entry": 0.968,
+      "sl": 0.9581,
+      "risk": 0.0099,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 1.0052,
+      "armed_at": "2026-10-15T14:44:02.186458+00:00",
+      "target_1r": 0.9779,
+      "target_15r": 0.9829,
+      "target_3r": 0.9978
+    },
+    "UNIUSDT": {
+      "symbol": "UNIUSDT",
+      "section_id": "8",
+      "side": "LONG",
+      "mt_entry": 6.8695,
+      "sl": 6.8347,
+      "risk": 0.0348,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 7.059,
+      "armed_at": "2026-10-15T14:44:07.355580+00:00",
+      "target_1r": 6.9043,
+      "target_15r": 6.9217,
+      "target_3r": 6.9738
+    },
+    "APTUSDT": {
+      "symbol": "APTUSDT",
+      "section_id": "9",
+      "side": "LONG",
+      "mt_entry": 0.7632,
+      "sl": 0.7548,
+      "risk": 0.0084,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.7867,
+      "armed_at": "2026-10-15T14:44:14.191601+00:00",
+      "target_1r": 0.7716,
+      "target_15r": 0.7759,
+      "target_3r": 0.7885
+    },
+    "ARBUSDT": {
+      "symbol": "ARBUSDT",
+      "section_id": "10",
+      "side": "LONG",
+      "mt_entry": 0.1726,
+      "sl": 0.1709,
+      "risk": 0.0017,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.1792,
+      "armed_at": "2026-10-15T14:44:17.163105+00:00",
+      "target_1r": 0.1744,
+      "target_15r": 0.1752,
+      "target_3r": 0.1778
+    }
+  },
+  "active_positions": {},
+  "closed_trades": [],
+  "daily_single_shot": {
+    "2026-10-14": {
+      "BTCUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ETHUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SOLUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "BNBUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "AVAXUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "DOGEUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "DOTUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "LINKUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "LTCUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "NEARUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "OPUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "RENDERUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SUIUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "TIAUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "UNIUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "XRPUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "1000PEPEUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "APTUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ARBUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "FETUSDT": {
+        "LONG": false,
+        "SHORT": false
+      }
+    },
+    "2026-10-15": {
+      "BTCUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ETHUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SOLUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "BNBUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "AVAXUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "DOGEUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "DOTUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "LINKUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "LTCUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "NEARUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "OPUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "RENDERUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SUIUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "TIAUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "UNIUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "XRPUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "1000PEPEUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "APTUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ARBUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "FETUSDT": {
+        "LONG": false,
+        "SHORT": false
+      }
+    }
+  }
+}

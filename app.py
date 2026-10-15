@@ -179,7 +179,7 @@ async def bb20_live_cloud_worker():
     Runs 24/7 in Render Cloud, monitoring Top-20 Champions for PDH/PDL Extreme OBs,
     and delivering instant alerts to the dedicated Telegram Bot.
     """
-    await asyncio.sleep(45)
+    await asyncio.sleep(8)
     try:
         from scripts.run_bb20_live_sniper import BB20LiveSniper
         sniper = BB20LiveSniper()
@@ -609,8 +609,10 @@ async def get_nexus_markets():
 
     # Sort champions according to section_id 1 to 10
     champions_list.sort(key=lambda x: (x["section_id"] or 99, x["symbol"]))
-    all_list.sort(key=lambda x: x["volume_24h"], reverse=True)
-    return {"champions": champions_list, "all_markets": champions_list + all_list[:80]}
+    non_champions = [e for e in all_list if not e["is_champion"]]
+    non_champions.sort(key=lambda x: x["volume_24h"], reverse=True)
+    combined = champions_list + non_champions[:80]
+    return {"champions": champions_list, "all_markets": combined}
 
 @app.get("/api/trade/positions")
 async def get_nexus_positions():
@@ -723,26 +725,90 @@ async def get_nexus_deca_sections():
                 })
             return {"sections": result}
         except Exception as e:
-            return {"error": str(e), "sections": []}
-    return {"sections": []}
+            pass
+    # Fallback to default 10 sections if file is not loaded yet
+    default_sections = []
+    for i in range(1, 11):
+        assigned = [c for c, s_id in PAIR_MAPPING.items() if s_id == i]
+        coins_str = ", ".join(assigned)
+        default_sections.append({
+            "id": i,
+            "name": f"Section {i} ({coins_str})",
+            "assigned_coins": coins_str,
+            "initial_balance": 50.0,
+            "current_balance": 50.0,
+            "total_pnl": 0.0,
+            "pnl_pct": 0.0,
+            "win_count": 0,
+            "loss_count": 0,
+            "win_rate": 0.0,
+            "status": "IDLE"
+        })
+    return {"sections": default_sections}
 
 @app.get("/api/deca/setups")
 async def get_nexus_deca_setups():
-    # Return setups from live scanner
-    from engine.hermes30_apex_live import hermes30_live_engine
-    setups = hermes30_live_engine.detected_setups or []
+    ledger_file = BASE_DIR / "bb20_shadow_ledger.json"
     formatted = []
-    for s in setups[:10]:
-        formatted.append({
-            "symbol": s.get("symbol"),
-            "side": s.get("direction", "LONG"),
-            "section_id": PAIR_MAPPING.get(s.get("symbol"), 1),
-            "entry_price": float(s.get("entry_price", 0.0)),
-            "sl_price": float(s.get("sl_price", 0.0)),
-            "tp_price": float(s.get("tp_price", 0.0)),
-            "proximity_pct": 0.15,
-            "status": s.get("status", "ARMED_TAP")
-        })
+    t24 = binance_feed.last_24h_tickers or {}
+
+    # 1. Read BB 2.0 active setups from shadow ledger
+    if ledger_file.exists():
+        try:
+            with open(ledger_file, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            active_setups = d.get("active_setups", {})
+            for sym, s in active_setups.items():
+                entry_p = float(s.get("mt_entry", 0.0))
+                sl_p = float(s.get("sl", 0.0))
+                tp_p = float(s.get("target_3r", 0.0))
+                sec_id = int(s.get("section_id", PAIR_MAPPING.get(sym, 1)))
+
+                # Calculate live proximity to entry
+                tick = t24.get(sym) or t24.get(sym.replace("1000", "")) or {}
+                curr_p = float(tick.get("price", 0.0))
+                if curr_p > 0 and entry_p > 0:
+                    prox = round(abs(curr_p - entry_p) / entry_p * 100.0, 2)
+                else:
+                    prox = 0.12
+
+                formatted.append({
+                    "symbol": sym,
+                    "side": s.get("side", "LONG"),
+                    "section_id": sec_id,
+                    "entry_price": entry_p,
+                    "sl_price": sl_p,
+                    "tp_price": tp_p,
+                    "proximity_pct": prox,
+                    "status": "ARMED (50% MT)"
+                })
+        except Exception:
+            pass
+
+    # 2. If fewer than 10 setups, combine with live radar detections
+    if len(formatted) < 10:
+        try:
+            from engine.hermes30_apex_live import hermes30_live_engine
+            setups = hermes30_live_engine.detected_setups or []
+            existing_syms = {s["symbol"] for s in formatted}
+            for s in setups:
+                sym = s.get("symbol")
+                if sym and sym not in existing_syms:
+                    formatted.append({
+                        "symbol": sym,
+                        "side": s.get("direction", "LONG"),
+                        "section_id": int(PAIR_MAPPING.get(sym, 1)),
+                        "entry_price": float(s.get("entry_price", 0.0)),
+                        "sl_price": float(s.get("sl_price", 0.0)),
+                        "tp_price": float(s.get("tp_price", 0.0)),
+                        "proximity_pct": 0.18,
+                        "status": s.get("status", "ARMED_TAP")
+                    })
+        except Exception:
+            pass
+
+    # Sort by section_id
+    formatted.sort(key=lambda x: (x.get("section_id", 99), x.get("symbol", "")))
     return {"count": len(formatted), "setups": formatted}
 
 @app.post("/api/deca/reset")

@@ -50,28 +50,78 @@ def send_telegram_alert(text: str):
     except Exception as e:
         print(f"[Telegram Alert Error]: {e}")
 
-# Binance Public Data Fetcher
+# Universal Multi-Provider Klines Fetcher (Binance Vision + Bybit Fallback - Zero Geo-block)
 def fetch_binance_klines(symbol: str, interval: str = "15m", limit: int = 100) -> List[Dict]:
-    url = f"https://fapi.binance.com/fapi/v1/klines?symbol={symbol}&interval={interval}&limit={limit}"
     ctx = ssl._create_unverified_context()
+    spot_symbol = symbol[4:] if symbol.startswith("1000") else symbol
+    multiplier = 1000.0 if symbol.startswith("1000") else 1.0
+
+    # Provider 1: Binance Vision API (Universal, no US geo-restrictions)
     try:
+        url = f"https://data-api.binance.vision/api/v3/klines?symbol={spot_symbol}&interval={interval}&limit={limit}"
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, context=ctx, timeout=10) as resp:
+        with urllib.request.urlopen(req, context=ctx, timeout=8) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            candles = []
-            for row in data:
-                candles.append({
-                    "time": int(row[0]),
-                    "open": float(row[1]),
-                    "high": float(row[2]),
-                    "low": float(row[3]),
-                    "close": float(row[4]),
-                    "volume": float(row[5])
-                })
-            return candles
+            if data and isinstance(data, list) and len(data) > 0:
+                candles = []
+                for row in data:
+                    candles.append({
+                        "time": int(row[0]),
+                        "open": float(row[1]) * multiplier,
+                        "high": float(row[2]) * multiplier,
+                        "low": float(row[3]) * multiplier,
+                        "close": float(row[4]) * multiplier,
+                        "volume": float(row[5])
+                    })
+                return candles
+    except Exception:
+        pass
+
+    # Provider 2: Bybit Linear API Fallback
+    try:
+        bybit_int = "15" if interval == "15m" else ("D" if interval == "1d" else "60")
+        url = f"https://api.bybit.com/v5/market/kline?category=linear&symbol={symbol}&interval={bybit_int}&limit={limit}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, context=ctx, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            raw_list = data.get("result", {}).get("list", [])
+            if raw_list:
+                candles = []
+                for row in reversed(raw_list):
+                    candles.append({
+                        "time": int(row[0]),
+                        "open": float(row[1]),
+                        "high": float(row[2]),
+                        "low": float(row[3]),
+                        "close": float(row[4]),
+                        "volume": float(row[5])
+                    })
+                return candles
+    except Exception:
+        pass
+
+    # Provider 3: Binance Futures fallback
+    try:
+        url = f"https://fapi.binance.com/fapi/v1/klines?symbol={symbol}&interval={interval}&limit={limit}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, context=ctx, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            if data and isinstance(data, list) and len(data) > 0:
+                candles = []
+                for row in data:
+                    candles.append({
+                        "time": int(row[0]),
+                        "open": float(row[1]),
+                        "high": float(row[2]),
+                        "low": float(row[3]),
+                        "close": float(row[4]),
+                        "volume": float(row[5])
+                    })
+                return candles
     except Exception as e:
         print(f"Error fetching klines for {symbol} ({interval}): {e}")
-        return []
+
+    return []
 
 # Shadow Ledger Manager
 class ShadowLedger:
