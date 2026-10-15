@@ -218,12 +218,13 @@ class BB20LiveSniper:
                             sl = ob_low * (1.0 - cfg.SL_ANTI_HUNT_BUFFER)
                             risk = mt - sl
 
-                            # Check if invalidated or already filled in subsequent bars
-                            sl_hit = any(b["low"] <= sl for b in subsequent_bars)
-                            filled = any(b["low"] <= mt for b in subsequent_bars)
+                            # Check if invalidated by SL hit
+                            sl_hit = any(b["low"] <= sl for b in subsequent_bars) or current_price <= sl
 
-                            if risk > 0 and not sl_hit and not filled and current_price > mt:
+                            if risk > 0 and not sl_hit:
                                 self._arm_new_setup(symbol, sec_id, "LONG", mt, sl, risk, pdl, "PDL SUPPORT")
+                                # Immediately check if current bar fills the limit order
+                                self._check_pending_setup_fill(symbol, candles_15m)
                                 break
 
                 # -----------------------------------------------------------------
@@ -243,12 +244,13 @@ class BB20LiveSniper:
                             sl = ob_high * (1.0 + cfg.SL_ANTI_HUNT_BUFFER)
                             risk = sl - mt
 
-                            # Check if invalidated or already filled in subsequent bars
-                            sl_hit = any(b["high"] >= sl for b in subsequent_bars)
-                            filled = any(b["high"] >= mt for b in subsequent_bars)
+                            # Check if invalidated by SL hit
+                            sl_hit = any(b["high"] >= sl for b in subsequent_bars) or current_price >= sl
 
-                            if risk > 0 and not sl_hit and not filled and current_price < mt:
+                            if risk > 0 and not sl_hit:
                                 self._arm_new_setup(symbol, sec_id, "SHORT", mt, sl, risk, pdh, "PDH RESISTANCE")
+                                # Immediately check if current bar fills the limit order
+                                self._check_pending_setup_fill(symbol, candles_15m)
                                 break
 
         self.ledger.save()
