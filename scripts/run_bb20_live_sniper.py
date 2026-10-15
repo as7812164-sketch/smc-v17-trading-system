@@ -387,6 +387,10 @@ class BB20LiveSniper:
             # Move from active_setups to active_positions
             del self.ledger.data["active_setups"][symbol]
             day_key = self.get_day_key()
+            if day_key not in self.ledger.data.get("daily_single_shot", {}):
+                self.ledger.data.setdefault("daily_single_shot", {})[day_key] = {}
+            if symbol not in self.ledger.data["daily_single_shot"][day_key]:
+                self.ledger.data["daily_single_shot"][day_key][symbol] = {"LONG": False, "SHORT": False}
             self.ledger.data["daily_single_shot"][day_key][symbol][side] = True # LOCK single-shot
 
             pos_data = dict(setup)
@@ -422,19 +426,22 @@ class BB20LiveSniper:
         sec_id = pos["section_id"]
         sec = self.ledger.data["sections"][sec_id]
 
-        # 1. Check SL Hit
+        # 1. Check SL Hit across recent bars
+        recent_bars = candles[-2:] if len(candles) >= 2 else candles
         sl_hit = False
-        if side == "LONG" and last_c["low"] <= active_sl:
-            sl_hit = True
-        elif side == "SHORT" and last_c["high"] >= active_sl:
-            sl_hit = True
+        if side == "LONG":
+            sl_hit = any(b["low"] <= active_sl for b in recent_bars)
+        elif side == "SHORT":
+            sl_hit = any(b["high"] >= active_sl for b in recent_bars)
 
         if sl_hit:
             self._close_position(symbol, "SL_HIT", active_sl)
             return
 
-        # 2. Check Favorable Excursion & Trailing Milestone
-        max_fav_r = (last_c["high"] - entry) / risk if side == "LONG" else (entry - last_c["low"]) / risk
+        # 2. Check Favorable Excursion & Trailing Milestone (+1.0R -> +0.2R BE, +1.5R -> +1.0R lock, +2.0R -> +1.5R lock)
+        high_price = max(b["high"] for b in recent_bars)
+        low_price = min(b["low"] for b in recent_bars)
+        max_fav_r = (high_price - entry) / risk if side == "LONG" else (entry - low_price) / risk
         if max_fav_r > pos["highest_r"]:
             pos["highest_r"] = round(max_fav_r, 2)
 
@@ -442,7 +449,8 @@ class BB20LiveSniper:
             tier_candidate = int((max_fav_r - 1.0) / 0.5) + 1
             if tier_candidate > current_tier:
                 pos["current_tier"] = tier_candidate
-                locked_r = 0.2 if tier_candidate == 1 else (tier_candidate - 1) * 0.5
+                # Stepped Trailing SL: Tier 1 (+1.0R) -> +0.2R BE; Tier 2 (+1.5R) -> +1.0R lock; Tier 3 (+2.0R) -> +1.5R lock
+                locked_r = 0.2 if tier_candidate == 1 else tier_candidate * 0.5
                 new_sl = entry + (locked_r * risk) if side == "LONG" else entry - (locked_r * risk)
                 pos["active_sl"] = round(new_sl, 4)
 
@@ -473,7 +481,7 @@ class BB20LiveSniper:
             outcome = "FEE SHIELD SAVE (+0.2R)"
             sec["saves"] += 1
         else:
-            locked_r = (tier - 1) * 0.5
+            locked_r = tier * 0.5
             realized_r = locked_r - cfg.FRICTION_R
             outcome = f"WIN (+{locked_r:.1f}R PROFIT LOCKED)"
             sec["wins"] += 1

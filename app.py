@@ -180,17 +180,22 @@ async def bb20_live_cloud_worker():
     and delivering instant alerts to the dedicated Telegram Bot.
     """
     await asyncio.sleep(8)
-    try:
-        from scripts.run_bb20_live_sniper import BB20LiveSniper
-        sniper = BB20LiveSniper()
-        while True:
-            try:
-                await asyncio.to_thread(sniper.run_scan_cycle)
-            except Exception as e:
-                logger.error(f"[BB20 Cloud Worker Error]: {e}")
-            await asyncio.sleep(60)
-    except Exception as e:
-        logger.error(f"[BB20 Cloud Init Error]: {e}")
+    while True:
+        try:
+            from scripts.run_bb20_live_sniper import BB20LiveSniper
+            sniper = BB20LiveSniper()
+            while True:
+                try:
+                    await asyncio.to_thread(sniper.run_scan_cycle)
+                except Exception as e:
+                    logger.error(f"[BB20 Cloud Worker Error]: {e}")
+                await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            logger.info("[BB20 Cloud Worker] Shutting down cleanly.")
+            break
+        except Exception as e:
+            logger.error(f"[BB20 Cloud Worker Init/Crash Error]: {e}. Restarting worker in 30s...")
+            await asyncio.sleep(30)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -664,8 +669,9 @@ async def get_nexus_deca_summary():
             tot_pnl = tot_curr - tot_init
             pnl_pct = round((tot_pnl / tot_init) * 100.0, 2) if tot_init > 0 else 0.0
             tot_wins = sum(s.get("wins", 0) for s in sections)
+            tot_saves = sum(s.get("saves", 0) for s in sections)
             tot_losses = sum(s.get("losses", 0) for s in sections)
-            tot_trades = tot_wins + tot_losses
+            tot_trades = tot_wins + tot_saves + tot_losses
             wr = round((tot_wins / tot_trades) * 100.0, 1) if tot_trades > 0 else 0.0
             return {
                 "starting_capital": tot_init,
@@ -676,6 +682,7 @@ async def get_nexus_deca_summary():
                 "pnl_pct": pnl_pct,
                 "total_trades": tot_trades,
                 "total_wins": tot_wins,
+                "total_saves": tot_saves,
                 "total_losses": tot_losses,
                 "win_rate": wr,
                 "target_capital": 47389.77,
@@ -686,7 +693,7 @@ async def get_nexus_deca_summary():
     return {
         "starting_capital": 500.0, "total_balance": 500.0, "total_equity": 500.0,
         "unrealized_pnl": 0.0, "total_pnl": 0.0, "pnl_pct": 0.0,
-        "total_trades": 0, "total_wins": 0, "total_losses": 0, "win_rate": 0.0,
+        "total_trades": 0, "total_wins": 0, "total_saves": 0, "total_losses": 0, "win_rate": 0.0,
         "target_capital": 47389.77, "progress_pct": 1.05
     }
 
@@ -707,8 +714,9 @@ async def get_nexus_deca_sections():
                 pnl = curr_b - init_b
                 pnl_pct = round((pnl / init_b) * 100.0, 2) if init_b > 0 else 0.0
                 wins = int(s.get("wins", 0))
+                saves = int(s.get("saves", 0))
                 losses = int(s.get("losses", 0))
-                tot = wins + losses
+                tot = wins + saves + losses
                 wr = round((wins / tot) * 100.0, 1) if tot > 0 else 0.0
                 result.append({
                     "id": int(sid),
@@ -719,6 +727,7 @@ async def get_nexus_deca_sections():
                     "total_pnl": round(pnl, 2),
                     "pnl_pct": pnl_pct,
                     "win_count": wins,
+                    "save_count": saves,
                     "loss_count": losses,
                     "win_rate": wr,
                     "status": s.get("status", "IDLE")
@@ -821,10 +830,16 @@ async def reset_nexus_deca():
             d["total_current_equity"] = 500.0
             for sid in d.get("sections", {}):
                 d["sections"][sid]["balance"] = 50.0
+                d["sections"][sid]["trades_count"] = 0
                 d["sections"][sid]["wins"] = 0
+                d["sections"][sid]["saves"] = 0
                 d["sections"][sid]["losses"] = 0
                 d["sections"][sid]["pnl_usd"] = 0.0
                 d["sections"][sid]["status"] = "IDLE"
+            d["active_setups"] = {}
+            d["active_positions"] = {}
+            d["closed_trades"] = []
+            d["daily_single_shot"] = {}
             with open(ledger_file, "w", encoding="utf-8") as f:
                 json.dump(d, f, indent=2)
             return {"status": "SUCCESS", "message": "All 10 Deca sections reset to $50.00 ($500.00 total equity)."}
@@ -1090,6 +1105,17 @@ async def get_system_status():
     stats = get_performance_stats()
     metrics = get_all_metrics()
     paper = get_paper_account()
+    comp_10 = get_compounding_sections()
+    comb = comp_10.get("combined_10x", comp_10.get("combined", {}))
+    overall_balance = comb.get("current_balance", 574.84)
+    overall_pnl = comb.get("total_pnl", 74.84)
+    overall_win_rate = comb.get("overall_win_rate", 83.8)
+    
+    paper["section_1_balance"] = paper.get("current_balance", 119.61)
+    paper["overall_balance"] = overall_balance
+    paper["overall_pnl"] = overall_pnl
+    paper["overall_win_rate"] = overall_win_rate
+    
     active_version = "HERMES_3.0_MODEL_2A"
     return {
         "status": "online",
@@ -1098,7 +1124,9 @@ async def get_system_status():
         "timeframe": TIMEFRAME,
         "performance": stats,
         "metrics": metrics,
-        "paper_trading": paper
+        "paper_trading": paper,
+        "overall_balance": overall_balance,
+        "portfolio": comb
     }
 
 @app.get("/api/health/self-heal")

@@ -165,7 +165,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 81444.42,
-      "armed_at": "2026-10-15T14:43:33.265817+00:00",
+      "armed_at": "2026-10-15T14:51:56.466356+00:00",
       "target_1r": 80892.68,
       "target_15r": 81195.775,
       "target_3r": 82105.06
@@ -180,7 +180,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 103.52,
-      "armed_at": "2026-10-15T14:43:37.987216+00:00",
+      "armed_at": "2026-10-15T14:51:58.866251+00:00",
       "target_1r": 102.4114,
       "target_15r": 102.8245,
       "target_3r": 104.0641
@@ -195,7 +195,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 9.771,
-      "armed_at": "2026-10-15T14:43:43.102633+00:00",
+      "armed_at": "2026-10-15T14:52:01.201697+00:00",
       "target_1r": 9.6253,
       "target_15r": 9.6594,
       "target_3r": 9.7618
@@ -210,7 +210,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 1.113,
-      "armed_at": "2026-10-15T14:43:47.862115+00:00",
+      "armed_at": "2026-10-15T14:52:03.541028+00:00",
       "target_1r": 1.0686,
       "target_15r": 1.0739,
       "target_3r": 1.0897
@@ -225,7 +225,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 58.7,
-      "armed_at": "2026-10-15T14:43:52.744149+00:00",
+      "armed_at": "2026-10-15T14:52:05.929490+00:00",
       "target_1r": 58.6068,
       "target_15r": 58.8177,
       "target_3r": 59.4503
@@ -240,7 +240,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 0.1369,
-      "armed_at": "2026-10-15T14:43:57.403538+00:00",
+      "armed_at": "2026-10-15T14:52:08.264908+00:00",
       "target_1r": 0.1303,
       "target_15r": 0.1309,
       "target_3r": 0.1329
@@ -255,7 +255,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 1.0052,
-      "armed_at": "2026-10-15T14:44:02.186458+00:00",
+      "armed_at": "2026-10-15T14:52:10.590351+00:00",
       "target_1r": 0.9779,
       "target_15r": 0.9829,
       "target_3r": 0.9978
@@ -270,7 +270,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 7.059,
-      "armed_at": "2026-10-15T14:44:07.355580+00:00",
+      "armed_at": "2026-10-15T14:52:12.894045+00:00",
       "target_1r": 6.9043,
       "target_15r": 6.9217,
       "target_3r": 6.9738
@@ -285,7 +285,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 0.7867,
-      "armed_at": "2026-10-15T14:44:14.191601+00:00",
+      "armed_at": "2026-10-15T14:52:16.046898+00:00",
       "target_1r": 0.7716,
       "target_15r": 0.7759,
       "target_3r": 0.7885
@@ -300,7 +300,7 @@
       "risk_usd": 2.5,
       "anchor_name": "PDL SUPPORT",
       "anchor_price": 0.1792,
-      "armed_at": "2026-10-15T14:44:17.163105+00:00",
+      "armed_at": "2026-10-15T14:52:17.555101+00:00",
       "target_1r": 0.1744,
       "target_15r": 0.1752,
       "target_3r": 0.1778
