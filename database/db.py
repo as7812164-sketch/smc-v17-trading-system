@@ -1,9 +1,13 @@
 import sqlite3
 import json
 import time
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from config import DB_PATH
+
+logger = logging.getLogger("Database")
+
 
 def get_connection() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -384,18 +388,9 @@ def _sync_journal_to_paper_trades(conn):
     Ensures zero data loss and prevents missing trade records across container restarts.
     """
     try:
-        # First, purge any duplicate records in paper_trades keeping the original primary record
-        conn.execute("""
-        DELETE FROM paper_trades 
-        WHERE id NOT IN (
-            SELECT MIN(id) FROM paper_trades 
-            GROUP BY symbol, 
-                     CASE WHEN UPPER(side) IN ('BUY', 'LONG') THEN 'LONG' ELSE 'SHORT' END, 
-                     ROUND(entry_price, 4), 
-                     ROUND(exit_price, 4)
-        )
-        """)
-        conn.commit()
+        # CRITICAL SAFETY: ZERO DELETE policy on paper_trades to guarantee 100% preservation
+        # Duplicate purging via DELETE is strictly prohibited. All trade history must remain immutable.
+        pass
 
         j_rows = conn.execute("SELECT * FROM trade_journal WHERE status != 'OPEN'").fetchall()
         for jr in j_rows:
@@ -512,60 +507,12 @@ def get_performance_stats() -> Dict[str, Any]:
         }
 
 def wipe_legacy_database_clean() -> Dict[str, Any]:
-    """Wipes all legacy zones, signals, alerts, trades, and resets all 10 Hermes 3.5 compounding sections ($50 x 10 = $500)."""
-    with get_connection() as conn:
-        conn.execute("DELETE FROM zones;")
-        conn.execute("DELETE FROM signals;")
-        conn.execute("DELETE FROM sent_alerts;")
-        conn.execute("DELETE FROM paper_trades;")
-        try:
-            conn.execute("DELETE FROM trade_journal;")
-        except Exception:
-            pass
-        conn.execute("DELETE FROM paper_account WHERE id > 10;")
-        conn.execute("""
-        UPDATE paper_account SET
-            initial_balance = 50.0,
-            current_balance = 50.0,
-            vault_balance = 0.0,
-            total_pnl = 0.0,
-            win_count = 0,
-            loss_count = 0,
-            win_streak = 0,
-            milestone_target = 2000.0,
-            mode = 'HERMES_3.0_MODEL_2A'
-        WHERE id BETWEEN 1 AND 10;
-        """)
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_MODEL_2A');")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes_entry_mode', '50% Mean Threshold (MT)');")
-        conn.execute("DELETE FROM settings WHERE key = 'hermes35_entry_mode';")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_sections', '10');")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_capital', '500.0');")
-        conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('hermes_mode', 'HERMES_3.0_MODEL_2A')
-        ON CONFLICT(key) DO UPDATE SET value = 'HERMES_3.0_MODEL_2A';
-        """)
-        conn.execute("""
-        INSERT INTO system_metrics (key, value) VALUES ('last_alert', 'Hermes 3.0 Model 2A 10-Section Compounding Engine Armed ($500 USDT)')
-        ON CONFLICT(key) DO UPDATE SET value = 'Hermes 3.0 Model 2A 10-Section Compounding Engine Armed ($500 USDT)';
-        """)
-        conn.commit()
-
-    try:
-        from engine.trade_journal import init_journal_db_and_csv
-        init_journal_db_and_csv()
-    except Exception:
-        pass
-
-    try:
-        from database.cloud_vault import push_vault_state
-        push_vault_state()
-    except Exception:
-        pass
-
+    """Safety-shielded: ZERO DELETE policy strictly prevents erasing paper trades, accounts, or history."""
+    logger.warning("🛡️ [SAFETY SENTINEL] wipe_legacy_database_clean called but BLOCKED by Zero Data Loss Mandate.")
     return {
-        "status": "success",
-        "message": "All legacy records purged. Hermes 3.5 10-Section Compounding Engine ($500 total) initialized cleanly."
+        "status": "PROTECTED_ZERO_DATA_LOSS",
+        "message": "Trade history and active positions are strictly protected from deletion.",
+        "trades_protected": True
     }
 
 

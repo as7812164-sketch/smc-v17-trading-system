@@ -508,6 +508,12 @@ async def serve_nexus_assets():
     file_path = STATIC_DIR / "nexus_assets.html"
     return FileResponse(file_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
+@app.get("/hologram", response_class=HTMLResponse)
+@app.get("/nexus/hologram", response_class=HTMLResponse)
+async def serve_hologram():
+    file_path = STATIC_DIR / "hologram.html"
+    return FileResponse(file_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
 @app.get("/api/ticker/{symbol}")
 async def get_nexus_ticker(symbol: str):
     sym = symbol.upper()

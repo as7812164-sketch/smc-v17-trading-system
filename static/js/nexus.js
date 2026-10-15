@@ -148,6 +148,7 @@ function changePair(sym) {
 
 function startDataPollers() {
     pollTicker();
+    pollHeaderBtcEthTicker();
     pollOrderBook();
     pollPositions();
     pollTradeHistory();
@@ -156,12 +157,46 @@ function startDataPollers() {
     pollSentries();
 
     setInterval(pollTicker, 2500);
+    setInterval(pollHeaderBtcEthTicker, 3000);
     setInterval(pollOrderBook, 2500);
     setInterval(pollPositions, 3000);
     setInterval(pollTradeHistory, 4000);
     setInterval(pollSummary, 5000);
     setInterval(pollDockRadar, 6000);
     setInterval(pollSentries, 10000);
+}
+
+async function pollHeaderBtcEthTicker() {
+    try {
+        const resBtc = await fetch('/api/ticker/BTCUSDT');
+        if (resBtc.ok) {
+            const btc = await resBtc.json();
+            const btcPriceEl = document.getElementById("navBtcPrice");
+            const btcChgEl = document.getElementById("navBtcChg");
+            if (btcPriceEl && btc.last_price > 0) {
+                btcPriceEl.innerText = `$${btc.last_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+            if (btcChgEl) {
+                const sign = btc.price_change_pct >= 0 ? '+' : '';
+                btcChgEl.innerText = `${sign}${btc.price_change_pct.toFixed(2)}%`;
+                btcChgEl.className = `pair-change-pill ${btc.price_change_pct >= 0 ? 'pill-green' : 'pill-red'}`;
+            }
+        }
+        const resEth = await fetch('/api/ticker/ETHUSDT');
+        if (resEth.ok) {
+            const eth = await resEth.json();
+            const ethPriceEl = document.getElementById("navEthPrice");
+            const ethChgEl = document.getElementById("navEthChg");
+            if (ethPriceEl && eth.last_price > 0) {
+                ethPriceEl.innerText = `$${eth.last_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+            if (ethChgEl) {
+                const sign = eth.price_change_pct >= 0 ? '+' : '';
+                ethChgEl.innerText = `${sign}${eth.price_change_pct.toFixed(2)}%`;
+                ethChgEl.className = `pair-change-pill ${eth.price_change_pct >= 0 ? 'pill-green' : 'pill-red'}`;
+            }
+        }
+    } catch (e) {}
 }
 
 async function pollTicker() {

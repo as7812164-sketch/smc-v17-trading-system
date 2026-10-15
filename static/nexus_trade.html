@@ -40,6 +40,7 @@
                 <a href="/nexus/markets" class="nav-link"><i class="fa-solid fa-layer-group"></i> Markets</a>
                 <a href="/nexus/deca" class="nav-link"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca $47k Hub</a>
                 <a href="/nexus/assets" class="nav-link"><i class="fa-solid fa-wallet"></i> Assets</a>
+                <a href="/hologram" class="nav-link nav-link-hologram"><i class="fa-solid fa-vr-cardboard"></i> Hologram 2.0 <span class="hologram-live-badge"><span class="hologram-pulse-dot"></span>LIVE</span></a>
                 <span style="color:var(--border-subtle); margin:0 4px;">|</span>
                 <a href="/hermes-ai" class="nav-link" style="color:#60A5FA;"><i class="fa-solid fa-brain"></i> Hermes AI Hub</a>
                 <a href="/signals" class="nav-link"><i class="fa-solid fa-satellite-dish"></i> SMC Signals</a>
@@ -47,8 +48,24 @@
             </nav>
         </div>
 
-        <!-- CENTER / RIGHT STATS PILL ($500 STARTING EQUITY) -->
+        <!-- CENTER / RIGHT STATS PILL & BTC/ETH LIVE TICKER -->
         <div style="display:flex; align-items:center; gap:12px;">
+            <div class="header-ticker-pill" id="headerBtcEthPill">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <i class="fa-brands fa-bitcoin" style="color:var(--gold); font-size:13px;"></i>
+                    <span style="font-weight:800; color:#fff;">BTC</span>
+                    <span id="navBtcPrice" style="color:#fff; font-weight:700;">--</span>
+                    <span id="navBtcChg" class="pair-change-pill pill-green" style="font-size:10px; padding:1px 4px;">+0.00%</span>
+                </div>
+                <span style="color:var(--border-subtle);">|</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <i class="fa-brands fa-ethereum" style="color:#C084FC; font-size:13px;"></i>
+                    <span style="font-weight:800; color:#fff;">ETH</span>
+                    <span id="navEthPrice" style="color:#fff; font-weight:700;">--</span>
+                    <span id="navEthChg" class="pair-change-pill pill-green" style="font-size:10px; padding:1px 4px;">+0.00%</span>
+                </div>
+            </div>
+
             <div class="top-stats-pill">
                 <div class="stat-item">
                     <span class="stat-label">Total Equity</span>
@@ -343,7 +360,7 @@
         <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:12px; width:90%; max-width:440px; max-height:80vh; display:flex; flex-direction:column; overflow:hidden; margin:10vh auto; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
             <div style="padding:16px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-weight:800; font-size:14px; color:#fff;">Select Futures Contract</span>
-                <button onclick="document.getElementById('pairModal').style.display='none'" style="background:transparent; border:none; color:var(--text-muted); font-size:18px; cursor:pointer;">&times;</button>
+                <button class="btn-modal-close" onclick="document.getElementById('pairModal').style.display='none'">&times;</button>
             </div>
             <div style="padding:12px 16px;">
                 <div class="input-wrapper" style="padding:6px 12px;">
@@ -368,7 +385,7 @@
                     <div style="font-size:10px; color:var(--text-muted);">BITGET PRO & HERMES SUITE</div>
                 </div>
             </div>
-            <button onclick="toggleDrawer()" style="background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
+            <button class="btn-modal-close" onclick="toggleDrawer()">&times;</button>
         </div>
 
         <!-- SECTION 1: NEXUSPRO TRADING SUITE -->
@@ -376,6 +393,12 @@
             <i class="fa-solid fa-cube"></i> NexusPro Trading Suite
         </div>
         <nav style="display:flex; flex-direction:column; gap:6px; margin-bottom:20px;">
+            <a href="/hologram" style="display:flex; align-items:center; justify-content:space-between; color:#00F0FF; text-decoration:none; font-weight:800; font-size:13px; padding:10px 12px; border-radius:8px; background:linear-gradient(135deg, rgba(0,240,255,0.12), rgba(139,92,246,0.18)); border:1px solid rgba(0,240,255,0.4); box-shadow:0 0 14px rgba(0,240,255,0.2); margin-bottom:4px;">
+                <span style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-vr-cardboard" style="color:#00F0FF; width:18px;"></i> Hologram 2.0 Terminal
+                </span>
+                <span class="hologram-live-badge"><span class="hologram-pulse-dot"></span>LIVE</span>
+            </a>
             <a href="/trade" style="display:flex; align-items:center; justify-content:space-between; color:#fff; text-decoration:none; font-weight:700; font-size:13px; padding:10px 12px; border-radius:8px; background:var(--bg-surface-elevated);">
                 <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-chart-line" style="color:var(--brand-teal); width:18px;"></i> Futures Terminal</span>
                 <span style="font-size:9px; background:var(--brand-teal); color:#000; font-weight:900; padding:2px 6px; border-radius:4px;">LIVE</span>
@@ -389,6 +412,10 @@
             </a>
             <a href="/nexus/assets" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
                 <i class="fa-solid fa-wallet" style="width:18px;"></i> Assets & Margin Allocation
+            </a>
+            <a href="/hologram" style="display:flex; align-items:center; justify-content:space-between; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-atom" style="color:var(--brand-cyan); width:18px;"></i> Hologram 2.0 Terminal</span>
+                <span style="font-size:9px; background:rgba(0,240,255,0.2); color:var(--brand-cyan); font-weight:800; padding:2px 6px; border-radius:4px;">NEW</span>
             </a>
         </nav>
 

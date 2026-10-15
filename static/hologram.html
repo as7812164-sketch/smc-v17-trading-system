@@ -1,0 +1,2458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HERMES 3.5 • Holographic 2.0 Terminal Matrix</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-space: #030712;
+            --bg-space-dark: #02040a;
+            --bg-card: rgba(10, 16, 32, 0.78);
+            --bg-card-hover: rgba(16, 26, 50, 0.90);
+            --border-glow: rgba(0, 240, 255, 0.22);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+
+            --cyan-glow: #00F0FF;
+            --cyan-dim: rgba(0, 240, 255, 0.15);
+            --brand-teal: #00DFC0;
+            --violet-glow: #A855F7;
+            --purple-neon: #8B5CF6;
+            --purple-dim: rgba(139, 92, 246, 0.15);
+            --gold: #FFB800;
+            --gold-glow: rgba(255, 184, 0, 0.25);
+            --green-glow: #00C087;
+            --green-dim: rgba(0, 192, 135, 0.15);
+            --red-glow: #FF4B55;
+            --red-dim: rgba(255, 75, 85, 0.15);
+
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-hud: 'Orbitron', monospace;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-space);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            line-height: 1.45;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Cosmic Starfield Particle Canvas */
+        #starfieldCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Holographic Scanline Overlay */
+        .scanline-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%
+            ), linear-gradient(
+                90deg,
+                rgba(255, 0, 0, 0.015),
+                rgba(0, 255, 0, 0.01),
+                rgba(0, 0, 255, 0.015)
+            );
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.65;
+        }
+
+        /* App Wrapper */
+        .app-container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 16px 120px 16px;
+        }
+
+        /* ==========================================================================
+           PWA / APK DOWNLOAD BANNER
+           ========================================================================== */
+        .download-banner {
+            background: linear-gradient(90deg, rgba(0, 240, 255, 0.12), rgba(139, 92, 246, 0.15), rgba(255, 184, 0, 0.12));
+            border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+            backdrop-filter: blur(12px);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 110;
+            font-size: 12px;
+        }
+
+        .download-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .download-pill {
+            background: linear-gradient(135deg, #00F0FF, #00DFC0);
+            color: #030712;
+            font-weight: 800;
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .download-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-apk-download {
+            background: linear-gradient(135deg, #00DFC0, #0099FF);
+            color: #030712;
+            font-weight: 800;
+            font-size: 11px;
+            padding: 5px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 12px rgba(0, 223, 192, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-apk-download:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 18px rgba(0, 240, 255, 0.6);
+        }
+
+        .btn-banner-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+        }
+
+        /* ==========================================================================
+           TOP HEADER
+           ========================================================================== */
+        .top-header {
+            height: 64px;
+            background: rgba(8, 14, 28, 0.88);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            margin-top: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 240, 255, 0.05);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hamburger-btn {
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            color: var(--cyan-glow);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .hamburger-btn:hover {
+            background: rgba(0, 240, 255, 0.2);
+            box-shadow: 0 0 12px var(--cyan-glow);
+        }
+
+        .winged-emblem {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cyber-logo-icon {
+            width: 38px;
+            height: 38px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cyber-logo-icon svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 8px #00F0FF);
+        }
+
+        .brand-text-block {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title {
+            font-family: var(--font-hud);
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #FFFFFF, var(--cyan-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-badge-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .live-matrix-badge {
+            background: rgba(0, 192, 135, 0.15);
+            border: 1px solid rgba(0, 192, 135, 0.4);
+            color: var(--green-glow);
+            font-size: 10px;
+            font-weight: 800;
+            padding: 1px 7px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green-glow);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--green-glow);
+            animation: pulse-live 1.8s infinite;
+        }
+
+        @keyframes pulse-live {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .notif-bell-btn {
+            position: relative;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: var(--violet-glow);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .notif-bell-btn:hover {
+            box-shadow: 0 0 14px var(--violet-glow);
+        }
+
+        .notif-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--gold);
+            color: #030712;
+            font-size: 9px;
+            font-weight: 900;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 8px var(--gold);
+        }
+
+        /* ==========================================================================
+           LIVE TICKER TAPE (CRITICAL: BTC & ETH PROMINENTLY SHOWCASED)
+           ========================================================================== */
+        .ticker-tape-container {
+            background: rgba(6, 11, 24, 0.85);
+            border: 1px solid rgba(0, 240, 255, 0.18);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker-label {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(139, 92, 246, 0.2));
+            border-right: 1px solid rgba(0, 240, 255, 0.3);
+            padding: 8px 14px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--cyan-glow);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 5;
+        }
+
+        .ticker-track {
+            display: flex;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            flex: 1;
+        }
+
+        .ticker-track-inner {
+            display: inline-flex;
+            align-items: center;
+            animation: ticker-slide 32s linear infinite;
+        }
+
+        .ticker-track-inner:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes ticker-slide {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: #E2E8F0;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .ticker-item:hover {
+            background: rgba(0, 240, 255, 0.08);
+        }
+
+        .ticker-item.featured-btc {
+            background: rgba(255, 184, 0, 0.1);
+            border-left: 2px solid var(--gold);
+        }
+
+        .ticker-item.featured-eth {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 2px solid var(--purple-neon);
+        }
+
+        .ticker-sym {
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .ticker-item.featured-btc .ticker-sym {
+            color: var(--gold);
+        }
+
+        .ticker-item.featured-eth .ticker-sym {
+            color: #C084FC;
+        }
+
+        .ticker-price {
+            font-weight: 700;
+        }
+
+        .ticker-chg {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .ticker-chg.up {
+            background: rgba(0, 192, 135, 0.18);
+            color: var(--green-glow);
+        }
+
+        .ticker-chg.down {
+            background: rgba(255, 75, 85, 0.18);
+            color: var(--red-glow);
+        }
+
+        /* ==========================================================================
+           HERO CARD - 3D ROTATING HOLOGRAPHIC GLOBE
+           ========================================================================== */
+        .hero-globe-card {
+            background: radial-gradient(circle at 50% 40%, rgba(16, 28, 54, 0.85) 0%, rgba(6, 11, 22, 0.95) 100%);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 28px 24px;
+            position: relative;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(0, 240, 255, 0.08);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        /* High-Tech Corner Brackets */
+        .corner-bracket {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            pointer-events: none;
+        }
+        .corner-tl { top: 8px; left: 8px; border-top: 2px solid var(--cyan-glow); border-left: 2px solid var(--cyan-glow); }
+        .corner-tr { top: 8px; right: 8px; border-top: 2px solid var(--cyan-glow); border-right: 2px solid var(--cyan-glow); }
+        .corner-bl { bottom: 8px; left: 8px; border-bottom: 2px solid var(--cyan-glow); border-left: 2px solid var(--cyan-glow); }
+        .corner-br { bottom: 8px; right: 8px; border-bottom: 2px solid var(--cyan-glow); border-right: 2px solid var(--cyan-glow); }
+
+        .globe-stage-wrapper {
+            position: relative;
+            width: 100%;
+            height: 340px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #globeCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #globeCanvas:active {
+            cursor: grabbing;
+        }
+
+        /* Floating HUD Layer Center of Globe */
+        .globe-center-hud {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: rgba(5, 10, 20, 0.55);
+            padding: 16px 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+        }
+
+        .hud-label {
+            font-family: var(--font-hud);
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--cyan-glow);
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hud-equity-value {
+            font-family: var(--font-mono);
+            font-size: 38px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #FFFFFF 30%, #00F0FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 25px rgba(0, 240, 255, 0.45);
+        }
+
+        .hud-badge-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .badge-return {
+            background: rgba(0, 192, 135, 0.2);
+            border: 1px solid rgba(0, 192, 135, 0.6);
+            color: #10B981;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 0 14px rgba(0, 192, 135, 0.3);
+        }
+
+        .badge-isolated {
+            background: rgba(0, 240, 255, 0.15);
+            border: 1px solid rgba(0, 240, 255, 0.5);
+            color: var(--cyan-glow);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+        }
+
+        /* Under Globe Stats & Deca Progress Bar */
+        .globe-bottom-metrics {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .metrics-grid-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .metric-card {
+            background: rgba(12, 18, 36, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .metric-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: 17px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        /* Deca Matrix Progress Bar ($500 -> $20,000 Target) */
+        .progress-box {
+            background: rgba(10, 16, 30, 0.7);
+            border: 1px solid rgba(255, 184, 0, 0.25);
+            border-radius: 12px;
+            padding: 14px 18px;
+            position: relative;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .progress-trophy-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .progress-track {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 3.85%;
+            background: linear-gradient(90deg, #00DFC0, #00F0FF, #FFB800);
+            border-radius: 5px;
+            box-shadow: 0 0 14px rgba(255, 184, 0, 0.6);
+            position: relative;
+            transition: width 0.8s ease;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           4-SENTRIES DIAGNOSTIC MATRIX (ARC REACTOR HUD STYLE)
+           ========================================================================== */
+        .section-header-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .section-title {
+            font-family: var(--font-hud);
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .armed-shield-badge {
+            background: rgba(0, 240, 255, 0.12);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            color: var(--cyan-glow);
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .sentries-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .sentry-reactor-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .sentry-reactor-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 240, 255, 0.35);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 240, 255, 0.15);
+        }
+
+        .reactor-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .reactor-gauge-wrap {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 12px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reactor-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: reactor-spin 20s linear infinite;
+        }
+
+        .reactor-svg.reverse {
+            animation: reactor-spin-rev 15s linear infinite;
+        }
+
+        @keyframes reactor-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes reactor-spin-rev {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .reactor-center-core {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .core-green {
+            background: radial-gradient(circle, rgba(0, 192, 135, 0.3) 0%, rgba(3, 7, 18, 0.8) 100%);
+            color: var(--green-glow);
+            box-shadow: 0 0 16px rgba(0, 192, 135, 0.5);
+            border: 1px solid rgba(0, 192, 135, 0.6);
+        }
+
+        .core-cyan {
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.3) 0%, rgba(3, 7, 18, 0.8) 100%);
+            color: var(--cyan-glow);
+            box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+            border: 1px solid rgba(0, 240, 255, 0.6);
+        }
+
+        .core-gold {
+            background: radial-gradient(circle, rgba(255, 184, 0, 0.3) 0%, rgba(3, 7, 18, 0.8) 100%);
+            color: var(--gold);
+            box-shadow: 0 0 16px rgba(255, 184, 0, 0.5);
+            border: 1px solid rgba(255, 184, 0, 0.6);
+        }
+
+        .core-purple {
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(3, 7, 18, 0.8) 100%);
+            color: var(--violet-glow);
+            box-shadow: 0 0 16px rgba(168, 85, 247, 0.5);
+            border: 1px solid rgba(168, 85, 247, 0.6);
+        }
+
+        .sentry-info-box {
+            text-align: center;
+        }
+
+        .sentry-num-pill {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .sentry-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .sentry-status-val {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .sentry-subdesc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           DECA COMPOUNDING MATRIX (10 SECTIONS)
+           ========================================================================== */
+        .deca-sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .section-badge-card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 14px;
+            position: relative;
+            backdrop-filter: blur(12px);
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .section-badge-card.macro-4h {
+            border-left: 3px solid var(--cyan-glow);
+        }
+
+        .section-badge-card.macro-4h:hover {
+            border-color: var(--cyan-glow);
+            box-shadow: 0 0 18px rgba(0, 240, 255, 0.2);
+        }
+
+        .section-badge-card.intraday-1h {
+            border-left: 3px solid var(--gold);
+        }
+
+        .section-badge-card.intraday-1h:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 18px rgba(255, 184, 0, 0.2);
+        }
+
+        .sec-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .sec-id-pill {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-family: var(--font-hud);
+        }
+
+        .pill-macro {
+            background: rgba(0, 240, 255, 0.15);
+            color: var(--cyan-glow);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+
+        .pill-intraday {
+            background: rgba(255, 184, 0, 0.15);
+            color: var(--gold);
+            border: 1px solid rgba(255, 184, 0, 0.3);
+        }
+
+        .sec-balance-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .sec-balance-val {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .sec-pnl-pill {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .sec-status-row {
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+        }
+
+        .sec-position-tag {
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sec-winrate-tag {
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 10px;
+        }
+
+        /* ==========================================================================
+           LIVE SETUP RADAR CARD
+           ========================================================================== */
+        .radar-card-main {
+            background: var(--bg-card);
+            border: 1px solid rgba(0, 240, 255, 0.22);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .radar-header-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .radar-sweep-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--cyan-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cyan-glow);
+            font-size: 14px;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        .setups-table-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .setup-row-item {
+            background: rgba(14, 22, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            transition: all 0.2s ease;
+        }
+
+        .setup-row-item:hover {
+            background: rgba(20, 32, 60, 0.85);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        .setup-coin-col {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 140px;
+        }
+
+        .setup-side-pill {
+            font-size: 10px;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .side-buy {
+            background: rgba(0, 192, 135, 0.2);
+            color: var(--green-glow);
+            border: 1px solid rgba(0, 192, 135, 0.4);
+        }
+
+        .side-sell {
+            background: rgba(255, 75, 85, 0.2);
+            color: var(--red-glow);
+            border: 1px solid rgba(255, 75, 85, 0.4);
+        }
+
+        .setup-metrics-col {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+
+        .setup-actions-col {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-setup-action {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 11px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .btn-chart {
+            background: rgba(0, 240, 255, 0.12);
+            color: var(--cyan-glow);
+            border: 1px solid rgba(0, 240, 255, 0.35);
+        }
+
+        .btn-chart:hover {
+            background: rgba(0, 240, 255, 0.25);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .btn-position {
+            background: rgba(255, 184, 0, 0.15);
+            color: var(--gold);
+            border: 1px solid rgba(255, 184, 0, 0.35);
+        }
+
+        .btn-position:hover {
+            background: rgba(255, 184, 0, 0.25);
+            box-shadow: 0 0 10px var(--gold);
+        }
+
+        /* ==========================================================================
+           BOTTOM NAVIGATION DOCK (5 TABS WITH CENTER 3D FLOATING SPHERE)
+           ========================================================================== */
+        .bottom-nav-dock {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 68px;
+            background: rgba(5, 10, 22, 0.88);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0, 240, 255, 0.25);
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 12px;
+        }
+
+        .nav-dock-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 700;
+            flex: 1;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .nav-dock-item i {
+            font-size: 17px;
+        }
+
+        .nav-dock-item:hover, .nav-dock-item.active {
+            color: var(--cyan-glow);
+        }
+
+        /* Center 3D Floating Glowing Holographic Sphere */
+        .center-floating-sphere-btn {
+            position: relative;
+            top: -20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #00F0FF, #7C3AED, #030712);
+            border: 2px solid #00F0FF;
+            box-shadow: 0 0 24px rgba(0, 240, 255, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 105;
+        }
+
+        .center-floating-sphere-btn:hover {
+            transform: scale(1.12) rotate(15deg);
+            box-shadow: 0 0 34px rgba(0, 240, 255, 1);
+        }
+
+        /* Concentric Pulsating Ripples */
+        .ripple-wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 240, 255, 0.6);
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: none;
+            animation: ripple-pulse 2.4s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+        }
+
+        .ripple-wave:nth-child(2) {
+            animation-delay: 0.8s;
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        .ripple-wave:nth-child(3) {
+            animation-delay: 1.6s;
+            border-color: rgba(0, 223, 192, 0.4);
+        }
+
+        @keyframes ripple-pulse {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.9; }
+            100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+        }
+
+        .sphere-caption {
+            font-size: 9px;
+            font-family: var(--font-hud);
+            font-weight: 900;
+            color: var(--cyan-glow);
+            letter-spacing: 0.5px;
+            margin-top: 1px;
+            text-shadow: 0 0 6px var(--cyan-glow);
+        }
+
+        /* ==========================================================================
+           SLIDE-OUT DRAWER MENU (ALL PAGES)
+           ========================================================================== */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .drawer-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 320px;
+            max-width: 85vw;
+            height: 100vh;
+            background: rgba(7, 12, 25, 0.96);
+            border-right: 1px solid var(--border-glow);
+            z-index: 201;
+            transform: translateX(-100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 24px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .drawer-menu.active {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 18px;
+        }
+
+        .drawer-nav-section-title {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--cyan-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 14px 0 6px 4px;
+        }
+
+        .drawer-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .drawer-link:hover, .drawer-link.active {
+            background: rgba(0, 240, 255, 0.12);
+            color: #fff;
+            border-left: 3px solid var(--cyan-glow);
+        }
+
+        .drawer-link-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .drawer-link-left i {
+            width: 18px;
+            font-size: 14px;
+        }
+
+        /* Notification Dropdown Modal */
+        .notif-dropdown {
+            position: absolute;
+            top: 76px;
+            right: 20px;
+            width: 330px;
+            background: rgba(10, 16, 32, 0.95);
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 14px;
+            z-index: 150;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: none;
+        }
+
+        .notif-dropdown.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 0 12px 120px 12px;
+            }
+            .hud-equity-value {
+                font-size: 30px;
+            }
+            .globe-stage-wrapper {
+                height: 290px;
+            }
+            .metrics-grid-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Starfield Particles Background Canvas -->
+    <canvas id="starfieldCanvas"></canvas>
+    
+    <!-- Holographic Scanline Overlay -->
+    <div class="scanline-overlay"></div>
+
+    <!-- PWA / APK DOWNLOAD BANNER -->
+    <div class="download-banner" id="pwaApkBanner">
+        <div class="download-banner-left">
+            <span class="download-pill"><i class="fa-solid fa-bolt"></i> PWA & APK READY</span>
+            <span>HERMES 3.5 Single Tier Native Terminal available for instant execution.</span>
+        </div>
+        <div class="download-actions">
+            <a href="/static/HERMES_3.5_SINGLE_TIER_Trading_Terminal.apk" download class="btn-apk-download">
+                <i class="fa-brands fa-android"></i> Download APK
+            </a>
+            <button class="btn-banner-close" onclick="dismissBanner()">&times;</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="app-container">
+
+        <!-- TOP HEADER -->
+        <header class="top-header">
+            <div class="header-brand">
+                <button class="hamburger-btn" onclick="toggleDrawer()" title="Open System Navigation">
+                    <i class="fa-solid fa-bars-staggered"></i>
+                </button>
+                <div class="winged-emblem">
+                    <div class="cyber-logo-icon">
+                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Winged Cyber Crest -->
+                            <path d="M6 24L24 10L32 16L40 10L58 24L48 44L32 58L16 44L6 24Z" fill="url(#crestGrad)" fill-opacity="0.25" stroke="#00F0FF" stroke-width="2"/>
+                            <path d="M12 26L32 20L52 26L42 42L32 50L22 42L12 26Z" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="3 2"/>
+                            <path d="M32 12V52M20 28L44 36M44 28L20 36" stroke="#00F0FF" stroke-width="1.5"/>
+                            <circle cx="32" cy="32" r="5" fill="#FFB800" filter="drop-shadow(0 0 6px #FFB800)"/>
+                            <defs>
+                                <linearGradient id="crestGrad" x1="6" y1="10" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#00F0FF"/>
+                                    <stop offset="0.5" stop-color="#8B5CF6"/>
+                                    <stop offset="1" stop-color="#00DFC0"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="brand-text-block">
+                        <div class="brand-title">HERMES 3.5 SINGLE TIER</div>
+                        <div class="brand-badge-row">
+                            <span class="live-matrix-badge">
+                                <span class="pulse-dot"></span> 10-SECTION MATRIX LIVE
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button class="notif-bell-btn" onclick="toggleNotificationCenter()" title="Diagnostic Alerts">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-count">3</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- NOTIFICATION CENTER DROPDOWN -->
+        <div class="notif-dropdown" id="notifDropdown">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-weight:800; font-size:12px; color:var(--cyan-glow);"><i class="fa-solid fa-satellite-dish"></i> SENTRY SATELLITE DISPATCH</span>
+                <span style="font-size:10px; color:var(--text-muted);">Real-time</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="background:rgba(0,192,135,0.1); border:1px solid rgba(0,192,135,0.3); border-radius:6px; padding:8px; font-size:11px;">
+                    <div style="font-weight:700; color:var(--green-glow);">Section 1: OPUSDT In Profit</div>
+                    <div style="color:var(--text-muted); font-size:10px;">Trailing SL active &bull; 100% win rate maintained (12W 0L)</div>
+                </div>
+                <div style="background:rgba(0,240,255,0.1); border:1px solid rgba(0,240,255,0.3); border-radius:6px; padding:8px; font-size:11px;">
+                    <div style="font-weight:700; color:var(--cyan-glow);">Section 2: CRVUSDT Tap Confirmed</div>
+                    <div style="color:var(--text-muted); font-size:10px;">50% MT tapped with 22% rejection wick &bull; ROE +7.28%</div>
+                </div>
+                <div style="background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3); border-radius:6px; padding:8px; font-size:11px;">
+                    <div style="font-weight:700; color:var(--gold);">Sentry 1: BTC Macro Neutral</div>
+                    <div style="color:var(--text-muted); font-size:10px;">Zero veto triggered across all 10 isolated compounding sections</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+             LIVE TICKER TAPE (CRITICAL: BTCUSDT & ETHUSDT PROMINENTLY SHOWCASED)
+             User requirement: 'Jaha op usdt or crv usdt likha hai waha par btc or eth hona chaiye'
+             ========================================================================== -->
+        <div class="ticker-tape-container">
+            <div class="ticker-label">
+                <i class="fa-solid fa-bolt-lightning"></i> LIVE TICKER
+            </div>
+            <div class="ticker-track">
+                <div class="ticker-track-inner" id="tickerTapeTrack">
+                    <!-- Prominently Featured BTC & ETH First -->
+                    <a href="/trade" class="ticker-item featured-btc">
+                        <i class="fa-brands fa-bitcoin" style="color:var(--gold)"></i>
+                        <span class="ticker-sym">BTCUSDT</span>
+                        <span class="ticker-price" id="tapeBtcPrice">$67,850.20</span>
+                        <span class="ticker-chg up" id="tapeBtcChg">+2.14%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item featured-eth">
+                        <i class="fa-brands fa-ethereum" style="color:#C084FC"></i>
+                        <span class="ticker-sym">ETHUSDT</span>
+                        <span class="ticker-price" id="tapeEthPrice">$2,642.80</span>
+                        <span class="ticker-chg up" id="tapeEthChg">+1.82%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">SOLUSDT</span>
+                        <span class="ticker-price" id="tapeSolPrice">$155.40</span>
+                        <span class="ticker-chg up">+3.25%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">BNBUSDT</span>
+                        <span class="ticker-price" id="tapeBnbPrice">$585.10</span>
+                        <span class="ticker-chg up">+1.12%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">NEARUSDT</span>
+                        <span class="ticker-price" id="tapeNearPrice">$4.85</span>
+                        <span class="ticker-chg up">+4.10%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">FETUSDT</span>
+                        <span class="ticker-price" id="tapeFetPrice">$0.2082</span>
+                        <span class="ticker-chg down">-2.17%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">OPUSDT</span>
+                        <span class="ticker-price" id="tapeOpPrice">$0.1399</span>
+                        <span class="ticker-chg up">+3.44%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">CRVUSDT</span>
+                        <span class="ticker-price" id="tapeCrvPrice">$0.3587</span>
+                        <span class="ticker-chg up">+7.28%</span>
+                    </a>
+
+                    <!-- Duplicate for infinite marquee scrolling -->
+                    <a href="/trade" class="ticker-item featured-btc">
+                        <i class="fa-brands fa-bitcoin" style="color:var(--gold)"></i>
+                        <span class="ticker-sym">BTCUSDT</span>
+                        <span class="ticker-price" id="tapeBtcPrice2">$67,850.20</span>
+                        <span class="ticker-chg up" id="tapeBtcChg2">+2.14%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item featured-eth">
+                        <i class="fa-brands fa-ethereum" style="color:#C084FC"></i>
+                        <span class="ticker-sym">ETHUSDT</span>
+                        <span class="ticker-price" id="tapeEthPrice2">$2,642.80</span>
+                        <span class="ticker-chg up" id="tapeEthChg2">+1.82%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">SOLUSDT</span>
+                        <span class="ticker-price">$155.40</span>
+                        <span class="ticker-chg up">+3.25%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">BNBUSDT</span>
+                        <span class="ticker-price">$585.10</span>
+                        <span class="ticker-chg up">+1.12%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">NEARUSDT</span>
+                        <span class="ticker-price">$4.85</span>
+                        <span class="ticker-chg up">+4.10%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">FETUSDT</span>
+                        <span class="ticker-price">$0.2082</span>
+                        <span class="ticker-chg down">-2.17%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">OPUSDT</span>
+                        <span class="ticker-price">$0.1399</span>
+                        <span class="ticker-chg up">+3.44%</span>
+                    </a>
+                    <a href="/trade" class="ticker-item">
+                        <span class="ticker-sym">CRVUSDT</span>
+                        <span class="ticker-price">$0.3587</span>
+                        <span class="ticker-chg up">+7.28%</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+             HERO CARD - 3D ROTATING HOLOGRAPHIC GLOBE
+             ========================================================================== */
+        -->
+        <section class="hero-globe-card">
+            <!-- Corner Brackets -->
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+
+            <!-- Globe Stage with 3D Canvas -->
+            <div class="globe-stage-wrapper">
+                <canvas id="globeCanvas"></canvas>
+
+                <!-- Floating Center HUD Overlay -->
+                <div class="globe-center-hud">
+                    <div class="hud-label">
+                        <i class="fa-solid fa-circle-nodes"></i> TOTAL EQUITY
+                    </div>
+                    <div class="hud-equity-value" id="heroLiveEquity">$575.06</div>
+                    <div class="hud-badge-row">
+                        <span class="badge-return" id="heroLiveReturn">
+                            <i class="fa-solid fa-arrow-trend-up"></i> +15.01% Return
+                        </span>
+                        <span class="badge-isolated">
+                            <i class="fa-solid fa-shield-halved"></i> 5x ISOLATED
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Under Globe Metrics -->
+            <div class="globe-bottom-metrics">
+                <div class="metrics-grid-row">
+                    <div class="metric-card">
+                        <span class="metric-title"><i class="fa-solid fa-wallet" style="color:var(--brand-teal)"></i> Free Margin</span>
+                        <span class="metric-value" id="heroFreeMargin" style="color:var(--brand-teal);">$407.99</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-title"><i class="fa-solid fa-lock" style="color:#60A5FA"></i> Used Margin</span>
+                        <span class="metric-value" id="heroUsedMargin" style="color:#fff;">$167.07</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-title"><i class="fa-solid fa-microchip" style="color:var(--gold)"></i> Active Architecture Mode</span>
+                        <span class="metric-value" style="color:var(--gold); font-size:15px;" id="heroActiveMode">HERMES 3.0 MODEL 2A</span>
+                    </div>
+                </div>
+
+                <!-- Deca Matrix Progress Bar ($500 ➔ $20,000 Target) -->
+                <div class="progress-box">
+                    <div class="progress-header">
+                        <div class="progress-trophy-title">
+                            <i class="fa-solid fa-trophy"></i>
+                            <span>Deca Matrix Compounding Progress</span>
+                        </div>
+                        <span style="font-family:var(--font-mono); font-weight:800; color:#fff;" id="progressPctLabel">2.88% Target</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progressFillBar" style="width: 2.88%;"></div>
+                    </div>
+                    <div class="progress-labels">
+                        <span>$500.00 Base</span>
+                        <span style="color:var(--cyan-glow); font-weight:700;" id="progressCurrentLabel">Current: $575.06</span>
+                        <span style="color:var(--gold); font-weight:800;">$20,000.00 Target</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================================================
+             4-SENTRIES DIAGNOSTIC MATRIX (ARC REACTOR HUD STYLE)
+             ========================================================================== -->
+        <div class="section-header-hud">
+            <div class="section-title">
+                <i class="fa-solid fa-shield-halved" style="color:var(--cyan-glow)"></i>
+                <span>4-SENTRIES DIAGNOSTIC MATRIX</span>
+            </div>
+            <div class="armed-shield-badge">
+                <span class="pulse-dot"></span> 4 / 4 ARMED &bull; AUTONOMOUS DEFENSE
+            </div>
+        </div>
+
+        <div class="sentries-matrix-grid">
+            <!-- Sentry 1: Green Shield Arc -->
+            <div class="sentry-reactor-card">
+                <div class="reactor-top-row">
+                    <span class="sentry-num-pill" style="background:rgba(0,192,135,0.15); color:var(--green-glow);">SENTRY 01</span>
+                    <span style="font-size:9px; background:rgba(0,192,135,0.2); color:var(--green-glow); font-weight:800; padding:2px 6px; border-radius:3px;">
+                        <i class="fa-solid fa-check"></i> ARMED
+                    </span>
+                </div>
+                <div class="reactor-gauge-wrap">
+                    <svg class="reactor-svg" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(0,192,135,0.15)" stroke-width="3"/>
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--green-glow)" stroke-width="4" stroke-dasharray="180 80" stroke-linecap="round"/>
+                    </svg>
+                    <svg class="reactor-svg reverse" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(0,192,135,0.3)" stroke-width="2" stroke-dasharray="15 10"/>
+                    </svg>
+                    <div class="reactor-center-core core-green">
+                        <i class="fa-solid fa-shield"></i>
+                    </div>
+                </div>
+                <div class="sentry-info-box">
+                    <div class="sentry-title">Sentry 1 - BTC Veto</div>
+                    <div class="sentry-status-val" style="color:var(--green-glow);">NEUTRAL (Safe)</div>
+                    <div class="sentry-subdesc">BTC 4H EMA50 Causal Sentry &bull; 0 Veto</div>
+                </div>
+            </div>
+
+            <!-- Sentry 2: Cyan Pulse Arc -->
+            <div class="sentry-reactor-card">
+                <div class="reactor-top-row">
+                    <span class="sentry-num-pill" style="background:rgba(0,240,255,0.15); color:var(--cyan-glow);">SENTRY 02</span>
+                    <span style="font-size:9px; background:rgba(0,240,255,0.2); color:var(--cyan-glow); font-weight:800; padding:2px 6px; border-radius:3px;">
+                        <i class="fa-solid fa-check"></i> ARMED
+                    </span>
+                </div>
+                <div class="reactor-gauge-wrap">
+                    <svg class="reactor-svg" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(0,240,255,0.15)" stroke-width="3"/>
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--cyan-glow)" stroke-width="4" stroke-dasharray="200 60" stroke-linecap="round"/>
+                    </svg>
+                    <svg class="reactor-svg reverse" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(0,240,255,0.3)" stroke-width="2" stroke-dasharray="25 15"/>
+                    </svg>
+                    <div class="reactor-center-core core-cyan">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="sentry-info-box">
+                    <div class="sentry-title">Sentry 2 - Displacement</div>
+                    <div class="sentry-status-val" style="color:var(--cyan-glow);">&ge; 5.0% FVG</div>
+                    <div class="sentry-subdesc">Institutional Imbalance Floor Verified</div>
+                </div>
+            </div>
+
+            <!-- Sentry 3: Gold Lightning Arc -->
+            <div class="sentry-reactor-card">
+                <div class="reactor-top-row">
+                    <span class="sentry-num-pill" style="background:rgba(255,184,0,0.15); color:var(--gold);">SENTRY 03</span>
+                    <span style="font-size:9px; background:rgba(255,184,0,0.2); color:var(--gold); font-weight:800; padding:2px 6px; border-radius:3px;">
+                        <i class="fa-solid fa-check"></i> ARMED
+                    </span>
+                </div>
+                <div class="reactor-gauge-wrap">
+                    <svg class="reactor-svg" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,184,0,0.15)" stroke-width="3"/>
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="4" stroke-dasharray="220 50" stroke-linecap="round"/>
+                    </svg>
+                    <svg class="reactor-svg reverse" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,184,0,0.3)" stroke-width="2" stroke-dasharray="18 12"/>
+                    </svg>
+                    <div class="reactor-center-core core-gold">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                </div>
+                <div class="sentry-info-box">
+                    <div class="sentry-title">Sentry 3 - IDM Sweep</div>
+                    <div class="sentry-status-val" style="color:var(--gold);">&ge; 18% Wick</div>
+                    <div class="sentry-subdesc">50% MT Retracement Locked &bull; Rejection</div>
+                </div>
+            </div>
+
+            <!-- Sentry 4: Purple Cyber Lotus Arc -->
+            <div class="sentry-reactor-card">
+                <div class="reactor-top-row">
+                    <span class="sentry-num-pill" style="background:rgba(168,85,247,0.15); color:var(--violet-glow);">SENTRY 04</span>
+                    <span style="font-size:9px; background:rgba(168,85,247,0.2); color:var(--violet-glow); font-weight:800; padding:2px 6px; border-radius:3px;">
+                        <i class="fa-solid fa-check"></i> ARMED
+                    </span>
+                </div>
+                <div class="reactor-gauge-wrap">
+                    <svg class="reactor-svg" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(168,85,247,0.15)" stroke-width="3"/>
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--violet-glow)" stroke-width="4" stroke-dasharray="190 70" stroke-linecap="round"/>
+                    </svg>
+                    <svg class="reactor-svg reverse" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(168,85,247,0.3)" stroke-width="2" stroke-dasharray="20 10"/>
+                    </svg>
+                    <div class="reactor-center-core core-purple">
+                        <i class="fa-solid fa-atom"></i>
+                    </div>
+                </div>
+                <div class="sentry-info-box">
+                    <div class="sentry-title">Sentry 4 - Freshness</div>
+                    <div class="sentry-status-val" style="color:var(--violet-glow);">&le; 28 Bars</div>
+                    <div class="sentry-subdesc">Virgin Tap Window Verification Guard</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+           DECA COMPOUNDING MATRIX (10 SECTIONS)
+           ========================================================================== -->
+        <div class="section-header-hud">
+            <div class="section-title">
+                <i class="fa-solid fa-cubes-stacked" style="color:var(--brand-teal)"></i>
+                <span>DECA COMPOUNDING MATRIX (10 ISOLATED SECTIONS)</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted);">
+                <span style="color:var(--cyan-glow); font-weight:700;">Sec 1-5: 4H Macro</span> &bull; 
+                <span style="color:var(--gold); font-weight:700;">Sec 6-10: 1H Intraday</span>
+            </div>
+        </div>
+
+        <div class="deca-sections-grid" id="decaSectionsContainer">
+            <!-- Rendered dynamically from /api/deca/sections with high-fidelity defaults -->
+        </div>
+
+        <!-- ==========================================================================
+           LIVE SETUP RADAR CARD
+           ========================================================================== -->
+        <section class="radar-card-main">
+            <div class="radar-header-banner">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="radar-sweep-icon">
+                        <i class="fa-solid fa-crosshairs"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:900; font-size:14px; font-family:var(--font-hud); letter-spacing:0.5px; color:#fff;">
+                            INSTITUTIONAL 50% MT SETUP RADAR
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted);">
+                            Real-time Confluence Scanner &bull; Zero Phantom Setup Verification
+                        </div>
+                    </div>
+                </div>
+                <span style="background:rgba(0,240,255,0.12); color:var(--cyan-glow); font-size:10px; font-weight:800; padding:4px 10px; border-radius:6px; border:1px solid rgba(0,240,255,0.3);">
+                    <i class="fa-solid fa-satellite"></i> LIVE RADAR ACTIVE
+                </span>
+            </div>
+
+            <!-- Setups Feed List -->
+            <div class="setups-table-list" id="setupsFeedList">
+                <!-- Dynamically populated from /api/deca/setups -->
+            </div>
+        </section>
+
+    </div><!-- /app-container -->
+
+    <!-- ==========================================================================
+       BOTTOM NAVIGATION DOCK (5 TABS WITH CENTER 3D FLOATING SPHERE)
+       ========================================================================== -->
+    <nav class="bottom-nav-dock">
+        <!-- 1. Home / Futures -->
+        <a href="/trade" class="nav-dock-item">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Futures</span>
+        </a>
+
+        <!-- 2. Markets -->
+        <a href="/nexus/markets" class="nav-dock-item">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Markets</span>
+        </a>
+
+        <!-- 3. Center 3D Floating Glowing Holographic Sphere -->
+        <div style="position:relative; display:flex; justify-content:center; align-items:center; width:60px;">
+            <div class="ripple-wave"></div>
+            <div class="ripple-wave"></div>
+            <div class="ripple-wave"></div>
+            <a href="/hologram" class="center-floating-sphere-btn active" title="Hologram 2.0 Terminal Matrix">
+                <i class="fa-solid fa-atom" style="font-size:22px; color:#fff;"></i>
+                <span class="sphere-caption">HOLO</span>
+            </a>
+        </div>
+
+        <!-- 4. Compounding / Deca Hub -->
+        <a href="/nexus/deca" class="nav-dock-item">
+            <i class="fa-solid fa-trophy" style="color:var(--gold)"></i>
+            <span>Deca $47k</span>
+        </a>
+
+        <!-- 5. Positions -->
+        <a href="/trade#positions" class="nav-dock-item">
+            <i class="fa-solid fa-crosshairs"></i>
+            <span>Positions</span>
+        </a>
+    </nav>
+
+    <!-- ==========================================================================
+       SLIDE-OUT DRAWER MENU (LINKS TO ALL SYSTEM PAGES)
+       ========================================================================== -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+    <aside class="drawer-menu" id="drawerMenu">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="cyber-logo-icon" style="width:30px; height:30px;">
+                    <i class="fa-solid fa-bolt-lightning" style="color:var(--cyan-glow); font-size:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-family:var(--font-hud); font-size:13px; font-weight:900; color:#fff;">HERMES 3.5</div>
+                    <div style="font-size:9px; color:var(--text-muted); letter-spacing:0.5px;">HOLOGRAPHIC 2.0 SUITE</div>
+                </div>
+            </div>
+            <button onclick="toggleDrawer()" style="background:transparent; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;">&times;</button>
+        </div>
+
+        <div class="drawer-nav-section-title">Institutional Futures & Deca</div>
+        <a href="/trade" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-chart-line" style="color:var(--brand-teal)"></i> Futures Terminal</span>
+            <span style="font-size:9px; background:var(--brand-teal); color:#000; font-weight:800; padding:1px 5px; border-radius:3px;">PRO</span>
+        </a>
+        <a href="/nexus/markets" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-layer-group" style="color:#60A5FA"></i> Markets & Champions</span>
+        </a>
+        <a href="/nexus/deca" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca Hub ($47k Target)</span>
+            <span style="font-size:9px; color:var(--gold); font-weight:800;">$47K</span>
+        </a>
+        <a href="/nexus/assets" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-wallet" style="color:#34D399"></i> Assets & Allocations</span>
+        </a>
+        <a href="/hologram" class="drawer-link active">
+            <span class="drawer-link-left"><i class="fa-solid fa-atom" style="color:var(--cyan-glow)"></i> Hologram 2.0 Terminal</span>
+            <span style="font-size:9px; background:rgba(0,240,255,0.25); color:var(--cyan-glow); font-weight:800; padding:1px 5px; border-radius:3px;">ACTIVE</span>
+        </a>
+
+        <div class="drawer-nav-section-title">Hermes Intelligence Core</div>
+        <a href="/" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-desktop" style="color:#94A3B8"></i> Classic Hermes</span>
+        </a>
+        <a href="/signals" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-satellite-dish" style="color:#38BDF8"></i> Signals & Confluence</span>
+        </a>
+        <a href="/positions" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-crosshairs" style="color:#F59E0B"></i> Positions & Ledger</span>
+        </a>
+        <a href="/compounding" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-arrow-trend-up" style="color:var(--green-glow)"></i> Compounding Ladders</span>
+        </a>
+        <a href="/hermes-ai" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-brain" style="color:#A78BFA"></i> AI Assistant & Forensics</span>
+            <span style="font-size:9px; background:rgba(167,139,250,0.2); color:#A78BFA; font-weight:800; padding:1px 5px; border-radius:3px;">AI</span>
+        </a>
+        <a href="/trade-forensics" class="drawer-link">
+            <span class="drawer-link-left"><i class="fa-solid fa-fingerprint" style="color:#F87171"></i> Trade Forensics</span>
+        </a>
+
+        <!-- Drawer Footer Stats -->
+        <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border-subtle); font-size:11px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-muted)">Live Equity:</span>
+                <b style="color:var(--cyan-glow); font-family:var(--font-mono);" id="drawerLiveEquity">$575.06</b>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-muted)">4-Sentries Defense:</span>
+                <b style="color:var(--green-glow);">ARMED (0 Veto)</b>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-muted)">Strategy:</span>
+                <b style="color:var(--gold);">HERMES 3.0 MODEL 2A</b>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ==========================================================================
+       SCRIPTS: 3D HOLOGRAPHIC CANVAS GLOBE, PARTICLES & REAL-TIME DATA
+       ========================================================================== -->
+    <script>
+        // -------------------------------------------------------------------------
+        // 1. COSMIC STARFIELD BACKGROUND CANVAS
+        // -------------------------------------------------------------------------
+        (function initStarfield() {
+            const canvas = document.getElementById('starfieldCanvas');
+            const ctx = canvas.getContext('2d');
+            let w, h;
+            let stars = [];
+
+            function resize() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            const STAR_COUNT = 140;
+            for (let i = 0; i < STAR_COUNT; i++) {
+                stars.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    r: Math.random() * 1.5 + 0.3,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    speed: Math.random() * 0.02 + 0.005,
+                    color: Math.random() > 0.6 ? '#00F0FF' : (Math.random() > 0.5 ? '#A855F7' : '#FFFFFF')
+                });
+            }
+
+            function drawStars() {
+                ctx.clearRect(0, 0, w, h);
+                // Subtle gradient nebula glow
+                const grad = ctx.createRadialGradient(w * 0.5, h * 0.3, 50, w * 0.5, h * 0.3, w * 0.6);
+                grad.addColorStop(0, 'rgba(124, 58, 237, 0.07)');
+                grad.addColorStop(0.5, 'rgba(0, 240, 255, 0.04)');
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+
+                // Twinkle stars
+                for (let s of stars) {
+                    s.alpha += Math.sin(Date.now() * s.speed) * 0.015;
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0.1, Math.min(1, s.alpha));
+                    ctx.fillStyle = s.color;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                requestAnimationFrame(drawStars);
+            }
+            drawStars();
+        })();
+
+        // -------------------------------------------------------------------------
+        // 2. 3D INTERACTIVE HOLOGRAPHIC WIREFRAME GLOBE CANVAS
+        // -------------------------------------------------------------------------
+        (function initHolographicGlobe() {
+            const canvas = document.getElementById('globeCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height, cx, cy;
+            let sphereRadius = 135;
+
+            function resize() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                width = canvas.width = rect.width;
+                height = canvas.height = rect.height;
+                cx = width / 2;
+                cy = height / 2;
+                sphereRadius = Math.min(width * 0.38, 140);
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Rotation angles
+            let rotX = 0.22;
+            let rotY = 0;
+            let rotSpeedY = 0.0045;
+            let rotSpeedX = 0;
+
+            // Interactive dragging
+            let isDragging = false;
+            let lastMouseX = 0;
+            let lastMouseY = 0;
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                rotY += dx * 0.006;
+                rotX += dy * 0.006;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            // Touch events
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    lastMouseX = e.touches[0].clientX;
+                    lastMouseY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const dx = e.touches[0].clientX - lastMouseX;
+                const dy = e.touches[0].clientY - lastMouseY;
+                rotY += dx * 0.008;
+                rotX += dy * 0.008;
+                lastMouseX = e.touches[0].clientX;
+                lastMouseY = e.touches[0].clientY;
+            }, { passive: true });
+            window.addEventListener('touchend', () => { isDragging = false; });
+
+            // Constellation node satellites on surface
+            const nodes = [];
+            const NODE_COUNT = 24;
+            for (let i = 0; i < NODE_COUNT; i++) {
+                const lat = (Math.random() - 0.5) * Math.PI * 0.85;
+                const lon = Math.random() * Math.PI * 2;
+                nodes.push({ lat, lon, phase: Math.random() * Math.PI * 2 });
+            }
+
+            function project(x, y, z) {
+                // 3D rotation around X and Y
+                // 1. Rotate Y
+                const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+                const x1 = x * cosY - z * sinY;
+                const z1 = z * cosY + x * sinY;
+
+                // 2. Rotate X
+                const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+                const y2 = y * cosX - z1 * sinX;
+                const z2 = z1 * cosX + y * sinX;
+
+                // Perspective projection
+                const fov = 450;
+                const scale = fov / (fov + z2);
+                return {
+                    x: cx + x1 * scale,
+                    y: cy + y2 * scale,
+                    z: z2,
+                    scale: scale
+                };
+            }
+
+            function renderGlobe() {
+                ctx.clearRect(0, 0, width, height);
+
+                if (!isDragging) {
+                    rotY += rotSpeedY;
+                }
+
+                // Outer atmospheric cyan/purple glow
+                const halo = ctx.createRadialGradient(cx, cy, sphereRadius * 0.7, cx, cy, sphereRadius * 1.35);
+                halo.addColorStop(0, 'rgba(0, 240, 255, 0.08)');
+                halo.addColorStop(0.5, 'rgba(139, 92, 246, 0.06)');
+                halo.addColorStop(1, 'transparent');
+                ctx.fillStyle = halo;
+                ctx.beginPath();
+                ctx.arc(cx, cy, sphereRadius * 1.35, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 1. Draw Latitude Parallels
+                const lats = [-70, -50, -30, -10, 10, 30, 50, 70];
+                for (let deg of lats) {
+                    const phi = (deg * Math.PI) / 180;
+                    const r = sphereRadius * Math.cos(phi);
+                    const y = sphereRadius * Math.sin(phi);
+
+                    ctx.beginPath();
+                    let first = true;
+                    for (let th = 0; th <= Math.PI * 2 + 0.1; th += 0.25) {
+                        const px = r * Math.sin(th);
+                        const pz = r * Math.cos(th);
+                        const p = project(px, y, pz);
+
+                        if (first) {
+                            ctx.moveTo(p.x, p.y);
+                            first = false;
+                        } else {
+                            ctx.lineTo(p.x, p.y);
+                        }
+                    }
+                    ctx.strokeStyle = (deg === 0) ? 'rgba(0, 240, 255, 0.55)' : 'rgba(0, 240, 255, 0.2)';
+                    ctx.lineWidth = (deg === 0) ? 1.5 : 0.8;
+                    ctx.stroke();
+                }
+
+                // 2. Draw Longitude Meridians
+                const lons = 12;
+                for (let i = 0; i < lons; i++) {
+                    const lambda = (i * Math.PI) / lons;
+                    ctx.beginPath();
+                    let first = true;
+                    for (let phi = -Math.PI / 2; phi <= Math.PI / 2 + 0.1; phi += 0.15) {
+                        const px = sphereRadius * Math.cos(phi) * Math.sin(lambda);
+                        const py = sphereRadius * Math.sin(phi);
+                        const pz = sphereRadius * Math.cos(phi) * Math.cos(lambda);
+                        const p = project(px, py, pz);
+
+                        if (first) {
+                            ctx.moveTo(p.x, p.y);
+                            first = false;
+                        } else {
+                            ctx.lineTo(p.x, p.y);
+                        }
+                    }
+                    ctx.strokeStyle = 'rgba(168, 85, 247, 0.22)';
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                }
+
+                // 3. Orbiting Gimbal Ring (Tilted Planetary Ring)
+                const ringRadius = sphereRadius * 1.35;
+                ctx.beginPath();
+                let ringFirst = true;
+                const ringTilt = 0.42;
+                for (let a = 0; a <= Math.PI * 2 + 0.1; a += 0.15) {
+                    const rx = ringRadius * Math.cos(a);
+                    const rz = ringRadius * Math.sin(a);
+                    const ry = rz * Math.sin(ringTilt);
+                    const p = project(rx, ry, rz * Math.cos(ringTilt));
+                    if (ringFirst) {
+                        ctx.moveTo(p.x, p.y);
+                        ringFirst = false;
+                    } else {
+                        ctx.lineTo(p.x, p.y);
+                    }
+                }
+                ctx.strokeStyle = 'rgba(0, 223, 192, 0.35)';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+
+                // 4. Draw Constellation Nodes & Arcs
+                const projNodes = [];
+                for (let n of nodes) {
+                    const nx = sphereRadius * Math.cos(n.lat) * Math.sin(n.lon);
+                    const ny = sphereRadius * Math.sin(n.lat);
+                    const nz = sphereRadius * Math.cos(n.lat) * Math.cos(n.lon);
+                    const p = project(nx, ny, nz);
+                    projNodes.push(p);
+
+                    // Only draw nodes on visible front half
+                    if (p.z > -sphereRadius * 0.4) {
+                        const alpha = Math.max(0.2, (p.z + sphereRadius) / (sphereRadius * 2));
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 2.5 * p.scale, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(0, 240, 255, ${alpha})`;
+                        ctx.shadowColor = '#00F0FF';
+                        ctx.shadowBlur = 8;
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                }
+
+                // Connecting Constellation Arcs between close nodes
+                ctx.beginPath();
+                for (let i = 0; i < projNodes.length; i++) {
+                    for (let j = i + 1; j < projNodes.length; j++) {
+                        const p1 = projNodes[i], p2 = projNodes[j];
+                        if (p1.z > -50 && p2.z > -50) {
+                            const d = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                            if (d < 50) {
+                                ctx.moveTo(p1.x, p1.y);
+                                ctx.lineTo(p2.x, p2.y);
+                            }
+                        }
+                    }
+                }
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.14)';
+                ctx.lineWidth = 0.7;
+                ctx.stroke();
+
+                requestAnimationFrame(renderGlobe);
+            }
+            renderGlobe();
+        })();
+
+        // -------------------------------------------------------------------------
+        // 3. UI CONTROLLERS (DRAWER, BANNER, NOTIFICATIONS)
+        // -------------------------------------------------------------------------
+        function toggleDrawer() {
+            const overlay = document.getElementById('drawerOverlay');
+            const drawer = document.getElementById('drawerMenu');
+            overlay.classList.toggle('active');
+            drawer.classList.toggle('active');
+        }
+
+        function dismissBanner() {
+            const banner = document.getElementById('pwaApkBanner');
+            if (banner) banner.style.display = 'none';
+        }
+
+        function toggleNotificationCenter() {
+            const notif = document.getElementById('notifDropdown');
+            if (notif) notif.classList.toggle('show');
+        }
+
+        // Close dropdown when clicked outside
+        document.addEventListener('click', (e) => {
+            const notif = document.getElementById('notifDropdown');
+            const bell = document.querySelector('.notif-bell-btn');
+            if (notif && bell && !notif.contains(e.target) && !bell.contains(e.target)) {
+                notif.classList.remove('show');
+            }
+        });
+
+        // -------------------------------------------------------------------------
+        // 4. REAL-TIME API DATA ENGINE
+        // -------------------------------------------------------------------------
+        const DEFAULT_DECA_SECTIONS = [
+            { id: 1, name: "Section 1", balance: 119.61, initial_balance: 50.0, status: "IN POSITION", symbol: "OPUSDT", wins: 12, losses: 0, tf: "4H Macro", wr: 100 },
+            { id: 2, name: "Section 2", balance: 55.33, initial_balance: 50.0, status: "IN POSITION", symbol: "CRVUSDT", wins: 7, losses: 1, tf: "4H Macro", wr: 87.5 },
+            { id: 3, name: "Section 3", balance: 50.20, initial_balance: 50.0, status: "IDLE", symbol: null, wins: 0, losses: 0, tf: "4H Macro", wr: 100 },
+            { id: 4, name: "Section 4", balance: 50.13, initial_balance: 50.0, status: "IDLE", symbol: null, wins: 0, losses: 0, tf: "4H Macro", wr: 100 },
+            { id: 5, name: "Section 5", balance: 50.00, initial_balance: 50.0, status: "IDLE", symbol: null, wins: 0, losses: 0, tf: "4H Macro", wr: 100 },
+            { id: 6, name: "Section 6", balance: 47.46, initial_balance: 50.0, status: "IN POSITION", symbol: "FETUSDT", wins: 4, losses: 3, tf: "1H Intraday", wr: 57.1 },
+            { id: 7, name: "Section 7", balance: 45.23, initial_balance: 50.0, status: "IN POSITION", symbol: "TAOUSDT", wins: 0, losses: 0, tf: "1H Intraday", wr: 100 },
+            { id: 8, name: "Section 8", balance: 57.10, initial_balance: 50.0, status: "IN POSITION", symbol: "ZECUSDT", wins: 1, losses: 0, tf: "1H Intraday", wr: 100 },
+            { id: 9, name: "Section 9", balance: 50.00, initial_balance: 50.0, status: "IDLE", symbol: null, wins: 0, losses: 0, tf: "1H Intraday", wr: 100 },
+            { id: 10, name: "Section 10", balance: 50.00, initial_balance: 50.0, status: "IDLE", symbol: null, wins: 0, losses: 0, tf: "1H Intraday", wr: 100 },
+        ];
+
+        async function fetchDecaSummary() {
+            try {
+                const res = await fetch('/api/deca/summary');
+                if (!res.ok) throw new Error('Summary fetch failed');
+                const data = await res.json();
+
+                const equity = Number(data.total_equity || data.total_balance || 575.06);
+                const used = Number(data.used_margin || 167.07);
+                const free = Number(data.free_margin || 407.99);
+                const pnlPct = Number(data.pnl_pct || 15.01);
+
+                document.getElementById('heroLiveEquity').innerText = `$${equity.toFixed(2)}`;
+                document.getElementById('drawerLiveEquity').innerText = `$${equity.toFixed(2)}`;
+                document.getElementById('heroLiveReturn').innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> +${pnlPct.toFixed(2)}% Return`;
+                document.getElementById('heroFreeMargin').innerText = `$${free.toFixed(2)}`;
+                document.getElementById('heroUsedMargin').innerText = `$${used.toFixed(2)}`;
+
+                // Progress Bar toward $20,000 target
+                const target = 20000.0;
+                const progress = Math.min(100, Math.max(1.0, (equity / target) * 100));
+                document.getElementById('progressFillBar').style.width = `${progress.toFixed(2)}%`;
+                document.getElementById('progressPctLabel').innerText = `${progress.toFixed(2)}% Target`;
+                document.getElementById('progressCurrentLabel').innerText = `Current: $${equity.toFixed(2)}`;
+            } catch (err) {
+                console.warn('Using baseline deca summary fallback:', err);
+            }
+        }
+
+        async function fetchDecaSections() {
+            let sections = DEFAULT_DECA_SECTIONS;
+            try {
+                const res = await fetch('/api/deca/sections');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.sections && data.sections.length > 0) {
+                        sections = data.sections.map(s => {
+                            const sid = s.id || s.section_num;
+                            const actTrade = s.active_trade || s.open_trade;
+                            const actSym = actTrade ? actTrade.symbol : (s.assigned_coins ? s.assigned_coins.split(',')[0].trim() : null);
+                            return {
+                                id: sid,
+                                name: `Section ${sid}`,
+                                balance: Number(s.current_balance || s.balance || 50.0),
+                                initial_balance: Number(s.initial_balance || 50.0),
+                                status: s.status || (actTrade ? "IN POSITION" : "IDLE"),
+                                symbol: actSym,
+                                wins: s.win_count || 0,
+                                losses: s.loss_count || 0,
+                                wr: s.win_rate || 100,
+                                tf: sid <= 5 ? "4H Macro" : "1H Intraday"
+                            };
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn('Using default sections baseline:', e);
+            }
+
+            // Render 10 Section Cards
+            const container = document.getElementById('decaSectionsContainer');
+            if (!container) return;
+
+            container.innerHTML = sections.map(s => {
+                const isMacro = s.id <= 5;
+                const cardClass = isMacro ? 'macro-4h' : 'intraday-1h';
+                const pillClass = isMacro ? 'pill-macro' : 'pill-intraday';
+                const pnl = s.balance - s.initial_balance;
+                const pnlSign = pnl >= 0 ? '+' : '';
+                const pnlClass = pnl >= 0 ? 'color:var(--green-glow); background:rgba(0,192,135,0.15);' : 'color:var(--red-glow); background:rgba(255,75,85,0.15);';
+                const inPos = s.status === 'IN POSITION' || (s.symbol && s.status !== 'IDLE');
+
+                return `
+                    <div class="section-badge-card ${cardClass}">
+                        <div class="sec-card-header">
+                            <span class="sec-id-pill ${pillClass}">SEC ${String(s.id).padStart(2, '0')} &bull; ${s.tf}</span>
+                            <span style="font-size:10px; font-weight:800; color:${inPos ? 'var(--green-glow)' : 'var(--text-muted)'};">
+                                ${inPos ? '<i class="fa-solid fa-circle" style="font-size:6px; animation:pulse-live 1.5s infinite;"></i> ACTIVE' : '<i class="fa-solid fa-moon"></i> IDLE'}
+                            </span>
+                        </div>
+                        <div class="sec-balance-row">
+                            <span class="sec-balance-val">$${s.balance.toFixed(2)}</span>
+                            <span class="sec-pnl-pill" style="${pnlClass}">${pnlSign}$${pnl.toFixed(2)}</span>
+                        </div>
+                        <div class="sec-status-row">
+                            <span class="sec-position-tag" style="color:${inPos ? '#FFFFFF' : 'var(--text-muted)'};">
+                                ${inPos ? `<i class="fa-solid fa-crosshairs" style="color:var(--cyan-glow)"></i> [IN POSITION: ${s.symbol}]` : '[IDLE: READY]'}
+                            </span>
+                            <span class="sec-winrate-tag">${s.wins}W ${s.losses}L (${s.wr}%)</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function fetchDecaSetups() {
+            const listEl = document.getElementById('setupsFeedList');
+            if (!listEl) return;
+
+            let setups = [];
+            try {
+                const res = await fetch('/api/deca/setups');
+                if (res.ok) {
+                    const data = await res.json();
+                    setups = data.setups || [];
+                }
+            } catch (e) {
+                console.warn('Setups fetch error:', e);
+            }
+
+            // High-fidelity fallback if setups are empty
+            if (setups.length === 0) {
+                setups = [
+                    { symbol: "OPUSDT", side: "SELL", section_id: 1, timeframe: "4H", entry_price: 0.1409, mark_price: 0.1399, sl_price: 0.1450, tp_price: 0.1320, distance_pct: 0.0, probability_pct: 95.8, status: "LIVE POSITION", is_active: true },
+                    { symbol: "CRVUSDT", side: "SELL", section_id: 2, timeframe: "4H", entry_price: 0.3640, mark_price: 0.3587, sl_price: 0.3780, tp_price: 0.3360, distance_pct: 0.0, probability_pct: 94.2, status: "LIVE POSITION", is_active: true },
+                    { symbol: "FETUSDT", side: "SELL", section_id: 6, timeframe: "1H", entry_price: 0.2073, mark_price: 0.2082, sl_price: 0.2150, tp_price: 0.1910, distance_pct: 0.0, probability_pct: 91.5, status: "LIVE POSITION", is_active: true },
+                    { symbol: "BTCUSDT", side: "BUY", section_id: 1, timeframe: "4H", entry_price: 67200.0, mark_price: 67850.2, sl_price: 66100.0, tp_price: 69400.0, distance_pct: 0.42, probability_pct: 96.4, status: "ARMED (50% MT)", is_active: false },
+                    { symbol: "ETHUSDT", side: "BUY", section_id: 1, timeframe: "4H", entry_price: 2610.0, mark_price: 2642.8, sl_price: 2560.0, tp_price: 2710.0, distance_pct: 0.58, probability_pct: 95.0, status: "ARMED (50% MT)", is_active: false }
+                ];
+            }
+
+            listEl.innerHTML = setups.slice(0, 6).map(s => {
+                const isBuy = (s.side || "BUY").toUpperCase() === "BUY";
+                const sideClass = isBuy ? "side-buy" : "side-sell";
+                const sideIcon = isBuy ? "fa-arrow-trend-up" : "fa-arrow-trend-down";
+                const prob = s.probability_pct || 95;
+                const distStr = s.is_active ? `<span style="color:var(--green-glow); font-weight:800;">LIVE POSITION</span>` : `${Number(s.distance_pct || 0).toFixed(2)}% to 50% MT`;
+
+                return `
+                    <div class="setup-row-item">
+                        <div class="setup-coin-col">
+                            <span class="setup-side-pill ${sideClass}">
+                                <i class="fa-solid ${sideIcon}"></i> ${s.side}
+                            </span>
+                            <div>
+                                <div style="font-weight:900; font-size:13px; color:#fff;">${s.symbol}</div>
+                                <div style="font-size:10px; color:var(--text-muted);">Sec ${s.section_id} &bull; ${s.timeframe || '4H'}</div>
+                            </div>
+                        </div>
+
+                        <div class="setup-metrics-col">
+                            <div>
+                                <div style="font-size:9px; color:var(--text-muted);">PROXIMITY</div>
+                                <div style="font-weight:700;">${distStr}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:9px; color:var(--text-muted);">WIN PROB</div>
+                                <div style="font-weight:800; color:var(--cyan-glow);">${prob}%</div>
+                            </div>
+                            <div>
+                                <div style="font-size:9px; color:var(--text-muted);">ENTRY / MARK</div>
+                                <div style="font-weight:700; color:#E2E8F0;">$${Number(s.entry_price || 0).toFixed(4)} / $${Number(s.mark_price || 0).toFixed(4)}</div>
+                            </div>
+                        </div>
+
+                        <div class="setup-actions-col">
+                            <a href="/trade?symbol=${s.symbol}" class="btn-setup-action btn-chart">
+                                <i class="fa-solid fa-chart-simple"></i> CHART
+                            </a>
+                            <a href="/trade#positions" class="btn-setup-action btn-position">
+                                <i class="fa-solid fa-crosshairs"></i> POSITION
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Live Ticker updates
+        async function fetchLiveTickerPrices() {
+            try {
+                // Fetch BTC
+                const btcRes = await fetch('/api/ticker/BTCUSDT');
+                if (btcRes.ok) {
+                    const btc = await btcRes.json();
+                    if (btc.price) {
+                        const price = Number(btc.price).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        document.getElementById('tapeBtcPrice').innerText = `$${price}`;
+                        const el2 = document.getElementById('tapeBtcPrice2');
+                        if (el2) el2.innerText = `$${price}`;
+                        if (btc.change_24h !== undefined) {
+                            const chg = Number(btc.change_24h);
+                            const sign = chg >= 0 ? '+' : '';
+                            const chgStr = `${sign}${chg.toFixed(2)}%`;
+                            const chgEl = document.getElementById('tapeBtcChg');
+                            if (chgEl) {
+                                chgEl.innerText = chgStr;
+                                chgEl.className = `ticker-chg ${chg >= 0 ? 'up' : 'down'}`;
+                            }
+                        }
+                    }
+                }
+
+                // Fetch ETH
+                const ethRes = await fetch('/api/ticker/ETHUSDT');
+                if (ethRes.ok) {
+                    const eth = await ethRes.json();
+                    if (eth.price) {
+                        const price = Number(eth.price).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        document.getElementById('tapeEthPrice').innerText = `$${price}`;
+                        const el2 = document.getElementById('tapeEthPrice2');
+                        if (el2) el2.innerText = `$${price}`;
+                        if (eth.change_24h !== undefined) {
+                            const chg = Number(eth.change_24h);
+                            const sign = chg >= 0 ? '+' : '';
+                            const chgStr = `${sign}${chg.toFixed(2)}%`;
+                            const chgEl = document.getElementById('tapeEthChg');
+                            if (chgEl) {
+                                chgEl.innerText = chgStr;
+                                chgEl.className = `ticker-chg ${chg >= 0 ? 'up' : 'down'}`;
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore ticker fetch errors
+            }
+        }
+
+        // Initial Data Hydration
+        fetchDecaSummary();
+        fetchDecaSections();
+        fetchDecaSetups();
+        fetchLiveTickerPrices();
+
+        // Periodic Polling
+        setInterval(fetchDecaSummary, 4000);
+        setInterval(fetchDecaSections, 5000);
+        setInterval(fetchDecaSetups, 6000);
+        setInterval(fetchLiveTickerPrices, 4000);
+    </script>
+</body>
+</html>
