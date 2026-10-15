@@ -792,16 +792,24 @@ class Hermes30Model2ALiveEngine:
                     exit_price = hard_sl_price
                     logger.info(f"🛑 HERMES 3.0 EMERGENCY HARD SL: {sym} LONG hit hard circuit @ {hard_sl_price}")
 
-                # 3. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close before trailing is locked
+                # 3. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close occurring AFTER trade entry
                 elif not be_locked:
                     try:
                         k = await binance_feed.fetch_klines(sym, interval=tf, limit=2)
                         if k and len(k) >= 2:
                             last_closed_candle = k[-2]
-                            if float(last_closed_candle["close"]) <= active_sl_price:
-                                exit_triggered = "STRUCTURAL_BODY_CLOSE_SL"
-                                exit_price = float(last_closed_candle["close"])
-                                logger.info(f"🛑 HERMES 3.0 STRUCTURAL BODY CLOSE SL: {sym} LONG closed below {active_sl_price}")
+                            tf_str = str(tf).lower()
+                            tf_ms = (4 * 3600 * 1000) if "4h" in tf_str else ((3600 * 1000) if "1h" in tf_str else (15 * 60 * 1000))
+                            candle_open_ms = int(last_closed_candle.get("time", 0))
+                            candle_close_ms = candle_open_ms + tf_ms
+                            entry_time_ms = int(trade.get("entry_time") or 0)
+
+                            # STRICT GUARD: Only evaluate candles that closed AFTER this trade was opened!
+                            if candle_close_ms > entry_time_ms:
+                                if float(last_closed_candle["close"]) <= active_sl_price:
+                                    exit_triggered = "STRUCTURAL_BODY_CLOSE_SL"
+                                    exit_price = float(last_closed_candle["close"])
+                                    logger.info(f"🛑 HERMES 3.0 STRUCTURAL BODY CLOSE SL: {sym} LONG closed below {active_sl_price}")
                     except Exception:
                         pass
 
@@ -818,16 +826,24 @@ class Hermes30Model2ALiveEngine:
                     exit_price = hard_sl_price
                     logger.info(f"🛑 HERMES 3.0 EMERGENCY HARD SL: {sym} SHORT hit hard circuit @ {hard_sl_price}")
 
-                # 3. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close before trailing is locked
+                # 3. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close occurring AFTER trade entry
                 elif not be_locked:
                     try:
                         k = await binance_feed.fetch_klines(sym, interval=tf, limit=2)
                         if k and len(k) >= 2:
                             last_closed_candle = k[-2]
-                            if float(last_closed_candle["close"]) >= active_sl_price:
-                                exit_triggered = "STRUCTURAL_BODY_CLOSE_SL"
-                                exit_price = float(last_closed_candle["close"])
-                                logger.info(f"🛑 HERMES 3.0 STRUCTURAL BODY CLOSE SL: {sym} SHORT closed above {active_sl_price}")
+                            tf_str = str(tf).lower()
+                            tf_ms = (4 * 3600 * 1000) if "4h" in tf_str else ((3600 * 1000) if "1h" in tf_str else (15 * 60 * 1000))
+                            candle_open_ms = int(last_closed_candle.get("time", 0))
+                            candle_close_ms = candle_open_ms + tf_ms
+                            entry_time_ms = int(trade.get("entry_time") or 0)
+
+                            # STRICT GUARD: Only evaluate candles that closed AFTER this trade was opened!
+                            if candle_close_ms > entry_time_ms:
+                                if float(last_closed_candle["close"]) >= active_sl_price:
+                                    exit_triggered = "STRUCTURAL_BODY_CLOSE_SL"
+                                    exit_price = float(last_closed_candle["close"])
+                                    logger.info(f"🛑 HERMES 3.0 STRUCTURAL BODY CLOSE SL: {sym} SHORT closed above {active_sl_price}")
                     except Exception:
                         pass
 
