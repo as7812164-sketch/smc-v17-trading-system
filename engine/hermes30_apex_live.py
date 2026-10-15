@@ -166,17 +166,26 @@ class Hermes30Model2ALiveEngine:
             btc_candles = await binance_feed.fetch_klines("BTCUSDT", interval="4h", limit=10)
             if len(btc_candles) >= 3:
                 last_c = btc_candles[-2]  # Last completed 4H candle
-                o, c = float(last_c["open"]), float(last_c["close"])
-                chg = (c - o) / o if o > 0 else 0.0
-                long_veto = (chg <= -0.020)   # Dump >= 2% vetoes longs
-                short_veto = (chg >= 0.020)   # Pump >= 2% vetoes shorts
-                return {
-                    "bias": "BULLISH" if chg > 0 else "BEARISH",
-                    "change_pct": round(chg * 100.0, 2),
+                curr_c = btc_candles[-1]  # Current forming 4H candle
+                o_prev, c_prev = float(last_c["open"]), float(last_c["close"])
+                chg_prev = (c_prev - o_prev) / o_prev if o_prev > 0 else 0.0
+
+                o_curr, c_curr = float(curr_c["open"]), float(curr_c["close"])
+                chg_curr = (c_curr - o_curr) / o_curr if o_curr > 0 else 0.0
+
+                # Veto if either previous closed 4H or current live 4H dumped/pumped >= 2.0%
+                long_veto = (chg_prev <= -0.020) or (chg_curr <= -0.020)
+                short_veto = (chg_prev >= 0.020) or (chg_curr >= 0.020)
+                chg_rep = chg_curr if abs(chg_curr) > abs(chg_prev) else chg_prev
+                res = {
+                    "bias": "BULLISH" if chg_rep > 0 else "BEARISH",
+                    "change_pct": round(chg_rep * 100.0, 2),
                     "long_veto": long_veto,
                     "short_veto": short_veto,
-                    "btc_is_bull": chg > 0
+                    "btc_is_bull": chg_rep > 0
                 }
+                self.last_btc_bias = res
+                return res
         except Exception as e:
             logger.warning(f"BTC sentry error: {e}")
         return {"bias": "NEUTRAL", "change_pct": 0.0, "long_veto": False, "short_veto": False, "btc_is_bull": True}
@@ -437,8 +446,10 @@ class Hermes30Model2ALiveEngine:
                 else:
                     logger.info(f"⏳ All {tf.upper()} Deca Compounding sections are currently busy for {sym}.")
 
+        now_ts = time.time()
+        self.last_scan_time = now_ts
         return {
-            "timestamp": time.time(),
+            "timestamp": now_ts,
             "btc_sentry": btc_sentry,
             "total_detected": len(all_setups),
             "fresh_triggers": len(fresh),
@@ -645,7 +656,8 @@ class Hermes30Model2ALiveEngine:
             entry_price = float(trade["entry_price"])
             hard_sl_price = float(trade.get("hard_sl_price", 0.0) or (entry_price * 0.970 if side in ("BUY", "LONG") else entry_price * 1.030))
             trade_id = trade["id"]
-            tf = trade.get("timeframe", "4h")
+            tf = str(trade.get("timeframe") or ("4h" if int(trade.get("account_id") or 1) <= 5 else "1h")).lower()
+            tp_price = float(trade.get("tp_price", 0.0) or 0.0)
 
             cur_price = tickers.get(sym)
             if not cur_price or cur_price <= 0:
@@ -780,19 +792,31 @@ class Hermes30Model2ALiveEngine:
             # EXIT TRIGGER CHECKS
             # -------------------------------------------------------------
             if side in ("BUY", "LONG"):
-                # 1. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
-                if be_locked and current_locked_roi >= 1.0 and cur_price <= active_sl_price:
+                # 1. Take Profit (when Infinite Trailing Rider is disabled or target reached)
+                if not HERMES_3_INFINITE_TRAILING_RIDER and tp_price > 0 and cur_price >= tp_price:
+                    exit_triggered = "TP_HIT"
+                    exit_price = tp_price
+                    logger.info(f"🎯 HERMES 3.0 TAKE PROFIT: {sym} LONG hit TP @ {tp_price}")
+
+                # 2. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
+                elif be_locked and current_locked_roi >= 1.0 and cur_price <= active_sl_price:
                     exit_triggered = "TRAILING_SL_HIT"
                     exit_price = active_sl_price
                     logger.info(f"💎 HERMES 3.0 TRAILING SL EXIT: {sym} LONG hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
 
-                # 2. Emergency Hard Circuit Breaker Touch (-3.00%)
+                # 3. Emergency Hard Circuit Breaker Touch (-3.00%)
                 elif cur_price <= hard_sl_price:
                     exit_triggered = "EMERGENCY_HARD_SL_HIT"
                     exit_price = hard_sl_price
                     logger.info(f"🛑 HERMES 3.0 EMERGENCY HARD SL: {sym} LONG hit hard circuit @ {hard_sl_price}")
 
-                # 3. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close occurring AFTER trade entry
+                # 4. BTC Macro Causal Brake (if active dump detected)
+                elif HERMES_3_BTC_EMERGENCY_SHIELD and getattr(self, "last_btc_bias", None) and self.last_btc_bias.get("long_veto"):
+                    exit_triggered = "BTC_MACRO_BRAKE"
+                    exit_price = cur_price
+                    logger.warning(f"🚨 HERMES 3.0 BTC MACRO BRAKE EXIT: {sym} LONG exited on BTC 4H dump")
+
+                # 5. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close occurring AFTER trade entry
                 elif not be_locked:
                     try:
                         k = await binance_feed.fetch_klines(sym, interval=tf, limit=2)
@@ -803,9 +827,11 @@ class Hermes30Model2ALiveEngine:
                             candle_open_ms = int(last_closed_candle.get("time", 0))
                             candle_close_ms = candle_open_ms + tf_ms
                             entry_time_ms = int(trade.get("entry_time") or 0)
+                            if 0 < entry_time_ms < 100_000_000_000:
+                                entry_time_ms *= 1000  # Normalize seconds to ms
 
-                            # STRICT GUARD: Only evaluate candles that closed AFTER this trade was opened!
-                            if candle_close_ms > entry_time_ms:
+                            # STRICT & AIRTIGHT GUARD: Only evaluate candles that closed strictly after trade entry (+15s clock drift buffer)
+                            if entry_time_ms > 0 and candle_close_ms > (entry_time_ms + 15_000):
                                 if float(last_closed_candle["close"]) <= active_sl_price:
                                     exit_triggered = "STRUCTURAL_BODY_CLOSE_SL"
                                     exit_price = float(last_closed_candle["close"])
@@ -814,19 +840,31 @@ class Hermes30Model2ALiveEngine:
                         pass
 
             else: # SELL / SHORT
-                # 1. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
-                if be_locked and current_locked_roi >= 1.0 and cur_price >= active_sl_price:
+                # 1. Take Profit (when Infinite Trailing Rider is disabled or target reached)
+                if not HERMES_3_INFINITE_TRAILING_RIDER and tp_price > 0 and cur_price <= tp_price:
+                    exit_triggered = "TP_HIT"
+                    exit_price = tp_price
+                    logger.info(f"🎯 HERMES 3.0 TAKE PROFIT: {sym} SHORT hit TP @ {tp_price}")
+
+                # 2. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
+                elif be_locked and current_locked_roi >= 1.0 and cur_price >= active_sl_price:
                     exit_triggered = "TRAILING_SL_HIT"
                     exit_price = active_sl_price
                     logger.info(f"💎 HERMES 3.0 TRAILING SL EXIT: {sym} SHORT hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
 
-                # 2. Emergency Hard Circuit Breaker Touch (-3.00%)
+                # 3. Emergency Hard Circuit Breaker Touch (-3.00%)
                 elif cur_price >= hard_sl_price:
                     exit_triggered = "EMERGENCY_HARD_SL_HIT"
                     exit_price = hard_sl_price
                     logger.info(f"🛑 HERMES 3.0 EMERGENCY HARD SL: {sym} SHORT hit hard circuit @ {hard_sl_price}")
 
-                # 3. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close occurring AFTER trade entry
+                # 4. BTC Macro Causal Brake (if active pump detected)
+                elif HERMES_3_BTC_EMERGENCY_SHIELD and getattr(self, "last_btc_bias", None) and self.last_btc_bias.get("short_veto"):
+                    exit_triggered = "BTC_MACRO_BRAKE"
+                    exit_price = cur_price
+                    logger.warning(f"🚨 HERMES 3.0 BTC MACRO BRAKE EXIT: {sym} SHORT exited on BTC 4H pump")
+
+                # 5. Soft SL (-1.50%): Evaluated ONLY on Candle Body Close occurring AFTER trade entry
                 elif not be_locked:
                     try:
                         k = await binance_feed.fetch_klines(sym, interval=tf, limit=2)
@@ -837,9 +875,11 @@ class Hermes30Model2ALiveEngine:
                             candle_open_ms = int(last_closed_candle.get("time", 0))
                             candle_close_ms = candle_open_ms + tf_ms
                             entry_time_ms = int(trade.get("entry_time") or 0)
+                            if 0 < entry_time_ms < 100_000_000_000:
+                                entry_time_ms *= 1000  # Normalize seconds to ms
 
-                            # STRICT GUARD: Only evaluate candles that closed AFTER this trade was opened!
-                            if candle_close_ms > entry_time_ms:
+                            # STRICT & AIRTIGHT GUARD: Only evaluate candles that closed strictly after trade entry (+15s clock drift buffer)
+                            if entry_time_ms > 0 and candle_close_ms > (entry_time_ms + 15_000):
                                 if float(last_closed_candle["close"]) >= active_sl_price:
                                     exit_triggered = "STRUCTURAL_BODY_CLOSE_SL"
                                     exit_price = float(last_closed_candle["close"])

@@ -305,8 +305,9 @@ class BitgetTrader:
                     print(f"[COMPOUNDING BALANCE GUARD] {msg}")
                     return {"success": False, "skipped": True, "reason": msg}
 
-                if setup.get("margin"):
-                    margin = min(free_usdt, float(setup["margin"]))
+                req_margin = setup.get("margin_usdt") or setup.get("margin")
+                if req_margin:
+                    margin = min(free_usdt, float(req_margin))
                 else:
                     comp_bal = float(get_setting("bitget_compounding_balance", str(BITGET_STARTING_MARGIN)))
                     margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))
@@ -487,8 +488,9 @@ class BitgetTrader:
                     print(f"[COMPOUNDING BALANCE GUARD] {msg}")
                     return {"success": False, "skipped": True, "reason": msg}
 
-                if setup.get("margin"):
-                    margin = min(free_usdt, float(setup["margin"]))
+                req_margin = setup.get("margin_usdt") or setup.get("margin")
+                if req_margin:
+                    margin = min(free_usdt, float(req_margin))
                 else:
                     comp_bal = float(get_setting("bitget_1h_compounding_balance", str(BITGET_STARTING_MARGIN)))
                     margin = min(free_usdt, max(BITGET_STARTING_MARGIN, comp_bal))

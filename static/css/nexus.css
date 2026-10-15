@@ -642,15 +642,16 @@ body {
 
 .mobile-drawer {
     position: fixed;
-    top: 0; left: -280px; bottom: 0;
-    width: 280px;
+    top: 0; left: -320px; bottom: 0;
+    width: 320px;
     background: var(--bg-surface);
     border-right: 1px solid var(--border-subtle);
     z-index: 201;
     transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
-    padding: 24px 16px;
+    padding: 20px 16px;
+    overflow-y: auto;
 }
 
 .mobile-drawer.open { left: 0; }

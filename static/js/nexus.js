@@ -151,11 +151,15 @@ function startDataPollers() {
     pollOrderBook();
     pollPositions();
     pollSummary();
+    pollDockRadar();
+    pollSentries();
 
     setInterval(pollTicker, 2500);
     setInterval(pollOrderBook, 2500);
     setInterval(pollPositions, 3000);
     setInterval(pollSummary, 5000);
+    setInterval(pollDockRadar, 6000);
+    setInterval(pollSentries, 10000);
 }
 
 async function pollTicker() {
@@ -408,5 +412,102 @@ function toggleDrawer() {
     } else {
         drawer.classList.add("open");
         overlay.style.display = "block";
+    }
+}
+
+// ----------------- DOCK TAB SWITCHER & HERMES INTEGRATIONS -----------------
+
+function switchDockTab(tab) {
+    const tabs = ['positions', 'radar', 'sentries', 'ai'];
+    tabs.forEach(t => {
+        const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+        const pane = document.getElementById('dockPane' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (btn) btn.classList.toggle('active', t === tab);
+        if (pane) pane.style.display = (t === tab) ? 'block' : 'none';
+    });
+
+    if (tab === 'radar') pollDockRadar();
+    if (tab === 'sentries') pollSentries();
+}
+
+async function pollDockRadar() {
+    const tbody = document.getElementById("dockRadarTableBody");
+    const badge = document.getElementById("radarCountBadge");
+    if (!tbody) return;
+
+    try {
+        const res = await fetch("/api/deca/setups");
+        const data = await res.json();
+        const setups = data.setups || [];
+        if (badge) badge.innerText = setups.length;
+
+        if (setups.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">No active setups • Autonomous Scanner Scanning 20 Champions</td></tr>`;
+        } else {
+            tbody.innerHTML = setups.map(s => {
+                const isLong = s.side === 'LONG';
+                return `
+                    <tr style="cursor:pointer;" onclick="changePair('${s.symbol}')">
+                        <td>
+                            <span style="font-weight:800; color:#fff;">${s.symbol}</span>
+                        </td>
+                        <td>
+                            <span style="font-size:10px; padding:2px 6px; border-radius:3px; background:${isLong ? 'rgba(0,192,135,0.15)' : 'rgba(255,75,85,0.15)'}; color:${isLong ? 'var(--buy-green)' : 'var(--sell-red)'}; font-weight:800;">${s.side}</span>
+                        </td>
+                        <td><span style="color:var(--brand-teal); font-weight:700;">Section ${s.section_id}</span></td>
+                        <td><b style="color:#fff;">$${Number(s.entry_price).toFixed(4)}</b></td>
+                        <td><span style="color:var(--sell-red);">$${Number(s.sl_price).toFixed(4)}</span></td>
+                        <td><span style="color:var(--buy-green);">$${Number(s.tp_price).toFixed(4)}</span></td>
+                        <td><b style="color:var(--gold);">${s.proximity_pct != null ? s.proximity_pct.toFixed(2) + '%' : '--'}</b></td>
+                        <td><span style="font-size:10px; background:rgba(0,192,135,0.1); color:var(--buy-green); padding:2px 6px; border-radius:4px; font-weight:700;">${s.status}</span></td>
+                    </tr>
+                `;
+            }).join("");
+        }
+    } catch (e) {
+        console.error("Dock radar poll error:", e);
+    }
+}
+
+async function pollSentries() {
+    const btcEl = document.getElementById("sentryBtcStatus");
+    if (!btcEl) return;
+    try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
+        const btc = data.btc_macro_sentry || {};
+        const chg = btc.change_pct != null ? btc.change_pct : 0.0;
+        const veto = btc.long_veto ? "VETO (Dump Detected)" : "Safe (0 Veto)";
+        btcEl.innerText = `BTC 4H Dump Guard: ${veto} (${chg >= 0 ? '+' : ''}${chg}%)`;
+    } catch (e) {}
+}
+
+async function askDockAi() {
+    const input = document.getElementById("dockAiInput");
+    const respEl = document.getElementById("dockAiResponse");
+    if (!input || !respEl) return;
+    const prompt = input.value.trim();
+    if (!prompt) return;
+
+    respEl.innerHTML = `⏳ <i>Analyzing market structure with Gemini 2.5 Flash...</i>`;
+    try {
+        const res = await fetch("/api/ai/consult", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: prompt, symbol: currentSymbol })
+        });
+        const data = await res.json();
+        const text = data.analysis || data.response || data.verdict || "No response received";
+        respEl.innerHTML = `<div><b style="color:var(--brand-teal);">🤖 Gemini 2.5 Flash Analysis (${currentSymbol}):</b><p style="margin-top:6px; color:#fff;">${text.replace(/\n/g, '<br>')}</p></div>`;
+    } catch (e) {
+        respEl.innerHTML = `<span style="color:var(--sell-red);">Error consulting AI: ${e}</span>`;
+    }
+}
+
+function quickAskDock(text) {
+    const input = document.getElementById("dockAiInput");
+    if (input) {
+        input.value = text;
+        askDockAi();
     }
 }

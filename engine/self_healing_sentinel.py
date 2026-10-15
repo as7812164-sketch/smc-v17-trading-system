@@ -272,8 +272,25 @@ class HermesSelfHealingSentinel:
                 is_live_enabled = bitget_trader.is_auto_trade_enabled()
                 exchange_fetch_ok = bitget_fetch_success
 
-            # ONLY clear if fetch was 100% successful and confirmed missing after 180s
-            if is_live_enabled and exchange_fetch_ok and not is_on_exchange and age_seconds > 180:
+            # If trade is a LIMIT order, verify open orders on exchange before declaring orphan
+            is_limit_pending = False
+            order_type = str(t.get("order_type") or "LIMIT").upper()
+            if order_type == "LIMIT":
+                try:
+                    if "BITGET" in exchange and bitget_trader.is_configured():
+                        ccxt_sym = bitget_trader.format_symbol_for_bitget(sym)
+                        open_orders = bitget_trader.exchange.fetch_open_orders(ccxt_sym)
+                        if any(o.get('type') == 'limit' and float(o.get('remaining', 0) or 0) > 0 for o in open_orders):
+                            is_limit_pending = True
+                    elif "BINANCE" in exchange and binance_trader.is_configured():
+                        open_orders = binance_trader.exchange.fapiPrivateGetOpenOrders({'symbol': sym})
+                        if any(o.get('type') == 'LIMIT' for o in open_orders):
+                            is_limit_pending = True
+                except Exception:
+                    is_limit_pending = True  # Safety default: never purge on API check failure
+
+            # ONLY clear if fetch was 100% successful, confirmed missing position AND missing pending limit order after 300s
+            if is_live_enabled and exchange_fetch_ok and not is_on_exchange and not is_limit_pending and age_seconds > 300:
                 with get_connection() as conn:
                     conn.execute("""
                     UPDATE paper_trades 

@@ -40,6 +40,10 @@
                 <a href="/nexus/markets" class="nav-link"><i class="fa-solid fa-layer-group"></i> Markets</a>
                 <a href="/nexus/deca" class="nav-link"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca $47k Hub</a>
                 <a href="/nexus/assets" class="nav-link"><i class="fa-solid fa-wallet"></i> Assets</a>
+                <span style="color:var(--border-subtle); margin:0 4px;">|</span>
+                <a href="/hermes-ai" class="nav-link" style="color:#60A5FA;"><i class="fa-solid fa-brain"></i> Hermes AI Hub</a>
+                <a href="/signals" class="nav-link"><i class="fa-solid fa-satellite-dish"></i> SMC Signals</a>
+                <a href="/" class="nav-link" style="color:var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Hermes Classic</a>
             </nav>
         </div>
 
@@ -179,14 +183,25 @@
         <!-- 4. BOTTOM DOCK (POSITIONS & TRADE HISTORY) -->
         <section class="bottom-dock">
             <div class="dock-tabs">
-                <button class="dock-tab active">
-                    Positions (<span id="posCountBadge">0</span>)
+                <button class="dock-tab active" id="tabBtnPositions" onclick="switchDockTab('positions')">
+                    <i class="fa-solid fa-crosshairs"></i> Positions (<span id="posCountBadge">0</span>)
                 </button>
-                <button class="dock-tab" onclick="location.href='/nexus/deca'">
-                    BB 2.0 Deca Compounding ($47k Target)
+                <button class="dock-tab" id="tabBtnRadar" onclick="switchDockTab('radar')">
+                    <i class="fa-solid fa-satellite-dish" style="color:var(--brand-teal);"></i> BB 2.0 Setups Radar (<span id="radarCountBadge">10</span>)
                 </button>
+                <button class="dock-tab" id="tabBtnSentries" onclick="switchDockTab('sentries')">
+                    <i class="fa-solid fa-shield-halved" style="color:#60A5FA;"></i> Hermes 4-Sentries Matrix
+                </button>
+                <button class="dock-tab" id="tabBtnAi" onclick="switchDockTab('ai')">
+                    <i class="fa-solid fa-brain" style="color:#A78BFA;"></i> AI Consultant
+                </button>
+                <a href="/nexus/deca" class="dock-tab" style="margin-left:auto; text-decoration:none; color:var(--gold);">
+                    <i class="fa-solid fa-trophy"></i> Deca $47k Hub <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:9px;"></i>
+                </a>
             </div>
-            <div class="dock-content">
+
+            <!-- TAB 1: POSITIONS -->
+            <div class="dock-content" id="dockPanePositions">
                 <table class="terminal-table">
                     <thead>
                         <tr>
@@ -209,6 +224,87 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- TAB 2: BB 2.0 SETUPS RADAR -->
+            <div class="dock-content" id="dockPaneRadar" style="display:none;">
+                <table class="terminal-table">
+                    <thead>
+                        <tr>
+                            <th>Pair</th>
+                            <th>Direction</th>
+                            <th>Section Slot</th>
+                            <th>50% MT Limit Entry</th>
+                            <th>Anti-Hunt SL</th>
+                            <th>Take Profit (+3R)</th>
+                            <th>Proximity to Entry</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dockRadarTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align:center; color:var(--text-muted); padding:30px;">
+                                Scanning Top-20 Champions for PDH/PDL Extreme OBs...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 3: HERMES 4-SENTRIES MATRIX -->
+            <div class="dock-content" id="dockPaneSentries" style="display:none; padding:16px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                    <div style="background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">SENTRY 1</span>
+                            <span style="font-size:9px; background:rgba(0,192,135,0.2); color:var(--buy-green); font-weight:800; padding:2px 6px; border-radius:4px;">ARMED</span>
+                        </div>
+                        <div style="font-weight:800; font-size:13px; color:#fff;">BTC Causal Brake</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" id="sentryBtcStatus">BTC 4H Dump Guard: Safe (0.00%)</div>
+                    </div>
+                    <div style="background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">SENTRY 2</span>
+                            <span style="font-size:9px; background:rgba(0,192,135,0.2); color:var(--buy-green); font-weight:800; padding:2px 6px; border-radius:4px;">ACTIVE</span>
+                        </div>
+                        <div style="font-weight:800; font-size:13px; color:#fff;">Institutional Floor</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Displacement ≥ 5.0% + FVG Imbalance</div>
+                    </div>
+                    <div style="background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">SENTRY 3</span>
+                            <span style="font-size:9px; background:rgba(0,192,135,0.2); color:var(--buy-green); font-weight:800; padding:2px 6px; border-radius:4px;">ACTIVE</span>
+                        </div>
+                        <div style="font-weight:800; font-size:13px; color:#fff;">IDM & Wick Defense</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Rejection Wick ≥ 18% + 50% MT Tap</div>
+                    </div>
+                    <div style="background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">SENTRY 4</span>
+                            <span style="font-size:9px; background:rgba(0,192,135,0.2); color:var(--buy-green); font-weight:800; padding:2px 6px; border-radius:4px;">ACTIVE</span>
+                        </div>
+                        <div style="font-weight:800; font-size:13px; color:#fff;">Freshness Guard</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">≤ 28 Bars Tap Window Verification</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: HERMES AI CONSULTANT -->
+            <div class="dock-content" id="dockPaneAi" style="display:none; padding:16px;">
+                <div style="display:flex; gap:10px; margin-bottom:12px;">
+                    <input type="text" id="dockAiInput" placeholder="Ask Gemini 2.5 Flash about market structure (e.g. 'SOL 15m order block kaisa hai?')..." style="flex:1; background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:10px 14px; color:#fff; font-size:12px; outline:none;" onkeydown="if(event.key==='Enter') askDockAi()">
+                    <button onclick="askDockAi()" style="background:var(--brand-teal); color:#000; font-weight:800; border:none; border-radius:8px; padding:0 20px; font-size:12px; cursor:pointer;">
+                        <i class="fa-solid fa-paper-plane"></i> Ask
+                    </button>
+                </div>
+                <div id="dockAiResponse" style="font-size:12px; line-height:1.6; color:var(--text-secondary); background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:12px; max-height:140px; overflow-y:auto;">
+                    🤖 <i>Hermes AI Quant Consultant ready. Click any quick chip or ask a custom question in Hinglish or English:</i>
+                    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                        <button onclick="quickAskDock('Analyze BTC 4H causal sentry status')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">BTC Status</button>
+                        <button onclick="quickAskDock('Scan top 20 champions for BB 2.0 entry')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Scan Champions</button>
+                        <button onclick="quickAskDock('Explain 50% Mean Threshold Stepped Trailing rule')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Trailing Rule</button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -233,35 +329,80 @@
         </div>
     </div>
 
-    <!-- MOBILE SLIDE-OUT DRAWER -->
+    <!-- MOBILE / DESKTOP SLIDE-OUT DRAWER -->
     <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="toggleDrawer()"></div>
-    <div class="mobile-drawer" id="mobileDrawer">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border-subtle);">
-            <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
-            <div>
-                <div style="font-weight:800; font-size:15px;">NEXUSPRO</div>
-                <div style="font-size:10px; color:var(--brand-teal);">BITGET PRO EDITION</div>
+    <div class="mobile-drawer" id="mobileDrawer" style="overflow-y:auto;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border-subtle);">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+                <div>
+                    <div style="font-weight:800; font-size:15px; letter-spacing:0.5px;">NEXUS<span style="color:var(--brand-teal);">PRO</span></div>
+                    <div style="font-size:10px; color:var(--text-muted);">BITGET PRO & HERMES SUITE</div>
+                </div>
             </div>
+            <button onclick="toggleDrawer()" style="background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
         </div>
 
-        <nav style="display:flex; flex-direction:column; gap:12px;">
-            <a href="/trade" style="display:flex; align-items:center; gap:12px; color:#fff; text-decoration:none; font-weight:700; padding:10px; border-radius:6px; background:var(--bg-surface-elevated);">
-                <i class="fa-solid fa-chart-line" style="color:var(--brand-teal);"></i> Futures Terminal
+        <!-- SECTION 1: NEXUSPRO TRADING SUITE -->
+        <div style="font-size:10px; font-weight:800; color:var(--brand-teal); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
+            <i class="fa-solid fa-cube"></i> NexusPro Trading Suite
+        </div>
+        <nav style="display:flex; flex-direction:column; gap:6px; margin-bottom:20px;">
+            <a href="/trade" style="display:flex; align-items:center; justify-content:space-between; color:#fff; text-decoration:none; font-weight:700; font-size:13px; padding:10px 12px; border-radius:8px; background:var(--bg-surface-elevated);">
+                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-chart-line" style="color:var(--brand-teal); width:18px;"></i> Futures Terminal</span>
+                <span style="font-size:9px; background:var(--brand-teal); color:#000; font-weight:900; padding:2px 6px; border-radius:4px;">LIVE</span>
             </a>
-            <a href="/nexus/markets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
-                <i class="fa-solid fa-layer-group"></i> Markets Overview
+            <a href="/nexus/markets" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-layer-group" style="width:18px;"></i> Markets & 20 Champions
             </a>
-            <a href="/nexus/deca" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
-                <i class="fa-solid fa-trophy" style="color:var(--gold);"></i> BB 2.0 Deca Hub ($47k)
+            <a href="/nexus/deca" style="display:flex; align-items:center; justify-content:space-between; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-trophy" style="color:var(--gold); width:18px;"></i> BB 2.0 Deca Hub</span>
+                <span style="font-size:9px; color:var(--gold); font-weight:800;">$47K GOAL</span>
             </a>
-            <a href="/nexus/assets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
-                <i class="fa-solid fa-wallet"></i> Assets & Wallet
+            <a href="/nexus/assets" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-wallet" style="width:18px;"></i> Assets & Margin Allocation
             </a>
         </nav>
 
-        <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border-subtle); font-size:11px; color:var(--text-muted);">
-            <div>Starting Capital: <b>$500.00 USDT</b></div>
-            <div>Strategy: <b>BB 2.0 Liquidity Sniper</b></div>
+        <!-- SECTION 2: HERMES 3.0 INSTITUTIONAL SUITE -->
+        <div style="font-size:10px; font-weight:800; color:#60A5FA; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
+            <i class="fa-solid fa-shield-halved"></i> Hermes 3.0 Institutional
+        </div>
+        <nav style="display:flex; flex-direction:column; gap:6px; margin-bottom:20px;">
+            <a href="/hermes-ai" style="display:flex; align-items:center; justify-content:space-between; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-brain" style="color:#60A5FA; width:18px;"></i> 4-Sentries Diagnostic Matrix</span>
+                <span style="font-size:9px; background:rgba(96,165,250,0.2); color:#60A5FA; padding:2px 6px; border-radius:4px;">AI</span>
+            </a>
+            <a href="/signals" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-satellite-dish" style="color:#34D399; width:18px;"></i> SMC Signals & Zones
+            </a>
+            <a href="/positions" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-crosshairs" style="color:#F59E0B; width:18px;"></i> Live Positions & History
+            </a>
+            <a href="/compounding" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-arrow-trend-up" style="color:var(--gold); width:18px;"></i> Compounding Ladders
+            </a>
+            <a href="/brain" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-microchip" style="color:#A78BFA; width:18px;"></i> Mike Cognitive Brain
+            </a>
+            <a href="/trade_forensics" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-fingerprint" style="color:#F87171; width:18px;"></i> Trade Forensics & Replay
+            </a>
+            <a href="/pro-charts" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-chart-candlestick" style="color:#38BDF8; width:18px;"></i> Pro TradingView Charts
+            </a>
+            <a href="/" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-desktop" style="color:#94A3B8; width:18px;"></i> Hermes Classic Terminal
+            </a>
+            <a href="/settings" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-gear" style="color:#94A3B8; width:18px;"></i> Settings & API Engine
+            </a>
+        </nav>
+
+        <div style="padding-top:16px; border-top:1px solid var(--border-subtle); font-size:11px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px; margin-top:auto;">
+            <div style="display:flex; justify-content:space-between;"><span>Total Portfolio:</span> <b style="color:#fff;" id="drawerTotalEquity">$574.84 USDT</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>BB 2.0 Deca Capital:</span> <b style="color:var(--brand-teal);">$500.00 USDT</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>Hermes Model 2A:</span> <b style="color:var(--buy-green);">Active (100% Win Rate)</b></div>
         </div>
     </div>
 

@@ -1407,11 +1407,15 @@ def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[f
     Enforces 100% compounding directly on the specific timeframe account.
     """
     with get_connection() as conn:
-        trade = conn.execute("""
-        SELECT * FROM paper_trades 
-        WHERE (zone_id = ? OR (symbol = ? AND side = ?)) AND status = 'OPEN'
-        ORDER BY entry_time DESC LIMIT 1
-        """, (zone.get("id"), zone.get("symbol"), zone.get("side"))).fetchone()
+        trade = None
+        if zone.get("id"):
+            trade = conn.execute("SELECT * FROM paper_trades WHERE id = ? AND status = 'OPEN'", (zone["id"],)).fetchone()
+        if not trade:
+            trade = conn.execute("""
+            SELECT * FROM paper_trades 
+            WHERE (zone_id = ? OR (symbol = ? AND side = ?)) AND status = 'OPEN'
+            ORDER BY entry_time DESC LIMIT 1
+            """, (zone.get("zone_id") or zone.get("id"), zone.get("symbol"), zone.get("side"))).fetchone()
 
         now = int(time.time() * 1000)
         if not trade:

@@ -30,6 +30,10 @@
                 <a href="/nexus/markets" class="nav-link"><i class="fa-solid fa-layer-group"></i> Markets</a>
                 <a href="/nexus/deca" class="nav-link active"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca $47k Hub</a>
                 <a href="/nexus/assets" class="nav-link"><i class="fa-solid fa-wallet"></i> Assets</a>
+                <span style="color:var(--border-subtle); margin:0 4px;">|</span>
+                <a href="/hermes-ai" class="nav-link" style="color:#60A5FA;"><i class="fa-solid fa-brain"></i> Hermes AI Hub</a>
+                <a href="/signals" class="nav-link"><i class="fa-solid fa-satellite-dish"></i> SMC Signals</a>
+                <a href="/" class="nav-link" style="color:var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Hermes Classic</a>
             </nav>
         </div>
 
@@ -168,30 +172,80 @@
         <a href="/nexus/assets" class="mobile-tab-btn"><i class="fa-solid fa-wallet" style="font-size:16px;"></i><span>Assets</span></a>
     </div>
 
-    <!-- MOBILE DRAWER -->
+    <!-- MOBILE / DESKTOP SLIDE-OUT DRAWER -->
     <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="toggleDrawer()"></div>
-    <div class="mobile-drawer" id="mobileDrawer">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border-subtle);">
-            <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
-            <div>
-                <div style="font-weight:800; font-size:15px;">NEXUSPRO</div>
-                <div style="font-size:10px; color:var(--brand-teal);">BITGET PRO EDITION</div>
+    <div class="mobile-drawer" id="mobileDrawer" style="overflow-y:auto;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border-subtle);">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="brand-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+                <div>
+                    <div style="font-weight:800; font-size:15px; letter-spacing:0.5px;">NEXUS<span style="color:var(--brand-teal);">PRO</span></div>
+                    <div style="font-size:10px; color:var(--text-muted);">BITGET PRO & HERMES SUITE</div>
+                </div>
             </div>
+            <button onclick="toggleDrawer()" style="background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
         </div>
-        <nav style="display:flex; flex-direction:column; gap:12px;">
-            <a href="/trade" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
-                <i class="fa-solid fa-chart-line"></i> Futures Terminal
+
+        <!-- SECTION 1: NEXUSPRO TRADING SUITE -->
+        <div style="font-size:10px; font-weight:800; color:var(--brand-teal); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
+            <i class="fa-solid fa-cube"></i> NexusPro Trading Suite
+        </div>
+        <nav style="display:flex; flex-direction:column; gap:6px; margin-bottom:20px;">
+            <a href="/trade" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-chart-line" style="width:18px;"></i> Futures Terminal
             </a>
-            <a href="/nexus/markets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
-                <i class="fa-solid fa-layer-group"></i> Markets Overview
+            <a href="/nexus/markets" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-layer-group" style="width:18px;"></i> Markets & 20 Champions
             </a>
-            <a href="/nexus/deca" style="display:flex; align-items:center; gap:12px; color:#fff; text-decoration:none; font-weight:700; padding:10px; border-radius:6px; background:var(--bg-surface-elevated);">
-                <i class="fa-solid fa-trophy" style="color:var(--gold);"></i> BB 2.0 Deca Hub ($47k)
+            <a href="/nexus/deca" style="display:flex; align-items:center; justify-content:space-between; color:#fff; text-decoration:none; font-weight:700; font-size:13px; padding:10px 12px; border-radius:8px; background:var(--bg-surface-elevated);">
+                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-trophy" style="color:var(--gold); width:18px;"></i> BB 2.0 Deca Hub</span>
+                <span style="font-size:9px; background:var(--gold); color:#000; font-weight:900; padding:2px 6px; border-radius:4px;">$47K GOAL</span>
             </a>
-            <a href="/nexus/assets" style="display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; font-weight:700; padding:10px;">
-                <i class="fa-solid fa-wallet"></i> Assets & Wallet
+            <a href="/nexus/assets" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-wallet" style="width:18px;"></i> Assets & Margin Allocation
             </a>
         </nav>
+
+        <!-- SECTION 2: HERMES 3.0 INSTITUTIONAL SUITE -->
+        <div style="font-size:10px; font-weight:800; color:#60A5FA; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
+            <i class="fa-solid fa-shield-halved"></i> Hermes 3.0 Institutional
+        </div>
+        <nav style="display:flex; flex-direction:column; gap:6px; margin-bottom:20px;">
+            <a href="/hermes-ai" style="display:flex; align-items:center; justify-content:space-between; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-brain" style="color:#60A5FA; width:18px;"></i> 4-Sentries Diagnostic Matrix</span>
+                <span style="font-size:9px; background:rgba(96,165,250,0.2); color:#60A5FA; padding:2px 6px; border-radius:4px;">AI</span>
+            </a>
+            <a href="/signals" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-satellite-dish" style="color:#34D399; width:18px;"></i> SMC Signals & Zones
+            </a>
+            <a href="/positions" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-crosshairs" style="color:#F59E0B; width:18px;"></i> Live Positions & History
+            </a>
+            <a href="/compounding" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-arrow-trend-up" style="color:var(--gold); width:18px;"></i> Compounding Ladders
+            </a>
+            <a href="/brain" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-microchip" style="color:#A78BFA; width:18px;"></i> Mike Cognitive Brain
+            </a>
+            <a href="/trade_forensics" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-fingerprint" style="color:#F87171; width:18px;"></i> Trade Forensics & Replay
+            </a>
+            <a href="/pro-charts" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-chart-candlestick" style="color:#38BDF8; width:18px;"></i> Pro TradingView Charts
+            </a>
+            <a href="/" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-desktop" style="color:#94A3B8; width:18px;"></i> Hermes Classic Terminal
+            </a>
+            <a href="/settings" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
+                <i class="fa-solid fa-gear" style="color:#94A3B8; width:18px;"></i> Settings & API Engine
+            </a>
+        </nav>
+
+        <div style="padding-top:16px; border-top:1px solid var(--border-subtle); font-size:11px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px; margin-top:auto;">
+            <div style="display:flex; justify-content:space-between;"><span>Total Portfolio:</span> <b style="color:#fff;" id="drawerTotalEquity">$574.84 USDT</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>BB 2.0 Deca Capital:</span> <b style="color:var(--brand-teal);">$500.00 USDT</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>Hermes Model 2A:</span> <b style="color:var(--buy-green);">Active (100% Win Rate)</b></div>
+        </div>
     </div>
 
     <script>
