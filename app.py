@@ -756,7 +756,7 @@ async def get_nexus_deca_setups():
     """Live Setup Radar feed returning both live active positions and approaching 50% MT setups."""
     try:
         radar_data = await get_live_signals_radar()
-        active_execs = radar_data.get("active_trades", [])
+        active_execs = radar_data.get("active_executions") or radar_data.get("active_trades") or []
         radar_list = radar_data.get("radar", [])
         
         formatted = []
