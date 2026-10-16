@@ -216,7 +216,6 @@ async def lifespan(app: FastAPI):
     binance_heartbeat_task = asyncio.create_task(binance_ip_heartbeat_loop())
     from engine.self_healing_sentinel import self_healing_sentinel
     sentinel_task = asyncio.create_task(self_healing_sentinel.start())
-    bb20_cloud_task = asyncio.create_task(bb20_live_cloud_worker())
     yield
     # Shutdown
     hermes2_apex_engine.stop()
@@ -225,7 +224,6 @@ async def lifespan(app: FastAPI):
     hermes40_task.cancel()
     self_healing_sentinel.stop()
     sentinel_task.cancel()
-    bb20_cloud_task.cancel()
     tg_polling_task.cancel()
     keepalive_task.cancel()
     ticker_task.cancel()
