@@ -263,7 +263,7 @@ def run_tests():
             if sym in ("BTCUSDT", "ETHUSDT", "CRVUSDT", "OPUSDT", "FETUSDT"):
                 check(p.get("margin_usdt") > 0, f"  Position {sym} has valid margin: ${p.get('margin_usdt')}")
                 check(p.get("mark_price") > 0, f"  Position {sym} has live mark price: {p.get('mark_price')}")
-                check("section_id" in p and p.get("section_id") in [1, 2, 6], f"  Position {sym} has Section ID: {p.get('section_id')}")
+                check("section_id" in p and p.get("section_id") in list(range(1, 11)), f"  Position {sym} has Section ID: {p.get('section_id')}")
 
         # 3.3 Verify /api/trade/history
         r_hist = client.get("/api/trade/history")

@@ -32,7 +32,7 @@ HERMES_3_DYNAMIC_ATR_BUFFER = True
 # --- STEPPED TRAILING SL & PROXIMITY LIMIT ORDER ARCHITECTURE ---
 HERMES_3_LIMIT_PROXIMITY_PCT = 0.0020     # 0.20% proximity triggers Limit Order pre-placement
 HERMES_3_ENABLE_STEPPED_TRAILING = True   # Replaces static break-even with Stepped Trailing SL
-HERMES_3_INFINITE_TRAILING_RIDER = True   # No fixed TP ceiling; rides until trailing SL hit
+HERMES_3_INFINITE_TRAILING_RIDER = False  # Fixed TP target enabled alongside Stepped Trailing SL
 HERMES_3_STEPPED_TRAILING_LADDER = [
     # (Trigger ROI %, Locked SL ROI %)
     (5.0, 1.0),    # Touch +5% ROI -> Shift SL to +1% ROI (+0.2% spot move fee-saver)
