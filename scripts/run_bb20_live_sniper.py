@@ -32,10 +32,38 @@ if REPO_ROOT not in sys.path:
 
 import bb20_config as cfg
 
-# Telegram Notifier
-def send_telegram_alert(text: str):
+# Telegram Notifier with Real Candlestick Chart
+def send_telegram_alert(
+    text: str,
+    symbol: Optional[str] = None,
+    setup_or_pos: Optional[Dict] = None,
+    candles: Optional[List[Dict]] = None
+):
     if not cfg.BB20_TELEGRAM_BOT_TOKEN or not cfg.BB20_TELEGRAM_CHAT_ID:
         return
+
+    # Attempt to send with real candlestick chart if symbol and setup are provided
+    if symbol and setup_or_pos:
+        try:
+            from scripts.bb30_chart_generator import send_telegram_alert_with_chart
+            chart_candles = candles
+            if not chart_candles:
+                chart_candles = fetch_binance_klines(symbol, interval="15m", limit=50)
+            if chart_candles:
+                sent = send_telegram_alert_with_chart(
+                    token=cfg.BB20_TELEGRAM_BOT_TOKEN,
+                    chat_id=cfg.BB20_TELEGRAM_CHAT_ID,
+                    caption=text,
+                    symbol=symbol,
+                    candles=chart_candles,
+                    setup=setup_or_pos
+                )
+                if sent:
+                    return
+        except Exception as e:
+            print(f"[Chart Dispatch Error]: {e}")
+
+    # Fallback to standard text message
     url = f"https://api.telegram.org/bot{cfg.BB20_TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": cfg.BB20_TELEGRAM_CHAT_ID,
@@ -332,8 +360,10 @@ class BB20LiveSniper:
         # Telegram Alert
         emoji = "🟢 LONG" if side == "LONG" else "🔴 SHORT"
         msg = (
-            f"🎯 <b>BB 2.0 SNIPER — PENDING LIMIT SETUP</b>\n\n"
+            f"🎯 <b>BB 3.0 SNIPER — PENDING LIMIT SETUP</b>\n\n"
             f"<b>Coin</b>: #{symbol} ({emoji})\n"
+            f"<b>Strategy</b>: Day 1 {anchor_name} Sweep + 15m Extreme OB Retest\n"
+            f"<b>Model</b>: 50% Mean Threshold Stepped Trailing SL\n\n"
             f"<b>Section</b>: #{sec_id} (${sec['balance']:.2f} USDT)\n"
             f"<b>Anchor</b>: {anchor_name} (${anchor_price:.4f})\n\n"
             f"🎯 <b>50% MT Limit Entry</b>: <code>${mt:.4f}</code>\n"
@@ -343,9 +373,9 @@ class BB20LiveSniper:
             f"• Tier 1 (+1.0R): ${setup_data['target_1r']:.4f} (SL ➔ +0.2R BE)\n"
             f"• Tier 2 (+1.5R): ${setup_data['target_15r']:.4f} (Lock +1.0R)\n"
             f"• Target (+3.0R): ${setup_data['target_3r']:.4f}\n\n"
-            f"<i>Waiting for price to pull back to 50% MT level...</i>"
+            f"<i>Real-time candlestick chart attached above!</i>"
         )
-        send_telegram_alert(msg)
+        send_telegram_alert(msg, symbol=symbol, setup_or_pos=setup_data, candles=candles_15m)
 
     def _check_pending_setup_fill(self, symbol: str, candles: List[Dict]):
         setup = self.ledger.data["active_setups"][symbol]
@@ -406,14 +436,15 @@ class BB20LiveSniper:
             print(f"✅ [LIMIT FILLED] {symbol} {side} @ ${entry:.4f}! Trade is LIVE!")
 
             msg = (
-                f"⚡ <b>BB 2.0 SNIPER — LIMIT ORDER FILLED!</b>\n\n"
+                f"⚡ <b>BB 3.0 SNIPER — LIMIT ORDER FILLED!</b>\n\n"
                 f"<b>Coin</b>: #{symbol} ({side})\n"
+                f"<b>Strategy</b>: BB 3.0 (50% MT Retest Entered)\n"
                 f"<b>Fill Price</b>: <code>${entry:.4f}</code>\n"
                 f"<b>Stop Loss</b>: <code>${sl:.4f}</code>\n"
                 f"<b>Section #{sec_id}</b>: Risk ${setup['risk_usd']:.2f} USDT\n\n"
-                f"🛡️ <b>Model 3 Armor Active</b>: Monitoring live candles for stepped trailing profit locks."
+                f"🛡️ <b>Stepped Trailing Armor Active</b>: Monitoring live candles for profit locks."
             )
-            send_telegram_alert(msg)
+            send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos_data, candles=candles)
 
     def _monitor_active_position(self, symbol: str, candles: List[Dict]):
         pos = self.ledger.data["active_positions"][symbol]
@@ -457,14 +488,14 @@ class BB20LiveSniper:
                 print(f"🛡️ [TRAILING SL UPDATE] {symbol} {side}: Tier {tier_candidate} Locked! (SL ➔ ${new_sl:.4f})")
                 tier_msg = "Fee Shield (+0.2R Breakeven)" if tier_candidate == 1 else f"+{locked_r:.1f}R Pure Profit Locked!"
                 msg = (
-                    f"🪜 <b>BB 2.0 SNIPER — TRAILING PROFIT LOCKED!</b>\n\n"
+                    f"🪜 <b>BB 3.0 SNIPER — TRAILING PROFIT LOCKED!</b>\n\n"
                     f"<b>Coin</b>: #{symbol} ({side})\n"
                     f"<b>Peak Reached</b>: +{max_fav_r:.2f} R\n"
                     f"<b>New Stop Loss</b>: <code>${new_sl:.4f}</code>\n"
                     f"<b>Lock Status</b>: {tier_msg}\n\n"
-                    f"<i>Trade is protected against any sudden reversal!</i>"
+                    f"<i>Trade is protected against any sudden reversal! Real chart attached above.</i>"
                 )
-                send_telegram_alert(msg)
+                send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos, candles=candles)
 
     def _close_position(self, symbol: str, reason: str, exit_price: float):
         pos = self.ledger.data["active_positions"][symbol]
@@ -510,16 +541,17 @@ class BB20LiveSniper:
         # Telegram Alert
         res_emoji = "🏆 WIN" if realized_r > 0 else ("🛡️ SAFE SAVE" if tier == 1 else "🛑 LOSS")
         msg = (
-            f"🏁 <b>BB 2.0 SNIPER — TRADE COMPLETED</b>\n\n"
+            f"🏁 <b>BB 3.0 SNIPER — TRADE COMPLETED</b>\n\n"
             f"<b>Result</b>: {res_emoji} ({outcome})\n"
             f"<b>Coin</b>: #{symbol} ({pos['side']})\n"
+            f"<b>Strategy</b>: BB 3.0 (Stepped Trailing SL)\n"
             f"<b>Exit Price</b>: <code>${exit_price:.4f}</code>\n"
             f"<b>Realized R</b>: {realized_r:+.2f} R\n"
             f"<b>Dollar PnL</b>: <b>{dollar_pnl:+.2f} USDT</b>\n\n"
             f"<b>Section #{sec_id} Balance</b>: <b>${sec['balance']:.2f} USDT</b>\n"
             f"<b>Total Deca Equity</b>: <b>${self.ledger.data['total_current_equity']:.2f} USDT</b>"
         )
-        send_telegram_alert(msg)
+        send_telegram_alert(msg, symbol=symbol, setup_or_pos=closed_rec)
 
     def _print_dashboard(self):
         tot_eq = sum(s["balance"] for s in self.ledger.data["sections"].values())
@@ -535,13 +567,13 @@ def main():
     sniper = BB20LiveSniper()
     # Send start greeting
     send_telegram_alert(
-        "🚀 <b>BB 2.0 SNIPER AI MONITOR STARTED</b>\n\n"
-        "• <b>Status</b>: Active 24/7 Scanning (Top 20 Champions)\n"
-        "• <b>Strategy</b>: Day 1 PDH/PDL Mark + Extreme OB Retest\n"
+        "🚀 <b>BB 3.0 SNIPER AI MONITOR STARTED</b>\n\n"
+        "• <b>Status</b>: Active 24/7 Scanning with Real Candlestick Charts\n"
+        "• <b>Strategy</b>: Day 1 PDH/PDL Sweep Trap + 15m Extreme OB Retest\n"
+        "• <b>Execution Model</b>: 50% Mean Threshold Limit Entry & Stepped Trailing SL\n"
         "• <b>Discipline</b>: Max 1 Long & 1 Short per day per coin\n"
-        "• <b>Deca Capital</b>: $500.00 USDT (10 Sections @ 5% Risk)\n"
-        "• <b>Live Website Engine</b>: 100% Isolated & Untouched 🛡️\n\n"
-        "<i>Alerts will be delivered here instantly whenever a setup triggers.</i>"
+        "• <b>Deca Capital</b>: $500.00 USDT (10 Sections @ 5% Risk)\n\n"
+        "<i>All alerts will be delivered with live candlestick charts and strategy levels!</i>"
     )
 
     print("\nStarting live scan loop (runs every 60 seconds)... Press Ctrl+C to stop.\n")
