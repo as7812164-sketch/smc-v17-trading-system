@@ -300,7 +300,7 @@ class BB20LiveSniper:
                             sl_hit = any(b["low"] <= sl for b in subsequent_bars) or current_price <= sl
 
                             if risk > 0 and not sl_hit:
-                                self._arm_new_setup(symbol, sec_id, "LONG", mt, sl, risk, pdl, "PDL SUPPORT")
+                                self._arm_new_setup(symbol, sec_id, "LONG", mt, sl, risk, pdl, "PDL SUPPORT", candles_15m)
                                 # Immediately check if current bar fills the limit order
                                 self._check_pending_setup_fill(symbol, candles_15m)
                                 break
@@ -326,7 +326,7 @@ class BB20LiveSniper:
                             sl_hit = any(b["high"] >= sl for b in subsequent_bars) or current_price >= sl
 
                             if risk > 0 and not sl_hit:
-                                self._arm_new_setup(symbol, sec_id, "SHORT", mt, sl, risk, pdh, "PDH RESISTANCE")
+                                self._arm_new_setup(symbol, sec_id, "SHORT", mt, sl, risk, pdh, "PDH RESISTANCE", candles_15m)
                                 # Immediately check if current bar fills the limit order
                                 self._check_pending_setup_fill(symbol, candles_15m)
                                 break
@@ -334,7 +334,7 @@ class BB20LiveSniper:
         self.ledger.save()
         self._print_dashboard()
 
-    def _arm_new_setup(self, symbol: str, sec_id: str, side: str, mt: float, sl: float, risk: float, anchor_price: float, anchor_name: str):
+    def _arm_new_setup(self, symbol: str, sec_id: str, side: str, mt: float, sl: float, risk: float, anchor_price: float, anchor_name: str, candles_15m: Optional[List[Dict]] = None):
         sec = self.ledger.data["sections"][sec_id]
         risk_usd = sec["balance"] * cfg.SECTION_RISK_FRACTION
 
