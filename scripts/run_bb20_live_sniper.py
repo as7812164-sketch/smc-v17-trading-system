@@ -149,7 +149,85 @@ def fetch_binance_klines(symbol: str, interval: str = "15m", limit: int = 100) -
     except Exception as e:
         print(f"Error fetching klines for {symbol} ({interval}): {e}")
 
-    return []
+def _sync_to_sqlite(action: str, data: Dict):
+    try:
+        import sqlite3
+        db_path = os.path.join(REPO_ROOT, "database", "smc_v17.db")
+        if not os.path.exists(db_path):
+            return
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        
+        if action == "OPEN":
+            sym = data["symbol"]
+            side = data["side"]
+            entry = float(data["mt_entry"])
+            sl = float(data["sl"])
+            tp = float(data.get("target_1r", 0.0))
+            sec_id = int(data["section_id"])
+            now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+            c.execute("""
+                INSERT INTO paper_trades (
+                    symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
+                    status, entry_time, pnl_usdt, pnl_pct, timeframe, exchange, channel, account_id, mode
+                ) VALUES (?, ?, ?, 250.0, ?, ?, 'OPEN', ?, 0.0, 0.0, '15m', 'BITGET', ?, ?, 'BB_3.0_SNIPER')
+            """, (sym, side, entry, tp, sl, now_ms, f"sec_{sec_id}", sec_id))
+            conn.commit()
+
+        elif action == "CLOSE":
+            sym = data["symbol"]
+            side = data["side"]
+            entry = float(data["mt_entry"])
+            exit_p = float(data["exit_price"])
+            dollar_pnl = float(data["dollar_pnl"])
+            outcome = data["outcome"]
+            sec_id = int(data["section_id"])
+            sec_bal = float(data["section_new_balance"])
+            now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+            pnl_pct = round((dollar_pnl / 2.50) * 100.0, 2)
+
+            c.execute("""
+                UPDATE paper_trades
+                SET status = 'CLOSED', exit_price = ?, pnl_usdt = ?, pnl_pct = ?,
+                    exit_time = ?, autopsy_diagnosis = ?, roi_pct = ?
+                WHERE id = (
+                    SELECT id FROM paper_trades
+                    WHERE symbol = ? AND side = ? AND mode = 'BB_3.0_SNIPER' AND status = 'OPEN'
+                    ORDER BY id DESC LIMIT 1
+                )
+            """, (exit_p, dollar_pnl, pnl_pct, now_ms, outcome, pnl_pct, sym, side))
+
+            if c.rowcount == 0:
+                c.execute("""
+                    INSERT INTO paper_trades (
+                        symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
+                        status, entry_time, exit_time, exit_price, pnl_usdt, pnl_pct,
+                        timeframe, exchange, channel, account_id, mode, autopsy_diagnosis, roi_pct
+                    ) VALUES (?, ?, ?, 250.0, ?, ?, 'CLOSED', ?, ?, ?, ?, ?, '15m', 'BITGET', ?, ?, 'BB_3.0_SNIPER', ?, ?)
+                """, (sym, side, entry, entry, exit_p, now_ms - 60000, now_ms, exit_p, dollar_pnl, pnl_pct, f"sec_{sec_id}", sec_id, outcome, pnl_pct))
+
+            is_win = 1 if "WIN" in outcome else 0
+            is_loss = 1 if "LOSS" in outcome else 0
+            c.execute("""
+                UPDATE paper_account
+                SET current_balance = ?,
+                    win_count = win_count + ?,
+                    loss_count = loss_count + ?,
+                    total_pnl = total_pnl + ?
+                WHERE id = ?
+            """, (sec_bal, is_win, is_loss, dollar_pnl, sec_id))
+            conn.commit()
+
+        conn.close()
+        
+        try:
+            from database.cloud_vault import push_vault_state
+            push_vault_state()
+        except Exception:
+            pass
+
+    except Exception as e:
+        print(f"[DB Live Sync Error]: {e}")
 
 # Shadow Ledger Manager
 class ShadowLedger:
@@ -432,6 +510,7 @@ class BB20LiveSniper:
 
             sec_id = setup["section_id"]
             self.ledger.data["sections"][sec_id]["status"] = f"IN TRADE ({symbol} {side})"
+            _sync_to_sqlite("OPEN", pos_data)
 
             print(f"✅ [LIMIT FILLED] {symbol} {side} @ ${entry:.4f}! Trade is LIVE!")
 
@@ -535,6 +614,7 @@ class BB20LiveSniper:
 
         del self.ledger.data["active_positions"][symbol]
         self.ledger.save()
+        _sync_to_sqlite("CLOSE", closed_rec)
 
         print(f"🏁 [TRADE CLOSED] {symbol} {outcome} | PnL: ${dollar_pnl:+.2f} USDT | Sec #{sec_id} Bal: ${sec['balance']:.2f}")
 

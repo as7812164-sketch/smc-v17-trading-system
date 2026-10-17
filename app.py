@@ -810,6 +810,55 @@ async def get_nexus_deca_setups():
                 "is_active": False
             })
 
+        # 3. Merge Standalone BB 3.0 Live Setups & Active Positions from bb20_shadow_ledger.json
+        ledger_file = BASE_DIR / "bb20_shadow_ledger.json"
+        if ledger_file.exists():
+            try:
+                with open(ledger_file, "r", encoding="utf-8") as lf:
+                    bb_ledger = json.load(lf)
+                
+                # Active BB positions
+                for sym, pos in bb_ledger.get("active_positions", {}).items():
+                    sec_id = int(pos.get("section_id", PAIR_MAPPING.get(sym, 1)))
+                    formatted.insert(0, {
+                        "symbol": sym,
+                        "side": pos.get("side", "BUY"),
+                        "section_id": sec_id,
+                        "timeframe": "15M",
+                        "entry_price": float(pos.get("mt_entry", 0.0)),
+                        "mark_price": float(pos.get("active_sl", pos.get("mt_entry", 0.0))),
+                        "sl_price": float(pos.get("active_sl", 0.0)),
+                        "tp_price": float(pos.get("target_1r", 0.0)),
+                        "distance_pct": 0.0,
+                        "proximity_pct": 0.0,
+                        "roe_pct": round(float(pos.get("highest_r", 0.0)) * 5.0, 2),
+                        "status": "LIVE POSITION (BB 3.0)",
+                        "is_active": True
+                    })
+
+                # Pending 50% MT setups
+                for sym, setup in bb_ledger.get("active_setups", {}).items():
+                    sec_id = int(setup.get("section_id", PAIR_MAPPING.get(sym, 1)))
+                    formatted.append({
+                        "symbol": sym,
+                        "side": setup.get("side", "BUY"),
+                        "section_id": sec_id,
+                        "timeframe": "15M",
+                        "entry_price": float(setup.get("mt_entry", 0.0)),
+                        "mark_price": float(setup.get("mt_entry", 0.0)),
+                        "sl_price": float(setup.get("sl", 0.0)),
+                        "tp_price": float(setup.get("target_1r", 0.0)),
+                        "distance_pct": 0.05,
+                        "proximity_pct": 0.05,
+                        "probability_pct": 94,
+                        "wick_ratio_pct": 24,
+                        "status": "ARMED (50% MT LIMIT)",
+                        "proximity_state": "PENDING_LIMIT",
+                        "is_active": False
+                    })
+            except Exception as e:
+                logger.error(f"Error merging bb_ledger setups: {e}")
+
         return {
             "count": len(formatted),
             "setups": formatted,
