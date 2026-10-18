@@ -154,13 +154,24 @@ def push_vault_state() -> bool:
         url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{VAULT_FILE}?ref={VAULT_BRANCH}"
         headers = get_vault_headers()
 
-        # Check existing file SHA
+        # Check existing file SHA and prevent regression
         sha = None
         req = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode())
                 sha = data.get("sha")
+                existing_b64 = data.get("content", "")
+                if existing_b64:
+                    try:
+                        existing_vault = json.loads(base64.b64decode(existing_b64).decode("utf-8"))
+                        existing_trades = len(existing_vault.get("paper_trades", []))
+                        # Anti-Regression Armor: NEVER overwrite if remote has more trades!
+                        if len(paper_trades) < existing_trades:
+                            logger.error(f"ABORTED VAULT PUSH: Local trade count ({len(paper_trades)}) is smaller than remote ({existing_trades})! Potential data loss blocked.")
+                            return False
+                    except Exception as parse_err:
+                        logger.warning(f"Could not parse existing vault json: {parse_err}")
         except urllib.error.HTTPError as e:
             if e.code != 404:
                 logger.warning(f"Could not check vault sha: {e}")
