@@ -17,18 +17,18 @@ SECTION_RISK_FRACTION = 0.05  # 5% Risk per Section (Compounding Mode)
 FRICTION_R = 0.06  # 0.06 R (Taker fee + adverse slippage deduction)
 SL_ANTI_HUNT_BUFFER = 0.0015  # 0.15% Buffer beyond extreme wick
 
-# Asset Universe & Dedicated Pairing (2 Champions per Isolated Section)
+# Asset Universe & Dedicated Pairing (3 Proven Champions per Isolated Section = 30 Champions)
 PAIR_MAPPING = {
-    "BTCUSDT": 1, "ETHUSDT": 1,
-    "SOLUSDT": 2, "BNBUSDT": 2,
-    "AVAXUSDT": 3, "DOGEUSDT": 3,
-    "DOTUSDT": 4, "LINKUSDT": 4,
-    "LTCUSDT": 5, "NEARUSDT": 5,
-    "OPUSDT": 6, "RENDERUSDT": 6,
-    "SUIUSDT": 7, "TIAUSDT": 7,
-    "UNIUSDT": 8, "XRPUSDT": 8,
-    "1000PEPEUSDT": 9, "APTUSDT": 9,
-    "ARBUSDT": 10, "FETUSDT": 10
+    "BTCUSDT": 1, "ETHUSDT": 1, "BCHUSDT": 1,
+    "SOLUSDT": 2, "BNBUSDT": 2, "SEIUSDT": 2,
+    "AVAXUSDT": 3, "DOGEUSDT": 3, "KAVAUSDT": 3,
+    "DOTUSDT": 4, "LINKUSDT": 4, "ENSUSDT": 4,
+    "LTCUSDT": 5, "NEARUSDT": 5, "DYDXUSDT": 5,
+    "OPUSDT": 6, "RENDERUSDT": 6, "WLDUSDT": 6,
+    "SUIUSDT": 7, "TIAUSDT": 7, "TRBUSDT": 7,
+    "UNIUSDT": 8, "XRPUSDT": 8, "SNXUSDT": 8,
+    "1000PEPEUSDT": 9, "APTUSDT": 9, "ARKMUSDT": 9,
+    "ARBUSDT": 10, "FETUSDT": 10, "ONDOUSDT": 10
 }
 
 CHAMPIONS = list(PAIR_MAPPING.keys())

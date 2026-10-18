@@ -245,7 +245,7 @@ class BB20LiveSniper:
         if day_key not in self.ledger.data["daily_single_shot"]:
             self.ledger.data["daily_single_shot"][day_key] = {}
 
-        print(f"\n[{datetime.now(timezone.utc).strftime('%H:%M:%S UTC')}] Scanning Top-20 Champions for Extreme OB Setups...")
+        print(f"\n[{datetime.now(timezone.utc).strftime('%H:%M:%S UTC')}] Scanning Top-{len(cfg.CHAMPIONS)} Champions for Extreme OB Setups...")
 
         for symbol in cfg.CHAMPIONS:
             sec_id = str(cfg.PAIR_MAPPING.get(symbol, 1))

@@ -110,6 +110,12 @@ TOP_10_ELITE_ADDITIONS = [
     "MSTRUSDT", "NMRUSDT", "TAOUSDT", "1000PEPEUSDT", "USUSDT"
 ]
 
+# Top 10 Proven 6-Month Tested Champions (Backtested across 180 Days at 75%-87% Quality Win Rate)
+TOP_10_PROVEN_6M_CHAMPIONS = [
+    "BCHUSDT", "SNXUSDT", "SEIUSDT", "ONDOUSDT", "TRBUSDT",
+    "ARKMUSDT", "KAVAUSDT", "WLDUSDT", "DYDXUSDT", "ENSUSDT"
+]
+
 TOP_28_CHAMPIONS = [
     # Original 22 Core Champions
     "DOGEUSDT", "ALGOUSDT", "FETUSDT", "SANDUSDT", "BTCUSDT", "THETAUSDT", "OPUSDT", "FILUSDT",
@@ -118,7 +124,9 @@ TOP_28_CHAMPIONS = [
     # 6 High-Accuracy Golden Additions (75% - 90% Win Rate) + ATOM
     "ORDIUSDT", "ETCUSDT", "MANAUSDT", "ADAUSDT", "TIAUSDT", "AXSUSDT", "ATOMUSDT",
     # Top 10 Elite Additions (Tested 88.89% - 100% Win Rate)
-    *TOP_10_ELITE_ADDITIONS
+    *TOP_10_ELITE_ADDITIONS,
+    # Top 10 Proven 6-Month Champions (75% - 87% Quality Win Rate)
+    *TOP_10_PROVEN_6M_CHAMPIONS
 ]
 
 TOP_22_CHAMPIONS = list(dict.fromkeys(TOP_28_CHAMPIONS + TIER1_SWING_COINS + TIER1_QUICK_SNIPERS))
