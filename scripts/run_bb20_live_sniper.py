@@ -154,27 +154,36 @@ def _sync_to_sqlite(action: str, data: Dict):
     """Isolated: BB sniper never touches Hermes 3.5 smc_v17.db or cloud vault."""
     pass
 
-def _sync_to_nexuspro_render(action: str, data: Dict):
-    """Real-time HTTP sync bridge to NexusPro Terminal on Render (https://nexuspro-terminal.onrender.com)."""
-    try:
-        import urllib.request, ssl, json
-        url = "https://nexuspro-terminal.onrender.com/api/sync/trade"
-        payload = {
-            "action": action,
-            "data": data
-        }
-        data_bytes = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=data_bytes,
-            headers={"Content-Type": "application/json", "User-Agent": "BB30-Sniper-Bridge"}
-        )
-        ctx = ssl._create_unverified_context()
-        with urllib.request.urlopen(req, context=ctx, timeout=10) as resp:
-            res = json.loads(resp.read().decode("utf-8"))
-            print(f"📡 [NexusPro Cloud Sync] {action} {data.get('symbol', '')} -> {res.get('status')}")
-    except Exception as e:
-        print(f"⚠️ [NexusPro Cloud Sync Note] {action}: {e}")
+def _sync_to_cloud_terminals(action: str, data: Dict):
+    """Real-time HTTP sync bridge to both NexusPro and Hermes 3.5 Terminals on Render."""
+    urls = [
+        "https://nexuspro-terminal.onrender.com/api/sync/trade",
+        "https://smc-ai-agent.onrender.com/api/sync/trade"
+    ]
+    payload = {
+        "action": action,
+        "data": data
+    }
+    data_bytes = json.dumps(payload).encode("utf-8")
+    ctx = ssl._create_unverified_context()
+    
+    for url in urls:
+        try:
+            req = urllib.request.Request(
+                url,
+                data=data_bytes,
+                headers={"Content-Type": "application/json", "User-Agent": "BB30-Sniper-Bridge"}
+            )
+            with urllib.request.urlopen(req, context=ctx, timeout=8) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                host = "NexusPro" if "nexuspro" in url else "Hermes"
+                sym = data.get("symbol", "")
+                print(f"📡 [{host} Cloud Sync] {action} {sym} -> {res.get('status')}")
+        except Exception as e:
+            host = "NexusPro" if "nexuspro" in url else "Hermes"
+            print(f"⚠️ [{host} Cloud Sync Note] {action}: {e}")
+
+_sync_to_nexuspro_render = _sync_to_cloud_terminals
 
 # Shadow Ledger Manager
 class ShadowLedger:
@@ -236,6 +245,11 @@ class BB20LiveSniper:
         print(f"• Risk per Section: {cfg.SECTION_RISK_FRACTION * 100:.1f}% Compounding Mode")
         print(f"• Dedicated Telegram Alerts: Connected ✅")
         print("=" * 80)
+        # Push initial state of all pending setups and positions to cloud terminals
+        for s_sym, s_data in self.ledger.data.get("active_setups", {}).items():
+            _sync_to_cloud_terminals("SETUP", s_data)
+        for p_sym, p_data in self.ledger.data.get("active_positions", {}).items():
+            _sync_to_cloud_terminals("OPEN", p_data)
 
     def get_day_key(self) -> str:
         return datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -401,6 +415,7 @@ class BB20LiveSniper:
             f"<i>Real-time candlestick chart attached above!</i>"
         )
         send_telegram_alert(msg, symbol=symbol, setup_or_pos=setup_data, candles=candles_15m)
+        _sync_to_cloud_terminals("SETUP", setup_data)
 
     def _check_pending_setup_fill(self, symbol: str, candles: List[Dict]):
         setup = self.ledger.data["active_setups"][symbol]
@@ -416,6 +431,7 @@ class BB20LiveSniper:
                 armed_dt = datetime.fromisoformat(armed_str)
                 if (datetime.now(timezone.utc) - armed_dt).total_seconds() >= 8 * 3600:
                     del self.ledger.data["active_setups"][symbol]
+                    _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
                     print(f"⌛ Setup {symbol} Expired (8 hours without mitigation)")
                     return
             except Exception:
@@ -424,10 +440,12 @@ class BB20LiveSniper:
         # Check Invalidation
         if side == "LONG" and last_c["low"] <= sl:
             del self.ledger.data["active_setups"][symbol]
+            _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
             print(f"⚠️ Setup {symbol} Invalidated before fill (hit SL level)")
             return
         elif side == "SHORT" and last_c["high"] >= sl:
             del self.ledger.data["active_setups"][symbol]
+            _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
             print(f"⚠️ Setup {symbol} Invalidated before fill (hit SL level)")
             return
 

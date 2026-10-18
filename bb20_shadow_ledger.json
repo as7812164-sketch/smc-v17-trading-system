@@ -1,7 +1,7 @@
 {
   "created_at": "2026-10-14T08:11:07.723719+00:00",
   "total_initial_capital": 500.0,
-  "total_current_equity": 542.97,
+  "total_current_equity": 542.48,
   "sections": {
     "1": {
       "section_id": 1,
@@ -25,12 +25,12 @@
         "BNBUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 53.6,
-      "trades_count": 1,
+      "balance": 50.76,
+      "trades_count": 2,
       "wins": 1,
       "saves": 0,
-      "losses": 0,
-      "pnl_usd": 3.6,
+      "losses": 1,
+      "pnl_usd": 0.76,
       "status": "IDLE"
     },
     "3": {
@@ -55,12 +55,12 @@
         "LINKUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 50.0,
-      "trades_count": 0,
-      "wins": 0,
+      "balance": 52.35,
+      "trades_count": 1,
+      "wins": 1,
       "saves": 0,
       "losses": 0,
-      "pnl_usd": 0.0,
+      "pnl_usd": 2.35,
       "status": "IDLE"
     },
     "5": {
@@ -154,7 +154,38 @@
       "status": "IDLE"
     }
   },
-  "active_setups": {},
+  "active_setups": {
+    "UNIUSDT": {
+      "symbol": "UNIUSDT",
+      "section_id": "8",
+      "side": "SHORT",
+      "mt_entry": 7.25,
+      "sl": 7.2769,
+      "risk": 0.0269,
+      "risk_usd": 2.84,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 7.36,
+      "armed_at": "2026-10-18T13:31:11.076857+00:00",
+      "target_1r": 7.2231,
+      "target_15r": 7.2097,
+      "target_3r": 7.1693
+    },
+    "LTCUSDT": {
+      "symbol": "LTCUSDT",
+      "section_id": "5",
+      "side": "SHORT",
+      "mt_entry": 59.66,
+      "sl": 59.9598,
+      "risk": 0.2998,
+      "risk_usd": 2.62,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 60.08,
+      "armed_at": "2026-10-18T14:15:42.639957+00:00",
+      "target_1r": 59.3602,
+      "target_15r": 59.2103,
+      "target_3r": 58.7606
+    }
+  },
   "active_positions": {},
   "closed_trades": [
     {
@@ -609,6 +640,70 @@
       "realized_r": 0.14,
       "dollar_pnl": 0.33,
       "section_new_balance": 48.01
+    },
+    {
+      "symbol": "DOTUSDT",
+      "section_id": "4",
+      "side": "LONG",
+      "mt_entry": 1.1015,
+      "sl": 1.0974,
+      "risk": 0.0041,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 1.092,
+      "armed_at": "2026-10-18T10:56:51.743281+00:00",
+      "target_1r": 1.1056,
+      "target_15r": 1.1077,
+      "target_3r": 1.1139,
+      "open_time": 1792328628.0776417,
+      "filled_at": "2026-10-18T13:03:48.077641+00:00",
+      "current_tier": 2,
+      "active_sl": 1.1056,
+      "highest_r": 1.83,
+      "close_time": 1792328863.3752887,
+      "duration_minutes": 3.9,
+      "duration_str": "3m 55s",
+      "entry_time_str": "18 Oct, 18:33:48 IST",
+      "exit_time_str": "18 Oct, 18:37:43 IST",
+      "be_status_str": "\ud83d\udee1\ufe0f Trailing Protected",
+      "closed_at": "2026-10-18T13:07:43.377243+00:00",
+      "exit_price": 1.1056,
+      "outcome": "WIN (+1.0R PROFIT LOCKED)",
+      "realized_r": 0.94,
+      "dollar_pnl": 2.35,
+      "section_new_balance": 52.35
+    },
+    {
+      "symbol": "SEIUSDT",
+      "section_id": "2",
+      "side": "LONG",
+      "mt_entry": 0.0621,
+      "sl": 0.0619,
+      "risk": 0.0002,
+      "risk_usd": 2.68,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.0612,
+      "armed_at": "2026-10-18T10:55:47.596766+00:00",
+      "target_1r": 0.0624,
+      "target_15r": 0.0625,
+      "target_3r": 0.0629,
+      "open_time": 1792329922.6160626,
+      "filled_at": "2026-10-18T13:25:22.616062+00:00",
+      "current_tier": 0,
+      "active_sl": 0.0619,
+      "highest_r": 0.0,
+      "close_time": 1792330032.4206696,
+      "duration_minutes": 1.8,
+      "duration_str": "1m 49s",
+      "entry_time_str": "18 Oct, 18:55:22 IST",
+      "exit_time_str": "18 Oct, 18:57:12 IST",
+      "be_status_str": "BE Inactive",
+      "closed_at": "2026-10-18T13:27:12.420669+00:00",
+      "exit_price": 0.0619,
+      "outcome": "LOSS (SL HIT)",
+      "realized_r": -1.06,
+      "dollar_pnl": -2.84,
+      "section_new_balance": 50.76
     }
   ],
   "daily_single_shot": {
@@ -966,7 +1061,7 @@
         "SHORT": false
       },
       "DOTUSDT": {
-        "LONG": false,
+        "LONG": true,
         "SHORT": false
       },
       "LINKUSDT": {
@@ -1026,7 +1121,7 @@
         "SHORT": false
       },
       "SEIUSDT": {
-        "LONG": false,
+        "LONG": true,
         "SHORT": false
       },
       "KAVAUSDT": {

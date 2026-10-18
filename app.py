@@ -896,6 +896,62 @@ async def reset_nexus_deca():
             return {"status": "ERROR", "message": str(e)}
     return {"status": "ERROR", "message": "Ledger file not found"}
 
+@app.post("/api/sync/trade")
+async def sync_bb30_trade_to_smc(body: Dict[str, Any] = Body(...)):
+    """Syncs BB 3.0 setups, open positions and closed trades from live sniper to Hermes Deca Radar."""
+    action = body.get("action", "").upper()
+    data = body.get("data", body)
+    ledger_file = BASE_DIR / "bb20_shadow_ledger.json"
+    
+    try:
+        d = {}
+        if ledger_file.exists():
+            with open(ledger_file, "r", encoding="utf-8") as f:
+                d = json.load(f)
+        else:
+            d = {"active_setups": {}, "active_positions": {}, "closed_trades": [], "sections": {}}
+
+        sym = data.get("symbol", "")
+        if action == "SETUP":
+            if "active_setups" not in d:
+                d["active_setups"] = {}
+            d["active_setups"][sym] = data
+        elif action == "REMOVE_SETUP":
+            if "active_setups" in d:
+                d["active_setups"].pop(sym, None)
+        elif action == "OPEN":
+            if "active_setups" in d:
+                d["active_setups"].pop(sym, None)
+            if "active_positions" not in d:
+                d["active_positions"] = {}
+            d["active_positions"][sym] = data
+        elif action == "TRAILING":
+            if "active_positions" in d and sym in d["active_positions"]:
+                d["active_positions"][sym]["active_sl"] = data.get("trailing_sl", data.get("new_sl", 0.0))
+        elif action == "CLOSE":
+            if "active_setups" in d:
+                d["active_setups"].pop(sym, None)
+            if "active_positions" in d:
+                d["active_positions"].pop(sym, None)
+            if "closed_trades" not in d:
+                d["closed_trades"] = []
+            if not any(t.get("symbol") == sym and t.get("closed_at") == data.get("closed_at") for t in d["closed_trades"]):
+                d["closed_trades"].append(data)
+        elif action == "SYNC_ALL":
+            if "setups" in data:
+                d["active_setups"] = data["setups"]
+            if "active_positions" in data:
+                d["active_positions"] = data["active_positions"]
+            if "closed_trades" in data:
+                d["closed_trades"] = data["closed_trades"]
+
+        with open(ledger_file, "w", encoding="utf-8") as f:
+            json.dump(d, f, indent=2)
+            
+        return {"status": "SUCCESS", "action": action, "symbol": sym}
+    except Exception as e:
+        return {"status": "ERROR", "message": str(e)}
+
 @app.post("/api/admin/heal-trade")
 @app.get("/api/admin/heal-trade")
 async def api_heal_trade(trade_id: int = 525, sec_id: int = 1, restore_bal: float = 201.95, win_count: int = 19, loss_count: int = 0, win_streak: int = 19):
