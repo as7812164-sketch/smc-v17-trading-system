@@ -897,15 +897,23 @@ async def reset_nexus_deca():
     return {"status": "ERROR", "message": "Ledger file not found"}
 
 @app.post("/api/admin/heal-trade")
-async def api_heal_trade(trade_id: int = 525, sec_id: int = 1, restore_bal: float = 119.61):
+@app.get("/api/admin/heal-trade")
+async def api_heal_trade(trade_id: int = 525, sec_id: int = 1, restore_bal: float = 201.95, win_count: int = 19, loss_count: int = 0, win_streak: int = 19):
     from database.db import get_connection
     with get_connection() as conn:
-        conn.execute("UPDATE paper_account SET current_balance = ?, total_pnl = ?, loss_count = 0, win_count = 12, win_streak = 3 WHERE id = ?", (restore_bal, round(restore_bal - 50.0, 2), sec_id))
-        conn.execute("UPDATE paper_trades SET status = 'TRAILING_SL_HIT', exit_price = 0.1837668, pnl_usdt = 0.27, pnl_pct = 1.0, roi_pct = 1.0, exit_time = 1791983078878, autopsy_diagnosis = 'Self-Healed: Trailing SL Locked Profit (+1.0% ROI)' WHERE id = ?", (trade_id,))
+        conn.execute("UPDATE paper_account SET current_balance = ?, total_pnl = ?, loss_count = ?, win_count = ?, win_streak = ? WHERE id = ?", (restore_bal, round(restore_bal - 50.0, 2), loss_count, win_count, win_streak, sec_id))
         conn.commit()
     from database.cloud_vault import push_vault_state
     push_vault_state()
-    return {"status": "HEALED", "section_1_balance": restore_bal}
+    return {"status": "HEALED", "section_1_balance": restore_bal, "win_count": win_count}
+
+@app.post("/api/admin/vault/pull")
+@app.get("/api/admin/vault/pull")
+async def api_admin_vault_pull():
+    from database.cloud_vault import pull_and_restore_vault_state
+    res = pull_and_restore_vault_state()
+    return {"status": "SUCCESS", "pulled": res}
+
 
 
 @app.get("/api/journal/trades")

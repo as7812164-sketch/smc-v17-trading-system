@@ -17,7 +17,7 @@ import json
 import ssl
 import urllib.request
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -148,86 +148,33 @@ def fetch_binance_klines(symbol: str, interval: str = "15m", limit: int = 100) -
                 return candles
     except Exception as e:
         print(f"Error fetching klines for {symbol} ({interval}): {e}")
+    return []
 
 def _sync_to_sqlite(action: str, data: Dict):
+    """Isolated: BB sniper never touches Hermes 3.5 smc_v17.db or cloud vault."""
+    pass
+
+def _sync_to_nexuspro_render(action: str, data: Dict):
+    """Real-time HTTP sync bridge to NexusPro Terminal on Render (https://nexuspro-terminal.onrender.com)."""
     try:
-        import sqlite3
-        db_path = os.path.join(REPO_ROOT, "database", "smc_v17.db")
-        if not os.path.exists(db_path):
-            return
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        
-        if action == "OPEN":
-            sym = data["symbol"]
-            side = data["side"]
-            entry = float(data["mt_entry"])
-            sl = float(data["sl"])
-            tp = float(data.get("target_1r", 0.0))
-            sec_id = int(data["section_id"])
-            now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
-            c.execute("""
-                INSERT INTO paper_trades (
-                    symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
-                    status, entry_time, pnl_usdt, pnl_pct, timeframe, exchange, channel, account_id, mode
-                ) VALUES (?, ?, ?, 250.0, ?, ?, 'OPEN', ?, 0.0, 0.0, '15m', 'BITGET', ?, ?, 'BB_3.0_SNIPER')
-            """, (sym, side, entry, tp, sl, now_ms, f"sec_{sec_id}", sec_id))
-            conn.commit()
-
-        elif action == "CLOSE":
-            sym = data["symbol"]
-            side = data["side"]
-            entry = float(data["mt_entry"])
-            exit_p = float(data["exit_price"])
-            dollar_pnl = float(data["dollar_pnl"])
-            outcome = data["outcome"]
-            sec_id = int(data["section_id"])
-            sec_bal = float(data["section_new_balance"])
-            now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
-            pnl_pct = round((dollar_pnl / 2.50) * 100.0, 2)
-
-            c.execute("""
-                UPDATE paper_trades
-                SET status = 'CLOSED', exit_price = ?, pnl_usdt = ?, pnl_pct = ?,
-                    exit_time = ?, autopsy_diagnosis = ?, roi_pct = ?
-                WHERE id = (
-                    SELECT id FROM paper_trades
-                    WHERE symbol = ? AND side = ? AND mode = 'BB_3.0_SNIPER' AND status = 'OPEN'
-                    ORDER BY id DESC LIMIT 1
-                )
-            """, (exit_p, dollar_pnl, pnl_pct, now_ms, outcome, pnl_pct, sym, side))
-
-            if c.rowcount == 0:
-                c.execute("""
-                    INSERT INTO paper_trades (
-                        symbol, side, entry_price, position_size_usdt, tp_price, sl_price,
-                        status, entry_time, exit_time, exit_price, pnl_usdt, pnl_pct,
-                        timeframe, exchange, channel, account_id, mode, autopsy_diagnosis, roi_pct
-                    ) VALUES (?, ?, ?, 250.0, ?, ?, 'CLOSED', ?, ?, ?, ?, ?, '15m', 'BITGET', ?, ?, 'BB_3.0_SNIPER', ?, ?)
-                """, (sym, side, entry, entry, exit_p, now_ms - 60000, now_ms, exit_p, dollar_pnl, pnl_pct, f"sec_{sec_id}", sec_id, outcome, pnl_pct))
-
-            is_win = 1 if "WIN" in outcome else 0
-            is_loss = 1 if "LOSS" in outcome else 0
-            c.execute("""
-                UPDATE paper_account
-                SET current_balance = ?,
-                    win_count = win_count + ?,
-                    loss_count = loss_count + ?,
-                    total_pnl = total_pnl + ?
-                WHERE id = ?
-            """, (sec_bal, is_win, is_loss, dollar_pnl, sec_id))
-            conn.commit()
-
-        conn.close()
-        
-        try:
-            from database.cloud_vault import push_vault_state
-            push_vault_state()
-        except Exception:
-            pass
-
+        import urllib.request, ssl, json
+        url = "https://nexuspro-terminal.onrender.com/api/sync/trade"
+        payload = {
+            "action": action,
+            "data": data
+        }
+        data_bytes = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=data_bytes,
+            headers={"Content-Type": "application/json", "User-Agent": "BB30-Sniper-Bridge"}
+        )
+        ctx = ssl._create_unverified_context()
+        with urllib.request.urlopen(req, context=ctx, timeout=10) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            print(f"📡 [NexusPro Cloud Sync] {action} {data.get('symbol', '')} -> {res.get('status')}")
     except Exception as e:
-        print(f"[DB Live Sync Error]: {e}")
+        print(f"⚠️ [NexusPro Cloud Sync Note] {action}: {e}")
 
 # Shadow Ledger Manager
 class ShadowLedger:
@@ -312,7 +259,7 @@ class BB20LiveSniper:
 
             # 1. Fetch Daily Candles for PDH / PDL
             daily_candles = fetch_binance_klines(symbol, interval="1d", limit=3)
-            if len(daily_candles) < 2:
+            if not daily_candles or len(daily_candles) < 2:
                 continue
             prev_day = daily_candles[-2]
             pdh = prev_day["high"]
@@ -320,7 +267,7 @@ class BB20LiveSniper:
 
             # 2. Fetch 15m Candles
             candles_15m = fetch_binance_klines(symbol, interval="15m", limit=30)
-            if len(candles_15m) < 5:
+            if not candles_15m or len(candles_15m) < 5:
                 continue
 
             last_c = candles_15m[-1]
@@ -502,6 +449,7 @@ class BB20LiveSniper:
             self.ledger.data["daily_single_shot"][day_key][symbol][side] = True # LOCK single-shot
 
             pos_data = dict(setup)
+            pos_data["open_time"] = time.time()
             pos_data["filled_at"] = datetime.now(timezone.utc).isoformat()
             pos_data["current_tier"] = 0
             pos_data["active_sl"] = sl
@@ -511,6 +459,7 @@ class BB20LiveSniper:
             sec_id = setup["section_id"]
             self.ledger.data["sections"][sec_id]["status"] = f"IN TRADE ({symbol} {side})"
             _sync_to_sqlite("OPEN", pos_data)
+            _sync_to_nexuspro_render("OPEN", pos_data)
 
             print(f"✅ [LIMIT FILLED] {symbol} {side} @ ${entry:.4f}! Trade is LIVE!")
 
@@ -563,6 +512,12 @@ class BB20LiveSniper:
                 locked_r = 0.2 if tier_candidate == 1 else tier_candidate * 0.5
                 new_sl = entry + (locked_r * risk) if side == "LONG" else entry - (locked_r * risk)
                 pos["active_sl"] = round(new_sl, 4)
+                _sync_to_nexuspro_render("TRAILING", {
+                    "symbol": symbol,
+                    "trailing_sl": new_sl,
+                    "stage": tier_candidate,
+                    "highest_r": max_fav_r
+                })
 
                 print(f"🛡️ [TRAILING SL UPDATE] {symbol} {side}: Tier {tier_candidate} Locked! (SL ➔ ${new_sl:.4f})")
                 tier_msg = "Fee Shield (+0.2R Breakeven)" if tier_candidate == 1 else f"+{locked_r:.1f}R Pure Profit Locked!"
@@ -603,7 +558,31 @@ class BB20LiveSniper:
         sec["status"] = "IDLE"
 
         # Record trade in closed trades
+        now_ts = time.time()
+        open_ts = pos.get("open_time")
+        if not open_ts and pos.get("filled_at"):
+            try:
+                open_ts = datetime.fromisoformat(pos["filled_at"].replace("Z", "+00:00")).timestamp()
+            except Exception:
+                open_ts = now_ts - 300
+        elif not open_ts:
+            open_ts = now_ts - 300
+
+        dur_sec = max(0, int(now_ts - open_ts))
+        h, m, s = dur_sec // 3600, (dur_sec % 3600) // 60, dur_sec % 60
+        dur_str = f"{h}h {m}m" if h > 0 else (f"{m}m {s}s" if m > 0 else f"{s}s")
+
+        dt_open = datetime.fromtimestamp(open_ts, tz=timezone.utc) + timedelta(hours=5, minutes=30)
+        dt_close = datetime.fromtimestamp(now_ts, tz=timezone.utc) + timedelta(hours=5, minutes=30)
+
         closed_rec = dict(pos)
+        closed_rec["open_time"] = open_ts
+        closed_rec["close_time"] = now_ts
+        closed_rec["duration_minutes"] = round(dur_sec / 60.0, 1)
+        closed_rec["duration_str"] = dur_str
+        closed_rec["entry_time_str"] = dt_open.strftime("%d %b, %H:%M:%S IST")
+        closed_rec["exit_time_str"] = dt_close.strftime("%d %b, %H:%M:%S IST")
+        closed_rec["be_status_str"] = "🛡️ Trailing Protected" if realized_r > 0 else ("🛡️ BE Locked (+0.2R Shield)" if tier == 1 else "BE Inactive")
         closed_rec["closed_at"] = datetime.now(timezone.utc).isoformat()
         closed_rec["exit_price"] = exit_price
         closed_rec["outcome"] = outcome
@@ -615,6 +594,7 @@ class BB20LiveSniper:
         del self.ledger.data["active_positions"][symbol]
         self.ledger.save()
         _sync_to_sqlite("CLOSE", closed_rec)
+        _sync_to_nexuspro_render("CLOSE", closed_rec)
 
         print(f"🏁 [TRADE CLOSED] {symbol} {outcome} | PnL: ${dollar_pnl:+.2f} USDT | Sec #{sec_id} Bal: ${sec['balance']:.2f}")
 
@@ -657,12 +637,16 @@ def main():
     )
 
     print("\nStarting live scan loop (runs every 60 seconds)... Press Ctrl+C to stop.\n")
-    try:
-        while True:
+    while True:
+        try:
             sniper.run_scan_cycle()
-            time.sleep(60)
-    except KeyboardInterrupt:
-        print("\nBB 2.0 Live Sniper Stopped safely.")
+        except KeyboardInterrupt:
+            print("\nBB 2.0 Live Sniper Stopped safely.")
+            break
+        except Exception as e:
+            print(f"[Unhandled Loop Exception]: {e}")
+            time.sleep(10)
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()

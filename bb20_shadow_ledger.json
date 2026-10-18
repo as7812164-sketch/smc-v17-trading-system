@@ -1,7 +1,7 @@
 {
   "created_at": "2026-10-14T08:11:07.723719+00:00",
   "total_initial_capital": 500.0,
-  "total_current_equity": 506.85,
+  "total_current_equity": 538.47,
   "sections": {
     "1": {
       "section_id": 1,
@@ -10,12 +10,12 @@
         "ETHUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 50.0,
-      "trades_count": 0,
+      "balance": 50.35,
+      "trades_count": 1,
       "wins": 0,
-      "saves": 0,
+      "saves": 1,
       "losses": 0,
-      "pnl_usd": 0.0,
+      "pnl_usd": 0.35,
       "status": "IDLE"
     },
     "2": {
@@ -25,12 +25,12 @@
         "BNBUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 50.0,
-      "trades_count": 0,
-      "wins": 0,
+      "balance": 53.6,
+      "trades_count": 1,
+      "wins": 1,
       "saves": 0,
       "losses": 0,
-      "pnl_usd": 0.0,
+      "pnl_usd": 3.6,
       "status": "IDLE"
     },
     "3": {
@@ -70,12 +70,12 @@
         "NEARUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 50.0,
-      "trades_count": 0,
-      "wins": 0,
+      "balance": 52.35,
+      "trades_count": 1,
+      "wins": 1,
       "saves": 0,
       "losses": 0,
-      "pnl_usd": 0.0,
+      "pnl_usd": 2.35,
       "status": "IDLE"
     },
     "6": {
@@ -85,12 +85,12 @@
         "RENDERUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 50.35,
-      "trades_count": 1,
+      "balance": 47.68,
+      "trades_count": 2,
       "wins": 0,
       "saves": 1,
-      "losses": 0,
-      "pnl_usd": 0.35,
+      "losses": 1,
+      "pnl_usd": -2.32,
       "status": "IDLE"
     },
     "7": {
@@ -115,12 +115,12 @@
         "XRPUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 50.35,
-      "trades_count": 1,
-      "wins": 0,
+      "balance": 56.49,
+      "trades_count": 2,
+      "wins": 1,
       "saves": 1,
       "losses": 0,
-      "pnl_usd": 0.35,
+      "pnl_usd": 6.49,
       "status": "IDLE"
     },
     "9": {
@@ -130,12 +130,12 @@
         "APTUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 50.35,
-      "trades_count": 1,
-      "wins": 0,
+      "balance": 60.27,
+      "trades_count": 2,
+      "wins": 1,
       "saves": 1,
       "losses": 0,
-      "pnl_usd": 0.35,
+      "pnl_usd": 10.27,
       "status": "IDLE"
     },
     "10": {
@@ -145,53 +145,108 @@
         "FETUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 47.35,
-      "trades_count": 1,
-      "wins": 0,
+      "balance": 59.28,
+      "trades_count": 3,
+      "wins": 1,
       "saves": 0,
-      "losses": 1,
-      "pnl_usd": -2.65,
-      "status": "IN TRADE (ARBUSDT LONG)"
+      "losses": 2,
+      "pnl_usd": 9.28,
+      "status": "IDLE"
     }
   },
   "active_setups": {
-    "TIAUSDT": {
-      "symbol": "TIAUSDT",
-      "section_id": "7",
+    "1000PEPEUSDT": {
+      "symbol": "1000PEPEUSDT",
+      "section_id": "9",
+      "side": "LONG",
+      "mt_entry": 0.0038,
+      "sl": 0.0038,
+      "risk": 0.0,
+      "risk_usd": 3.01,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.0039,
+      "armed_at": "2026-10-17T22:15:06.580247+00:00",
+      "target_1r": 0.0039,
+      "target_15r": 0.0039,
+      "target_3r": 0.0039
+    },
+    "DOGEUSDT": {
+      "symbol": "DOGEUSDT",
+      "section_id": "3",
       "side": "SHORT",
-      "mt_entry": 0.7477,
-      "sl": 0.7542,
-      "risk": 0.0065,
+      "mt_entry": 0.0804,
+      "sl": 0.0806,
+      "risk": 0.0002,
+      "risk_usd": 2.81,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 0.0809,
+      "armed_at": "2026-10-18T00:00:34.160074+00:00",
+      "target_1r": 0.0801,
+      "target_15r": 0.08,
+      "target_3r": 0.0796
+    },
+    "LTCUSDT": {
+      "symbol": "LTCUSDT",
+      "section_id": "5",
+      "side": "SHORT",
+      "mt_entry": 59.4,
+      "sl": 59.5692,
+      "risk": 0.1692,
       "risk_usd": 2.62,
       "anchor_name": "PDH RESISTANCE",
-      "anchor_price": 0.7233,
-      "armed_at": "2026-10-17T07:10:56.732213+00:00",
-      "target_1r": 0.7412,
-      "target_15r": 0.7379,
-      "target_3r": 0.7281
-    }
-  },
-  "active_positions": {
+      "anchor_price": 60.08,
+      "armed_at": "2026-10-18T00:00:42.949966+00:00",
+      "target_1r": 59.2308,
+      "target_15r": 59.1462,
+      "target_3r": 58.8923
+    },
+    "XRPUSDT": {
+      "symbol": "XRPUSDT",
+      "section_id": "8",
+      "side": "SHORT",
+      "mt_entry": 1.3045,
+      "sl": 1.3083,
+      "risk": 0.0038,
+      "risk_usd": 2.82,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 1.3126,
+      "armed_at": "2026-10-18T00:00:58.997160+00:00",
+      "target_1r": 1.3006,
+      "target_15r": 1.2987,
+      "target_3r": 1.293
+    },
     "ARBUSDT": {
       "symbol": "ARBUSDT",
       "section_id": "10",
       "side": "LONG",
-      "mt_entry": 0.1888,
-      "sl": 0.1877,
-      "risk": 0.0011,
-      "risk_usd": 2.37,
+      "mt_entry": 0.1799,
+      "sl": 0.1791,
+      "risk": 0.0007,
+      "risk_usd": 2.96,
       "anchor_name": "PDL SUPPORT",
-      "anchor_price": 0.1893,
-      "armed_at": "2026-10-17T07:11:19.599311+00:00",
-      "target_1r": 0.1899,
-      "target_15r": 0.1904,
-      "target_3r": 0.192,
-      "filled_at": "2026-10-17T07:11:23.848040+00:00",
-      "current_tier": 0,
-      "active_sl": 0.1877,
-      "highest_r": 0.0
+      "anchor_price": 0.1768,
+      "armed_at": "2026-10-18T00:01:07.874454+00:00",
+      "target_1r": 0.1806,
+      "target_15r": 0.1809,
+      "target_3r": 0.182
+    },
+    "OPUSDT": {
+      "symbol": "OPUSDT",
+      "section_id": "6",
+      "side": "LONG",
+      "mt_entry": 0.1279,
+      "sl": 0.1273,
+      "risk": 0.0005,
+      "risk_usd": 2.38,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.126,
+      "armed_at": "2026-10-18T03:16:32.313665+00:00",
+      "target_1r": 0.1284,
+      "target_15r": 0.1287,
+      "target_3r": 0.1295
     }
   },
+  "active_positions": {},
   "closed_trades": [
     {
       "symbol": "OPUSDT",
@@ -342,6 +397,213 @@
       "realized_r": 0.94,
       "dollar_pnl": 2.35,
       "section_new_balance": 52.35
+    },
+    {
+      "symbol": "ARBUSDT",
+      "section_id": "10",
+      "side": "LONG",
+      "mt_entry": 0.1888,
+      "sl": 0.1877,
+      "risk": 0.0011,
+      "risk_usd": 2.37,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.1893,
+      "armed_at": "2026-10-17T07:11:19.599311+00:00",
+      "target_1r": 0.1899,
+      "target_15r": 0.1904,
+      "target_3r": 0.192,
+      "filled_at": "2026-10-17T07:11:23.848040+00:00",
+      "current_tier": 0,
+      "active_sl": 0.1877,
+      "highest_r": 0.73,
+      "closed_at": "2026-10-17T09:38:04.444876+00:00",
+      "exit_price": 0.1877,
+      "outcome": "LOSS (SL HIT)",
+      "realized_r": -1.06,
+      "dollar_pnl": -2.51,
+      "section_new_balance": 44.84
+    },
+    {
+      "symbol": "NEARUSDT",
+      "section_id": "5",
+      "side": "LONG",
+      "mt_entry": 5.011,
+      "sl": 4.9795,
+      "risk": 0.0315,
+      "risk_usd": 2.5,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 4.921,
+      "armed_at": "2026-10-17T13:46:26.481864+00:00",
+      "target_1r": 5.0425,
+      "target_15r": 5.0582,
+      "target_3r": 5.1054,
+      "filled_at": "2026-10-17T15:01:22.126045+00:00",
+      "current_tier": 2,
+      "active_sl": 5.0425,
+      "highest_r": 1.71,
+      "closed_at": "2026-10-17T15:04:56.581444+00:00",
+      "exit_price": 5.0425,
+      "outcome": "WIN (+1.0R PROFIT LOCKED)",
+      "realized_r": 0.94,
+      "dollar_pnl": 2.35,
+      "section_new_balance": 52.35
+    },
+    {
+      "symbol": "OPUSDT",
+      "section_id": "6",
+      "side": "LONG",
+      "mt_entry": 0.1289,
+      "sl": 0.1283,
+      "risk": 0.0006,
+      "risk_usd": 2.52,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.1332,
+      "armed_at": "2026-10-17T17:00:18.302231+00:00",
+      "target_1r": 0.1295,
+      "target_15r": 0.1298,
+      "target_3r": 0.1307,
+      "filled_at": "2026-10-17T21:28:37.416952+00:00",
+      "current_tier": 0,
+      "active_sl": 0.1283,
+      "highest_r": 0.0,
+      "closed_at": "2026-10-17T21:30:21.005571+00:00",
+      "exit_price": 0.1283,
+      "outcome": "LOSS (SL HIT)",
+      "realized_r": -1.06,
+      "dollar_pnl": -2.67,
+      "section_new_balance": 47.68
+    },
+    {
+      "symbol": "APTUSDT",
+      "section_id": "9",
+      "side": "LONG",
+      "mt_entry": 0.7902,
+      "sl": 0.7854,
+      "risk": 0.0048,
+      "risk_usd": 2.52,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.8267,
+      "armed_at": "2026-10-17T17:30:29.491769+00:00",
+      "target_1r": 0.795,
+      "target_15r": 0.7974,
+      "target_3r": 0.8045,
+      "filled_at": "2026-10-17T21:32:13.079723+00:00",
+      "current_tier": 8,
+      "active_sl": 0.8094,
+      "highest_r": 4.98,
+      "closed_at": "2026-10-17T21:35:51.042051+00:00",
+      "exit_price": 0.8094,
+      "outcome": "WIN (+4.0R PROFIT LOCKED)",
+      "realized_r": 3.94,
+      "dollar_pnl": 9.92,
+      "section_new_balance": 60.27
+    },
+    {
+      "symbol": "FETUSDT",
+      "section_id": "10",
+      "side": "LONG",
+      "mt_entry": 0.1881,
+      "sl": 0.1873,
+      "risk": 0.0008,
+      "risk_usd": 2.24,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.1954,
+      "armed_at": "2026-10-17T18:16:00.726693+00:00",
+      "target_1r": 0.189,
+      "target_15r": 0.1894,
+      "target_3r": 0.1906,
+      "filled_at": "2026-10-17T21:32:23.488181+00:00",
+      "current_tier": 13,
+      "active_sl": 0.1933,
+      "highest_r": 7.0,
+      "closed_at": "2026-10-17T21:36:02.843472+00:00",
+      "exit_price": 0.1933,
+      "outcome": "WIN (+6.5R PROFIT LOCKED)",
+      "realized_r": 6.44,
+      "dollar_pnl": 14.44,
+      "section_new_balance": 59.28
+    },
+    {
+      "symbol": "UNIUSDT",
+      "section_id": "8",
+      "side": "LONG",
+      "mt_entry": 7.0775,
+      "sl": 7.0444,
+      "risk": 0.0331,
+      "risk_usd": 2.52,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 7.092,
+      "armed_at": "2026-10-17T18:15:47.834299+00:00",
+      "target_1r": 7.1106,
+      "target_15r": 7.1271,
+      "target_3r": 7.1767,
+      "filled_at": "2026-10-17T21:33:54.303623+00:00",
+      "current_tier": 5,
+      "active_sl": 7.1602,
+      "highest_r": 3.22,
+      "closed_at": "2026-10-17T21:37:35.334568+00:00",
+      "exit_price": 7.1602,
+      "outcome": "WIN (+2.5R PROFIT LOCKED)",
+      "realized_r": 2.44,
+      "dollar_pnl": 6.14,
+      "section_new_balance": 56.49
+    },
+    {
+      "symbol": "SOLUSDT",
+      "section_id": "2",
+      "side": "SHORT",
+      "mt_entry": 104.195,
+      "sl": 104.4965,
+      "risk": 0.3015,
+      "risk_usd": 2.5,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 105.28,
+      "armed_at": "2026-10-18T00:00:25.590019+00:00",
+      "target_1r": 103.8935,
+      "target_15r": 103.7427,
+      "target_3r": 103.2905,
+      "filled_at": "2026-10-18T01:46:51.389504+00:00",
+      "current_tier": 3,
+      "active_sl": 103.7427,
+      "highest_r": 2.01,
+      "closed_at": "2026-10-18T01:50:10.726676+00:00",
+      "exit_price": 103.7427,
+      "outcome": "WIN (+1.5R PROFIT LOCKED)",
+      "realized_r": 1.44,
+      "dollar_pnl": 3.6,
+      "section_new_balance": 53.6
+    },
+    {
+      "symbol": "ETHUSDT",
+      "section_id": "1",
+      "side": "SHORT",
+      "mt_entry": 2422.79,
+      "sl": 2428.3571,
+      "risk": 5.5671,
+      "risk_usd": 2.5,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 2441.66,
+      "armed_at": "2026-10-18T00:00:19.836884+00:00",
+      "target_1r": 2417.2229,
+      "target_15r": 2414.4394,
+      "target_3r": 2406.0888,
+      "open_time": 1792293266.5575871,
+      "filled_at": "2026-10-18T03:14:26.557587+00:00",
+      "current_tier": 1,
+      "active_sl": 2421.6766,
+      "highest_r": 1.24,
+      "close_time": 1792293474.7837443,
+      "duration_minutes": 3.5,
+      "duration_str": "3m 28s",
+      "entry_time_str": "18 Oct, 08:44:26 IST",
+      "exit_time_str": "18 Oct, 08:47:54 IST",
+      "be_status_str": "\ud83d\udee1\ufe0f Trailing Protected",
+      "closed_at": "2026-10-18T03:17:54.783744+00:00",
+      "exit_price": 2421.6766,
+      "outcome": "FEE SHIELD SAVE (+0.2R)",
+      "realized_r": 0.14,
+      "dollar_pnl": 0.35,
+      "section_new_balance": 50.35
     }
   ],
   "daily_single_shot": {
@@ -629,6 +891,88 @@
         "SHORT": false
       },
       "NEARUSDT": {
+        "LONG": true,
+        "SHORT": false
+      },
+      "OPUSDT": {
+        "LONG": true,
+        "SHORT": false
+      },
+      "RENDERUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SUIUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "TIAUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "UNIUSDT": {
+        "LONG": true,
+        "SHORT": false
+      },
+      "XRPUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "1000PEPEUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "APTUSDT": {
+        "LONG": true,
+        "SHORT": false
+      },
+      "ARBUSDT": {
+        "LONG": true,
+        "SHORT": false
+      },
+      "FETUSDT": {
+        "LONG": true,
+        "SHORT": false
+      }
+    },
+    "2026-10-18": {
+      "BTCUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ETHUSDT": {
+        "LONG": false,
+        "SHORT": true
+      },
+      "SOLUSDT": {
+        "LONG": false,
+        "SHORT": true
+      },
+      "BNBUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "AVAXUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "DOGEUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "DOTUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "LINKUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "LTCUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "NEARUSDT": {
         "LONG": false,
         "SHORT": false
       },
@@ -665,7 +1009,7 @@
         "SHORT": false
       },
       "ARBUSDT": {
-        "LONG": true,
+        "LONG": false,
         "SHORT": false
       },
       "FETUSDT": {
