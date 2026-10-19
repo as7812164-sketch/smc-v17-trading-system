@@ -1224,7 +1224,12 @@ async def admin_reset_clean():
     res = wipe_legacy_database_clean()
     return res
 
-@app.get("/api/status")
+@app.api_route("/ping", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def ping_health():
+    return {"status": "ok", "service": "Hermes-SMC", "time": time.time()}
+
+@app.api_route("/api/status", methods=["GET", "HEAD"])
 async def get_system_status():
     stats = get_performance_stats()
     metrics = get_all_metrics()
