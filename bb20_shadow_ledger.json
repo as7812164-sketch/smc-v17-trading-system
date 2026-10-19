@@ -166,9 +166,10 @@
       "anchor_name": "PDH RESISTANCE",
       "anchor_price": 0.1874,
       "armed_at": "2026-10-19T07:00:11.778699+00:00",
-      "target_1r": 0.196,
-      "target_15r": 0.1952,
-      "target_3r": 0.1928
+      "trigger_t1_price": 0.195703,
+      "trigger_t2_price": 0.193727,
+      "trigger_t3_price": 0.191751,
+      "trailing_type": "CONTINUOUS_ROI_STEPPED"
     },
     "AVAXUSDT": {
       "symbol": "AVAXUSDT",
@@ -181,9 +182,10 @@
       "anchor_name": "PDH RESISTANCE",
       "anchor_price": 9.901,
       "armed_at": "2026-10-19T10:59:52.277644+00:00",
-      "target_1r": 9.7283,
-      "target_15r": 9.7143,
-      "target_3r": 9.672
+      "trigger_t1_price": 9.662838,
+      "trigger_t2_price": 9.565273,
+      "trigger_t3_price": 9.467708,
+      "trailing_type": "CONTINUOUS_ROI_STEPPED"
     },
     "WLDUSDT": {
       "symbol": "WLDUSDT",
@@ -196,9 +198,10 @@
       "anchor_name": "PDH RESISTANCE",
       "anchor_price": 0.5126,
       "armed_at": "2026-10-19T11:00:22.334232+00:00",
-      "target_1r": 0.4994,
-      "target_15r": 0.4974,
-      "target_3r": 0.4913
+      "trigger_t1_price": 0.498666,
+      "trigger_t2_price": 0.493631,
+      "trigger_t3_price": 0.488596,
+      "trailing_type": "CONTINUOUS_ROI_STEPPED"
     },
     "SUIUSDT": {
       "symbol": "SUIUSDT",
@@ -211,9 +214,10 @@
       "anchor_name": "PDH RESISTANCE",
       "anchor_price": 0.9993,
       "armed_at": "2026-10-19T11:00:29.101849+00:00",
-      "target_1r": 1.0023,
-      "target_15r": 1.0005,
-      "target_3r": 0.9952
+      "trigger_t1_price": 0.996243,
+      "trigger_t2_price": 0.986184,
+      "trigger_t3_price": 0.976125,
+      "trailing_type": "CONTINUOUS_ROI_STEPPED"
     }
   },
   "active_positions": {},

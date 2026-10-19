@@ -47,9 +47,9 @@ def generate_bb30_chart(
     ob_bottom = float(setup.get("ob_bottom") or 0.0)
     mt_entry = float(setup.get("mt_entry") or 0.0)
     sl_price = float(setup.get("sl") or setup.get("active_sl") or 0.0)
-    t1 = float(setup.get("target_1r") or 0.0)
-    t15 = float(setup.get("target_15r") or 0.0)
-    t3 = float(setup.get("target_3r") or 0.0)
+    t1 = float(setup.get("trigger_t1_price") or setup.get("target_1r") or 0.0)
+    t2 = float(setup.get("trigger_t2_price") or setup.get("target_15r") or 0.0)
+    t3 = float(setup.get("trigger_t3_price") or setup.get("target_3r") or 0.0)
     sec_id = setup.get("section_id", 1)
     status_label = setup.get("status_label", "PENDING LIMIT SETUP")
     active_sl = float(setup.get("active_sl") or 0.0)
@@ -61,7 +61,7 @@ def generate_bb30_chart(
 
     # Include key levels in scale
     all_levels = [min_p, max_p]
-    for lev in [anchor_price, ob_top, ob_bottom, mt_entry, sl_price, t1, t15]:
+    for lev in [anchor_price, ob_top, ob_bottom, mt_entry, sl_price, t1, t2]:
         if lev > 0:
             all_levels.append(lev)
     pad = (max(all_levels) - min(all_levels)) * 0.08
@@ -131,22 +131,22 @@ def generate_bb30_chart(
                 color='#FFFFFF', fontsize=9, fontweight='bold', va='center', ha='right',
                 bbox=dict(boxstyle='round,pad=0.25', facecolor='#DC2626', edgecolor='none', alpha=0.95))
 
-    # 5. Stepped Trailing Ladder Milestones (+1.0R, +1.5R, +3.0R)
+    # 5. Stepped Trailing Ladder Milestones (+4.8% ROI, +9.8% ROI, +14.8% ROI)
     if t1 > 0:
         ax.axhline(t1, color='#10B981', linestyle=':', linewidth=1.3, alpha=0.85, zorder=4)
-        ax.text(0.5, t1, f"  +1.0R Milestone (Move SL to +0.2R BE): ${t1:.4f}",
+        ax.text(0.5, t1, f"  +4.8% ROI Trigger (Move SL to +1.0% Risk-Free): ${t1:.4f}",
                 color='#10B981', fontsize=8, fontweight='bold', va='bottom', ha='left')
 
-    if t15 > 0:
-        ax.axhline(t15, color='#10B981', linestyle='-.', linewidth=1.4, alpha=0.85, zorder=4)
-        ax.text(0.5, t15, f"  +1.5R Milestone (Lock +1.0R Pure Profit): ${t15:.4f}",
+    if t2 > 0:
+        ax.axhline(t2, color='#10B981', linestyle='-.', linewidth=1.4, alpha=0.85, zorder=4)
+        ax.text(0.5, t2, f"  +9.8% ROI Trigger (Lock +5.1% Pure Profit): ${t2:.4f}",
                 color='#10B981', fontsize=8, fontweight='bold', va='bottom', ha='left')
 
     if t3 > 0:
-        ax.axhline(t3, color='#22C55E', linestyle='-', linewidth=1.8, alpha=0.9, zorder=4)
-        ax.text(n_bars - 1, t3, f" [TARGET] TAKE PROFIT (+3.0R): ${t3:.4f} ",
-                color='#000000', fontsize=9, fontweight='bold', va='center', ha='right',
-                bbox=dict(boxstyle='round,pad=0.25', facecolor='#22C55E', edgecolor='none', alpha=0.95))
+        ax.axhline(t3, color='#22C55E', linestyle='-', linewidth=1.6, alpha=0.9, zorder=4)
+        ax.text(0.5, t3, f"  +14.8% ROI Trigger (Lock +10.1% Pure Profit): ${t3:.4f}",
+                color='#22C55E', fontsize=8, fontweight='bold', va='bottom', ha='left')
+
 
     # Axis Limits & Ticks
     ax.set_ylim(y_min, y_max)

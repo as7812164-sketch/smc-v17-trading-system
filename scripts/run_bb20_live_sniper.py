@@ -32,7 +32,55 @@ if REPO_ROOT not in sys.path:
 
 import bb20_config as cfg
 
+# ROI Stepped Trailing SL Calculation Functions (Continuous Ladder)
+def get_roi_trailing_tier(peak_roi_pct: float) -> int:
+    """
+    Returns the trailing tier based on peak ROI%:
+    < 4.80%   -> Tier 0 (Initial SL active)
+    >= 4.80%  -> Tier 1 (SL to +1.00% ROI - Risk-Free Fee Shield)
+    >= 9.80%  -> Tier 2 (SL to +5.10% ROI)
+    >= 14.80% -> Tier 3 (SL to +10.10% ROI)
+    >= 19.80% -> Tier 4 (SL to +15.10% ROI)
+    >= 24.80% -> Tier 5 (SL to +20.10% ROI)
+    >= 29.80% -> Tier 6 (SL to +25.10% ROI)
+    >= 34.80% -> Tier 7 (SL to +30.10% ROI)
+    General: Every +5.0% additional ROI peak shifts SL forward by +5.0% ROI indefinitely!
+    """
+    if peak_roi_pct < 4.80:
+        return 0
+    return int(round((peak_roi_pct - 4.80) / 5.0 + 1e-5, 4)) + 1
+
+def get_locked_roi(tier: int) -> float:
+    """
+    Returns the locked ROI% for a given tier:
+    Tier 0 -> 0.0%
+    Tier 1 -> 1.00%
+    Tier 2 -> 5.10%
+    Tier 3 -> 10.10%
+    Tier 4 -> 15.10%
+    Tier k -> 5.10 + (k - 2) * 5.0%
+    """
+    if tier <= 0:
+        return 0.0
+    if tier == 1:
+        return 1.00
+    return round(5.10 + (tier - 2) * 5.0, 2)
+
+def calculate_trailing_sl_price(entry: float, side: str, locked_roi_pct: float, leverage: float = 5.0) -> float:
+    """
+    Translates locked ROI% to exact stop-loss spot price at given leverage:
+    Spot Move % = ROI% / Leverage
+    LONG:  SL = Entry * (1 + locked_roi / (leverage * 100))
+    SHORT: SL = Entry * (1 - locked_roi / (leverage * 100))
+    """
+    spot_fraction = locked_roi_pct / (leverage * 100.0)
+    if side == "LONG":
+        return round(entry * (1.0 + spot_fraction), 6)
+    else:
+        return round(entry * (1.0 - spot_fraction), 6)
+
 # Telegram Notifier with Real Candlestick Chart
+
 def send_telegram_alert(
     text: str,
     symbol: Optional[str] = None,
@@ -379,7 +427,13 @@ class BB20LiveSniper:
 
     def _arm_new_setup(self, symbol: str, sec_id: str, side: str, mt: float, sl: float, risk: float, anchor_price: float, anchor_name: str, candles_15m: Optional[List[Dict]] = None):
         sec = self.ledger.data["sections"][sec_id]
-        risk_usd = sec["balance"] * cfg.SECTION_RISK_FRACTION
+        risk_usd = round(sec["balance"] * cfg.SECTION_RISK_FRACTION, 2)
+        margin_usd = round(sec["balance"], 2)
+
+        # Exact price triggers for continuous ROI stepped trailing ladder (5x leverage)
+        trigger_t1_price = calculate_trailing_sl_price(mt, side, 4.80, 5.0)
+        trigger_t2_price = calculate_trailing_sl_price(mt, side, 9.80, 5.0)
+        trigger_t3_price = calculate_trailing_sl_price(mt, side, 14.80, 5.0)
 
         setup_data = {
             "symbol": symbol,
@@ -388,36 +442,42 @@ class BB20LiveSniper:
             "mt_entry": round(mt, 4),
             "sl": round(sl, 4),
             "risk": round(risk, 4),
-            "risk_usd": round(risk_usd, 2),
+            "risk_usd": risk_usd,
+            "margin_usdt": margin_usd,
+            "position_size_usdt": round(margin_usd * 5, 2),
+            "leverage": 5,
             "anchor_name": anchor_name,
             "anchor_price": round(anchor_price, 4),
             "armed_at": datetime.now(timezone.utc).isoformat(),
-            "target_1r": round(mt + risk if side == "LONG" else mt - risk, 4),
-            "target_15r": round(mt + 1.5 * risk if side == "LONG" else mt - 1.5 * risk, 4),
-            "target_3r": round(mt + 3.0 * risk if side == "LONG" else mt - 3.0 * risk, 4)
+            "trigger_t1_price": trigger_t1_price,
+            "trigger_t2_price": trigger_t2_price,
+            "trigger_t3_price": trigger_t3_price,
+            "trailing_type": "CONTINUOUS_ROI_STEPPED"
         }
 
         self.ledger.data["active_setups"][symbol] = setup_data
         print(f"🔥 [NEW PENDING SETUP] {symbol} {side} @ 50% MT ${mt:.4f} (Section #{sec_id})")
 
-        # Telegram Alert
+        # Telegram Alert (Clean Option 1 - Continuous ROI Stepped Trailing)
         emoji = "🟢 LONG" if side == "LONG" else "🔴 SHORT"
-        win_est_usd = risk_usd * 3.0
         msg = (
             f"🎯 <b>BB 3.0 • LIMIT SETUP</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"🪙 <b>#{symbol}</b> {emoji} (5x)\n\n"
             f"🎯 <b>Entry</b>  : <code>${mt:.4f}</code> (50% MT)\n"
             f"🛑 <b>Stop</b>   : <code>${sl:.4f}</code> (Risk: ${risk_usd:.2f})\n"
-            f"🎯 <b>Target</b> : <code>${setup_data['target_3r']:.4f}</code> (Win: +${win_est_usd:.2f} | 1:3 R)\n\n"
-            f"🪜 <b>Trailing Plan</b>:\n"
-            f"• +1.0R (<code>${setup_data['target_1r']:.4f}</code>) ➔ Move SL to BE\n"
-            f"• +1.5R (<code>${setup_data['target_15r']:.4f}</code>) ➔ Lock +1.0R Profit\n\n"
+            f"🛡️ <b>Trailing</b> : Infinite Stepped ROI Armor Active\n\n"
+            f"🪜 <b>ROI Trailing Ladder</b>:\n"
+            f"• +4.8% ROI (<code>${trigger_t1_price:.4f}</code>) ➔ Move SL to +1.0% (Risk-Free)\n"
+            f"• +9.8% ROI (<code>${trigger_t2_price:.4f}</code>) ➔ Lock +5.1% Pure Profit\n"
+            f"• +14.8% ROI (<code>${trigger_t3_price:.4f}</code>) ➔ Lock +10.1% Pure Profit\n"
+            f"• +5.0% Step ➔ Continuous Trailing\n\n"
             f"💼 <b>Section #{sec_id}</b> (${sec['balance']:.2f} USDT)\n"
             f"━━━━━━━━━━━━━━━━━━━━"
         )
         send_telegram_alert(msg, symbol=symbol, setup_or_pos=setup_data, candles=candles_15m)
         _sync_to_cloud_terminals("SETUP", setup_data)
+
 
     def _check_pending_setup_fill(self, symbol: str, candles: List[Dict]):
         setup = self.ledger.data["active_setups"][symbol]
@@ -473,7 +533,10 @@ class BB20LiveSniper:
             pos_data["filled_at"] = datetime.now(timezone.utc).isoformat()
             pos_data["current_tier"] = 0
             pos_data["active_sl"] = sl
-            pos_data["highest_r"] = 0.0
+            pos_data["peak_roi"] = 0.0
+            pos_data["margin_usdt"] = sec["balance"]
+            pos_data["position_size_usdt"] = round(sec["balance"] * 5.0, 2)
+            pos_data["leverage"] = 5.0
             self.ledger.data["active_positions"][symbol] = pos_data
 
             sec_id = setup["section_id"]
@@ -490,7 +553,7 @@ class BB20LiveSniper:
                 f"🎯 <b>Fill Price</b> : <code>${entry:.4f}</code>\n"
                 f"🛑 <b>Active SL</b>  : <code>${sl:.4f}</code>\n"
                 f"💰 <b>Risk Amount</b>: ${setup['risk_usd']:.2f} USDT (5%)\n\n"
-                f"🛡️ <b>Status</b>: Trailing Armor Active (Section #{sec_id})\n"
+                f"🛡️ <b>Status</b>: Continuous ROI Trailing Active (Section #{sec_id})\n"
                 f"━━━━━━━━━━━━━━━━━━━━"
             )
             send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos_data, candles=candles)
@@ -501,10 +564,10 @@ class BB20LiveSniper:
         side = pos["side"]
         entry = pos["mt_entry"]
         active_sl = pos["active_sl"]
-        risk = pos["risk"]
-        current_tier = pos["current_tier"]
+        current_tier = pos.get("current_tier", 0)
         sec_id = pos["section_id"]
         sec = self.ledger.data["sections"][sec_id]
+        leverage = float(pos.get("leverage", 5.0))
 
         # 1. Check SL Hit across recent bars
         recent_bars = candles[-2:] if len(candles) >= 2 else candles
@@ -518,64 +581,81 @@ class BB20LiveSniper:
             self._close_position(symbol, "SL_HIT", active_sl)
             return
 
-        # 2. Check Favorable Excursion & Trailing Milestone (+1.0R -> +0.2R BE, +1.5R -> +1.0R lock, +2.0R -> +1.5R lock)
+        # 2. Check Favorable Excursion in ROI terms (5x leverage)
         high_price = max(b["high"] for b in recent_bars)
         low_price = min(b["low"] for b in recent_bars)
-        max_fav_r = (high_price - entry) / risk if side == "LONG" else (entry - low_price) / risk
-        if max_fav_r > pos["highest_r"]:
-            pos["highest_r"] = round(max_fav_r, 2)
 
-        if max_fav_r >= 1.0:
-            tier_candidate = int((max_fav_r - 1.0) / 0.5) + 1
-            if tier_candidate > current_tier:
-                pos["current_tier"] = tier_candidate
-                # Stepped Trailing SL: Tier 1 (+1.0R) -> +0.2R BE; Tier 2 (+1.5R) -> +1.0R lock; Tier 3 (+2.0R) -> +1.5R lock
-                locked_r = 0.2 if tier_candidate == 1 else tier_candidate * 0.5
-                new_sl = entry + (locked_r * risk) if side == "LONG" else entry - (locked_r * risk)
-                pos["active_sl"] = round(new_sl, 4)
-                _sync_to_nexuspro_render("TRAILING", {
-                    "symbol": symbol,
-                    "trailing_sl": new_sl,
-                    "stage": tier_candidate,
-                    "highest_r": max_fav_r
-                })
+        if side == "LONG":
+            fav_spot_gain = (high_price - entry) / entry
+        else:
+            fav_spot_gain = (entry - low_price) / entry
 
-                print(f"🛡️ [TRAILING SL UPDATE] {symbol} {side}: Tier {tier_candidate} Locked! (SL ➔ ${new_sl:.4f})")
-                tier_label = "+0.2R Fee Shield (Breakeven)" if tier_candidate == 1 else f"+{locked_r:.1f}R Pure Profit Locked"
-                msg = (
-                    f"🪜 <b>BB 3.0 • PROFIT LOCKED</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🪙 <b>#{symbol}</b> {'🟢 LONG' if side == 'LONG' else '🔴 SHORT'}\n\n"
-                    f"⚡ <b>Milestone</b> : Tier {tier_candidate} Hit (Peak: +{max_fav_r:.2f}R)\n"
-                    f"🛡️ <b>New SL</b>    : <code>${new_sl:.4f}</code> ({tier_label})\n"
-                    f"🔒 <b>Protection</b>: Risk-Free Guaranteed\n\n"
-                    f"💼 <b>Section #{sec_id}</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━"
-                )
-                send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos, candles=candles)
+        curr_peak_roi = round(fav_spot_gain * leverage * 100.0, 2)
+        if curr_peak_roi > pos.get("peak_roi", 0.0):
+            pos["peak_roi"] = curr_peak_roi
+
+        # 3. Continuous Stepped Trailing SL Check
+        tier_candidate = get_roi_trailing_tier(curr_peak_roi)
+        if tier_candidate > current_tier:
+            pos["current_tier"] = tier_candidate
+            locked_roi = get_locked_roi(tier_candidate)
+            new_sl = calculate_trailing_sl_price(entry, side, locked_roi, leverage)
+            pos["active_sl"] = round(new_sl, 4)
+            pos["locked_roi"] = locked_roi
+
+            _sync_to_nexuspro_render("TRAILING", {
+                "symbol": symbol,
+                "trailing_sl": new_sl,
+                "stage": tier_candidate,
+                "locked_roi": locked_roi,
+                "peak_roi": curr_peak_roi
+            })
+
+            tier_label = "+1.0% ROI Fee Shield (Risk-Free)" if tier_candidate == 1 else f"+{locked_roi:.2f}% ROI Pure Profit Locked"
+            print(f"🛡️ [ROI TRAILING SL UPDATE] {symbol} {side}: Tier {tier_candidate} Locked! (SL ➔ ${new_sl:.4f} | +{locked_roi:.2f}% ROI)")
+
+            msg = (
+                f"🪜 <b>BB 3.0 • PROFIT LOCKED</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🪙 <b>#{symbol}</b> {'🟢 LONG' if side == 'LONG' else '🔴 SHORT'}\n\n"
+                f"⚡ <b>Milestone</b> : Tier {tier_candidate} Hit (Peak: +{curr_peak_roi:.2f}% ROI)\n"
+                f"🛡️ <b>New SL</b>    : <code>${new_sl:.4f}</code> ({tier_label})\n"
+                f"🔒 <b>Protection</b>: Guaranteed Locked\n\n"
+                f"💼 <b>Section #{sec_id}</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━"
+            )
+            send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos, candles=candles)
 
     def _close_position(self, symbol: str, reason: str, exit_price: float):
         pos = self.ledger.data["active_positions"][symbol]
-        tier = pos["current_tier"]
+        tier = pos.get("current_tier", 0)
         sec_id = pos["section_id"]
         sec = self.ledger.data["sections"][sec_id]
+        side = pos["side"]
+        entry = pos["mt_entry"]
+        leverage = float(pos.get("leverage", 5.0))
+        margin = float(pos.get("margin_usdt", sec["balance"]))
 
         if tier == 0:
-            realized_r = -1.0 - cfg.FRICTION_R
+            spot_diff = (exit_price - entry) / entry if side == "LONG" else (entry - exit_price) / entry
+            realized_roi = (spot_diff * leverage * 100.0) - (cfg.FRICTION_R * 5.0)
+            dollar_pnl = round((realized_roi / 100.0) * margin, 2)
             outcome = "LOSS (SL HIT)"
             sec["losses"] += 1
         elif tier == 1:
-            realized_r = 0.2 - cfg.FRICTION_R
-            outcome = "FEE SHIELD SAVE (+0.2R)"
+            locked_roi = 1.00
+            realized_roi = locked_roi - 0.20  # deduction for fees
+            dollar_pnl = round((realized_roi / 100.0) * margin, 2)
+            outcome = "FEE SHIELD SAVE (+1.0% ROI)"
             sec["saves"] += 1
         else:
-            locked_r = tier * 0.5
-            realized_r = locked_r - cfg.FRICTION_R
-            outcome = f"WIN (+{locked_r:.1f}R PROFIT LOCKED)"
+            locked_roi = get_locked_roi(tier)
+            realized_roi = locked_roi - 0.20  # deduction for fees
+            dollar_pnl = round((realized_roi / 100.0) * margin, 2)
+            outcome = f"WIN (+{locked_roi:.1f}% ROI LOCKED)"
             sec["wins"] += 1
 
         sec["trades_count"] += 1
-        dollar_pnl = sec["balance"] * cfg.SECTION_RISK_FRACTION * realized_r
         sec["balance"] = max(1.0, round(sec["balance"] + dollar_pnl, 2))
         sec["pnl_usd"] = round(sec["pnl_usd"] + dollar_pnl, 2)
         sec["status"] = "IDLE"
@@ -605,11 +685,11 @@ class BB20LiveSniper:
         closed_rec["duration_str"] = dur_str
         closed_rec["entry_time_str"] = dt_open.strftime("%d %b, %H:%M:%S IST")
         closed_rec["exit_time_str"] = dt_close.strftime("%d %b, %H:%M:%S IST")
-        closed_rec["be_status_str"] = "🛡️ Trailing Protected" if realized_r > 0 else ("🛡️ BE Locked (+0.2R Shield)" if tier == 1 else "BE Inactive")
+        closed_rec["be_status_str"] = f"🛡️ Trailing Lock (+{get_locked_roi(tier):.1f}% ROI)" if tier > 1 else ("🛡️ BE Locked (+1.0% ROI Shield)" if tier == 1 else "BE Inactive")
         closed_rec["closed_at"] = datetime.now(timezone.utc).isoformat()
         closed_rec["exit_price"] = exit_price
         closed_rec["outcome"] = outcome
-        closed_rec["realized_r"] = round(realized_r, 2)
+        closed_rec["realized_roi"] = round(realized_roi, 2)
         closed_rec["dollar_pnl"] = round(dollar_pnl, 2)
         closed_rec["section_new_balance"] = sec["balance"]
         self.ledger.data["closed_trades"].append(closed_rec)
@@ -622,7 +702,7 @@ class BB20LiveSniper:
         print(f"🏁 [TRADE CLOSED] {symbol} {outcome} | PnL: ${dollar_pnl:+.2f} USDT | Sec #{sec_id} Bal: ${sec['balance']:.2f}")
 
         # Telegram Alert
-        if realized_r > 0.2:
+        if tier > 1:
             title_tag = "🏆 TRADE CLOSED • WIN"
         elif tier == 1:
             title_tag = "🛡️ TRADE CLOSED • RISK-FREE SAVE"

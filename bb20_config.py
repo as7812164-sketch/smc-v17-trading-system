@@ -33,5 +33,20 @@ PAIR_MAPPING = {
 
 CHAMPIONS = list(PAIR_MAPPING.keys())
 
+# Continuous ROI-Based Stepped Trailing SL Ladder (5x Leverage)
+# Tier 1: At +4.80% ROI -> Move SL to +1.00% ROI (Fee Shield / Risk-Free)
+# Tier 2: At +9.80% ROI -> Move SL to +5.10% ROI
+# Tier 3: At +14.80% ROI -> Move SL to +10.10% ROI
+# Tier 4: At +19.80% ROI -> Move SL to +15.10% ROI
+# Tier 5: At +24.80% ROI -> Move SL to +20.10% ROI
+# Tier 6: At +29.80% ROI -> Move SL to +25.10% ROI
+# Tier 7: At +34.80% ROI -> Move SL to +30.10% ROI
+# Continuous: Every +5.00% additional ROI peak shifts SL forward by +5.00% ROI indefinitely!
+TRAILING_TIER_1_TRIGGER_ROI = 4.80
+TRAILING_TIER_1_LOCK_ROI = 1.00
+TRAILING_STEP_ROI = 5.00
+DEFAULT_LEVERAGE = 5.0
+
 # Storage
 SHADOW_LEDGER_FILE = "bb20_shadow_ledger.json"
+
