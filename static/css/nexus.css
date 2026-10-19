@@ -1239,6 +1239,141 @@ body {
     background: #080B11 !important;
 }
 
+/* ==========================================================================
+   TRADINGVIEW PRICE RANGE / MEASURE TOOL (PRO FIDELITY)
+   ========================================================================== */
+.measure-tool-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 18;
+    overflow: hidden;
+    user-select: none;
+}
 
+.measure-tool-overlay.drawing-mode {
+    pointer-events: all !important;
+    cursor: crosshair !important;
+}
 
+.measure-tool-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
 
+.measure-box {
+    fill: rgba(41, 98, 255, 0.22);
+    stroke: rgba(41, 98, 255, 0.50);
+    stroke-width: 1px;
+    stroke-dasharray: 2 2;
+    pointer-events: auto;
+    cursor: move;
+}
+
+.measure-bound-line {
+    stroke: #2962FF;
+    stroke-width: 1.5px;
+}
+
+.measure-center-line {
+    stroke: #2962FF;
+    stroke-width: 1.5px;
+}
+
+.measure-handle {
+    fill: #0F1420;
+    stroke: #2962FF;
+    stroke-width: 2.5px;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: transform 0.1s ease, fill 0.1s ease;
+}
+
+.measure-handle:hover, .measure-handle:active {
+    transform: scale(1.25);
+    fill: #2962FF;
+}
+
+.measure-badge {
+    position: absolute;
+    background: rgba(20, 24, 35, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #FFFFFF;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 4px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+    pointer-events: auto;
+    white-space: nowrap;
+    z-index: 22;
+    transform: translate(-50%, 0);
+    user-select: none;
+}
+
+.measure-action-bar {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(20, 24, 35, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 6px;
+    padding: 3px 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7);
+    pointer-events: auto;
+    z-index: 26;
+    transform: translate(-50%, -100%);
+    user-select: none;
+}
+
+.measure-bar-handle {
+    color: #64748B;
+    font-size: 11px;
+    padding: 2px;
+}
+
+.measure-action-btn {
+    background: transparent;
+    border: none;
+    color: #94A3B8;
+    font-size: 12px;
+    padding: 3px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.measure-action-btn:hover {
+    color: #FF4B55;
+    background: rgba(255, 75, 85, 0.18);
+}
+
+.measure-action-btn.close-btn {
+    font-size: 15px;
+    line-height: 1;
+    color: #94A3B8;
+}
+
+.measure-action-btn.close-btn:hover {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.btn-measure-active {
+    background: rgba(41, 98, 255, 0.25) !important;
+    border-color: #2962FF !important;
+    color: #60A5FA !important;
+    box-shadow: 0 0 10px rgba(41, 98, 255, 0.4) !important;
+}

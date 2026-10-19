@@ -157,6 +157,11 @@
                         <i class="fa-solid fa-backward-step" style="color:#F59E0B;"></i> Replay
                     </button>
                     
+                    <!-- TradingView Price Range / Ruler Measure Tool -->
+                    <button id="btnToggleMeasure" class="chart-tool-btn" onclick="toggleMeasureTool()" title="TradingView Price Range / Measure Tool (Drag on chart to measure % and price distance)">
+                        <i class="fa-solid fa-ruler-combined" style="color:#3B82F6;"></i> Measure
+                    </button>
+                    
                     <!-- Fullscreen & Visualizer Buttons -->
                     <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
                         <button id="btnRotateChart" onclick="toggleChartOrientation()" class="chart-tool-btn" title="Toggle Portrait / Landscape Mode">
@@ -249,7 +254,39 @@
                 </div>
             </div>
 
-            <div id="tradingview_chart" onclick="onChartAreaClick(event)"></div>
+            <div id="tradingview_chart" onclick="onChartAreaClick(event)" style="position:relative;">
+                <!-- TRADINGVIEW PRICE RANGE / MEASURE TOOL OVERLAY -->
+                <div id="measureToolOverlay" class="measure-tool-overlay" style="display:none;">
+                    <svg id="measureToolSvg" class="measure-tool-svg">
+                        <defs>
+                            <marker id="measureArrowDown" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                                <path d="M 0 0 L 6 3 L 0 6 Z" fill="#2962FF" />
+                            </marker>
+                            <marker id="measureArrowUp" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                                <path d="M 0 0 L 6 3 L 0 6 Z" fill="#2962FF" />
+                            </marker>
+                        </defs>
+                        <rect id="measureBox" class="measure-box" x="0" y="0" width="0" height="0" />
+                        <line id="measureLineTop" class="measure-bound-line" x1="0" y1="0" x2="0" y2="0" />
+                        <line id="measureLineBottom" class="measure-bound-line" x1="0" y1="0" x2="0" y2="0" />
+                        <line id="measureLineCenter" class="measure-center-line" x1="0" y1="0" x2="0" y2="0" />
+                        <circle id="measureHandle1" class="measure-handle" cx="-999" cy="-999" r="7" />
+                        <circle id="measureHandle2" class="measure-handle" cx="-999" cy="-999" r="7" />
+                    </svg>
+                    <!-- Floating Info Badge Pill -->
+                    <div id="measureBadge" class="measure-badge" style="display:none;">
+                        <span id="measureBadgeText">-0.000 (-0.00%) -0</span>
+                    </div>
+                    <!-- Floating Action Mini-Toolbar (Trash & Close) -->
+                    <div id="measureActionBar" class="measure-action-bar" style="display:none;">
+                        <span class="measure-bar-handle" title="TradingView Price Range"><i class="fa-solid fa-ellipsis-vertical"></i></span>
+                        <button type="button" class="measure-action-btn" onclick="clearMeasureTool(event)" title="Delete Price Range (Delete / Esc)">
+                            <i class="fa-solid fa-trash-can" style="color:#FF4B55;"></i>
+                        </button>
+                        <button type="button" class="measure-action-btn close-btn" onclick="clearMeasureTool(event)" title="Close">&times;</button>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- 2. ORDER BOOK (MIDDLE) -->

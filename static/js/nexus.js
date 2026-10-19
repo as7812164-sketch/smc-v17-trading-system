@@ -185,6 +185,13 @@ function initChart() {
     // Crosshair Live Tracker for OHLCV Tooltip Bar
     chart.subscribeCrosshairMove(onCrosshairMove);
 
+    // Dynamic Chart Pan & Zoom sync for TradingView Measure Tool
+    chart.timeScale().subscribeVisibleLogicalRangeChange(repositionMeasureOverlay);
+    chart.timeScale().subscribeVisibleTimeRangeChange(repositionMeasureOverlay);
+
+    // Initialize Measure Tool engine & event bindings
+    initMeasureTool();
+
     window.addEventListener('resize', handleChartResize);
     document.addEventListener('fullscreenchange', handleChartResize);
     document.addEventListener('webkitfullscreenchange', handleChartResize);
@@ -197,6 +204,7 @@ function handleChartResize() {
             width: container.clientWidth || window.innerWidth, 
             height: container.clientHeight || 340 
         });
+        repositionMeasureOverlay();
     }
 }
 
@@ -544,6 +552,442 @@ function exitReplayMode() {
     }
 }
 
+// ==========================================================================
+// TRADINGVIEW PRICE RANGE / RULER / MEASURE TOOL ENGINE
+// ==========================================================================
+
+let isMeasureActive = false;
+let isMeasuring = false;
+let isDraggingHandle = null; // 1 or 2
+let measurePoint1 = null; // { time, logical, price, x, y }
+let measurePoint2 = null; // { time, logical, price, x, y }
+let measurePriceLine = null;
+let measureEventsInitialized = false;
+
+function initMeasureTool() {
+    const overlay = document.getElementById("measureToolOverlay");
+    if (!overlay || measureEventsInitialized) return;
+    measureEventsInitialized = true;
+
+    // Pointer events on overlay for smooth desktop mouse & mobile touch drawing
+    overlay.addEventListener("pointerdown", onMeasurePointerDown);
+    overlay.addEventListener("pointermove", onMeasurePointerMove);
+    overlay.addEventListener("pointerup", onMeasurePointerUp);
+    overlay.addEventListener("pointercancel", onMeasurePointerUp);
+
+    // Circular handles for dynamic re-adjusting
+    const h1 = document.getElementById("measureHandle1");
+    const h2 = document.getElementById("measureHandle2");
+
+    if (h1) {
+        h1.addEventListener("pointerdown", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isDraggingHandle = 1;
+            try { h1.setPointerCapture(e.pointerId); } catch(err) {}
+        });
+        h1.addEventListener("pointermove", onHandlePointerMove);
+        h1.addEventListener("pointerup", onHandlePointerUp);
+        h1.addEventListener("pointercancel", onHandlePointerUp);
+    }
+
+    if (h2) {
+        h2.addEventListener("pointerdown", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isDraggingHandle = 2;
+            try { h2.setPointerCapture(e.pointerId); } catch(err) {}
+        });
+        h2.addEventListener("pointermove", onHandlePointerMove);
+        h2.addEventListener("pointerup", onHandlePointerUp);
+        h2.addEventListener("pointercancel", onHandlePointerUp);
+    }
+
+    // Global keyboard shortcuts (Escape / Delete to clear)
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" || e.key === "Delete" || e.key === "Backspace") {
+            if (measurePoint1 || isMeasureActive) {
+                clearMeasureTool();
+            }
+        }
+    });
+}
+
+function toggleMeasureTool() {
+    const btn = document.getElementById("btnToggleMeasure");
+    const overlay = document.getElementById("measureToolOverlay");
+    if (!overlay) return;
+
+    if (isMeasureActive) {
+        // If already in drawing mode without points, cancel
+        if (isMeasuring || (!measurePoint1 && !measurePoint2)) {
+            cancelMeasureMode();
+            return;
+        }
+        // If already placed, clear existing and start new drawing
+        clearMeasureTool();
+        startMeasureMode();
+    } else {
+        if (measurePoint1 && measurePoint2) {
+            clearMeasureTool();
+        }
+        startMeasureMode();
+    }
+}
+
+function startMeasureMode() {
+    isMeasureActive = true;
+    isMeasuring = false;
+    const btn = document.getElementById("btnToggleMeasure");
+    if (btn) btn.classList.add("btn-measure-active");
+
+    const overlay = document.getElementById("measureToolOverlay");
+    if (overlay) {
+        overlay.style.display = "block";
+        overlay.classList.add("drawing-mode");
+    }
+}
+
+function cancelMeasureMode() {
+    isMeasureActive = false;
+    isMeasuring = false;
+    const btn = document.getElementById("btnToggleMeasure");
+    if (btn) btn.classList.remove("btn-measure-active");
+
+    const overlay = document.getElementById("measureToolOverlay");
+    if (overlay) {
+        overlay.classList.remove("drawing-mode");
+        if (!measurePoint1 || !measurePoint2) {
+            overlay.style.display = "none";
+        }
+    }
+}
+
+function clearMeasureTool(e) {
+    if (e) {
+        try { e.preventDefault(); e.stopPropagation(); } catch(err) {}
+    }
+    isMeasureActive = false;
+    isMeasuring = false;
+    isDraggingHandle = null;
+    measurePoint1 = null;
+    measurePoint2 = null;
+
+    if (measurePriceLine && candleSeries) {
+        try { candleSeries.removePriceLine(measurePriceLine); } catch(err) {}
+        measurePriceLine = null;
+    }
+
+    const btn = document.getElementById("btnToggleMeasure");
+    if (btn) btn.classList.remove("btn-measure-active");
+
+    const overlay = document.getElementById("measureToolOverlay");
+    if (overlay) {
+        overlay.classList.remove("drawing-mode");
+        overlay.style.display = "none";
+    }
+
+    const badge = document.getElementById("measureBadge");
+    if (badge) badge.style.display = "none";
+
+    const actionBar = document.getElementById("measureActionBar");
+    if (actionBar) actionBar.style.display = "none";
+
+    const box = document.getElementById("measureBox");
+    if (box) { box.setAttribute("width", "0"); box.setAttribute("height", "0"); }
+    const topL = document.getElementById("measureLineTop");
+    if (topL) { topL.setAttribute("x1", "0"); topL.setAttribute("x2", "0"); }
+    const btmL = document.getElementById("measureLineBottom");
+    if (btmL) { btmL.setAttribute("x1", "0"); btmL.setAttribute("x2", "0"); }
+    const ctrL = document.getElementById("measureLineCenter");
+    if (ctrL) { ctrL.setAttribute("x1", "0"); ctrL.setAttribute("x2", "0"); }
+    const h1 = document.getElementById("measureHandle1");
+    if (h1) { h1.setAttribute("cx", "-999"); h1.setAttribute("cy", "-999"); }
+    const h2 = document.getElementById("measureHandle2");
+    if (h2) { h2.setAttribute("cx", "-999"); h2.setAttribute("cy", "-999"); }
+}
+
+function getMeasureCoordsFromEvent(e) {
+    const container = document.getElementById("tradingview_chart");
+    if (!container || !chart || !candleSeries) return null;
+    const rect = container.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+
+    let time = null;
+    let logical = null;
+    try { time = chart.timeScale().coordinateToTime(x); } catch(err) {}
+    try { logical = chart.timeScale().coordinateToLogical(x); } catch(err) {}
+    let price = null;
+    try { price = candleSeries.coordinateToPrice(y); } catch(err) {}
+
+    if (price === null && currentFullCandles && currentFullCandles.length > 0) {
+        price = currentFullCandles[currentFullCandles.length - 1].close;
+    }
+
+    if (!time && currentFullCandles && currentFullCandles.length > 0) {
+        if (logical !== null) {
+            const idx = Math.max(0, Math.min(currentFullCandles.length - 1, Math.round(logical)));
+            time = currentFullCandles[idx].time;
+        } else {
+            time = currentFullCandles[currentFullCandles.length - 1].time;
+        }
+    }
+
+    return { x, y, time, logical, price };
+}
+
+function onMeasurePointerDown(e) {
+    if (!isMeasureActive) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const pt = getMeasureCoordsFromEvent(e);
+    if (!pt || pt.price === null) return;
+
+    if (!isMeasuring) {
+        isMeasuring = true;
+        measurePoint1 = pt;
+        measurePoint2 = pt;
+        renderMeasureGraphics(measurePoint1, measurePoint2);
+
+        const overlay = document.getElementById("measureToolOverlay");
+        if (overlay && overlay.setPointerCapture && e.pointerId !== undefined) {
+            try { overlay.setPointerCapture(e.pointerId); } catch(err) {}
+        }
+    }
+}
+
+function onMeasurePointerMove(e) {
+    if (!isMeasuring) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const pt = getMeasureCoordsFromEvent(e);
+    if (!pt || pt.price === null) return;
+
+    measurePoint2 = pt;
+    renderMeasureGraphics(measurePoint1, measurePoint2);
+}
+
+function onMeasurePointerUp(e) {
+    if (!isMeasuring) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    isMeasuring = false;
+    isMeasureActive = false;
+
+    const pt = getMeasureCoordsFromEvent(e);
+    if (pt && pt.price !== null) {
+        measurePoint2 = pt;
+    }
+
+    // If drag was very small (< 10px), synthesize a clear visual range so user sees the tool
+    if (measurePoint1 && measurePoint2 && Math.hypot(measurePoint2.x - measurePoint1.x, measurePoint2.y - measurePoint1.y) < 10) {
+        const fallbackCandleCount = Math.min(25, Math.floor(currentFullCandles.length * 0.15));
+        const p1Price = measurePoint1.price;
+        const targetPrice = p1Price * 0.965; // ~3.5% move
+        const targetY = candleSeries ? candleSeries.priceToCoordinate(targetPrice) : (measurePoint1.y + 60);
+        measurePoint2 = {
+            x: measurePoint1.x + 80,
+            y: targetY || (measurePoint1.y + 60),
+            price: targetPrice,
+            time: measurePoint1.time,
+            logical: (measurePoint1.logical || 0) + fallbackCandleCount
+        };
+    }
+
+    // Finalize drawing mode
+    const overlay = document.getElementById("measureToolOverlay");
+    if (overlay) {
+        overlay.classList.remove("drawing-mode");
+    }
+    const btn = document.getElementById("btnToggleMeasure");
+    if (btn) btn.classList.remove("btn-measure-active");
+
+    renderMeasureGraphics(measurePoint1, measurePoint2);
+}
+
+function onHandlePointerMove(e) {
+    if (!isDraggingHandle || !measurePoint1 || !measurePoint2) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const pt = getMeasureCoordsFromEvent(e);
+    if (!pt || pt.price === null) return;
+
+    if (isDraggingHandle === 1) {
+        measurePoint1 = pt;
+    } else if (isDraggingHandle === 2) {
+        measurePoint2 = pt;
+    }
+    renderMeasureGraphics(measurePoint1, measurePoint2);
+}
+
+function onHandlePointerUp(e) {
+    if (!isDraggingHandle) return;
+    e.preventDefault();
+    e.stopPropagation();
+    isDraggingHandle = null;
+    renderMeasureGraphics(measurePoint1, measurePoint2);
+}
+
+function renderMeasureGraphics(p1, p2) {
+    if (!p1 || !p2 || !chart || !candleSeries) return;
+
+    // Convert prices to current pixel Y coordinates
+    const y1 = candleSeries.priceToCoordinate(p1.price) ?? p1.y;
+    const y2 = candleSeries.priceToCoordinate(p2.price) ?? p2.y;
+
+    // Convert times/logicals to current pixel X coordinates
+    let x1 = null;
+    if (p1.time) {
+        try { x1 = chart.timeScale().timeToCoordinate(p1.time); } catch(e) {}
+    }
+    if ((x1 === null || x1 === undefined) && p1.logical !== null && p1.logical !== undefined) {
+        try { x1 = chart.timeScale().logicalToCoordinate(p1.logical); } catch(e) {}
+    }
+    if (x1 === null || x1 === undefined) x1 = p1.x;
+
+    let x2 = null;
+    if (p2.time) {
+        try { x2 = chart.timeScale().timeToCoordinate(p2.time); } catch(e) {}
+    }
+    if ((x2 === null || x2 === undefined) && p2.logical !== null && p2.logical !== undefined) {
+        try { x2 = chart.timeScale().logicalToCoordinate(p2.logical); } catch(e) {}
+    }
+    if (x2 === null || x2 === undefined) x2 = p2.x;
+
+    const left = Math.min(x1, x2);
+    const right = Math.max(x1, x2);
+    const width = Math.max(2, right - left);
+
+    const top = Math.min(y1, y2);
+    const bottom = Math.max(y1, y2);
+    const height = Math.max(2, bottom - top);
+
+    // 1. Shaded Box
+    const box = document.getElementById("measureBox");
+    if (box) {
+        box.setAttribute("x", left);
+        box.setAttribute("y", top);
+        box.setAttribute("width", width);
+        box.setAttribute("height", height);
+    }
+
+    // 2. Top & Bottom Boundary Lines
+    const topL = document.getElementById("measureLineTop");
+    if (topL) {
+        topL.setAttribute("x1", left);
+        topL.setAttribute("y1", top);
+        topL.setAttribute("x2", right);
+        topL.setAttribute("y2", top);
+    }
+    const btmL = document.getElementById("measureLineBottom");
+    if (btmL) {
+        btmL.setAttribute("x1", left);
+        btmL.setAttribute("y1", bottom);
+        btmL.setAttribute("x2", right);
+        btmL.setAttribute("y2", bottom);
+    }
+
+    // 3. Central Vertical Arrow Line
+    const ctrL = document.getElementById("measureLineCenter");
+    const midX = (left + right) / 2;
+    if (ctrL) {
+        ctrL.setAttribute("x1", midX);
+        ctrL.setAttribute("y1", y1);
+        ctrL.setAttribute("x2", midX);
+        ctrL.setAttribute("y2", y2);
+        if (y2 >= y1) {
+            ctrL.setAttribute("marker-end", "url(#measureArrowDown)");
+        } else {
+            ctrL.setAttribute("marker-end", "url(#measureArrowUp)");
+        }
+    }
+
+    // 4. Circular Handles
+    const h1 = document.getElementById("measureHandle1");
+    if (h1) {
+        h1.setAttribute("cx", x1);
+        h1.setAttribute("cy", y1);
+    }
+    const h2 = document.getElementById("measureHandle2");
+    if (h2) {
+        h2.setAttribute("cx", x2);
+        h2.setAttribute("cy", y2);
+    }
+
+    // 5. Calculate Values: Δ Price, Δ %, Ticks
+    const pStart = p1.price;
+    const pEnd = p2.price;
+    const diff = pEnd - pStart;
+    const pct = pStart > 0 ? (diff / pStart) * 100 : 0;
+    const sign = diff >= 0 ? "+" : "";
+
+    let precision = 4;
+    if (pStart > 1000) precision = 2;
+    else if (pStart < 0.01) precision = 6;
+    else if (pStart < 1) precision = 4;
+
+    const diffText = `${sign}${diff.toFixed(precision)}`;
+    const pctText = `(${sign}${pct.toFixed(2)}%)`;
+    const ticksVal = Math.round(diff * Math.pow(10, Math.min(precision, 4)));
+
+    // 6. Floating Badge Pill (TradingView exact format: "-0.228 (-4.65%) -228")
+    const badge = document.getElementById("measureBadge");
+    const badgeText = document.getElementById("measureBadgeText");
+    if (badge && badgeText) {
+        badgeText.innerText = `${diffText} ${pctText} ${ticksVal >= 0 ? '+' : ''}${ticksVal}`;
+        badge.style.display = "block";
+
+        const container = document.getElementById("tradingview_chart");
+        const chartH = container ? container.clientHeight : 400;
+        let badgeY = bottom + 12;
+        if (badgeY + 28 > chartH) {
+            badgeY = top - 32;
+        }
+        badge.style.left = `${Math.max(65, Math.min((container?.clientWidth || 360) - 75, midX))}px`;
+        badge.style.top = `${badgeY}px`;
+    }
+
+    // 7. Floating Action Bar (Delete 🗑️ and Close)
+    const actionBar = document.getElementById("measureActionBar");
+    if (actionBar && !isMeasuring) {
+        actionBar.style.display = "flex";
+        let barY = top - 12;
+        if (barY < 12) barY = bottom + 38;
+        const container = document.getElementById("tradingview_chart");
+        actionBar.style.left = `${Math.max(60, Math.min((container?.clientWidth || 360) - 60, midX))}px`;
+        actionBar.style.top = `${barY}px`;
+    }
+
+    // 8. Right Price Scale Highlight Line (TradingView blue scale badge)
+    if (candleSeries && !isMeasuring) {
+        if (!measurePriceLine) {
+            measurePriceLine = candleSeries.createPriceLine({
+                price: pEnd,
+                color: '#2962FF',
+                lineWidth: 1,
+                lineStyle: LightweightCharts.LineStyle.Solid,
+                axisLabelVisible: true,
+                title: 'Range'
+            });
+        } else {
+            measurePriceLine.applyOptions({
+                price: pEnd
+            });
+        }
+    }
+}
+
+function repositionMeasureOverlay() {
+    if (measurePoint1 && measurePoint2) {
+        renderMeasureGraphics(measurePoint1, measurePoint2);
+    }
+}
+
 // ----------------- FULLSCREEN & AUTO-LANDSCAPE CHART VIEW -----------------
 
 let isChartLandscapeForced = false;
@@ -844,6 +1288,7 @@ function toggleChartStrategyHUD(e) {
 }
 
 function onChartAreaClick(e) {
+    if (isMeasureActive || isMeasuring) return;
     // If user clicks on the chart container, reveal / refresh strategy lines
     const hud = document.getElementById("chartStrategyHUD");
     const target = cachedActivePositions.find(p => p.symbol === currentSymbol) || cachedRadarSetups.find(s => s.symbol === currentSymbol);
