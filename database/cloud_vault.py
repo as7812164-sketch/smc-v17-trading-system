@@ -374,6 +374,14 @@ def pull_and_restore_vault_state() -> bool:
         conn.commit()
         conn.close()
 
+        # CRITICAL AUTO-RECONCILIATION: Always reconcile paper_account balances against immutable trade history!
+        try:
+            from database.db import reconcile_portfolio_from_trades
+            reconcile_portfolio_from_trades()
+            logger.info("Executed automatic portfolio reconciliation from trade history.")
+        except Exception as rec_err:
+            logger.warning(f"Portfolio auto-reconciliation warning: {rec_err}")
+
         # Restore BB 2.0 Shadow Ledger if present in vault
         bb20_ledger_data = vault_data.get("bb20_shadow_ledger")
         if bb20_ledger_data:

@@ -970,7 +970,14 @@ async def api_admin_vault_pull():
     res = pull_and_restore_vault_state()
     return {"status": "SUCCESS", "pulled": res}
 
-
+@app.post("/api/admin/reconcile-portfolio")
+@app.get("/api/admin/reconcile-portfolio")
+async def api_admin_reconcile_portfolio():
+    from database.db import reconcile_portfolio_from_trades
+    from database.cloud_vault import push_vault_state
+    res = reconcile_portfolio_from_trades()
+    push_vault_state()
+    return {"status": "SUCCESS", "reconciled": res}
 
 @app.get("/api/journal/trades")
 async def get_journal_trades_endpoint():
