@@ -185,14 +185,40 @@ class BinanceFeed:
         return []
 
     async def fetch_symbol_price(self, symbol: str) -> Optional[float]:
-        """Direct ultra-fast single-symbol price fetch with 4-tier failover (Vision -> Bybit -> Peer -> Vision 24hr)."""
+        """Direct ultra-fast single-symbol price fetch with 5-tier failover (Bitget -> MEXC -> Vision -> Bybit -> Peer)."""
         if not symbol:
             return None
         sym = symbol.upper()
         spot_sym, mult = map_symbol_for_spot(sym)
         session = await self.get_session()
 
-        # Tier 1: Binance Vision single price (~60ms, cloud-friendly)
+        # Tier 1: Bitget Futures single ticker (Primary - exact exchange used by Hermes)
+        try:
+            url = f"https://api.bitget.com/api/v2/mix/market/ticker?symbol={sym}&productType=usdt-futures"
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=2.5)) as resp:
+                if resp.status == 200:
+                    d = await resp.json()
+                    data_list = d.get("data", [])
+                    if data_list:
+                        p = float(data_list[0].get("lastPr", 0.0) or data_list[0].get("markPrice", 0.0))
+                        if p > 0:
+                            return p
+        except Exception:
+            pass
+
+        # Tier 2: MEXC single price (Global, ultra-fast, zero cloud geoblock)
+        try:
+            url = f"https://api.mexc.com/api/v3/ticker/price?symbol={sym}"
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=2.5)) as resp:
+                if resp.status == 200:
+                    d = await resp.json()
+                    p = float(d.get("price", 0.0))
+                    if p > 0:
+                        return p
+        except Exception:
+            pass
+
+        # Tier 3: Binance Vision single price (~60ms)
         try:
             url = f"{BINANCE_VISION_BASE}/api/v3/ticker/price?symbol={spot_sym}"
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=2.5)) as resp:
@@ -204,7 +230,7 @@ class BinanceFeed:
         except Exception:
             pass
 
-        # Tier 2: Bybit linear single ticker
+        # Tier 4: Bybit linear single ticker
         try:
             url = f"{BYBIT_BASE}/v5/market/tickers?category=linear&symbol={sym}"
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=2.5)) as resp:
@@ -218,7 +244,7 @@ class BinanceFeed:
         except Exception:
             pass
 
-        # Tier 3: Peer Render API
+        # Tier 5: Peer Render API
         try:
             url = f"https://nexuspro-terminal.onrender.com/api/ticker/{sym}"
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=2.5)) as resp:
@@ -230,62 +256,85 @@ class BinanceFeed:
         except Exception:
             pass
 
-        # Tier 4: Binance Vision 24hr single ticker
-        try:
-            url = f"{BINANCE_VISION_BASE}/api/v3/ticker/24hr?symbol={spot_sym}"
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=3.0)) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    p = float(data.get("lastPrice", 0.0)) * mult
-                    if p > 0:
-                        return p
-        except Exception:
-            pass
-
         return None
 
     async def fetch_all_tickers(self) -> Dict[str, float]:
-        """Fetch live ticker prices for all pairs using Vision, Bybit, and Peer fallbacks."""
+        """Fetch live ticker prices for all pairs using Bitget Futures, MEXC, Vision, and Bybit fallbacks."""
         session = await self.get_session()
         tickers: Dict[str, float] = {}
 
-        # 1. Binance Vision Tickers (Spot, super-fast, 100% cloud-friendly, zero geoblock)
+        # 1. Bitget Futures Bulk (Primary - covers 846 Futures pairs, zero geoblock)
         try:
-            async with session.get(f"{BINANCE_VISION_BASE}/api/v3/ticker/price", timeout=aiohttp.ClientTimeout(total=4.0)) as resp:
+            url = "https://api.bitget.com/api/v2/mix/market/tickers?productType=usdt-futures"
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=4.0)) as resp:
                 if resp.status == 200:
-                    data = await resp.json()
-                    for item in data:
-                        sym = item["symbol"]
-                        p = float(item["price"])
-                        tickers[sym] = p
-                        k1000 = f"1000{sym}"
-                        if k1000 not in tickers:
-                            tickers[k1000] = p * 1000.0
+                    d = await resp.json()
+                    for item in d.get("data", []):
+                        sym = item.get("symbol")
+                        p_str = item.get("lastPr") or item.get("markPrice")
+                        if sym and p_str:
+                            tickers[sym] = float(p_str)
                     if tickers:
                         self.is_connected = True
                         set_metric("binance_status", "CONNECTED")
         except Exception:
             pass
 
-        # 2. Bybit Linear Tickers (Covers extra linear futures contracts)
-        try:
-            async with session.get(f"{BYBIT_BASE}/v5/market/tickers?category=linear", timeout=aiohttp.ClientTimeout(total=4.0)) as resp:
-                if resp.status == 200:
-                    res_json = await resp.json()
-                    for item in res_json.get("result", {}).get("list", []):
-                        sym = item.get("symbol")
-                        price_str = item.get("lastPrice")
-                        if sym and price_str:
-                            p = float(price_str)
+        # 2. MEXC Bulk Tickers (Secondary - covers 1866 pairs, zero geoblock)
+        if len(tickers) < 50:
+            try:
+                url = "https://api.mexc.com/api/v3/ticker/price"
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=4.0)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for item in data:
+                            sym = item.get("symbol")
+                            p = float(item.get("price", 0.0))
+                            if sym and p > 0 and sym not in tickers:
+                                tickers[sym] = p
+                        if tickers:
+                            self.is_connected = True
+                            set_metric("binance_status", "CONNECTED")
+            except Exception:
+                pass
+
+        # 3. Binance Vision Tickers (Spot fallback)
+        if len(tickers) < 50:
+            try:
+                async with session.get(f"{BINANCE_VISION_BASE}/api/v3/ticker/price", timeout=aiohttp.ClientTimeout(total=4.0)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for item in data:
+                            sym = item["symbol"]
+                            p = float(item["price"])
                             if sym not in tickers:
                                 tickers[sym] = p
-                    if tickers:
-                        self.is_connected = True
-                        set_metric("binance_status", "CONNECTED")
-        except Exception:
-            pass
+                            k1000 = f"1000{sym}"
+                            if k1000 not in tickers:
+                                tickers[k1000] = p * 1000.0
+                        if tickers:
+                            self.is_connected = True
+                            set_metric("binance_status", "CONNECTED")
+            except Exception:
+                pass
 
-        # 3. Peer Render Endpoint Fallback (nexuspro-terminal.onrender.com)
+        # 4. Bybit Linear Tickers (Covers extra linear futures contracts)
+        if len(tickers) < 50:
+            try:
+                async with session.get(f"{BYBIT_BASE}/v5/market/tickers?category=linear", timeout=aiohttp.ClientTimeout(total=4.0)) as resp:
+                    if resp.status == 200:
+                        res_json = await resp.json()
+                        for item in res_json.get("result", {}).get("list", []):
+                            sym = item.get("symbol")
+                            price_str = item.get("lastPrice")
+                            if sym and price_str:
+                                p = float(price_str)
+                                if sym not in tickers:
+                                    tickers[sym] = p
+            except Exception:
+                pass
+
+        # 5. Peer Render Endpoint Fallback
         if len(tickers) < 20:
             try:
                 peer_url = "https://nexuspro-terminal.onrender.com/api/markets"
@@ -300,27 +349,13 @@ class BinanceFeed:
             except Exception:
                 pass
 
-        # 4. Binance Futures direct (if accessible)
-        if len(tickers) < 20:
-            try:
-                async with session.get(f"{BINANCE_FAPI_BASE}/fapi/v1/ticker/price", timeout=aiohttp.ClientTimeout(total=3.0)) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        for item in data:
-                            sym = item["symbol"]
-                            p = float(item["price"])
-                            if sym not in tickers:
-                                tickers[sym] = p
-            except Exception:
-                pass
-
         if tickers:
             self.last_all_tickers = tickers
             self.last_heartbeat = time.time()
             self.last_data_time = time.time()
             return tickers
 
-        # 5. Last cached tickers guarantee (Never return empty if we previously had tickers)
+        # Last cached tickers guarantee (Never return empty if we previously had tickers)
         return self.last_all_tickers or {}
 
     async def fetch_24hr_tickers(self) -> Dict[str, Dict[str, Any]]:
@@ -332,7 +367,66 @@ class BinanceFeed:
         session = await self.get_session()
         data_map: Dict[str, Dict[str, Any]] = {}
 
-        # 1. Binance Vision 24hr (Global, super-fast, no US/India geo-restrictions)
+        # 1. Bitget Futures 24hr (Primary - matches exchange execution, zero geoblock)
+        try:
+            url = "https://api.bitget.com/api/v2/mix/market/tickers?productType=usdt-futures"
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=4.5)) as resp:
+                if resp.status == 200:
+                    d = await resp.json()
+                    for item in d.get("data", []):
+                        sym = item.get("symbol")
+                        if sym:
+                            p = float(item.get("lastPr", 0.0) or item.get("markPrice", 0.0) or 0.0)
+                            chg = float(item.get("change24h", 0.0) or 0.0) * 100.0
+                            h = float(item.get("high24h", 0.0) or 0.0)
+                            l = float(item.get("low24h", 0.0) or 0.0)
+                            vol = float(item.get("usdtVolume", 0.0) or item.get("baseVolume", 0.0) or 0.0)
+                            data_map[sym] = {
+                                "price": p,
+                                "change_24h": chg,
+                                "high_24h": h,
+                                "low_24h": l,
+                                "volume_24h": vol,
+                            }
+                    if data_map:
+                        self.is_connected = True
+                        set_metric("binance_status", "CONNECTED")
+                        self.last_24h_tickers = data_map
+                        self.last_24h_time = time.time()
+                        self.last_heartbeat = time.time()
+                        self.last_data_time = time.time()
+                        return self.last_24h_tickers
+        except Exception:
+            pass
+
+        # 2. MEXC 24hr Tickers (Secondary - global spot pairs)
+        try:
+            url = "https://api.mexc.com/api/v3/ticker/24hr"
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=4.5)) as resp:
+                if resp.status == 200:
+                    raw = await resp.json()
+                    for item in raw:
+                        sym = item.get("symbol")
+                        if sym and sym not in data_map:
+                            data_map[sym] = {
+                                "price": float(item.get("lastPrice", 0.0) or 0.0),
+                                "change_24h": float(item.get("priceChangePercent", 0.0) or 0.0),
+                                "high_24h": float(item.get("highPrice", 0.0) or 0.0),
+                                "low_24h": float(item.get("lowPrice", 0.0) or 0.0),
+                                "volume_24h": float(item.get("quoteVolume", 0.0) or 0.0),
+                            }
+                    if data_map:
+                        self.is_connected = True
+                        set_metric("binance_status", "CONNECTED")
+                        self.last_24h_tickers = data_map
+                        self.last_24h_time = time.time()
+                        self.last_heartbeat = time.time()
+                        self.last_data_time = time.time()
+                        return self.last_24h_tickers
+        except Exception:
+            pass
+
+        # 3. Binance Vision 24hr
         try:
             async with session.get(f"{BINANCE_VISION_BASE}/api/v3/ticker/24hr", timeout=aiohttp.ClientTimeout(total=5.0)) as resp:
                 if resp.status == 200:
@@ -347,46 +441,6 @@ class BinanceFeed:
                                 "low_24h": float(item.get("lowPrice", 0.0) or 0.0),
                                 "volume_24h": float(item.get("quoteVolume", 0.0) or 0.0),
                             }
-                        k1000 = f"1000{sym}"
-                        if k1000 not in data_map:
-                            data_map[k1000] = {
-                                "price": float(item.get("lastPrice", 0.0) or 0.0) * 1000.0,
-                                "change_24h": float(item.get("priceChangePercent", 0.0) or 0.0),
-                                "high_24h": float(item.get("highPrice", 0.0) or 0.0) * 1000.0,
-                                "low_24h": float(item.get("lowPrice", 0.0) or 0.0) * 1000.0,
-                                "volume_24h": float(item.get("quoteVolume", 0.0) or 0.0),
-                            }
-                    if data_map:
-                        self.is_connected = True
-                        set_metric("binance_status", "CONNECTED")
-                        self.last_24h_tickers = data_map
-                        self.last_24h_time = time.time()
-                        self.last_heartbeat = time.time()
-                        self.last_data_time = time.time()
-                        return self.last_24h_tickers
-        except Exception:
-            pass
-
-        # 2. Bybit Fallback (if Binance Vision is unreachable)
-        try:
-            async with session.get(f"{BYBIT_BASE}/v5/market/tickers?category=linear", timeout=aiohttp.ClientTimeout(total=5.0)) as resp:
-                if resp.status == 200:
-                    res_json = await resp.json()
-                    for item in res_json.get("result", {}).get("list", []):
-                        sym = item.get("symbol")
-                        if sym and sym not in data_map:
-                            p = float(item.get("lastPrice", 0.0) or 0.0)
-                            chg = float(item.get("price24hPcnt", 0.0) or 0.0) * 100.0
-                            h = float(item.get("highPrice24h", 0.0) or 0.0)
-                            l = float(item.get("lowPrice24h", 0.0) or 0.0)
-                            vol = float(item.get("turnover24h", 0.0) or 0.0)
-                            data_map[sym] = {
-                                "price": p,
-                                "change_24h": chg,
-                                "high_24h": h,
-                                "low_24h": l,
-                                "volume_24h": vol,
-                            }
                     if data_map:
                         self.last_24h_tickers = data_map
                         self.last_24h_time = time.time()
@@ -394,7 +448,7 @@ class BinanceFeed:
         except Exception:
             pass
 
-        # 3. Peer Render Endpoint Fallback
+        # 4. Peer Render Endpoint Fallback
         try:
             peer_url = "https://nexuspro-terminal.onrender.com/api/markets"
             async with session.get(peer_url, timeout=aiohttp.ClientTimeout(total=4.0)) as resp:
@@ -414,24 +468,6 @@ class BinanceFeed:
                         self.last_24h_tickers = data_map
                         self.last_24h_time = time.time()
                         return self.last_24h_tickers
-        except Exception:
-            pass
-
-        # 4. Binance Futures 24hr (Fallback)
-        try:
-            async with session.get(f"{BINANCE_FAPI_BASE}/fapi/v1/ticker/24hr", timeout=aiohttp.ClientTimeout(total=3.0)) as resp:
-                if resp.status == 200:
-                    raw = await resp.json()
-                    for item in raw:
-                        sym = item.get("symbol")
-                        if sym:
-                            data_map[sym] = {
-                                "price": float(item.get("lastPrice", 0.0) or 0.0),
-                                "change_24h": float(item.get("priceChangePercent", 0.0) or 0.0),
-                                "high_24h": float(item.get("highPrice", 0.0) or 0.0),
-                                "low_24h": float(item.get("lowPrice", 0.0) or 0.0),
-                                "volume_24h": float(item.get("quoteVolume", 0.0) or 0.0),
-                            }
         except Exception:
             pass
 
