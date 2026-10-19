@@ -402,21 +402,19 @@ class BB20LiveSniper:
 
         # Telegram Alert
         emoji = "🟢 LONG" if side == "LONG" else "🔴 SHORT"
+        win_est_usd = risk_usd * 3.0
         msg = (
-            f"🎯 <b>BB 3.0 SNIPER — PENDING LIMIT SETUP</b>\n\n"
-            f"<b>Coin</b>: #{symbol} ({emoji})\n"
-            f"<b>Strategy</b>: Day 1 {anchor_name} Sweep + 15m Extreme OB Retest\n"
-            f"<b>Model</b>: 50% Mean Threshold Stepped Trailing SL\n\n"
-            f"<b>Section</b>: #{sec_id} (${sec['balance']:.2f} USDT)\n"
-            f"<b>Anchor</b>: {anchor_name} (${anchor_price:.4f})\n\n"
-            f"🎯 <b>50% MT Limit Entry</b>: <code>${mt:.4f}</code>\n"
-            f"🛑 <b>Stop Loss (0.15% Buffer)</b>: <code>${sl:.4f}</code>\n"
-            f"💰 <b>Risk Amount (5%)</b>: ${risk_usd:.2f} USDT\n\n"
-            f"🪜 <b>Profit Targets</b>:\n"
-            f"• Tier 1 (+1.0R): ${setup_data['target_1r']:.4f} (SL ➔ +0.2R BE)\n"
-            f"• Tier 2 (+1.5R): ${setup_data['target_15r']:.4f} (Lock +1.0R)\n"
-            f"• Target (+3.0R): ${setup_data['target_3r']:.4f}\n\n"
-            f"<i>Real-time candlestick chart attached above!</i>"
+            f"🎯 <b>BB 3.0 • LIMIT SETUP</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🪙 <b>#{symbol}</b> {emoji} (5x)\n\n"
+            f"🎯 <b>Entry</b>  : <code>${mt:.4f}</code> (50% MT)\n"
+            f"🛑 <b>Stop</b>   : <code>${sl:.4f}</code> (Risk: ${risk_usd:.2f})\n"
+            f"🎯 <b>Target</b> : <code>${setup_data['target_3r']:.4f}</code> (Win: +${win_est_usd:.2f} | 1:3 R)\n\n"
+            f"🪜 <b>Trailing Plan</b>:\n"
+            f"• +1.0R (<code>${setup_data['target_1r']:.4f}</code>) ➔ Move SL to BE\n"
+            f"• +1.5R (<code>${setup_data['target_15r']:.4f}</code>) ➔ Lock +1.0R Profit\n\n"
+            f"💼 <b>Section #{sec_id}</b> (${sec['balance']:.2f} USDT)\n"
+            f"━━━━━━━━━━━━━━━━━━━━"
         )
         send_telegram_alert(msg, symbol=symbol, setup_or_pos=setup_data, candles=candles_15m)
         _sync_to_cloud_terminals("SETUP", setup_data)
@@ -486,13 +484,14 @@ class BB20LiveSniper:
             print(f"✅ [LIMIT FILLED] {symbol} {side} @ ${entry:.4f}! Trade is LIVE!")
 
             msg = (
-                f"⚡ <b>BB 3.0 SNIPER — LIMIT ORDER FILLED!</b>\n\n"
-                f"<b>Coin</b>: #{symbol} ({side})\n"
-                f"<b>Strategy</b>: BB 3.0 (50% MT Retest Entered)\n"
-                f"<b>Fill Price</b>: <code>${entry:.4f}</code>\n"
-                f"<b>Stop Loss</b>: <code>${sl:.4f}</code>\n"
-                f"<b>Section #{sec_id}</b>: Risk ${setup['risk_usd']:.2f} USDT\n\n"
-                f"🛡️ <b>Stepped Trailing Armor Active</b>: Monitoring live candles for profit locks."
+                f"⚡ <b>BB 3.0 • ORDER FILLED</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🪙 <b>#{symbol}</b> {'🟢 LONG' if side == 'LONG' else '🔴 SHORT'} (5x)\n\n"
+                f"🎯 <b>Fill Price</b> : <code>${entry:.4f}</code>\n"
+                f"🛑 <b>Active SL</b>  : <code>${sl:.4f}</code>\n"
+                f"💰 <b>Risk Amount</b>: ${setup['risk_usd']:.2f} USDT (5%)\n\n"
+                f"🛡️ <b>Status</b>: Trailing Armor Active (Section #{sec_id})\n"
+                f"━━━━━━━━━━━━━━━━━━━━"
             )
             send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos_data, candles=candles)
 
@@ -542,14 +541,16 @@ class BB20LiveSniper:
                 })
 
                 print(f"🛡️ [TRAILING SL UPDATE] {symbol} {side}: Tier {tier_candidate} Locked! (SL ➔ ${new_sl:.4f})")
-                tier_msg = "Fee Shield (+0.2R Breakeven)" if tier_candidate == 1 else f"+{locked_r:.1f}R Pure Profit Locked!"
+                tier_label = "+0.2R Fee Shield (Breakeven)" if tier_candidate == 1 else f"+{locked_r:.1f}R Pure Profit Locked"
                 msg = (
-                    f"🪜 <b>BB 3.0 SNIPER — TRAILING PROFIT LOCKED!</b>\n\n"
-                    f"<b>Coin</b>: #{symbol} ({side})\n"
-                    f"<b>Peak Reached</b>: +{max_fav_r:.2f} R\n"
-                    f"<b>New Stop Loss</b>: <code>${new_sl:.4f}</code>\n"
-                    f"<b>Lock Status</b>: {tier_msg}\n\n"
-                    f"<i>Trade is protected against any sudden reversal! Real chart attached above.</i>"
+                    f"🪜 <b>BB 3.0 • PROFIT LOCKED</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"🪙 <b>#{symbol}</b> {'🟢 LONG' if side == 'LONG' else '🔴 SHORT'}\n\n"
+                    f"⚡ <b>Milestone</b> : Tier {tier_candidate} Hit (Peak: +{max_fav_r:.2f}R)\n"
+                    f"🛡️ <b>New SL</b>    : <code>${new_sl:.4f}</code> ({tier_label})\n"
+                    f"🔒 <b>Protection</b>: Risk-Free Guaranteed\n\n"
+                    f"💼 <b>Section #{sec_id}</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━"
                 )
                 send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos, candles=candles)
 
@@ -621,17 +622,28 @@ class BB20LiveSniper:
         print(f"🏁 [TRADE CLOSED] {symbol} {outcome} | PnL: ${dollar_pnl:+.2f} USDT | Sec #{sec_id} Bal: ${sec['balance']:.2f}")
 
         # Telegram Alert
-        res_emoji = "🏆 WIN" if realized_r > 0 else ("🛡️ SAFE SAVE" if tier == 1 else "🛑 LOSS")
+        if realized_r > 0.2:
+            title_tag = "🏆 TRADE CLOSED • WIN"
+        elif tier == 1:
+            title_tag = "🛡️ TRADE CLOSED • RISK-FREE SAVE"
+        else:
+            title_tag = "🛑 TRADE CLOSED • LOSS"
+
+        sign = "+" if dollar_pnl >= 0 else ""
+        prev_bal = round(sec['balance'] - dollar_pnl, 2)
+        pnl_pct = (dollar_pnl / prev_bal) * 100 if prev_bal > 0 else 0.0
+
         msg = (
-            f"🏁 <b>BB 3.0 SNIPER — TRADE COMPLETED</b>\n\n"
-            f"<b>Result</b>: {res_emoji} ({outcome})\n"
-            f"<b>Coin</b>: #{symbol} ({pos['side']})\n"
-            f"<b>Strategy</b>: BB 3.0 (Stepped Trailing SL)\n"
-            f"<b>Exit Price</b>: <code>${exit_price:.4f}</code>\n"
-            f"<b>Realized R</b>: {realized_r:+.2f} R\n"
-            f"<b>Dollar PnL</b>: <b>{dollar_pnl:+.2f} USDT</b>\n\n"
-            f"<b>Section #{sec_id} Balance</b>: <b>${sec['balance']:.2f} USDT</b>\n"
-            f"<b>Total Deca Equity</b>: <b>${self.ledger.data['total_current_equity']:.2f} USDT</b>"
+            f"<b>{title_tag}</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🪙 <b>#{symbol}</b> ({pos['side']})\n\n"
+            f"💰 <b>Net Profit</b>: <b>{sign}${dollar_pnl:.2f} USDT</b> ({sign}{pnl_pct:.1f}%)\n"
+            f"📈 <b>Entry</b>   : <code>${pos['mt_entry']:.4f}</code>\n"
+            f"🏁 <b>Exit</b>    : <code>${exit_price:.4f}</code> ({outcome})\n"
+            f"⏱️ <b>Time</b>    : {dur_str}\n\n"
+            f"💼 <b>Sec #{sec_id} Bal</b>: ${prev_bal:.2f} ➔ <b>${sec['balance']:.2f}</b>\n"
+            f"📊 <b>Total Equity</b>: <b>${self.ledger.data['total_current_equity']:.2f} USDT</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━"
         )
         send_telegram_alert(msg, symbol=symbol, setup_or_pos=closed_rec)
 
