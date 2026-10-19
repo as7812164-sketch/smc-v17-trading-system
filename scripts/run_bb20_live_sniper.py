@@ -168,20 +168,24 @@ def _sync_to_cloud_terminals(action: str, data: Dict):
     ctx = ssl._create_unverified_context()
     
     for url in urls:
-        try:
-            req = urllib.request.Request(
-                url,
-                data=data_bytes,
-                headers={"Content-Type": "application/json", "User-Agent": "BB30-Sniper-Bridge"}
-            )
-            with urllib.request.urlopen(req, context=ctx, timeout=8) as resp:
-                res = json.loads(resp.read().decode("utf-8"))
-                host = "NexusPro" if "nexuspro" in url else "Hermes"
-                sym = data.get("symbol", "")
-                print(f"📡 [{host} Cloud Sync] {action} {sym} -> {res.get('status')}")
-        except Exception as e:
-            host = "NexusPro" if "nexuspro" in url else "Hermes"
-            print(f"⚠️ [{host} Cloud Sync Note] {action}: {e}")
+        host = "NexusPro" if "nexuspro" in url else "Hermes"
+        sym = data.get("symbol", "")
+        for attempt in range(2):
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=data_bytes,
+                    headers={"Content-Type": "application/json", "User-Agent": "BB30-Sniper-Bridge"}
+                )
+                with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+                    res = json.loads(resp.read().decode("utf-8"))
+                    print(f"📡 [{host} Cloud Sync] {action} {sym} -> {res.get('status')}")
+                    break
+            except Exception as e:
+                if attempt == 0:
+                    time.sleep(3)
+                else:
+                    print(f"⚠️ [{host} Cloud Sync Note] {action} {sym}: {e}")
 
 _sync_to_nexuspro_render = _sync_to_cloud_terminals
 

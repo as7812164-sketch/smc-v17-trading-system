@@ -94,18 +94,22 @@ hermes2_apex_engine.set_broadcast_callback(ws_broadcast)
 hermes40_live_engine.set_broadcast_callback(ws_broadcast)
 
 async def keepalive_loop():
-    """Pings the public Render URL every 4 minutes to permanently lock Render active 24/7."""
-    render_url = os.getenv("RENDER_EXTERNAL_URL", "https://smc-ai-agent.onrender.com").rstrip("/")
-    # Wait 30 seconds after startup before starting ping loop
-    await asyncio.sleep(30)
+    """Pings both public Render URLs every 3 minutes to permanently prevent Render free tier sleep."""
+    urls = [
+        "https://nexuspro-terminal.onrender.com/api/status",
+        "https://smc-ai-agent.onrender.com/api/status"
+    ]
+    # Wait 15 seconds after startup before starting ping loop
+    await asyncio.sleep(15)
     while True:
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{render_url}/api/status", timeout=15) as resp:
-                    pass
-        except Exception:
-            pass
-        await asyncio.sleep(240)  # Ping every 4 minutes (locks Render server awake 24/7)
+        for u in urls:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(u, timeout=20) as resp:
+                        pass
+            except Exception:
+                pass
+        await asyncio.sleep(180)  # Ping every 3 minutes (Render free tier sleeps after 15 mins)
 
 async def ticker_cache_loop():
     """Background task: keeps Binance 24h ticker prices hot in RAM every 10s."""

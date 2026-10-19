@@ -1,7 +1,7 @@
 {
   "created_at": "2026-10-14T08:11:07.723719+00:00",
   "total_initial_capital": 500.0,
-  "total_current_equity": 546.74,
+  "total_current_equity": 543.19,
   "sections": {
     "1": {
       "section_id": 1,
@@ -70,12 +70,12 @@
         "NEARUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 52.35,
-      "trades_count": 1,
+      "balance": 52.72,
+      "trades_count": 2,
       "wins": 1,
-      "saves": 0,
+      "saves": 1,
       "losses": 0,
-      "pnl_usd": 2.35,
+      "pnl_usd": 2.72,
       "status": "IDLE"
     },
     "6": {
@@ -85,12 +85,12 @@
         "RENDERUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 48.01,
-      "trades_count": 3,
+      "balance": 48.35,
+      "trades_count": 4,
       "wins": 0,
-      "saves": 2,
+      "saves": 3,
       "losses": 1,
-      "pnl_usd": -1.99,
+      "pnl_usd": -1.65,
       "status": "IDLE"
     },
     "7": {
@@ -145,60 +145,75 @@
         "FETUSDT"
       ],
       "initial_balance": 50.0,
-      "balance": 63.54,
-      "trades_count": 4,
-      "wins": 2,
+      "balance": 59.28,
+      "trades_count": 3,
+      "wins": 1,
       "saves": 0,
       "losses": 2,
-      "pnl_usd": 13.54,
+      "pnl_usd": 9.28,
       "status": "IDLE"
     }
   },
   "active_setups": {
-    "UNIUSDT": {
-      "symbol": "UNIUSDT",
-      "section_id": "8",
+    "ARBUSDT": {
+      "symbol": "ARBUSDT",
+      "section_id": "10",
       "side": "SHORT",
-      "mt_entry": 7.25,
-      "sl": 7.2769,
-      "risk": 0.0269,
-      "risk_usd": 2.84,
+      "mt_entry": 0.1976,
+      "sl": 0.1992,
+      "risk": 0.0016,
+      "risk_usd": 2.96,
       "anchor_name": "PDH RESISTANCE",
-      "anchor_price": 7.36,
-      "armed_at": "2026-10-18T13:31:11.076857+00:00",
-      "target_1r": 7.2231,
-      "target_15r": 7.2097,
-      "target_3r": 7.1693
+      "anchor_price": 0.1874,
+      "armed_at": "2026-10-19T07:00:11.778699+00:00",
+      "target_1r": 0.196,
+      "target_15r": 0.1952,
+      "target_3r": 0.1928
     },
-    "LTCUSDT": {
-      "symbol": "LTCUSDT",
-      "section_id": "5",
+    "AVAXUSDT": {
+      "symbol": "AVAXUSDT",
+      "section_id": "3",
       "side": "SHORT",
-      "mt_entry": 59.66,
-      "sl": 59.9598,
-      "risk": 0.2998,
-      "risk_usd": 2.62,
+      "mt_entry": 9.7565,
+      "sl": 9.7847,
+      "risk": 0.0282,
+      "risk_usd": 2.81,
       "anchor_name": "PDH RESISTANCE",
-      "anchor_price": 60.08,
-      "armed_at": "2026-10-18T14:15:42.639957+00:00",
-      "target_1r": 59.3602,
-      "target_15r": 59.2103,
-      "target_3r": 58.7606
+      "anchor_price": 9.901,
+      "armed_at": "2026-10-19T10:59:52.277644+00:00",
+      "target_1r": 9.7283,
+      "target_15r": 9.7143,
+      "target_3r": 9.672
     },
-    "1000PEPEUSDT": {
-      "symbol": "1000PEPEUSDT",
-      "section_id": "9",
-      "side": "LONG",
-      "mt_entry": 0.0038,
-      "sl": 0.0038,
-      "risk": 0.0,
-      "risk_usd": 3.01,
-      "anchor_name": "PDL SUPPORT",
-      "anchor_price": 0.0038,
-      "armed_at": "2026-10-18T18:29:01.925029+00:00",
-      "target_1r": 0.0039,
-      "target_15r": 0.0039,
-      "target_3r": 0.0039
+    "WLDUSDT": {
+      "symbol": "WLDUSDT",
+      "section_id": "6",
+      "side": "SHORT",
+      "mt_entry": 0.5035,
+      "sl": 0.5076,
+      "risk": 0.0041,
+      "risk_usd": 2.42,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 0.5126,
+      "armed_at": "2026-10-19T11:00:22.334232+00:00",
+      "target_1r": 0.4994,
+      "target_15r": 0.4974,
+      "target_3r": 0.4913
+    },
+    "SUIUSDT": {
+      "symbol": "SUIUSDT",
+      "section_id": "7",
+      "side": "SHORT",
+      "mt_entry": 1.0059,
+      "sl": 1.0094,
+      "risk": 0.0036,
+      "risk_usd": 2.81,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 0.9993,
+      "armed_at": "2026-10-19T11:00:29.101849+00:00",
+      "target_1r": 1.0023,
+      "target_15r": 1.0005,
+      "target_3r": 0.9952
     }
   },
   "active_positions": {},
@@ -721,28 +736,68 @@
       "section_new_balance": 50.76
     },
     {
-      "symbol": "FETUSDT",
-      "section_id": 10,
+      "symbol": "WLDUSDT",
+      "section_id": "6",
       "side": "LONG",
-      "mt_entry": 0.1864,
-      "entry_price": 0.1864,
-      "exit_price": 0.1876,
-      "sl": 0.1856,
-      "active_sl": 0.1876,
-      "margin_usdt": 59.28,
-      "position_size_usdt": 296.4,
-      "leverage": 5,
-      "dollar_pnl": 4.26,
-      "realized_pnl": 4.26,
-      "pnl_pct": 7.19,
-      "outcome": "WIN (+1.5R PROFIT LOCKED)",
-      "exit_reason": "WIN (+1.5R PROFIT LOCKED)",
-      "open_time": 1792344660.0,
-      "close_time": 1792345200.0,
-      "entry_time_str": "18 Oct, 23:01:00 IST",
-      "exit_time_str": "18 Oct, 23:10:00 IST",
-      "duration_str": "9m 0s",
-      "be_status_str": "\ud83d\udee1\ufe0f Trailing Protected"
+      "mt_entry": 0.4642,
+      "sl": 0.4614,
+      "risk": 0.0027,
+      "risk_usd": 2.4,
+      "anchor_name": "PDL SUPPORT",
+      "anchor_price": 0.478,
+      "armed_at": "2026-10-18T20:31:01.461432+00:00",
+      "target_1r": 0.4669,
+      "target_15r": 0.4683,
+      "target_3r": 0.4724,
+      "open_time": 1792355703.9507546,
+      "filled_at": "2026-10-18T20:35:03.950754+00:00",
+      "current_tier": 1,
+      "active_sl": 0.4647,
+      "highest_r": 1.33,
+      "close_time": 1792355941.1485481,
+      "duration_minutes": 4.0,
+      "duration_str": "3m 57s",
+      "entry_time_str": "19 Oct, 02:05:03 IST",
+      "exit_time_str": "19 Oct, 02:09:01 IST",
+      "be_status_str": "\ud83d\udee1\ufe0f Trailing Protected",
+      "closed_at": "2026-10-18T20:39:01.149527+00:00",
+      "exit_price": 0.4647,
+      "outcome": "FEE SHIELD SAVE (+0.2R)",
+      "realized_r": 0.14,
+      "dollar_pnl": 0.34,
+      "section_new_balance": 48.35
+    },
+    {
+      "symbol": "NEARUSDT",
+      "section_id": "5",
+      "side": "SHORT",
+      "mt_entry": 5.0695,
+      "sl": 5.0936,
+      "risk": 0.0241,
+      "risk_usd": 2.62,
+      "anchor_name": "PDH RESISTANCE",
+      "anchor_price": 5.063,
+      "armed_at": "2026-10-19T06:19:05.610566+00:00",
+      "target_1r": 5.0454,
+      "target_15r": 5.0333,
+      "target_3r": 4.9971,
+      "open_time": 1792390755.495209,
+      "filled_at": "2026-10-19T06:19:15.495209+00:00",
+      "current_tier": 1,
+      "active_sl": 5.0647,
+      "highest_r": 1.1,
+      "close_time": 1792392741.589181,
+      "duration_minutes": 33.1,
+      "duration_str": "33m 6s",
+      "entry_time_str": "19 Oct, 11:49:15 IST",
+      "exit_time_str": "19 Oct, 12:22:21 IST",
+      "be_status_str": "\ud83d\udee1\ufe0f Trailing Protected",
+      "closed_at": "2026-10-19T06:52:21.590157+00:00",
+      "exit_price": 5.0647,
+      "outcome": "FEE SHIELD SAVE (+0.2R)",
+      "realized_r": 0.14,
+      "dollar_pnl": 0.37,
+      "section_new_balance": 52.72
     }
   ],
   "daily_single_shot": {
@@ -1176,7 +1231,7 @@
         "SHORT": false
       },
       "WLDUSDT": {
-        "LONG": false,
+        "LONG": true,
         "SHORT": false
       },
       "TRBUSDT": {
@@ -1188,6 +1243,128 @@
         "SHORT": false
       },
       "ARKMUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ONDOUSDT": {
+        "LONG": false,
+        "SHORT": false
+      }
+    },
+    "2026-10-19": {
+      "BTCUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ETHUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "BCHUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SOLUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "BNBUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SEIUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "AVAXUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "DOGEUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "KAVAUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "DOTUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "LINKUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ENSUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "LTCUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "NEARUSDT": {
+        "LONG": false,
+        "SHORT": true
+      },
+      "DYDXUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "OPUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "RENDERUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "WLDUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SUIUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "TIAUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "TRBUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "UNIUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "XRPUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "SNXUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "1000PEPEUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "APTUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ARKMUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "ARBUSDT": {
+        "LONG": false,
+        "SHORT": false
+      },
+      "FETUSDT": {
         "LONG": false,
         "SHORT": false
       },
