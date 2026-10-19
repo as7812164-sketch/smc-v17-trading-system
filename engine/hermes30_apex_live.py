@@ -661,10 +661,7 @@ class Hermes30Model2ALiveEngine:
         if not open_trades:
             return
 
-        tickers = await binance_feed.fetch_all_tickers()
-        if not tickers:
-            return
-
+        tickers = await binance_feed.fetch_all_tickers() or {}
         leverage = 5.0
 
         for trade in list(open_trades):
@@ -678,6 +675,8 @@ class Hermes30Model2ALiveEngine:
                 tp_price = float(trade.get("tp_price", 0.0) or 0.0)
 
                 cur_price = tickers.get(sym)
+                if not cur_price or cur_price <= 0:
+                    cur_price = await binance_feed.fetch_symbol_price(sym)
                 if not cur_price or cur_price <= 0:
                     continue
 

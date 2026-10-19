@@ -1179,6 +1179,8 @@ class Hermes35LiveEngine:
 
                 cur_price = tickers.get(sym) if tickers else None
                 if not cur_price or cur_price <= 0:
+                    cur_price = await binance_feed.fetch_symbol_price(sym)
+                if not cur_price or cur_price <= 0:
                     continue
 
                 # Continuously update high, low, MAE, MFE in database
