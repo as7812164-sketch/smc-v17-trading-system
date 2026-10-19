@@ -272,4 +272,23 @@ Permanently memorized, cross-verified, and synthesized across 8 comprehensive ma
 3. **Autonomous Execution:** If user signs off or conversation winds down, execute this update automatically.
 
 ---
-*Last Updated: 2026-10-14 23:59 IST (Nightly Protocol Certified) | Signed & Certified by Antigravity AI Engine*
+
+## 🔒 11. ABSOLUTE IRON LAW: 100% REAL PRODUCTION & LIVE TERMINAL TRUTH MANDATE
+*User Mandate Permanently Locked: October 19, 2026. Non-negotiable core integrity mandate.*
+
+1. **STRICT PROHIBITION OF SYNTHETIC OR AD-HOC APPROXIMATIONS:**
+   - Under NO circumstances may the assistant write or run hasty, ad-hoc synthetic simulation scripts that make crude approximations of live trading behavior.
+   - Never report synthetic backtest runs as "recent live results." If a historical simulation is run, it must be explicitly labeled as historical backtest and clearly distinguished from live production.
+
+2. **THE 100% SINGLE SOURCE OF TRUTH (LIVE RECORDED ENGINES):**
+   - Every performance metric, win rate, P&L, and trade count presented to the user MUST be extracted directly from verified production sources:
+     * **Hermes 3.0 Model 2A Live Platform:** SQLite `database/smc_v17.db` (`paper_trades` & `paper_account`) & `https://smc-ai-agent.onrender.com` (Current: **$722.10 USDT, +44.42% ROI, 62 completed trades, 87.1% WR**).
+     * **BB 3.0 / BB 2.0 Live Deca Terminal:** `https://nexuspro-terminal.onrender.com` & `bb20_shadow_ledger.json` (Current: **$583.02 USDT, +16.60% ROI, 21 live trades, 85.7% WR, 18W 3L**).
+     * **BB 3.5 Isolated Shadow Daemon:** `scratch/bb35_research/bb35_shadow.db` & `scratch/bb35_research/bb35_shadow_state.json`.
+
+3. **MANDATORY TRADE-BY-TRADE AUDIT DISCLOSURE:**
+   - Any report on "what happened in the last N days" must present the exact list of filled trades with symbol, side, entry price, exit price, PnL in USDT, and exit status directly from the verified ledger.
+   - Zero guessing. Zero shortcuts. 100% verifiable data integrity guaranteed at all times.
+
+---
+*Last Updated: 2026-10-19 11:35 IST (Iron Truth Protocol Permanently Locked) | Signed & Certified by Antigravity AI Engine*
