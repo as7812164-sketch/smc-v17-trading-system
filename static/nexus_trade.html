@@ -127,13 +127,15 @@
         <section class="chart-container" id="chartSection" style="position:relative;">
             <div class="chart-controls-wrapper">
                 <div class="chart-controls">
-                    <!-- Timeframes -->
+                    <!-- Timeframes (Full 1-Year History: 1m, 5m, 15m, 1H, 4H, 1D, 1W, 1M) -->
                     <button class="tf-btn" onclick="setTimeframe('1m', this)">1m</button>
                     <button class="tf-btn" onclick="setTimeframe('5m', this)">5m</button>
                     <button class="tf-btn active" onclick="setTimeframe('15m', this)">15m</button>
                     <button class="tf-btn" onclick="setTimeframe('1h', this)">1H</button>
                     <button class="tf-btn" onclick="setTimeframe('4h', this)">4H</button>
                     <button class="tf-btn" onclick="setTimeframe('1d', this)">1D</button>
+                    <button class="tf-btn" onclick="setTimeframe('1w', this)">1W</button>
+                    <button class="tf-btn" onclick="setTimeframe('1month', this)">1M</button>
                     
                     <span style="color:var(--border-subtle); margin:0 2px;">|</span>
                     
@@ -157,10 +159,13 @@
                     
                     <!-- Fullscreen & Visualizer Buttons -->
                     <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+                        <button id="btnRotateChart" onclick="toggleChartOrientation()" class="chart-tool-btn" title="Toggle Portrait / Landscape Mode">
+                            <i class="fa-solid fa-rotate"></i>
+                        </button>
                         <button id="chartStrategyToggleBtn" onclick="toggleChartStrategyHUD(event)" class="chart-tool-btn" style="background:rgba(0,223,192,0.14); color:var(--brand-teal); border:1px solid rgba(0,223,192,0.4); display:none;">
                             <i class="fa-solid fa-eye"></i> Strategy HUD
                         </button>
-                        <button id="btnFullscreenChart" onclick="toggleChartFullscreen()" class="chart-tool-btn" title="Toggle Fullscreen Chart View">
+                        <button id="btnFullscreenChart" onclick="toggleChartFullscreen()" class="chart-tool-btn" title="Toggle Fullscreen Landscape Chart View">
                             <i class="fa-solid fa-expand"></i>
                         </button>
                     </div>

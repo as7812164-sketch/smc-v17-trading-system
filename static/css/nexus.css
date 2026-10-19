@@ -1224,5 +1224,21 @@ body {
     background: #080B11 !important;
 }
 
+/* Forced Landscape Mode (for mobile fullscreen & rotate button) */
+.chart-container.chart-forced-landscape {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vh !important;
+    height: 100vw !important;
+    max-width: 100vh !important;
+    max-height: 100vw !important;
+    transform: rotate(90deg) translateY(-100vw) !important;
+    transform-origin: top left !important;
+    z-index: 99999 !important;
+    background: #080B11 !important;
+}
+
+
 
 

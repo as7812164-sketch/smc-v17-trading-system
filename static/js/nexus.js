@@ -127,14 +127,17 @@ function initChart() {
         }
     });
 
-    // 1. Volume Histogram Series (Bottom overlay)
+    // 1. Volume Histogram Series (Dedicated isolated scale, never distorts candlestick prices)
     volumeSeries = chart.addHistogramSeries({
         priceFormat: { type: 'volume' },
-        priceScaleId: '', // Overlay on chart
+        priceScaleId: 'volume_scale',
+    });
+    chart.priceScale('volume_scale').applyOptions({
         scaleMargins: {
-            top: 0.82,
+            top: 0.80,
             bottom: 0,
         },
+        visible: false,
     });
 
     // 2. Candlestick Series (Main Price)
@@ -144,6 +147,15 @@ function initChart() {
         borderVisible: false,
         wickUpColor: '#00C087',
         wickDownColor: '#FF4B55'
+    });
+
+    // Auto-scale right price scale dynamically for candlesticks with clean padding
+    chart.priceScale('right').applyOptions({
+        autoScale: true,
+        scaleMargins: {
+            top: 0.08,
+            bottom: 0.22,
+        },
     });
 
     // 3. EMA 20 (Yellow / Fast Trend)
@@ -532,32 +544,79 @@ function exitReplayMode() {
     }
 }
 
-// ----------------- FULLSCREEN CHART VIEW -----------------
+// ----------------- FULLSCREEN & AUTO-LANDSCAPE CHART VIEW -----------------
 
-function toggleChartFullscreen() {
+let isChartLandscapeForced = false;
+
+async function toggleChartFullscreen() {
     const elem = document.getElementById("chartSection");
     if (!elem) return;
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) {
-            elem.webkitRequestFullscreen();
+    const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+
+    if (!isFull) {
+        try {
+            if (elem.requestFullscreen) {
+                await elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) {
+                await elem.webkitRequestFullscreen();
+            }
+        } catch(e) {}
+
+        // Auto-lock to LANDSCAPE mode!
+        try {
+            if (screen.orientation && screen.orientation.lock) {
+                await screen.orientation.lock('landscape');
+            }
+        } catch(e) {
+            // CSS Fallback rotation on mobile portrait
+            if (window.innerWidth < window.innerHeight) {
+                elem.classList.add('chart-forced-landscape');
+                isChartLandscapeForced = true;
+            }
         }
     } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        }
+        try {
+            if (document.exitFullscreen) {
+                await document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                await document.webkitExitFullscreen();
+            }
+        } catch(e) {}
+
+        try {
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+        } catch(e) {}
+
+        elem.classList.remove('chart-forced-landscape');
+        isChartLandscapeForced = false;
     }
+    setTimeout(handleChartResize, 200);
 }
 
-// ----------------- LOAD CANDLESTICKS -----------------
+function toggleChartOrientation() {
+    const elem = document.getElementById("chartSection");
+    if (!elem) return;
+    isChartLandscapeForced = !isChartLandscapeForced;
+    elem.classList.toggle('chart-forced-landscape', isChartLandscapeForced);
+    setTimeout(handleChartResize, 150);
+}
+
+// ----------------- LOAD CANDLESTICKS (1-YEAR HISTORY SUPPORT) -----------------
 
 async function loadKlines() {
     if (!candleSeries) return;
     try {
-        const res = await fetch(`/api/klines/${currentSymbol}?interval=${currentInterval}&limit=180`);
+        // Multi-year deep history limit (up to 1,000 candles for 1d, 1w, 1M, and 300 for 15m/1h)
+        let limit = 300;
+        if (currentInterval === "1d" || currentInterval === "1w" || currentInterval === "1month") {
+            limit = 1000;
+        } else if (currentInterval === "4h" || currentInterval === "1h") {
+            limit = 600;
+        }
+
+        const res = await fetch(`/api/klines/${currentSymbol}?interval=${currentInterval}&limit=${limit}`);
         const data = await res.json();
         if (data.candles && data.candles.length > 0) {
             currentFullCandles = data.candles;

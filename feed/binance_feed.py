@@ -60,6 +60,66 @@ class BinanceFeed:
 
         session = await self.get_session()
 
+        # Provider 0: MEXC Global Futures Klines (Up to 2,000 candles, 1-year history, ZERO GEOBLOCKING on Render)
+        try:
+            mexc_map = {
+                "1m": "Min1", "5m": "Min5", "15m": "Min15", "1h": "Min60", "4h": "Hour4",
+                "1d": "Day1", "1w": "Week1", "1month": "Month1", "1m_month": "Month1"
+            }
+            clean_sym = symbol.upper().replace("1000", "") if "1000" in symbol.upper() else symbol.upper()
+            mexc_sym = clean_sym.replace("USDT", "_USDT")
+            mexc_iv = mexc_map.get(interval.lower(), "Min15" if "15" in interval else ("Min60" if "1h" in interval.lower() else "Hour4"))
+            m_mult = 1000.0 if "1000" in symbol.upper() else 1.0
+            
+            url = f"https://contract.mexc.com/api/v1/contract/kline/{mexc_sym}?interval={mexc_iv}"
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=4.0)) as resp:
+                if resp.status == 200:
+                    d = await resp.json()
+                    data = d.get("data", {})
+                    t = data.get("time", [])
+                    o = data.get("open", [])
+                    h = data.get("high", [])
+                    l = data.get("low", [])
+                    c = data.get("close", [])
+                    v = data.get("vol", [])
+                    if t and len(t) > 0:
+                        candles = []
+                        running_cvd = 0.0
+                        for i in range(len(t)):
+                            vol = float(v[i])
+                            c_val = round(float(c[i]) * m_mult, 6)
+                            o_val = round(float(o[i]) * m_mult, 6)
+                            h_val = round(float(h[i]) * m_mult, 6)
+                            l_val = round(float(l[i]) * m_mult, 6)
+                            rng = max(1e-8, h_val - l_val)
+                            body_bias = (c_val - o_val) / rng
+                            taker_buy = vol * (0.5 + 0.25 * body_bias)
+                            taker_sell = max(0.0, vol - taker_buy)
+                            delta = taker_buy - taker_sell
+                            running_cvd += delta
+                            candles.append({
+                                "time": int(t[i]) * 1000,
+                                "open": o_val,
+                                "high": h_val,
+                                "low": l_val,
+                                "close": c_val,
+                                "volume": vol,
+                                "taker_buy": taker_buy,
+                                "taker_sell": taker_sell,
+                                "delta": delta,
+                                "cvd": running_cvd
+                            })
+                        if candles:
+                            candles = candles[-limit:] if limit > 0 else candles
+                            self.last_heartbeat = time.time()
+                            self.last_data_time = time.time()
+                            self.is_connected = True
+                            set_metric("binance_status", "CONNECTED")
+                            self.klines_cache[cache_key] = (time.time(), candles)
+                            return candles
+        except Exception:
+            pass
+
         # Provider 1: Binance Vision API (Universal, no US geo-restrictions)
         if symbol != "KASUSDT":
             spot_sym, mult = map_symbol_for_spot(symbol)
