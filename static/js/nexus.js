@@ -13,11 +13,25 @@ let currentInterval = "15m";
 let currentLeverage = 5;
 let chart = null;
 let candleSeries = null;
+let volumeSeries = null;
+let ema20Series = null;
+let ema50Series = null;
+let ema200Series = null;
 let currentChartPriceLines = [];
+let currentSmcPriceLines = [];
 let cachedActivePositions = [];
 let cachedRadarSetups = [];
 let activeChartStrategy = null;
 let isHudManuallyHidden = false;
+
+// Advanced Indicators & Replay Engine State
+let currentFullCandles = [];
+let indicatorsState = { ema: true, vol: true, smc: true };
+let isReplayMode = false;
+let replayCandles = [];
+let replayIndex = 0;
+let replayTimer = null;
+let replaySpeedMs = 800;
 
 // Parse symbol from URL (e.g. /trade?symbol=SOLUSDT)
 const urlParams = new URLSearchParams(window.location.search);
@@ -74,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupOrderDesk();
 });
 
-// ----------------- LIGHTWEIGHT CHART -----------------
+// ----------------- ADVANCED TRADINGVIEW CHART ENGINE -----------------
 
 function initChart() {
     const container = document.getElementById("tradingview_chart");
@@ -113,6 +127,17 @@ function initChart() {
         }
     });
 
+    // 1. Volume Histogram Series (Bottom overlay)
+    volumeSeries = chart.addHistogramSeries({
+        priceFormat: { type: 'volume' },
+        priceScaleId: '', // Overlay on chart
+        scaleMargins: {
+            top: 0.82,
+            bottom: 0,
+        },
+    });
+
+    // 2. Candlestick Series (Main Price)
     candleSeries = chart.addCandlestickSeries({
         upColor: '#00C087',
         downColor: '#FF4B55',
@@ -121,24 +146,426 @@ function initChart() {
         wickDownColor: '#FF4B55'
     });
 
-    window.addEventListener('resize', () => {
-        if (chart && container) {
-            chart.applyOptions({ 
-                width: container.clientWidth || window.innerWidth, 
-                height: container.clientHeight || 340 
+    // 3. EMA 20 (Yellow / Fast Trend)
+    ema20Series = chart.addLineSeries({
+        color: '#FFB800',
+        lineWidth: 1.5,
+        title: 'EMA 20',
+        priceLineVisible: false,
+    });
+
+    // 4. EMA 50 (Cyan / Dynamic Base)
+    ema50Series = chart.addLineSeries({
+        color: '#00DFC0',
+        lineWidth: 1.5,
+        title: 'EMA 50',
+        priceLineVisible: false,
+    });
+
+    // 5. EMA 200 (Purple / Institutional Macro)
+    ema200Series = chart.addLineSeries({
+        color: '#A78BFA',
+        lineWidth: 2,
+        title: 'EMA 200',
+        priceLineVisible: false,
+    });
+
+    // Crosshair Live Tracker for OHLCV Tooltip Bar
+    chart.subscribeCrosshairMove(onCrosshairMove);
+
+    window.addEventListener('resize', handleChartResize);
+    document.addEventListener('fullscreenchange', handleChartResize);
+    document.addEventListener('webkitfullscreenchange', handleChartResize);
+}
+
+function handleChartResize() {
+    const container = document.getElementById("tradingview_chart");
+    if (chart && container) {
+        chart.applyOptions({ 
+            width: container.clientWidth || window.innerWidth, 
+            height: container.clientHeight || 340 
+        });
+    }
+}
+
+// ----------------- INDICATORS & CALCULATIONS -----------------
+
+function calculateEMA(candles, period) {
+    if (!candles || candles.length < period) return [];
+    const k = 2 / (period + 1);
+    let ema = 0;
+    for (let i = 0; i < period; i++) {
+        ema += candles[i].close;
+    }
+    ema /= period;
+
+    const results = [{ time: candles[period - 1].time, value: Number(ema.toFixed(4)) }];
+    for (let i = period; i < candles.length; i++) {
+        ema = (candles[i].close * k) + (ema * (1 - k));
+        results.push({ time: candles[i].time, value: Number(ema.toFixed(4)) });
+    }
+    return results;
+}
+
+function renderIndicators(candles) {
+    if (!candles || candles.length === 0) return;
+
+    // 1. Candlesticks
+    if (candleSeries) candleSeries.setData(candles);
+
+    // 2. Volume
+    if (volumeSeries) {
+        if (indicatorsState.vol) {
+            const volData = candles.map(c => ({
+                time: c.time,
+                value: c.volume || 0,
+                color: (c.close >= c.open) ? 'rgba(0, 192, 135, 0.45)' : 'rgba(255, 75, 85, 0.45)'
+            }));
+            volumeSeries.setData(volData);
+        } else {
+            volumeSeries.setData([]);
+        }
+    }
+
+    // 3. EMA 20, 50, 200
+    if (indicatorsState.ema) {
+        const ema20 = calculateEMA(candles, 20);
+        const ema50 = calculateEMA(candles, 50);
+        const ema200 = calculateEMA(candles, Math.min(200, Math.max(20, Math.floor(candles.length * 0.7))));
+        if (ema20Series) ema20Series.setData(ema20);
+        if (ema50Series) ema50Series.setData(ema50);
+        if (ema200Series) ema200Series.setData(ema200);
+
+        // Update OHLC Bar EMA Labels
+        const lastEma20 = ema20.length > 0 ? ema20[ema20.length - 1].value : '--';
+        const lastEma50 = ema50.length > 0 ? ema50[ema50.length - 1].value : '--';
+        const lastEma200 = ema200.length > 0 ? ema200[ema200.length - 1].value : '--';
+        const e20El = document.getElementById("ohlcEma20");
+        const e50El = document.getElementById("ohlcEma50");
+        const e200El = document.getElementById("ohlcEma200");
+        if (e20El) e20El.innerText = lastEma20;
+        if (e50El) e50El.innerText = lastEma50;
+        if (e200El) e200El.innerText = lastEma200;
+    } else {
+        if (ema20Series) ema20Series.setData([]);
+        if (ema50Series) ema50Series.setData([]);
+        if (ema200Series) ema200Series.setData([]);
+    }
+
+    // 4. Automated SMC Levels (PDH, PDL, 15m Extreme OB, 50% MT)
+    updateSmcLevels(candles);
+}
+
+function updateSmcLevels(candles) {
+    if (currentSmcPriceLines && currentSmcPriceLines.length > 0) {
+        currentSmcPriceLines.forEach(l => {
+            try { candleSeries.removePriceLine(l); } catch(e) {}
+        });
+        currentSmcPriceLines = [];
+    }
+    if (!indicatorsState.smc || !candleSeries || !candles || candles.length < 20) return;
+
+    // A. PDH & PDL Detection
+    const lookback = Math.min(candles.length - 2, 48);
+    let pdh = -Infinity;
+    let pdl = Infinity;
+    for (let i = candles.length - lookback; i < candles.length - 2; i++) {
+        if (candles[i].high > pdh) pdh = candles[i].high;
+        if (candles[i].low < pdl) pdl = candles[i].low;
+    }
+
+    if (pdh > 0 && isFinite(pdh)) {
+        const pdhLine = candleSeries.createPriceLine({
+            price: pdh,
+            color: '#FF4B55',
+            lineWidth: 1,
+            lineStyle: 2, // Dashed
+            axisLabelVisible: true,
+            title: `PDH (Liquidity Trap): $${pdh.toFixed(4)}`
+        });
+        currentSmcPriceLines.push(pdhLine);
+    }
+
+    if (pdl > 0 && isFinite(pdl)) {
+        const pdlLine = candleSeries.createPriceLine({
+            price: pdl,
+            color: '#00F0FF',
+            lineWidth: 1,
+            lineStyle: 2, // Dashed
+            axisLabelVisible: true,
+            title: `PDL (Liquidity Sweep): $${pdl.toFixed(4)}`
+        });
+        currentSmcPriceLines.push(pdlLine);
+    }
+
+    // B. 15m Extreme Order Block & 50% Mean Threshold
+    let bestDisp = 0;
+    let obCandle = null;
+    let obType = 'DEMAND';
+    for (let i = candles.length - 22; i < candles.length - 3; i++) {
+        if (i < 0 || i + 2 >= candles.length) continue;
+        const move = Math.abs(candles[i+2].close - candles[i].open) / candles[i].open;
+        if (move > bestDisp && move >= 0.012) {
+            bestDisp = move;
+            obCandle = candles[i];
+            obType = candles[i+2].close > candles[i].open ? 'DEMAND' : 'SUPPLY';
+        }
+    }
+
+    if (obCandle) {
+        const obTop = Math.max(obCandle.open, obCandle.close, obCandle.high);
+        const obBottom = Math.min(obCandle.open, obCandle.close, obCandle.low);
+        const mt50 = obBottom + (obTop - obBottom) * 0.5;
+
+        const mtLine = candleSeries.createPriceLine({
+            price: mt50,
+            color: '#FFB800',
+            lineWidth: 2,
+            lineStyle: 1, // Dotted
+            axisLabelVisible: true,
+            title: `50% MT Sniper Entry [${obType}]: $${mt50.toFixed(4)}`
+        });
+        currentSmcPriceLines.push(mtLine);
+    }
+}
+
+// Indicator Toggle Handlers
+function toggleEmaIndicator() {
+    indicatorsState.ema = !indicatorsState.ema;
+    const btn = document.getElementById("btnToggleEma");
+    if (btn) btn.classList.toggle("active", indicatorsState.ema);
+    renderIndicators(isReplayMode ? replayCandles.slice(0, replayIndex) : currentFullCandles);
+}
+
+function toggleVolumeIndicator() {
+    indicatorsState.vol = !indicatorsState.vol;
+    const btn = document.getElementById("btnToggleVol");
+    if (btn) btn.classList.toggle("active", indicatorsState.vol);
+    renderIndicators(isReplayMode ? replayCandles.slice(0, replayIndex) : currentFullCandles);
+}
+
+function toggleSmcLevels() {
+    indicatorsState.smc = !indicatorsState.smc;
+    const btn = document.getElementById("btnToggleSmc");
+    if (btn) btn.classList.toggle("active", indicatorsState.smc);
+    renderIndicators(isReplayMode ? replayCandles.slice(0, replayIndex) : currentFullCandles);
+}
+
+// ----------------- CROSSHAIR OHLCV TOOLTIP -----------------
+
+function onCrosshairMove(param) {
+    if (!param || !param.time || !candleSeries) {
+        if (currentFullCandles.length > 0) {
+            updateOhlcHeader(currentFullCandles[currentFullCandles.length - 1]);
+        }
+        return;
+    }
+    const candle = param.seriesData.get(candleSeries);
+    if (candle) {
+        updateOhlcHeader(candle);
+    }
+}
+
+function updateOhlcHeader(bar) {
+    if (!bar) return;
+    const oEl = document.getElementById("ohlcO");
+    const hEl = document.getElementById("ohlcH");
+    const lEl = document.getElementById("ohlcL");
+    const cEl = document.getElementById("ohlcC");
+    const chgEl = document.getElementById("ohlcChg");
+    const volEl = document.getElementById("ohlcVol");
+    if (!cEl) return;
+
+    if (oEl) oEl.innerText = Number(bar.open).toFixed(4);
+    if (hEl) hEl.innerText = Number(bar.high).toFixed(4);
+    if (lEl) lEl.innerText = Number(bar.low).toFixed(4);
+    if (cEl) {
+        cEl.innerText = Number(bar.close).toFixed(4);
+        cEl.className = 'ohlc-val ' + (bar.close >= bar.open ? 'green' : 'red');
+    }
+    if (chgEl) {
+        const chg = ((bar.close - bar.open) / bar.open) * 100;
+        const sign = chg >= 0 ? '+' : '';
+        chgEl.innerText = `${sign}${chg.toFixed(2)}%`;
+        chgEl.className = 'ohlc-val ' + (chg >= 0 ? 'green' : 'red');
+    }
+    if (volEl) {
+        const v = bar.volume || 0;
+        volEl.innerText = v >= 1e6 ? (v/1e6).toFixed(2)+'M' : (v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v.toFixed(0));
+    }
+}
+
+// ----------------- FREE BAR REPLAY SIMULATOR -----------------
+
+function toggleReplayMode() {
+    if (isReplayMode) {
+        exitReplayMode();
+    } else {
+        startReplayMode();
+    }
+}
+
+function startReplayMode() {
+    if (!currentFullCandles || currentFullCandles.length < 30) {
+        alert("Candlestick data is loading, please wait a moment...");
+        return;
+    }
+    isReplayMode = true;
+    replayCandles = [...currentFullCandles];
+    replayIndex = Math.max(15, replayCandles.length - 35); // Start 35 bars back
+    
+    const bar = document.getElementById("replayControllerBar");
+    if (bar) bar.style.display = "flex";
+    const btn = document.getElementById("btnToggleReplay");
+    if (btn) btn.classList.add("btn-replay-active");
+
+    const scrubber = document.getElementById("replayScrubber");
+    if (scrubber) {
+        scrubber.min = 15;
+        scrubber.max = replayCandles.length;
+        scrubber.value = replayIndex;
+    }
+    updateReplayDisplay();
+}
+
+function updateReplayDisplay() {
+    const visible = replayCandles.slice(0, replayIndex);
+    renderIndicators(visible);
+    if (visible.length > 0) updateOhlcHeader(visible[visible.length - 1]);
+    
+    const cnt = document.getElementById("replayCounterText");
+    if (cnt) cnt.innerText = `Bar ${replayIndex} / ${replayCandles.length}`;
+    const scrubber = document.getElementById("replayScrubber");
+    if (scrubber) scrubber.value = replayIndex;
+}
+
+function toggleReplayPlayPause() {
+    const btn = document.getElementById("btnReplayPlayPause");
+    if (replayTimer) {
+        clearInterval(replayTimer);
+        replayTimer = null;
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+            btn.classList.remove('active-play');
+        }
+    } else {
+        if (replayIndex >= replayCandles.length) {
+            replayIndex = Math.max(15, replayCandles.length - 35);
+        }
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+            btn.classList.add('active-play');
+        }
+        replayTimer = setInterval(stepReplayForward, replaySpeedMs);
+    }
+}
+
+function stepReplayForward() {
+    if (replayIndex < replayCandles.length) {
+        const nextCandle = replayCandles[replayIndex++];
+        if (candleSeries) candleSeries.update(nextCandle);
+        if (volumeSeries && indicatorsState.vol) {
+            volumeSeries.update({
+                time: nextCandle.time,
+                value: nextCandle.volume || 0,
+                color: nextCandle.close >= nextCandle.open ? 'rgba(0, 192, 135, 0.45)' : 'rgba(255, 75, 85, 0.45)'
             });
         }
-    });
+        updateOhlcHeader(nextCandle);
+        const cnt = document.getElementById("replayCounterText");
+        if (cnt) cnt.innerText = `Bar ${replayIndex} / ${replayCandles.length}`;
+        const scrubber = document.getElementById("replayScrubber");
+        if (scrubber) scrubber.value = replayIndex;
+    } else {
+        toggleReplayPlayPause();
+    }
 }
+
+function stepReplayBackward() {
+    if (replayIndex > 15) {
+        replayIndex--;
+        updateReplayDisplay();
+    }
+}
+
+function resetReplayToStart() {
+    replayIndex = Math.max(15, replayCandles.length - 35);
+    updateReplayDisplay();
+}
+
+function onReplayScrubberChange(val) {
+    replayIndex = parseInt(val, 10);
+    updateReplayDisplay();
+}
+
+function setReplaySpeed(speed, btn) {
+    document.querySelectorAll(".replay-speed-pill").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    if (speed === 1) replaySpeedMs = 800;
+    else if (speed === 2) replaySpeedMs = 400;
+    else if (speed === 5) replaySpeedMs = 150;
+
+    if (replayTimer) {
+        clearInterval(replayTimer);
+        replayTimer = setInterval(stepReplayForward, replaySpeedMs);
+    }
+}
+
+function exitReplayMode() {
+    if (replayTimer) {
+        clearInterval(replayTimer);
+        replayTimer = null;
+    }
+    isReplayMode = false;
+    const bar = document.getElementById("replayControllerBar");
+    if (bar) bar.style.display = "none";
+    const btn = document.getElementById("btnToggleReplay");
+    if (btn) btn.classList.remove("btn-replay-active");
+    const playBtn = document.getElementById("btnReplayPlayPause");
+    if (playBtn) {
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+        playBtn.classList.remove('active-play');
+    }
+    if (candleSeries && currentFullCandles) {
+        renderIndicators(currentFullCandles);
+        if (currentFullCandles.length > 0) updateOhlcHeader(currentFullCandles[currentFullCandles.length - 1]);
+    }
+}
+
+// ----------------- FULLSCREEN CHART VIEW -----------------
+
+function toggleChartFullscreen() {
+    const elem = document.getElementById("chartSection");
+    if (!elem) return;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+}
+
+// ----------------- LOAD CANDLESTICKS -----------------
 
 async function loadKlines() {
     if (!candleSeries) return;
     try {
-        const res = await fetch(`/api/klines/${currentSymbol}?interval=${currentInterval}&limit=120`);
+        const res = await fetch(`/api/klines/${currentSymbol}?interval=${currentInterval}&limit=180`);
         const data = await res.json();
         if (data.candles && data.candles.length > 0) {
-            candleSeries.setData(data.candles);
-            if (chart) chart.timeScale().fitContent();
+            currentFullCandles = data.candles;
+            if (!isReplayMode) {
+                renderIndicators(currentFullCandles);
+                if (chart) chart.timeScale().fitContent();
+                updateOhlcHeader(currentFullCandles[currentFullCandles.length - 1]);
+            }
 
             // Auto-detect and render strategy levels for this pair
             const target = cachedActivePositions.find(p => p.symbol === currentSymbol) || cachedRadarSetups.find(s => s.symbol === currentSymbol);

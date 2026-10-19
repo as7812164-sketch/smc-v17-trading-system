@@ -124,19 +124,83 @@
         </div>
 
         <!-- 1. CHART CONTAINER (LEFT/CENTER) -->
-        <section class="chart-container" style="position:relative;">
-            <div class="chart-controls">
-                <button class="tf-btn" onclick="setTimeframe('1m', this)">1m</button>
-                <button class="tf-btn" onclick="setTimeframe('5m', this)">5m</button>
-                <button class="tf-btn active" onclick="setTimeframe('15m', this)">15m</button>
-                <button class="tf-btn" onclick="setTimeframe('1h', this)">1H</button>
-                <button class="tf-btn" onclick="setTimeframe('4h', this)">4H</button>
-                <button class="tf-btn" onclick="setTimeframe('1d', this)">1D</button>
-                <span style="color:var(--border-subtle); margin:0 4px;">|</span>
-                <span style="font-size:11px; color:var(--text-muted); font-weight:600;"><i class="fa-solid fa-chart-simple"></i> Candlesticks</span>
-                <button id="chartStrategyToggleBtn" onclick="toggleChartStrategyHUD(event)" class="tf-btn" style="margin-left:auto; background:rgba(0,223,192,0.14); color:var(--brand-teal); border:1px solid rgba(0,223,192,0.4); font-weight:800; display:none; border-radius:4px; padding:2px 8px;">
-                    <i class="fa-solid fa-crosshairs"></i> Strategy Visualizer
-                </button>
+        <section class="chart-container" id="chartSection" style="position:relative;">
+            <div class="chart-controls-wrapper">
+                <div class="chart-controls">
+                    <!-- Timeframes -->
+                    <button class="tf-btn" onclick="setTimeframe('1m', this)">1m</button>
+                    <button class="tf-btn" onclick="setTimeframe('5m', this)">5m</button>
+                    <button class="tf-btn active" onclick="setTimeframe('15m', this)">15m</button>
+                    <button class="tf-btn" onclick="setTimeframe('1h', this)">1H</button>
+                    <button class="tf-btn" onclick="setTimeframe('4h', this)">4H</button>
+                    <button class="tf-btn" onclick="setTimeframe('1d', this)">1D</button>
+                    
+                    <span style="color:var(--border-subtle); margin:0 2px;">|</span>
+                    
+                    <!-- Indicators -->
+                    <button id="btnToggleEma" class="chart-tool-btn active" onclick="toggleEmaIndicator()" title="Toggle EMA 20/50/200 Ribbon">
+                        <i class="fa-solid fa-water"></i> EMA
+                    </button>
+                    <button id="btnToggleVol" class="chart-tool-btn active" onclick="toggleVolumeIndicator()" title="Toggle Volume Histogram">
+                        <i class="fa-solid fa-chart-column"></i> Vol
+                    </button>
+                    <button id="btnToggleSmc" class="chart-tool-btn active" onclick="toggleSmcLevels()" title="Toggle Auto PDH/PDL & 15m Extreme OB Levels">
+                        <i class="fa-solid fa-crosshairs" style="color:var(--gold);"></i> SMC
+                    </button>
+                    
+                    <span style="color:var(--border-subtle); margin:0 2px;">|</span>
+                    
+                    <!-- Free Bar Replay Mode -->
+                    <button id="btnToggleReplay" class="chart-tool-btn" onclick="toggleReplayMode()" title="Interactive Historical Bar Replay Simulator (100% Free)">
+                        <i class="fa-solid fa-backward-step" style="color:#F59E0B;"></i> Replay
+                    </button>
+                    
+                    <!-- Fullscreen & Visualizer Buttons -->
+                    <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+                        <button id="chartStrategyToggleBtn" onclick="toggleChartStrategyHUD(event)" class="chart-tool-btn" style="background:rgba(0,223,192,0.14); color:var(--brand-teal); border:1px solid rgba(0,223,192,0.4); display:none;">
+                            <i class="fa-solid fa-eye"></i> Strategy HUD
+                        </button>
+                        <button id="btnFullscreenChart" onclick="toggleChartFullscreen()" class="chart-tool-btn" title="Toggle Fullscreen Chart View">
+                            <i class="fa-solid fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Real-Time Crosshair OHLCV & Indicators Bar -->
+                <div class="chart-ohlc-bar" id="chartOhlcBar">
+                    <span class="ohlc-item"><span class="ohlc-lbl">O:</span> <span class="ohlc-val" id="ohlcO">--</span></span>
+                    <span class="ohlc-item"><span class="ohlc-lbl">H:</span> <span class="ohlc-val" id="ohlcH">--</span></span>
+                    <span class="ohlc-item"><span class="ohlc-lbl">L:</span> <span class="ohlc-val" id="ohlcL">--</span></span>
+                    <span class="ohlc-item"><span class="ohlc-lbl">C:</span> <span class="ohlc-val" id="ohlcC">--</span></span>
+                    <span class="ohlc-item"><span class="ohlc-lbl">CHG:</span> <span class="ohlc-val" id="ohlcChg">--</span></span>
+                    <span class="ohlc-item"><span class="ohlc-lbl">VOL:</span> <span class="ohlc-val" id="ohlcVol">--</span></span>
+                    <span style="color:var(--border-subtle); margin:0 4px;">|</span>
+                    <span class="ohlc-item"><span class="ohlc-lbl" style="color:#FFB800;">EMA20:</span> <span class="ohlc-val gold" id="ohlcEma20">--</span></span>
+                    <span class="ohlc-item"><span class="ohlc-lbl" style="color:#00DFC0;">EMA50:</span> <span class="ohlc-val cyan" id="ohlcEma50">--</span></span>
+                    <span class="ohlc-item"><span class="ohlc-lbl" style="color:#A78BFA;">EMA200:</span> <span class="ohlc-val purple" id="ohlcEma200">--</span></span>
+                </div>
+            </div>
+
+            <!-- INTERACTIVE BAR REPLAY FLOATING CONTROLLER -->
+            <div id="replayControllerBar" class="replay-controller-bar" style="display:none;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="replay-badge"><i class="fa-solid fa-circle-play"></i> REPLAY SIMULATOR</span>
+                    <button class="replay-ctrl-btn" onclick="resetReplayToStart()" title="Jump to Replay Start"><i class="fa-solid fa-backward-fast"></i></button>
+                    <button class="replay-ctrl-btn" onclick="stepReplayBackward()" title="Step 1 Bar Backward"><i class="fa-solid fa-backward-step"></i></button>
+                    <button class="replay-ctrl-btn" id="btnReplayPlayPause" onclick="toggleReplayPlayPause()" title="Play / Pause Replay"><i class="fa-solid fa-play"></i> Play</button>
+                    <button class="replay-ctrl-btn" onclick="stepReplayForward()" title="Step 1 Bar Forward"><i class="fa-solid fa-forward-step"></i></button>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; flex:1; max-width:320px;">
+                    <input type="range" id="replayScrubber" min="1" max="100" value="1" class="replay-slider" oninput="onReplayScrubberChange(this.value)">
+                    <span id="replayCounterText" style="font-size:10px; color:#fff; min-width:70px;">Bar 1 / 100</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:10px; color:var(--text-muted);">SPEED:</span>
+                    <button class="replay-speed-pill active" onclick="setReplaySpeed(1, this)">1x</button>
+                    <button class="replay-speed-pill" onclick="setReplaySpeed(2, this)">2x</button>
+                    <button class="replay-speed-pill" onclick="setReplaySpeed(5, this)">5x</button>
+                    <button class="replay-ctrl-btn" onclick="exitReplayMode()" style="background:rgba(255,75,85,0.2); color:var(--sell-red); border-color:rgba(255,75,85,0.4);" title="Exit Replay"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
 
             <!-- INTERACTIVE FLOATING STRATEGY HUD OVERLAY ON CHART -->

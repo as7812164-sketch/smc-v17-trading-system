@@ -1044,4 +1044,185 @@ body {
     background: rgba(0, 223, 192, 0.06) !important;
 }
 
+/* ==========================================================================
+   ADVANCED TRADINGVIEW CHART ENGINE: REPLAY, INDICATORS, FULLSCREEN & OHLC BAR
+   ========================================================================== */
+
+.chart-controls-wrapper {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.chart-tool-btn {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.chart-tool-btn:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--bg-surface-elevated);
+}
+
+.chart-tool-btn.active {
+    background: rgba(0, 223, 192, 0.14);
+    color: var(--brand-teal);
+    border-color: rgba(0, 223, 192, 0.5);
+    box-shadow: 0 0 8px rgba(0, 223, 192, 0.2);
+}
+
+.chart-tool-btn.btn-replay-active {
+    background: rgba(245, 158, 11, 0.18);
+    color: #FBBF24;
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
+/* OHLC Tooltip Bar */
+.chart-ohlc-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 12px;
+    background: rgba(8, 11, 17, 0.9);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    overflow-x: auto;
+    white-space: nowrap;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    -webkit-overflow-scrolling: touch;
+}
+
+.ohlc-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.ohlc-lbl {
+    color: var(--text-muted);
+    font-weight: 700;
+}
+.ohlc-val {
+    color: #fff;
+    font-weight: 800;
+}
+.ohlc-val.green { color: var(--buy-green); }
+.ohlc-val.red { color: var(--sell-red); }
+.ohlc-val.gold { color: #F59E0B; }
+.ohlc-val.cyan { color: var(--brand-teal); }
+.ohlc-val.purple { color: #A78BFA; }
+
+/* Interactive Bar Replay Floating Controller */
+.replay-controller-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, rgba(20, 27, 43, 0.98), rgba(15, 20, 32, 0.98));
+    border-bottom: 2px solid #F59E0B;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    z-index: 20;
+    gap: 10px;
+    font-family: var(--font-mono);
+}
+
+.replay-badge {
+    background: #F59E0B;
+    color: #080B11;
+    font-weight: 900;
+    font-size: 9px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.replay-ctrl-btn {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+}
+
+.replay-ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #fff;
+}
+
+.replay-ctrl-btn.active-play {
+    background: var(--buy-green);
+    color: #000;
+    border-color: var(--buy-green);
+    font-weight: 900;
+}
+
+.replay-speed-pill {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.replay-speed-pill.active {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #F59E0B;
+    color: #F59E0B;
+}
+
+.replay-slider {
+    flex: 1;
+    max-width: 200px;
+    accent-color: #F59E0B;
+    cursor: pointer;
+}
+
+/* Fullscreen Chart Container */
+.chart-container:fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border: none !important;
+    z-index: 9999 !important;
+    background: #080B11 !important;
+}
+
+.chart-container:-webkit-full-screen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border: none !important;
+    z-index: 9999 !important;
+    background: #080B11 !important;
+}
+
+
 
