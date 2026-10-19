@@ -534,6 +534,22 @@ class Hermes30Model2ALiveEngine:
             soft_sl = float(setup["soft_sl_price"])
             hard_sl = float(setup["hard_sl_price"])
 
+            # Real-Time Price Proximity Armor: Prevent retroactive fills when market has already moved past TP or SL
+            try:
+                tickers = await binance_feed.fetch_all_tickers()
+                live_p = tickers.get(symbol)
+                if live_p and live_p > 0:
+                    if side in ("BUY", "LONG"):
+                        if live_p >= tp or live_p <= hard_sl:
+                            logger.warning(f"⚠️ Suppressing stale entry for {symbol} LONG: Current price ({live_p}) already passed TP ({tp}) or SL ({hard_sl}).")
+                            return
+                    else:  # SHORT / SELL
+                        if live_p <= tp or live_p >= hard_sl:
+                            logger.warning(f"⚠️ Suppressing stale entry for {symbol} SHORT: Current price ({live_p}) already passed TP ({tp}) or SL ({hard_sl}).")
+                            return
+            except Exception as pe:
+                logger.debug(f"Price proximity check warning for {symbol}: {pe}")
+
             setup["account_id"] = sec_id
             setup["channel"] = f"sec_{sec_id}"
             setup["timeframe"] = timeframe
