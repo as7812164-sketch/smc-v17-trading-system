@@ -346,6 +346,7 @@ body {
     flex: 1;
     width: 100%;
     height: 100%;
+    min-height: 330px;
 }
 
 /* ORDER BOOK */
@@ -752,16 +753,295 @@ body {
 
 .mobile-drawer.open { left: 0; }
 
+/* ==========================================================================
+   MOBILE RESPONSIVE OPTIMIZATIONS (ZERO GLITCH • INSTANT TRACKING)
+   ========================================================================== */
 @media (max-width: 960px) {
+    body {
+        padding-bottom: 70px;
+        overflow-x: hidden;
+    }
+
     .terminal-layout {
         display: flex;
         flex-direction: column;
         height: auto;
         overflow-y: auto;
-        padding-bottom: 70px;
+        overflow-x: hidden;
+        padding-bottom: 85px;
+        width: 100%;
+        max-width: 100vw;
     }
-    .chart-container { height: 380px; }
-    .mobile-bottom-bar { display: flex; }
+
+    /* Sub-bar ticker */
+    .ticker-sub-bar {
+        order: 1;
+        width: 100%;
+        max-width: 100vw;
+        padding: 0 10px;
+        gap: 12px;
+        white-space: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 1. Chart - Compact height on phone screen */
+    .chart-container { 
+        order: 2;
+        height: 310px; 
+        min-height: 310px;
+        max-height: 310px;
+        width: 100%;
+        max-width: 100vw;
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .chart-controls {
+        padding: 4px 8px;
+        gap: 4px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tf-btn {
+        padding: 4px 7px;
+        font-size: 11px;
+    }
+
+    /* 2. Positions & Setups Radar Dock - Immediately under chart for mobile tracking */
+    .bottom-dock {
+        order: 3;
+        width: 100%;
+        max-width: 100vw;
+        min-height: 360px;
+        border-top: 1px solid var(--border-subtle);
+        border-bottom: 1px solid var(--border-subtle);
+        background: var(--bg-surface);
+    }
+
+    .dock-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        padding: 0 8px;
+        gap: 6px;
+    }
+
+    .dock-tab {
+        font-size: 11px;
+        padding: 8px 10px;
+        flex-shrink: 0;
+    }
+
+    .dock-content {
+        overflow-x: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 8px 10px;
+    }
+
+    .terminal-table {
+        min-width: 580px;
+    }
+
+    /* 3. Order Placement Desk */
+    .order-desk {
+        order: 4;
+        width: 100%;
+        max-width: 100vw;
+        border-left: none;
+        border-top: 1px solid var(--border-subtle);
+        padding: 14px 12px;
+    }
+
+    /* 4. Order Book */
+    .orderbook-container {
+        order: 5;
+        width: 100%;
+        max-width: 100vw;
+        border-right: none;
+        border-top: 1px solid var(--border-subtle);
+        max-height: 220px;
+        padding: 8px 12px;
+    }
+
+    /* Top Header Adjustments */
+    .top-header {
+        padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px 8px 10px;
+    }
+
     .nav-links { display: none; }
     .top-stats-pill { display: none; }
+
+    .header-ticker-pill {
+        padding: 3px 8px;
+        font-size: 11px;
+        gap: 6px;
+    }
+
+    /* Mobile Fixed Bottom Dock */
+    .mobile-bottom-bar { 
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        height: 60px;
+        background: rgba(8, 11, 17, 0.98);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid var(--border-subtle);
+        align-items: center;
+        justify-content: space-around;
+        padding-bottom: env(safe-area-inset-bottom, 4px);
+    }
+
+    .mobile-tab-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 6px 10px;
+        transition: color 0.15s ease;
+    }
+
+    .mobile-tab-btn i {
+        font-size: 16px;
+    }
+
+    .mobile-tab-btn.active, .mobile-tab-btn:hover {
+        color: var(--brand-teal);
+    }
 }
+
+/* ==========================================================================
+   STRATEGY HUD OVERLAY ON CHART (TV STYLE)
+   ========================================================================== */
+.chart-strategy-hud {
+    position: absolute;
+    top: 40px;
+    left: 10px;
+    z-index: 25;
+    background: rgba(11, 15, 25, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 223, 192, 0.45);
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    width: calc(100% - 20px);
+    max-width: 380px;
+    font-family: var(--font-sans);
+    animation: fadeInHud 0.25s ease-out;
+}
+
+@keyframes fadeInHud {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hud-pill {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+}
+.hud-pill.pill-long {
+    background: rgba(0, 192, 135, 0.18);
+    color: var(--buy-green);
+    border: 1px solid rgba(0, 192, 135, 0.4);
+}
+.hud-pill.pill-short {
+    background: rgba(255, 75, 85, 0.18);
+    color: var(--sell-red);
+    border: 1px solid rgba(255, 75, 85, 0.4);
+}
+.hud-pill.pill-sec {
+    background: rgba(0, 223, 192, 0.12);
+    color: var(--brand-teal);
+    border: 1px solid rgba(0, 223, 192, 0.3);
+}
+.hud-pill.pill-strat {
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.hud-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+}
+.hud-close-btn:hover { color: #fff; }
+
+.hud-metric-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.hud-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.hud-lbl {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.hud-val {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    font-weight: 800;
+}
+.hud-val.cyan { color: var(--brand-teal); }
+.hud-val.white { color: #fff; }
+.hud-val.red { color: var(--sell-red); }
+.hud-val.green { color: var(--buy-green); }
+
+.hud-pnl-strip {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.hud-trailing-stage {
+    font-size: 10px;
+    color: #FCD34D;
+    font-weight: 600;
+}
+
+.clickable-row {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.clickable-row:hover {
+    background: rgba(0, 223, 192, 0.06) !important;
+}
+
+

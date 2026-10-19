@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NexusPro • Institutional Futures & BB 2.0 Deca Terminal</title>
+    <title>NexusPro • Institutional Futures & BB 3.0 Deca Terminal</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,6 +15,17 @@
     
     <!-- TradingView Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    
+    <!-- Telegram WebApp SDK & Auto-Expand -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            }
+        } catch(e) {}
+    </script>
     
     <link rel="stylesheet" href="/static/css/nexus.css">
 </head>
@@ -37,9 +48,10 @@
             </a>
             <nav class="nav-links">
                 <a href="/trade" class="nav-link active"><i class="fa-solid fa-chart-line"></i> Futures</a>
-                <a href="/nexus/markets" class="nav-link"><i class="fa-solid fa-layer-group"></i> Markets</a>
-                <a href="/nexus/deca" class="nav-link"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca $47k Hub</a>
-                <a href="/nexus/assets" class="nav-link"><i class="fa-solid fa-wallet"></i> Assets</a>
+                <a href="/markets" class="nav-link"><i class="fa-solid fa-layer-group"></i> Markets</a>
+                <a href="/deca" class="nav-link"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Deca $47k Hub</a>
+                <a href="/positions" class="nav-link"><i class="fa-solid fa-crosshairs" style="color:#F59E0B"></i> Positions</a>
+                <a href="/assets" class="nav-link"><i class="fa-solid fa-wallet"></i> Assets</a>
                 <a href="/hologram" class="nav-link nav-link-hologram"><i class="fa-solid fa-vr-cardboard"></i> Hologram 2.0 <span class="hologram-live-badge"><span class="hologram-pulse-dot"></span>LIVE</span></a>
                 <span style="color:var(--border-subtle); margin:0 4px;">|</span>
                 <a href="/hermes-ai" class="nav-link" style="color:#60A5FA;"><i class="fa-solid fa-brain"></i> Hermes AI Hub</a>
@@ -82,6 +94,9 @@
             </div>
 
             <div style="display:flex; align-items:center; gap:8px;">
+                <a href="/download/apk" style="text-decoration:none; background:rgba(0, 223, 192, 0.15); border:1px solid rgba(0, 223, 192, 0.4); color:var(--brand-teal); font-weight:800; font-size:11px; padding:6px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;" title="Download Android APK">
+                    <i class="fa-brands fa-android"></i> Get APK
+                </a>
                 <a href="/nexus/assets" style="text-decoration:none; background:var(--brand-teal); color:#080B11; font-weight:800; font-size:11px; padding:6px 12px; border-radius:6px;">
                     <i class="fa-solid fa-wallet"></i> Deposit
                 </a>
@@ -104,12 +119,12 @@
                 <div><span style="color:var(--text-muted)">24h High: </span><span id="displayHigh24">--</span></div>
                 <div><span style="color:var(--text-muted)">24h Low: </span><span id="displayLow24">--</span></div>
                 <div><span style="color:var(--text-muted)">24h Vol: </span><span id="displayVol24">--</span></div>
-                <div><span style="color:var(--text-muted)">Strategy: </span><span style="color:var(--brand-teal); font-weight:700;">BB 2.0 (PDH/PDL 50% MT)</span></div>
+                <div><span style="color:var(--text-muted)">Strategy: </span><span style="color:var(--brand-teal); font-weight:700;">BB 3.0 (Continuous ROI Trailing)</span></div>
             </div>
         </div>
 
         <!-- 1. CHART CONTAINER (LEFT/CENTER) -->
-        <section class="chart-container">
+        <section class="chart-container" style="position:relative;">
             <div class="chart-controls">
                 <button class="tf-btn" onclick="setTimeframe('1m', this)">1m</button>
                 <button class="tf-btn" onclick="setTimeframe('5m', this)">5m</button>
@@ -119,8 +134,53 @@
                 <button class="tf-btn" onclick="setTimeframe('1d', this)">1D</button>
                 <span style="color:var(--border-subtle); margin:0 4px;">|</span>
                 <span style="font-size:11px; color:var(--text-muted); font-weight:600;"><i class="fa-solid fa-chart-simple"></i> Candlesticks</span>
+                <button id="chartStrategyToggleBtn" onclick="toggleChartStrategyHUD(event)" class="tf-btn" style="margin-left:auto; background:rgba(0,223,192,0.14); color:var(--brand-teal); border:1px solid rgba(0,223,192,0.4); font-weight:800; display:none; border-radius:4px; padding:2px 8px;">
+                    <i class="fa-solid fa-crosshairs"></i> Strategy Visualizer
+                </button>
             </div>
-            <div id="tradingview_chart"></div>
+
+            <!-- INTERACTIVE FLOATING STRATEGY HUD OVERLAY ON CHART -->
+            <div id="chartStrategyHUD" class="chart-strategy-hud" style="display:none;">
+                <div class="hud-header">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span id="hudSideBadge" class="hud-pill pill-long">LONG 5X</span>
+                        <span id="hudSectionBadge" class="hud-pill pill-sec">Section #1</span>
+                        <span id="hudStrategyBadge" class="hud-pill pill-strat">BB 3.0 TRAILING</span>
+                    </div>
+                    <button onclick="toggleChartStrategyHUD(event)" class="hud-close-btn" title="Close Overlay">&times;</button>
+                </div>
+                <div class="hud-body">
+                    <div class="hud-metric-row">
+                        <div class="hud-metric">
+                            <span class="hud-lbl">ENTRY PRICE</span>
+                            <span class="hud-val cyan" id="hudEntryPrice">$0.0000</span>
+                        </div>
+                        <div class="hud-metric">
+                            <span class="hud-lbl">CURRENT MARK</span>
+                            <span class="hud-val white" id="hudMarkPrice">$0.0000</span>
+                        </div>
+                        <div class="hud-metric">
+                            <span class="hud-lbl">TRAILING STOP LOSS</span>
+                            <span class="hud-val red" id="hudSlPrice">$0.0000</span>
+                        </div>
+                        <div class="hud-metric">
+                            <span class="hud-lbl">TARGET TAKE PROFIT</span>
+                            <span class="hud-val green" id="hudTpPrice">$0.0000</span>
+                        </div>
+                    </div>
+                    <div class="hud-pnl-strip">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:var(--text-muted); font-size:10px; font-weight:700;">UNREALIZED PnL:</span>
+                            <span id="hudPnlValue" style="font-weight:900; font-size:12px; font-family:var(--font-mono); color:var(--buy-green);">+$0.00 (+0.00% ROI)</span>
+                        </div>
+                        <div class="hud-trailing-stage" id="hudTrailingStageText">
+                            🛡️ Trailing SL: Dynamic ROI Lock Active
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tradingview_chart" onclick="onChartAreaClick(event)"></div>
         </section>
 
         <!-- 2. ORDER BOOK (MIDDLE) -->
@@ -174,8 +234,8 @@
 
             <div style="background:var(--bg-base); padding:8px; border-radius:6px; font-size:10px; display:flex; flex-direction:column; gap:4px; font-family:var(--font-mono);">
                 <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted)">Take Profit (1:2 RRR)</span>
-                    <span style="color:var(--buy-green)">Automatic</span>
+                    <span style="color:var(--text-muted)">Take Profit (Trailing)</span>
+                    <span style="color:var(--buy-green)">Infinite Rider</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
                     <span style="color:var(--text-muted)">Stop Loss (Anti-Hunt)</span>
@@ -183,7 +243,7 @@
                 </div>
                 <div style="display:flex; justify-content:space-between;">
                     <span style="color:var(--text-muted)">Stepped Trailing</span>
-                    <span style="color:var(--brand-teal)">+1.0R ➔ +0.2R BE Lock</span>
+                    <span style="color:var(--brand-teal)">+4.8% ROI ➔ +1.0% Lock</span>
                 </div>
             </div>
 
@@ -207,7 +267,7 @@
                     <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-teal);"></i> Trade History (<span id="historyCountBadge">0</span>)
                 </button>
                 <button class="dock-tab" id="tabBtnRadar" onclick="switchDockTab('radar')">
-                    <i class="fa-solid fa-satellite-dish" style="color:var(--brand-teal);"></i> BB 2.0 Setups Radar (<span id="radarCountBadge">10</span>)
+                    <i class="fa-solid fa-satellite-dish" style="color:var(--brand-teal);"></i> BB 3.0 Setups Radar (<span id="radarCountBadge">10</span>)
                 </button>
                 <button class="dock-tab" id="tabBtnSentries" onclick="switchDockTab('sentries')">
                     <i class="fa-solid fa-shield-halved" style="color:#60A5FA;"></i> Hermes 4-Sentries Matrix
@@ -271,7 +331,7 @@
                 </table>
             </div>
 
-            <!-- TAB 2: BB 2.0 SETUPS RADAR -->
+            <!-- TAB 2: BB 3.0 SETUPS RADAR -->
             <div class="dock-content" id="dockPaneRadar" style="display:none;">
                 <table class="terminal-table">
                     <thead>
@@ -346,7 +406,7 @@
                     🤖 <i>Hermes AI Quant Consultant ready. Click any quick chip or ask a custom question in Hinglish or English:</i>
                     <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
                         <button onclick="quickAskDock('Analyze BTC 4H causal sentry status')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">BTC Status</button>
-                        <button onclick="quickAskDock('Scan top 20 champions for BB 2.0 entry')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Scan Champions</button>
+                        <button onclick="quickAskDock('Scan top 20 champions for BB 3.0 entry')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Scan Champions</button>
                         <button onclick="quickAskDock('Explain 50% Mean Threshold Stepped Trailing rule')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Trailing Rule</button>
                     </div>
                 </div>
@@ -388,6 +448,22 @@
             <button class="btn-modal-close" onclick="toggleDrawer()">&times;</button>
         </div>
 
+        <!-- ANDROID APK DOWNLOAD HERO CARD -->
+        <div style="background:linear-gradient(135deg, rgba(0, 223, 192, 0.15), rgba(0, 240, 255, 0.08)); border:1px solid rgba(0, 223, 192, 0.35); border-radius:10px; padding:12px; margin-bottom:18px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div style="width:36px; height:36px; border-radius:8px; background:rgba(0, 223, 192, 0.2); display:flex; align-items:center; justify-content:center; color:var(--brand-teal); font-size:20px;">
+                    <i class="fa-brands fa-android"></i>
+                </div>
+                <div>
+                    <div style="font-weight:900; font-size:13px; color:#fff;">NexusPro Android App</div>
+                    <div style="font-size:10px; color:var(--text-muted);">v3.0 Ultra-Responsive Mobile APK</div>
+                </div>
+            </div>
+            <a href="/download/apk" style="display:flex; align-items:center; justify-content:center; gap:8px; background:var(--brand-teal); color:#080B11; font-weight:800; font-size:12px; padding:8px 12px; border-radius:6px; text-decoration:none;">
+                <i class="fa-solid fa-download"></i> Download APK File
+            </a>
+        </div>
+
         <!-- SECTION 1: NEXUSPRO TRADING SUITE -->
         <div style="font-size:10px; font-weight:800; color:var(--brand-teal); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
             <i class="fa-solid fa-cube"></i> NexusPro Trading Suite
@@ -407,7 +483,7 @@
                 <i class="fa-solid fa-layer-group" style="width:18px;"></i> Markets & 20 Champions
             </a>
             <a href="/nexus/deca" style="display:flex; align-items:center; justify-content:space-between; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
-                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-trophy" style="color:var(--gold); width:18px;"></i> BB 2.0 Deca Hub</span>
+                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-trophy" style="color:var(--gold); width:18px;"></i> BB 3.0 Deca Hub</span>
                 <span style="font-size:9px; color:var(--gold); font-weight:800;">$47K GOAL</span>
             </a>
             <a href="/nexus/assets" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
@@ -419,9 +495,9 @@
             </a>
         </nav>
 
-        <!-- SECTION 2: HERMES 3.0 INSTITUTIONAL SUITE -->
+        <!-- SECTION 2: BB 3.0 INSTITUTIONAL MATRIX -->
         <div style="font-size:10px; font-weight:800; color:#60A5FA; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-            <i class="fa-solid fa-shield-halved"></i> Hermes 3.0 Institutional
+            <i class="fa-solid fa-shield-halved"></i> BB 3.0 Institutional Matrix
         </div>
         <nav style="display:flex; flex-direction:column; gap:6px; margin-bottom:20px;">
             <a href="/hermes-ai" style="display:flex; align-items:center; justify-content:space-between; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
@@ -455,27 +531,32 @@
         </nav>
 
         <div style="padding-top:16px; border-top:1px solid var(--border-subtle); font-size:11px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px; margin-top:auto;">
-            <div style="display:flex; justify-content:space-between;"><span>Total Portfolio:</span> <b style="color:#fff;" id="drawerTotalEquity">$574.84 USDT</b></div>
-            <div style="display:flex; justify-content:space-between;"><span>BB 2.0 Deca Capital:</span> <b style="color:var(--brand-teal);">$500.00 USDT</b></div>
-            <div style="display:flex; justify-content:space-between;"><span>Hermes Model 2A:</span> <b style="color:var(--buy-green);">Active (100% Win Rate)</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>Total Portfolio:</span> <b style="color:#fff;" id="drawerTotalEquity">$575.06 USDT</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>BB 3.0 Deca Capital:</span> <b style="color:var(--brand-teal);">$500.00 USDT</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>Strategy:</span> <b style="color:var(--buy-green);" id="drawerActiveMode">BB 3.0 (STEPPED TRAILING SL)</b></div>
         </div>
     </div>
 
     <!-- MOBILE BOTTOM 5-TAB BAR -->
+    <!-- MOBILE FIXED BOTTOM DOCK (5 TABS) -->
     <div class="mobile-bottom-bar">
         <a href="/trade" class="mobile-tab-btn active">
             <i class="fa-solid fa-chart-line" style="font-size:16px;"></i>
             <span>Futures</span>
         </a>
-        <a href="/nexus/markets" class="mobile-tab-btn">
+        <a href="/markets" class="mobile-tab-btn">
             <i class="fa-solid fa-layer-group" style="font-size:16px;"></i>
             <span>Markets</span>
         </a>
-        <a href="/nexus/deca" class="mobile-tab-btn">
+        <a href="/deca" class="mobile-tab-btn">
             <i class="fa-solid fa-trophy" style="font-size:16px; color:var(--gold);"></i>
             <span>Deca 47k</span>
         </a>
-        <a href="/nexus/assets" class="mobile-tab-btn">
+        <a href="/positions" class="mobile-tab-btn">
+            <i class="fa-solid fa-crosshairs" style="font-size:16px; color:#F59E0B;"></i>
+            <span>Positions</span>
+        </a>
+        <a href="/assets" class="mobile-tab-btn">
             <i class="fa-solid fa-wallet" style="font-size:16px;"></i>
             <span>Assets</span>
         </a>
