@@ -435,12 +435,18 @@ class BB20LiveSniper:
         trigger_t2_price = calculate_trailing_sl_price(mt, side, 9.80, 5.0)
         trigger_t3_price = calculate_trailing_sl_price(mt, side, 14.80, 5.0)
 
+        tp_price = round(mt + (risk * 3.0) if side == "LONG" else mt - (risk * 3.0), 4)
+
         setup_data = {
             "symbol": symbol,
             "section_id": sec_id,
             "side": side,
             "mt_entry": round(mt, 4),
+            "entry_price": round(mt, 4),
             "sl": round(sl, 4),
+            "sl_price": round(sl, 4),
+            "tp_price": tp_price,
+            "target_1r": round(mt + risk if side == "LONG" else mt - risk, 4),
             "risk": round(risk, 4),
             "risk_usd": risk_usd,
             "margin_usdt": margin_usd,
@@ -667,10 +673,14 @@ class BB20LiveSniper:
         leverage = float(pos.get("leverage", 5.0))
         margin = float(pos.get("margin_usdt", sec["balance"]))
 
+        if exit_price <= 0:
+            exit_price = entry
+
         if tier == 0:
             spot_diff = (exit_price - entry) / entry if side == "LONG" else (entry - exit_price) / entry
             realized_roi = (spot_diff * leverage * 100.0) - (cfg.FRICTION_R * 5.0)
-            dollar_pnl = round((realized_roi / 100.0) * margin, 2)
+            realized_roi = max(-100.0, realized_roi)
+            dollar_pnl = max(-margin, round((realized_roi / 100.0) * margin, 2))
             outcome = "LOSS (SL HIT)"
             sec["losses"] += 1
         elif tier == 1:
