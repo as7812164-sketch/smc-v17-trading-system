@@ -1593,6 +1593,28 @@
             border: 1px solid rgba(255, 77, 106, 0.35);
         }
 
+    
+        .coin-pill-btn {
+            background: var(--bg-surface-elevated, #1A2236);
+            border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+            border-radius: 6px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .coin-pill-btn:hover, .coin-pill-btn:active {
+            border-color: var(--brand-teal, #00DFC0);
+            background: rgba(0, 223, 192, 0.15);
+        }
+        .active-pos-pill {
+            background: rgba(20, 27, 43, 0.95);
+            border-color: rgba(255, 215, 0, 0.35);
+        }
+
     </style>
 </head>
 <body>
@@ -2064,24 +2086,39 @@
          TAB 3: FUTURES / CHART TERMINAL
          ========================================== -->
     <main class="tab-panel" id="tab-trade">
-        <div class="hero-wallet-card" style="padding: 12px 14px; margin-bottom: 10px;">
+        <div class="hero-wallet-card" style="padding: 10px 14px; margin-bottom: 8px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span style="font-size:16px; font-weight:900;" id="tradeSymbol">BTCUSDT</span>
                     <span class="bpc-tag-short">HERMES 3.0 2A</span>
                     <span class="bpc-tag-isolated">5x ISOLATED</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:15px; font-weight:900; font-family:var(--font-mono);" id="tradeMarkPrice">$0.00</span>
-                    <a href="/trade" class="bpc-tag-isolated" style="text-decoration:none; background:rgba(0,223,192,0.18); border-color:var(--brand-teal); color:var(--brand-teal); font-weight:800; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
-                        <i class="fa-solid fa-expand"></i> Fullscreen
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:15px; font-weight:900; font-family:var(--font-mono); color:#fff;" id="tradeMarkPrice">$0.00</span>
+                    <button id="btnMobileLandscape" class="chart-tool-btn" onclick="HermesMobileChart.toggleLandscape()" style="background:rgba(0,223,192,0.18); border-color:var(--brand-teal); color:var(--brand-teal); font-weight:800; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                        <i class="fa-solid fa-mobile-screen-button" style="transform:rotate(90deg);"></i> Landscape
+                    </button>
+                    <a href="/trade" class="bpc-tag-isolated" style="text-decoration:none; background:rgba(56,189,248,0.15); border-color:rgba(56,189,248,0.4); color:var(--cyan); font-weight:800; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-expand"></i> Terminal
                     </a>
                 </div>
             </div>
         </div>
 
+        <!-- ACTIVE POSITIONS QUICK STRIP (TAP TO VIEW CHART & BAR REPLAY) -->
+        <div id="mobileActivePosStrip" style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:2px 2px 8px 2px; margin-bottom:6px; -webkit-overflow-scrolling:touch;">
+            <span style="font-size:10px; font-weight:800; color:var(--text-muted); white-space:nowrap;"><i class="fa-solid fa-crosshairs" style="color:#F59E0B;"></i> POSITIONS:</span>
+            <button class="coin-pill-btn active-pos-pill" onclick="selectMobileCoin('STXUSDT')"><span style="color:#00C087; font-weight:800;">🟢 STX</span> (-1.65%)</button>
+            <button class="coin-pill-btn active-pos-pill" onclick="selectMobileCoin('ICPUSDT')"><span style="color:#00C087; font-weight:800;">🟢 ICP</span> (+1.70%)</button>
+            <button class="coin-pill-btn active-pos-pill" onclick="selectMobileCoin('RUNEUSDT')"><span style="color:#FF4B55; font-weight:800;">🔴 RUNE</span> (+7.13%)</button>
+            <button class="coin-pill-btn active-pos-pill" onclick="selectMobileCoin('ETHUSDT')"><span style="color:#00C087; font-weight:800;">🟢 ETH</span> (+3.06%)</button>
+            <button class="coin-pill-btn" onclick="selectMobileCoin('BTCUSDT')">BTC</button>
+            <button class="coin-pill-btn" onclick="selectMobileCoin('SOLUSDT')">SOL</button>
+            <button class="coin-pill-btn" onclick="selectMobileCoin('DOGEUSDT')">DOGE</button>
+        </div>
+
         <!-- SUPERCHARGED HERMES 3.0 CHART & REPLAY BACKTESTER SUITE -->
-        <div class="chart-container" style="position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom:12px; background:#0B0E14;">
+        <div id="mobileChartSectionWrapper" class="chart-container" style="position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom:12px; background:#0B0E14;">
             
             <!-- Controls Toolbar -->
             <div class="chart-controls-wrapper" style="padding:6px 8px; background:#0F1420; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
@@ -2433,6 +2470,48 @@
                     caches.delete(k);
                 });
             });
+        }
+
+        
+        function selectMobileCoin(sym) {
+            if (window.HermesMobileChart) {
+                HermesMobileChart.setSymbol(sym);
+            }
+            const symEl = document.getElementById('tradeSymbol');
+            if (symEl) symEl.innerText = sym;
+            const symText = document.getElementById('mobileChartSymbolText');
+            if (symText) symText.innerText = sym;
+        }
+
+        function renderActivePositionsStrip(positions) {
+            const strip = document.getElementById('mobileActivePosStrip');
+            if (!strip) return;
+            if (!positions || positions.length === 0) {
+                strip.innerHTML = `
+                    <span style="font-size:10px; font-weight:800; color:var(--text-muted); white-space:nowrap;"><i class="fa-solid fa-radar" style="color:var(--brand-teal);"></i> MARKETS:</span>
+                    <button class="coin-pill-btn active-pos-pill" onclick="selectMobileCoin('BTCUSDT')">BTCUSDT</button>
+                    <button class="coin-pill-btn" onclick="selectMobileCoin('ETHUSDT')">ETHUSDT</button>
+                    <button class="coin-pill-btn" onclick="selectMobileCoin('SOLUSDT')">SOLUSDT</button>
+                    <button class="coin-pill-btn" onclick="selectMobileCoin('DOGEUSDT')">DOGEUSDT</button>
+                `;
+                return;
+            }
+            let html = `<span style="font-size:10px; font-weight:800; color:var(--text-muted); white-space:nowrap;"><i class="fa-solid fa-crosshairs" style="color:#F59E0B;"></i> POSITIONS:</span>`;
+            for (const p of positions) {
+                const isLong = (p.side || '').toUpperCase() === 'BUY' || (p.side || '').toUpperCase() === 'LONG';
+                const color = isLong ? '#00C087' : '#FF4B55';
+                const icon = isLong ? '🟢' : '🔴';
+                const roe = Number(p.pnl_pct || 0);
+                const roeStr = (roe >= 0 ? '+' : '') + roe.toFixed(2) + '%';
+                const symShort = (p.symbol || '').replace('USDT', '');
+                html += `<button class="coin-pill-btn active-pos-pill" onclick="selectMobileCoin('${p.symbol}')"><span style="color:${color}; font-weight:800;">${icon} ${symShort}</span> (${roeStr})</button>`;
+            }
+            html += `
+                <button class="coin-pill-btn" onclick="selectMobileCoin('BTCUSDT')">BTC</button>
+                <button class="coin-pill-btn" onclick="selectMobileCoin('ETHUSDT')">ETH</button>
+                <button class="coin-pill-btn" onclick="selectMobileCoin('SOLUSDT')">SOL</button>
+            `;
+            strip.innerHTML = html;
         }
 
         function switchTab(tabId) {
@@ -3160,6 +3239,7 @@
                 if (!container) return;
 
                 window.lastPositionsData = (data && data.positions) ? data.positions : [];
+                renderActivePositionsStrip(window.lastPositionsData);
 
                 if (!data || !data.positions || data.positions.length === 0) {
                     container.innerHTML = `

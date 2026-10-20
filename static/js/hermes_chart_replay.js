@@ -1,24 +1,10 @@
 /**
  * HERMES 3.0 MODEL 2A INTERACTIVE BAR REPLAY & STRATEGY BACKTESTER SUITE
  * =====================================================================
- * Designed specifically for Hermes APEX APK & Mobile Web Terminal.
- * 
- * Features:
- * 1. High-Performance TradingView Lightweight Candlestick Chart with EMAs & Volume.
- * 2. Free Historical Bar Replay Simulator (Start, Step Forward/Backward, Play/Pause, Speed 1x-5x, Scrubber).
- * 3. Real-Time Hermes 3.0 Model 2A Detection Engine:
- *    - Adaptive Displacement (1.5% - 4.0%)
- *    - Decisional Order Block (Fib 0.30 - 0.70) + FVG Imbalance
- *    - Inducement (IDM) Sweep
- *    - 50% Mean Threshold (MT) Tap with Rejection Wick >= 18%
- * 4. Interactive BUY / SELL Signal Card with 50% MT Entry, TP (+14% ROE / 1:2 R:R), SL (-14% ROE).
- * 5. Interactive Simulated Trade Execution & Live Tracking:
- *    - Visual Entry, TP, and dynamic Trailing SL price lines on chart.
- *    - Stepped Trailing Profit Armor (+5% ROI -> +1% Fee Shield, +9.5% -> +5%, +14.5% -> +10%).
- *    - Floating Active Position HUD with Live ROE %, Peak ROI %, and Market Close button.
- *    - Victory / Trailing Shield / SL Hit outcome banners with Web Audio API chimes.
- * 6. Replay Backtest Journal with Win Rate %, Net Return %, P&L, and full Trade Log.
- * 7. Customizable TradingView Price Range / Ruler Measure Tool with enlarged touch handles.
+ * Pure Candlesticks (EMA lines & Volume removed as requested by user).
+ * Full Hermes 3.0 Model 2A Strategy Detection, Entry/TP/SL Markers & Lines.
+ * Live Open Position Synchronization & Historical Replay Forensics.
+ * Force-Landscape Fullscreen Mode with Mobile Optimization.
  */
 
 (function(window) {
@@ -26,15 +12,14 @@
 
     let mChart = null;
     let mCandleSeries = null;
-    let mVolumeSeries = null;
-    let mEma20Series = null;
-    let mEma50Series = null;
-    let mEma200Series = null;
-
     let mSymbol = "BTCUSDT";
     let mInterval = "15m";
     let mFullCandles = [];
-    let mIndicatorsState = { ema: true, vol: true, smc: true };
+
+    // Strategy & Markers State
+    let mActiveLivePosition = null;
+    let mDetectedSetups = []; // All historical setups
+    let mCurrentMarkers = [];
 
     // Replay State
     let mIsReplayMode = false;
@@ -49,7 +34,7 @@
     let mSimTrade = null;
     let mCurrentSetup = null;
     let mSimJournal = [];
-    let mPriceLines = { entry: null, tp: null, sl: null };
+    let mPriceLines = { entry: null, tp: null, sl: null, liveEntry: null, liveTp: null, liveSl: null };
     let mBannerTimeout = null;
 
     // Measure Tool State
@@ -58,6 +43,13 @@
     let mDraggingHandle = null;
     let mMeasurePt1 = null;
     let mMeasurePt2 = null;
+
+    // Landscape Fullscreen State
+    let mIsLandscape = false;
+
+    // -------------------------------------------------------------
+    // INITIALIZATION & PURE CANDLESTICK CHART SETUP
+    // -------------------------------------------------------------
 
     function initHermesChart(containerId = "mobileChartCanvas", defaultSymbol = "BTCUSDT") {
         mSymbol = defaultSymbol.toUpperCase();
@@ -71,6 +63,7 @@
 
         container.innerHTML = "";
 
+        // PURE CANDLESTICK CHART (NO EMA LINES, NO VOLUME SERIES)
         mChart = window.LightweightCharts.createChart(container, {
             width: container.clientWidth || 360,
             height: container.clientHeight || 340,
@@ -92,7 +85,7 @@
             rightPriceScale: {
                 borderColor: 'rgba(255, 255, 255, 0.08)',
                 autoScale: true,
-                scaleMargins: { top: 0.1, bottom: 0.2 }
+                scaleMargins: { top: 0.08, bottom: 0.08 }
             },
             timeScale: {
                 borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -101,7 +94,7 @@
             }
         });
 
-        // Candlestick Series
+        // Candlestick Series - full height, sharp institutional theme
         mCandleSeries = mChart.addCandlestickSeries({
             upColor: '#00C087',
             downColor: '#FF4B55',
@@ -111,48 +104,71 @@
             wickDownColor: '#FF4B55'
         });
 
-        // Volume Series
-        mVolumeSeries = mChart.addHistogramSeries({
-            color: 'rgba(0, 192, 135, 0.35)',
-            priceFormat: { type: 'volume' },
-            priceScaleId: '',
-            scaleMargins: { top: 0.82, bottom: 0 }
-        });
-
-        // EMA Ribbon
-        mEma20Series = mChart.addLineSeries({ color: '#FFB800', lineWidth: 1.5, title: 'EMA 20' });
-        mEma50Series = mChart.addLineSeries({ color: '#00DFC0', lineWidth: 1.5, title: 'EMA 50' });
-        mEma200Series = mChart.addLineSeries({ color: '#A78BFA', lineWidth: 1.5, title: 'EMA 200' });
-
-        // Crosshair move handler
+        // Crosshair OHLC header update
         mChart.subscribeCrosshairMove(param => {
             if (!param || !param.time || !param.seriesPrices) return;
             const bar = param.seriesPrices.get(mCandleSeries);
             if (bar) updateChartHeaderOHLC(bar);
         });
 
-        // Responsive resize
+        // ResizeObserver
         const ro = new ResizeObserver(entries => {
             if (!entries || !entries.length || !mChart) return;
             const { width, height } = entries[0].contentRect;
-            mChart.applyOptions({ width: Math.max(width, 300), height: Math.max(height, 280) });
+            mChart.applyOptions({ width: Math.max(width, 280), height: Math.max(height, 260) });
         });
         ro.observe(container);
 
         initMeasureToolOverlay();
-        loadKlinesData();
+        fetchLivePositionAndLoad();
+    }
+
+    async function fetchLivePositionAndLoad() {
+        // 1. Fetch live open positions from DB (checking both paper & trade endpoints)
+        try {
+            let found = null;
+            const posRes = await fetch(`/api/paper/positions?t=${Date.now()}`);
+            if (posRes.ok) {
+                const posData = await posRes.json();
+                const list = posData.positions || [];
+                found = list.find(p => (p.symbol || '').toUpperCase() === mSymbol.toUpperCase()) || null;
+            }
+            if (!found) {
+                const trRes = await fetch(`/api/trade/positions?t=${Date.now()}`);
+                if (trRes.ok) {
+                    const trData = await trRes.json();
+                    const list = trData.positions || [];
+                    found = list.find(p => (p.symbol || '').toUpperCase() === mSymbol.toUpperCase()) || null;
+                }
+            }
+            mActiveLivePosition = found;
+        } catch(e) {
+            mActiveLivePosition = null;
+        }
+
+        // 2. Fetch candles
+        await loadKlinesData();
     }
 
     async function loadKlinesData() {
         if (!mCandleSeries) return;
         try {
-            const res = await fetch(`/api/klines/${mSymbol}?interval=${mInterval}&limit=160&t=${Date.now()}`);
+            const res = await fetch(`/api/klines/${mSymbol}?interval=${mInterval}&limit=180&t=${Date.now()}`);
             if (!res.ok) return;
             const data = await res.json();
             if (!data || !data.candles || !data.candles.length) return;
 
             mFullCandles = data.candles;
-            renderChartIndicators(mFullCandles);
+            mCandleSeries.setData(mFullCandles);
+
+            // Scan all Hermes 3.0 Model 2A setups on historical candles
+            mDetectedSetups = scanAllHermes30Setups(mFullCandles);
+
+            // Update markers on chart
+            updateChartMarkers();
+
+            // Render live position lines if active
+            renderLivePositionLines();
 
             if (mFullCandles.length > 0) {
                 updateChartHeaderOHLC(mFullCandles[mFullCandles.length - 1]);
@@ -160,7 +176,7 @@
 
             mChart.timeScale().fitContent();
 
-            // Update UI label
+            // Update UI headers
             const symEl = document.getElementById("mobileChartSymbolText");
             if (symEl) symEl.innerText = mSymbol;
             const priceEl = document.getElementById("mobileChartPriceText");
@@ -171,51 +187,6 @@
         } catch(e) {
             console.warn("Mobile klines load error:", e);
         }
-    }
-
-    function renderChartIndicators(candles) {
-        if (!mCandleSeries || !candles || !candles.length) return;
-
-        mCandleSeries.setData(candles);
-
-        if (mVolumeSeries && mIndicatorsState.vol) {
-            mVolumeSeries.setData(candles.map(c => ({
-                time: c.time,
-                value: c.volume || 0,
-                color: c.close >= c.open ? 'rgba(0, 192, 135, 0.45)' : 'rgba(255, 75, 85, 0.45)'
-            })));
-        } else if (mVolumeSeries) {
-            mVolumeSeries.setData([]);
-        }
-
-        if (mIndicatorsState.ema) {
-            if (mEma20Series) mEma20Series.setData(calculateEMA(candles, 20));
-            if (mEma50Series) mEma50Series.setData(calculateEMA(candles, 50));
-            if (mEma200Series) mEma200Series.setData(calculateEMA(candles, 200));
-        } else {
-            if (mEma20Series) mEma20Series.setData([]);
-            if (mEma50Series) mEma50Series.setData([]);
-            if (mEma200Series) mEma200Series.setData([]);
-        }
-    }
-
-    function calculateEMA(candles, period) {
-        const k = 2 / (period + 1);
-        const result = [];
-        let ema = 0;
-        for (let i = 0; i < candles.length; i++) {
-            const close = candles[i].close;
-            if (i < period - 1) {
-                ema += close;
-            } else if (i === period - 1) {
-                ema = (ema + close) / period;
-                result.push({ time: candles[i].time, value: ema });
-            } else {
-                ema = close * k + ema * (1 - k);
-                result.push({ time: candles[i].time, value: ema });
-            }
-        }
-        return result;
     }
 
     function updateChartHeaderOHLC(bar) {
@@ -257,10 +228,319 @@
     function setMobileSymbol(sym) {
         mSymbol = sym.toUpperCase();
         if (mIsReplayMode) exitMobileReplay();
-        loadKlinesData();
+        fetchLivePositionAndLoad();
     }
 
-    // ----------------- FREE BAR REPLAY SIMULATOR -----------------
+    // -------------------------------------------------------------
+    // HERMES 3.0 MODEL 2A COMPREHENSIVE SETUPS SCANNER & MARKERS
+    // -------------------------------------------------------------
+
+    function scanAllHermes30Setups(candles) {
+        const setups = [];
+        if (!candles || candles.length < 20) return setups;
+
+        let minDisp = 0.015;
+        if (mInterval === '15m') minDisp = 0.012; // Sensitive 1.2% on 15m
+        else if (mInterval === '1h') minDisp = 0.020;
+        else if (mInterval === '4h' || mInterval === '1d') minDisp = 0.035;
+
+        const n = candles.length;
+        for (let i = 15; i < n - 2; i++) {
+            // 1. BULLISH (LONG) SETUP CHECK AT BAR i
+            const priorLows = candles.slice(Math.max(0, i - 12), i + 1).map(c => c.low);
+            if (candles[i].low === Math.min(...priorLows)) {
+                const subWindow = candles.slice(i, Math.min(i + 14, n));
+                const subHighs = subWindow.map(c => c.high);
+                const maxHigh = Math.max(...subHighs);
+                const peakIdx = i + subHighs.indexOf(maxHigh);
+
+                if (peakIdx > i + 2) {
+                    const originL = candles[i].low;
+                    const gain = (maxHigh - originL) / originL;
+
+                    if (gain >= minDisp) {
+                        const idmLow = candles[peakIdx - 1].low;
+                        let bestMid = -1;
+                        let maxRange = 0;
+
+                        for (let mid = i + 1; mid < peakIdx; mid++) {
+                            const cMid = candles[mid];
+                            const fib = (cMid.low - originL) / (maxHigh - originL);
+                            if (fib >= 0.25 && fib <= 0.75) {
+                                const r = cMid.high - cMid.low;
+                                if (r > maxRange) {
+                                    maxRange = r;
+                                    bestMid = mid;
+                                }
+                            }
+                        }
+
+                        if (bestMid !== -1) {
+                            const decC = candles[bestMid - 1] || candles[bestMid];
+                            const decTop = Math.max(decC.open, decC.close);
+                            const decBot = decC.low;
+                            const mt = (decTop + decBot) / 2.0;
+
+                            // Look for tap
+                            for (let t = peakIdx + 1; t < Math.min(peakIdx + 20, n); t++) {
+                                const tapC = candles[t];
+                                const isTapping = (tapC.low <= mt * 1.003 && tapC.close >= mt * 0.994);
+                                const swept = candles.slice(peakIdx, t + 1).some(c => c.low <= idmLow);
+                                const cRange = tapC.high - tapC.low;
+                                const lowerWick = Math.min(tapC.open, tapC.close) - tapC.low;
+                                const wickRatio = cRange > 0 ? (lowerWick / cRange) : 0;
+
+                                if (isTapping && swept && wickRatio >= 0.15) {
+                                    setups.push({
+                                        side: "BUY",
+                                        type: "LONG",
+                                        entryPrice: mt,
+                                        tpPrice: mt * 1.028, // +14% ROE @ 5x
+                                        hardSlPrice: mt * 0.972, // -14% ROE
+                                        softSlPrice: mt * 0.985,
+                                        displacementPct: (gain * 100).toFixed(2),
+                                        wickRatioPct: (wickRatio * 100).toFixed(1),
+                                        candleIndex: t,
+                                        candleTime: tapC.time
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. BEARISH (SHORT) SETUP CHECK AT BAR i
+            const priorHighs = candles.slice(Math.max(0, i - 12), i + 1).map(c => c.high);
+            if (candles[i].high === Math.max(...priorHighs)) {
+                const subWindow = candles.slice(i, Math.min(i + 14, n));
+                const subLows = subWindow.map(c => c.low);
+                const minLow = Math.min(...subLows);
+                const troughIdx = i + subLows.indexOf(minLow);
+
+                if (troughIdx > i + 2) {
+                    const originH = candles[i].high;
+                    const drop = (originH - minLow) / originH;
+
+                    if (drop >= minDisp) {
+                        const idmHigh = candles[troughIdx - 1].high;
+                        let bestMid = -1;
+                        let maxRange = 0;
+
+                        for (let mid = i + 1; mid < troughIdx; mid++) {
+                            const cMid = candles[mid];
+                            const fib = (originH - cMid.high) / (originH - minLow);
+                            if (fib >= 0.25 && fib <= 0.75) {
+                                const r = cMid.high - cMid.low;
+                                if (r > maxRange) {
+                                    maxRange = r;
+                                    bestMid = mid;
+                                }
+                            }
+                        }
+
+                        if (bestMid !== -1) {
+                            const decC = candles[bestMid - 1] || candles[bestMid];
+                            const decTop = decC.high;
+                            const decBot = Math.min(decC.open, decC.close);
+                            const mt = (decTop + decBot) / 2.0;
+
+                            for (let t = troughIdx + 1; t < Math.min(troughIdx + 20, n); t++) {
+                                const tapC = candles[t];
+                                const isTapping = (tapC.high >= mt * 0.997 && tapC.close <= mt * 1.006);
+                                const swept = candles.slice(troughIdx, t + 1).some(c => c.high >= idmHigh);
+                                const cRange = tapC.high - tapC.low;
+                                const upperWick = tapC.high - Math.max(tapC.open, tapC.close);
+                                const wickRatio = cRange > 0 ? (upperWick / cRange) : 0;
+
+                                if (isTapping && swept && wickRatio >= 0.15) {
+                                    setups.push({
+                                        side: "SELL",
+                                        type: "SHORT",
+                                        entryPrice: mt,
+                                        tpPrice: mt * 0.972, // +14% ROE @ 5x
+                                        hardSlPrice: mt * 1.028, // -14% ROE
+                                        softSlPrice: mt * 1.015,
+                                        displacementPct: (drop * 100).toFixed(2),
+                                        wickRatioPct: (wickRatio * 100).toFixed(1),
+                                        candleIndex: t,
+                                        candleTime: tapC.time
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return setups;
+    }
+
+    function updateChartMarkers() {
+        if (!mCandleSeries) return;
+
+        const markers = [];
+
+        // 1. Live Active Position Marker (if coin is in open position)
+        if (mActiveLivePosition && mFullCandles && mFullCandles.length > 0) {
+            let entryTimeSec = mActiveLivePosition.entry_time || 0;
+            if (entryTimeSec > 1e11) entryTimeSec = Math.floor(entryTimeSec / 1000);
+            let closestCandle = null;
+            if (entryTimeSec > 0) {
+                closestCandle = mFullCandles.find(c => c.time >= entryTimeSec);
+            }
+            if (!closestCandle) closestCandle = mFullCandles[mFullCandles.length - 1];
+
+            const isLong = (mActiveLivePosition.side || '').toUpperCase() === 'BUY' || (mActiveLivePosition.side_raw || '').toUpperCase() === 'LONG';
+            const ep = mActiveLivePosition.entry_price || 0;
+            const roe = mActiveLivePosition.roe_str || (mActiveLivePosition.pnl_pct ? `${mActiveLivePosition.pnl_pct}%` : '+0.00%');
+
+            markers.push({
+                time: closestCandle.time,
+                position: isLong ? 'belowBar' : 'aboveBar',
+                color: isLong ? '#00DFC0' : '#FF4B55',
+                shape: isLong ? 'arrowUp' : 'arrowDown',
+                text: `${isLong ? '🟢 ACTIVE BUY' : '🔴 ACTIVE SELL'} @ $${ep.toFixed(ep < 1 ? 4 : 2)} (${roe})`,
+                size: 2
+            });
+        }
+
+        // 2. Historical Strategy Setup Markers
+        const maxTime = mIsReplayMode && mReplayIndex > 0 ? mReplayCandles[mReplayIndex - 1].time : Infinity;
+        for (const s of mDetectedSetups) {
+            if (s.candleTime <= maxTime) {
+                const isLong = s.side === 'BUY';
+                const ep = s.entryPrice;
+                markers.push({
+                    time: s.candleTime,
+                    position: isLong ? 'belowBar' : 'aboveBar',
+                    color: isLong ? '#00C087' : '#FF4B55',
+                    shape: isLong ? 'arrowUp' : 'arrowDown',
+                    text: `Hermes 3.0 ${s.type} @ $${ep.toFixed(ep < 1 ? 4 : 2)}`,
+                    size: 1.5
+                });
+            }
+        }
+
+        // Sort markers by time (Lightweight charts requirement)
+        markers.sort((a, b) => a.time - b.time);
+        mCurrentMarkers = markers;
+        mCandleSeries.setMarkers(markers);
+    }
+
+    function renderLivePositionLines() {
+        clearLivePositionLines();
+        if (!mCandleSeries || !mActiveLivePosition) return;
+
+        const p = mActiveLivePosition;
+        const isLong = (p.side || '').toUpperCase() === 'BUY' || (p.side_raw || '').toUpperCase() === 'LONG';
+        const ep = p.entry_price || 0;
+        const tp = p.tp_price || (isLong ? ep * 1.028 : ep * 0.972);
+        const sl = p.trailing_sl_price && p.trailing_sl_price > 0 ? p.trailing_sl_price : (p.sl_price || (isLong ? ep * 0.972 : ep * 1.028));
+        const isTrailing = Boolean(p.trailing_sl_price && p.trailing_sl_price > 0);
+
+        try {
+            mPriceLines.liveEntry = mCandleSeries.createPriceLine({
+                price: ep,
+                color: '#00DFC0',
+                lineWidth: 2,
+                lineStyle: window.LightweightCharts.LineStyle.Dashed,
+                axisLabelVisible: true,
+                title: `ENTRY: $${ep.toFixed(ep < 1 ? 4 : 2)}`
+            });
+
+            mPriceLines.liveTp = mCandleSeries.createPriceLine({
+                price: tp,
+                color: '#00C087',
+                lineWidth: 2,
+                lineStyle: window.LightweightCharts.LineStyle.Solid,
+                axisLabelVisible: true,
+                title: `TP: $${tp.toFixed(tp < 1 ? 4 : 2)} (+14% ROE)`
+            });
+
+            mPriceLines.liveSl = mCandleSeries.createPriceLine({
+                price: sl,
+                color: isTrailing ? '#FFB800' : '#FF4B55',
+                lineWidth: 2,
+                lineStyle: isTrailing ? window.LightweightCharts.LineStyle.Solid : window.LightweightCharts.LineStyle.Dashed,
+                axisLabelVisible: true,
+                title: `${isTrailing ? 'ARMOR SL' : 'STOP LOSS'}: $${sl.toFixed(sl < 1 ? 4 : 2)}`
+            });
+        } catch(e) {}
+
+        // Render Live Position HUD on chart
+        renderLivePositionHUD();
+    }
+
+    function clearLivePositionLines() {
+        if (!mCandleSeries) return;
+        try {
+            if (mPriceLines.liveEntry) mCandleSeries.removePriceLine(mPriceLines.liveEntry);
+            if (mPriceLines.liveTp) mCandleSeries.removePriceLine(mPriceLines.liveTp);
+            if (mPriceLines.liveSl) mCandleSeries.removePriceLine(mPriceLines.liveSl);
+        } catch(e) {}
+        mPriceLines.liveEntry = null;
+        mPriceLines.liveTp = null;
+        mPriceLines.liveSl = null;
+    }
+
+    function renderLivePositionHUD() {
+        const hud = document.getElementById("mobileReplayActiveHUD");
+        if (!hud) return;
+
+        if (!mActiveLivePosition && (!mSimTrade || !mSimTrade.active)) {
+            hud.style.display = "none";
+            return;
+        }
+
+        if (mSimTrade && mSimTrade.active) {
+            renderReplayActiveHUD();
+            return;
+        }
+
+        const p = mActiveLivePosition;
+        const isLong = (p.side || '').toUpperCase() === 'BUY' || (p.side_raw || '').toUpperCase() === 'LONG';
+
+        const b = document.getElementById("mRahSide");
+        if (b) {
+            b.className = `rah-badge ${isLong ? 'rah-long' : 'rah-short'}`;
+            b.innerText = `${isLong ? 'LONG' : 'SHORT'} 5X (LIVE)`;
+        }
+
+        const ep = document.getElementById("mRahEntry");
+        if (ep) ep.innerText = `$${(p.entry_price || 0).toFixed(p.entry_price < 1 ? 4 : 2)}`;
+
+        const curP = p.mark_price || p.current_price || (mFullCandles.length > 0 ? mFullCandles[mFullCandles.length - 1].close : p.entry_price);
+        const cur = document.getElementById("mRahCur");
+        if (cur) cur.innerText = `$${curP.toFixed(curP < 1 ? 4 : 2)}`;
+
+        const roeEl = document.getElementById("mRahRoe");
+        if (roeEl) {
+            const roe = p.pnl_pct || p.roi_pct || 0;
+            roeEl.className = roe >= 0 ? "val-green" : "val-red";
+            roeEl.innerText = p.roe_str || `${roe >= 0 ? '+' : ''}${roe.toFixed(2)}%`;
+        }
+
+        const pkEl = document.getElementById("mRahPeak");
+        if (pkEl) pkEl.innerText = `+${(p.mfe_pct || 0).toFixed(1)}%`;
+
+        const armEl = document.getElementById("mRahArmor");
+        if (armEl) {
+            if (p.trailing_sl_price && p.trailing_sl_price > 0) {
+                armEl.innerHTML = `<span style="color:var(--gold); font-weight:800;">🛡️ Armor Active: SL @ $${p.trailing_sl_price}</span>`;
+            } else {
+                armEl.innerText = "Initial Shield (-14% ROE)";
+            }
+        }
+
+        hud.style.display = "block";
+    }
+
+    // -------------------------------------------------------------
+    // FREE HISTORICAL BAR REPLAY SIMULATOR
+    // -------------------------------------------------------------
 
     function toggleMobileReplay() {
         if (mIsReplayMode) {
@@ -271,13 +551,26 @@
     }
 
     function startMobileReplay() {
-        if (!mFullCandles || mFullCandles.length < 30) {
+        if (!mFullCandles || mFullCandles.length < 25) {
             alert("Candles are loading, please wait...");
             return;
         }
         mIsReplayMode = true;
         mReplayCandles = [...mFullCandles];
-        mReplayIndex = Math.max(25, mReplayCandles.length - 45); // Start 45 bars back
+        
+        // Start replay 50 bars back or at least before live entry if available
+        let startBack = 50;
+        if (mActiveLivePosition) {
+            let entryTimeSec = mActiveLivePosition.entry_time || 0;
+            if (entryTimeSec > 1e11) entryTimeSec = Math.floor(entryTimeSec / 1000);
+            const entryIdx = mReplayCandles.findIndex(c => c.time >= entryTimeSec);
+            if (entryIdx !== -1) {
+                // Start replay 8 bars before trade entry so user can watch setup form and enter!
+                startBack = Math.max(15, mReplayCandles.length - Math.max(0, entryIdx - 8));
+            }
+        }
+
+        mReplayIndex = Math.max(20, mReplayCandles.length - startBack);
 
         const bar = document.getElementById("mobileReplayBar");
         if (bar) bar.style.display = "flex";
@@ -286,16 +579,19 @@
 
         const scrubber = document.getElementById("mReplayScrubber");
         if (scrubber) {
-            scrubber.min = 25;
+            scrubber.min = 20;
             scrubber.max = mReplayCandles.length;
             scrubber.value = mReplayIndex;
         }
+
         updateMobileReplayDisplay();
     }
 
     function updateMobileReplayDisplay() {
         const visible = mReplayCandles.slice(0, mReplayIndex);
-        renderChartIndicators(visible);
+        if (mCandleSeries) mCandleSeries.setData(visible);
+
+        updateChartMarkers();
 
         if (visible.length > 0) {
             const lastBar = visible[visible.length - 1];
@@ -326,7 +622,7 @@
             }
         } else {
             if (mReplayIndex >= mReplayCandles.length) {
-                mReplayIndex = Math.max(25, mReplayCandles.length - 45);
+                mReplayIndex = Math.max(20, mReplayCandles.length - 50);
             }
             if (btn) {
                 btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
@@ -340,14 +636,9 @@
         if (mReplayIndex < mReplayCandles.length) {
             const nextCandle = mReplayCandles[mReplayIndex++];
             if (mCandleSeries) mCandleSeries.update(nextCandle);
-            if (mVolumeSeries && mIndicatorsState.vol) {
-                mVolumeSeries.update({
-                    time: nextCandle.time,
-                    value: nextCandle.volume || 0,
-                    color: nextCandle.close >= nextCandle.open ? 'rgba(0, 192, 135, 0.45)' : 'rgba(255, 75, 85, 0.45)'
-                });
-            }
             updateChartHeaderOHLC(nextCandle);
+
+            updateChartMarkers();
 
             const cnt = document.getElementById("mReplayCounterText");
             if (cnt) cnt.innerText = `Bar ${mReplayIndex} / ${mReplayCandles.length}`;
@@ -367,14 +658,14 @@
     }
 
     function stepMobileReplayBackward() {
-        if (mReplayIndex > 25) {
+        if (mReplayIndex > 20) {
             mReplayIndex--;
             updateMobileReplayDisplay();
         }
     }
 
     function resetMobileReplayToStart() {
-        mReplayIndex = Math.max(25, mReplayCandles.length - 45);
+        mReplayIndex = Math.max(20, mReplayCandles.length - 50);
         updateMobileReplayDisplay();
     }
 
@@ -444,29 +735,35 @@
         }
         dismissReplaySignal();
         clearReplayPriceLines();
-        const hud = document.getElementById("mobileReplayActiveHUD");
-        if (hud) hud.style.display = "none";
-
+        
         if (mCandleSeries && mFullCandles) {
-            renderChartIndicators(mFullCandles);
+            mCandleSeries.setData(mFullCandles);
+            updateChartMarkers();
+            renderLivePositionLines();
             if (mFullCandles.length > 0) updateChartHeaderOHLC(mFullCandles[mFullCandles.length - 1]);
         }
     }
 
-    // ----------------- HERMES 3.0 MODEL 2A ALGORITHMIC ENGINE -----------------
+    // -------------------------------------------------------------
+    // REPLAY SETUP EVALUATION & INTERACTIVE BUY/SELL SIGNAL CARD
+    // -------------------------------------------------------------
 
-    function checkHermes30SetupOnReplay(candles) {
-        if (!candles || candles.length < 25) return;
+    function checkHermes30SetupOnReplay(visibleCandles) {
+        if (!visibleCandles || visibleCandles.length < 20) return;
         if (mSimTrade && mSimTrade.active) {
             dismissReplaySignal();
             return;
         }
 
-        const setup = detectHermes30Setup(candles);
-        if (setup) {
-            if (!mCurrentSetup || mCurrentSetup.candleIndex !== setup.candleIndex || mCurrentSetup.side !== setup.side) {
-                mCurrentSetup = setup;
-                showReplaySignalCard(setup);
+        const n = visibleCandles.length;
+        const currentBar = visibleCandles[n - 1];
+
+        // Check if there is a detected setup on this bar or within last 2 bars
+        const match = mDetectedSetups.find(s => Math.abs(s.candleIndex - (n - 1)) <= 1);
+        if (match) {
+            if (!mCurrentSetup || mCurrentSetup.candleTime !== match.candleTime) {
+                mCurrentSetup = match;
+                showReplaySignalCard(match);
                 playInstitutionalChime("signal");
 
                 if (mIsAutoTrade) {
@@ -474,168 +771,11 @@
                 }
             }
         } else {
-            if (mCurrentSetup && (candles.length - 1 - mCurrentSetup.candleIndex > 4)) {
+            if (mCurrentSetup && Math.abs((n - 1) - mCurrentSetup.candleIndex) > 3) {
                 dismissReplaySignal();
                 mCurrentSetup = null;
             }
         }
-    }
-
-    function detectHermes30Setup(candles) {
-        const n = candles.length;
-        const curr = candles[n - 1];
-
-        let minDisp = 0.025;
-        if (mInterval === '15m') minDisp = 0.015;
-        else if (mInterval === '1h') minDisp = 0.022;
-        else if (mInterval === '4h' || mInterval === '1d') minDisp = 0.038;
-
-        const lookback = Math.min(35, n - 4);
-        const startIdx = Math.max(0, n - lookback);
-
-        // Bullish Long
-        let originLow = Infinity;
-        let originIdx = -1;
-        for (let i = startIdx; i < n - 6; i++) {
-            if (candles[i].low < originLow) {
-                originLow = candles[i].low;
-                originIdx = i;
-            }
-        }
-
-        if (originIdx !== -1 && originLow > 0) {
-            let peakHigh = -Infinity;
-            let peakIdx = -1;
-            for (let i = originIdx + 2; i < n - 2; i++) {
-                if (candles[i].high > peakHigh) {
-                    peakHigh = candles[i].high;
-                    peakIdx = i;
-                }
-            }
-
-            if (peakIdx > originIdx + 2) {
-                const gain = (peakHigh - originLow) / originLow;
-                if (gain >= minDisp) {
-                    const idmLow = candles[peakIdx - 1].low;
-                    let bestMid = -1;
-                    let maxR = 0;
-                    for (let mid = originIdx + 1; mid < peakIdx; mid++) {
-                        const cMid = candles[mid];
-                        const fib = (cMid.low - originLow) / (peakHigh - originLow);
-                        if (fib >= 0.28 && fib <= 0.72) {
-                            const r = cMid.high - cMid.low;
-                            const hasFvg = (mid + 1 < n && mid - 1 >= 0) ? (candles[mid + 1].low > candles[mid - 1].high) : true;
-                            if (hasFvg && r > maxR) {
-                                maxR = r;
-                                bestMid = mid;
-                            }
-                        }
-                    }
-
-                    if (bestMid !== -1) {
-                        const decC = candles[bestMid - 1] || candles[bestMid];
-                        const decTop = Math.max(decC.open, decC.close);
-                        const decBot = decC.low;
-                        const mt = (decTop + decBot) / 2.0;
-
-                        const sweptIdm = candles.slice(peakIdx, n).some(c => c.low < idmLow);
-                        const isTapping = (curr.low <= mt * 1.0025 && curr.close >= mt * 0.995);
-                        const cRange = curr.high - curr.low;
-                        const lowerWick = Math.min(curr.open, curr.close) - curr.low;
-                        const wickRatio = cRange > 0 ? (lowerWick / cRange) : 0;
-
-                        if (sweptIdm && isTapping && wickRatio >= 0.18) {
-                            return {
-                                symbol: mSymbol,
-                                side: "BUY",
-                                type: "LONG",
-                                entryPrice: mt,
-                                tpPrice: mt * (1.0 + 0.028), // +14% ROE
-                                softSlPrice: mt * (1.0 - 0.015),
-                                hardSlPrice: mt * (1.0 - 0.028), // -14% ROE
-                                displacementPct: (gain * 100).toFixed(2),
-                                wickRatioPct: (wickRatio * 100).toFixed(1),
-                                candleIndex: n - 1,
-                                candleTime: curr.time
-                            };
-                        }
-                    }
-                }
-            }
-        }
-
-        // Bearish Short
-        let originHigh = -Infinity;
-        let originHighIdx = -1;
-        for (let i = startIdx; i < n - 6; i++) {
-            if (candles[i].high > originHigh) {
-                originHigh = candles[i].high;
-                originHighIdx = i;
-            }
-        }
-
-        if (originHighIdx !== -1 && originHigh > 0) {
-            let troughLow = Infinity;
-            let troughIdx = -1;
-            for (let i = originHighIdx + 2; i < n - 2; i++) {
-                if (candles[i].low < troughLow) {
-                    troughLow = candles[i].low;
-                    troughIdx = i;
-                }
-            }
-
-            if (troughIdx > originHighIdx + 2) {
-                const drop = (originHigh - troughLow) / originHigh;
-                if (drop >= minDisp) {
-                    const idmHigh = candles[troughIdx - 1].high;
-                    let bestMid = -1;
-                    let maxR = 0;
-                    for (let mid = originHighIdx + 1; mid < troughIdx; mid++) {
-                        const cMid = candles[mid];
-                        const fib = (originHigh - cMid.high) / (originHigh - troughLow);
-                        if (fib >= 0.28 && fib <= 0.72) {
-                            const r = cMid.high - cMid.low;
-                            const hasBearFvg = (mid + 1 < n && mid - 1 >= 0) ? (candles[mid + 1].high < candles[mid - 1].low) : true;
-                            if (hasBearFvg && r > maxR) {
-                                maxR = r;
-                                bestMid = mid;
-                            }
-                        }
-                    }
-
-                    if (bestMid !== -1) {
-                        const decC = candles[bestMid - 1] || candles[bestMid];
-                        const decTop = decC.high;
-                        const decBot = Math.min(decC.open, decC.close);
-                        const mt = (decTop + decBot) / 2.0;
-
-                        const sweptIdm = candles.slice(troughIdx, n).some(c => c.high > idmHigh);
-                        const isTapping = (curr.high >= mt * 0.9975 && curr.close <= mt * 1.005);
-                        const cRange = curr.high - curr.low;
-                        const upperWick = curr.high - Math.max(curr.open, curr.close);
-                        const wickRatio = cRange > 0 ? (upperWick / cRange) : 0;
-
-                        if (sweptIdm && isTapping && wickRatio >= 0.18) {
-                            return {
-                                symbol: mSymbol,
-                                side: "SELL",
-                                type: "SHORT",
-                                entryPrice: mt,
-                                tpPrice: mt * (1.0 - 0.028), // +14% ROE
-                                softSlPrice: mt * (1.0 + 0.015),
-                                hardSlPrice: mt * (1.0 + 0.028), // -14% ROE
-                                displacementPct: (drop * 100).toFixed(2),
-                                wickRatioPct: (wickRatio * 100).toFixed(1),
-                                candleIndex: n - 1,
-                                candleTime: curr.time
-                            };
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 
     function showReplaySignalCard(setup) {
@@ -647,22 +787,22 @@
         if (badge) {
             badge.className = `rsc-badge ${isLong ? 'rsc-badge-long' : 'rsc-badge-short'}`;
             badge.innerHTML = isLong 
-                ? '<i class="fa-solid fa-arrow-trend-up"></i> HERMES 3.0 MODEL 2A • LONG' 
-                : '<i class="fa-solid fa-arrow-trend-down"></i> HERMES 3.0 MODEL 2A • SHORT';
+                ? '<i class="fa-solid fa-arrow-trend-up"></i> HERMES 3.0 MODEL 2A • LONG BUY' 
+                : '<i class="fa-solid fa-arrow-trend-down"></i> HERMES 3.0 MODEL 2A • SHORT SELL';
         }
 
         const ep = document.getElementById("mRscEntry");
-        if (ep) ep.innerText = `$${setup.entryPrice.toFixed(4)}`;
+        if (ep) ep.innerText = `$${setup.entryPrice.toFixed(setup.entryPrice < 1 ? 4 : 2)}`;
         const tp = document.getElementById("mRscTp");
-        if (tp) tp.innerText = `$${setup.tpPrice.toFixed(4)} (+14% ROE)`;
+        if (tp) tp.innerText = `$${setup.tpPrice.toFixed(setup.tpPrice < 1 ? 4 : 2)} (+14% ROE)`;
         const sl = document.getElementById("mRscSl");
-        if (sl) sl.innerText = `$${setup.hardSlPrice.toFixed(4)} (-14% ROE)`;
+        if (sl) sl.innerText = `$${setup.hardSlPrice.toFixed(setup.hardSlPrice < 1 ? 4 : 2)} (-14% ROE)`;
         const dw = document.getElementById("mRscDisp");
         if (dw) dw.innerText = `+${setup.displacementPct}% / ${setup.wickRatioPct}% Wick`;
 
         const btn = document.getElementById("btnMobileExecuteSignal");
         if (btn) {
-            btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Execute Simulated ${isLong ? 'LONG' : 'SHORT'} @ 50% MT`;
+            btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Execute Simulated ${isLong ? 'LONG BUY' : 'SHORT SELL'} @ 50% MT`;
         }
 
         card.style.display = "block";
@@ -673,13 +813,17 @@
         if (card) card.style.display = "none";
     }
 
+    // -------------------------------------------------------------
+    // SIMULATED TRADE EXECUTION & STEPPED TRAILING SL LADDER
+    // -------------------------------------------------------------
+
     function executeCurrentReplaySignal() {
         if (!mCurrentSetup) return;
         const s = mCurrentSetup;
 
         mSimTrade = {
             active: true,
-            symbol: s.symbol,
+            symbol: mSymbol,
             side: s.side,
             entryPrice: s.entryPrice,
             tpPrice: s.tpPrice,
@@ -698,7 +842,7 @@
         dismissReplaySignal();
         updateReplayPriceLines();
         renderReplayActiveHUD();
-        showOutcomeBanner("⚡ ORDER EXECUTED", `${s.side === 'BUY' ? 'LONG' : 'SHORT'} 5X Filled @ $${s.entryPrice.toFixed(4)} (50% MT)`, "info");
+        showOutcomeBanner("⚡ ORDER EXECUTED", `${s.side === 'BUY' ? 'LONG' : 'SHORT'} 5X Filled @ $${s.entryPrice.toFixed(s.entryPrice < 1 ? 4 : 2)} (50% MT)`, "info");
         playInstitutionalChime("shield");
     }
 
@@ -745,7 +889,9 @@
             if (mPriceLines.tp) mCandleSeries.removePriceLine(mPriceLines.tp);
             if (mPriceLines.sl) mCandleSeries.removePriceLine(mPriceLines.sl);
         } catch(e) {}
-        mPriceLines = { entry: null, tp: null, sl: null };
+        mPriceLines.entry = null;
+        mPriceLines.tp = null;
+        mPriceLines.sl = null;
     }
 
     function evaluateActiveReplaySimTrade(candle) {
@@ -773,7 +919,7 @@
             : ((t.entryPrice - barClose) / t.entryPrice) * 100 * leverage;
         t.currRoe = currRoe;
 
-        // Stepped Trailing Profit Armor
+        // Stepped Trailing Profit Armor Ladder (+5% -> +1%, +9.5% -> +5%, +14.5% -> +10%)
         let targetLocked = t.lockedRoi || 0;
         let targetStep = t.currentStep || 0;
 
@@ -794,14 +940,14 @@
             playInstitutionalChime("shield");
         }
 
-        // Take Profit
+        // Take Profit Check (+14.0% ROE)
         const tpHit = isLong ? (barHigh >= t.tpPrice) : (barLow <= t.tpPrice);
         if (tpHit) {
             resolveReplayTrade("TAKE_PROFIT", t.tpPrice, +14.0, candle);
             return;
         }
 
-        // Trailing SL
+        // Trailing SL Check
         if (t.lockedRoi > 0) {
             const trailingHit = isLong ? (barLow <= t.slPrice) : (barHigh >= t.slPrice);
             if (trailingHit) {
@@ -810,7 +956,7 @@
             }
         }
 
-        // Hard SL
+        // Hard SL Check (-14.0% ROE)
         const slHit = isLong ? (barLow <= t.hardSlPrice) : (barHigh >= t.hardSlPrice);
         if (slHit) {
             resolveReplayTrade("STOP_LOSS", t.hardSlPrice, -14.0, candle);
@@ -834,11 +980,11 @@
         }
 
         const ep = document.getElementById("mRahEntry");
-        if (ep) ep.innerText = `$${t.entryPrice.toFixed(4)}`;
+        if (ep) ep.innerText = `$${t.entryPrice.toFixed(t.entryPrice < 1 ? 4 : 2)}`;
 
         const curP = mReplayCandles && mReplayIndex > 0 ? mReplayCandles[mReplayIndex - 1].close : t.entryPrice;
         const cur = document.getElementById("mRahCur");
-        if (cur) cur.innerText = `$${curP.toFixed(4)}`;
+        if (cur) cur.innerText = `$${curP.toFixed(curP < 1 ? 4 : 2)}`;
 
         const roeEl = document.getElementById("mRahRoe");
         if (roeEl) {
@@ -892,13 +1038,13 @@
         updateReplayJournalBadge();
 
         if (outcome === "TAKE_PROFIT") {
-            showOutcomeBanner("🏆 TAKE PROFIT HIT!", `+${roePct.toFixed(2)}% ROE (+$${pnlUsdt.toFixed(2)}) Target Reached!`, "win");
+            showOutcomeBanner("🏆 TAKE PROFIT HIT!", `+${roePct.toFixed(2)}% ROE (+$${pnlUsdt.toFixed(2)}) Target Hit!`, "win");
             playInstitutionalChime("win");
         } else if (outcome === "TRAILING_SL") {
-            showOutcomeBanner("🛡️ TRAILING SL EXIT!", `+${roePct.toFixed(2)}% ROE Profit Secured (+$${pnlUsdt.toFixed(2)})`, "win");
+            showOutcomeBanner("🛡️ TRAILING SL SECURED!", `+${roePct.toFixed(2)}% ROE Profit Protected (+$${pnlUsdt.toFixed(2)})`, "win");
             playInstitutionalChime("shield");
         } else if (outcome === "STOP_LOSS") {
-            showOutcomeBanner("🛑 STOP LOSS HIT", `${roePct.toFixed(2)}% ROE (-$${Math.abs(pnlUsdt).toFixed(2)}) Guard Triggered`, "loss");
+            showOutcomeBanner("🛑 STOP LOSS HIT", `${roePct.toFixed(2)}% ROE (-$${Math.abs(pnlUsdt).toFixed(2)}) Defense Triggered`, "loss");
         } else {
             showOutcomeBanner("⚡ MANUAL EXIT", `${roePct >= 0 ? '+' : ''}${roePct.toFixed(2)}% ROE ($${pnlUsdt.toFixed(2)})`, "info");
         }
@@ -966,7 +1112,9 @@
         } catch(e) {}
     }
 
-    // ----------------- REPLAY BACKTEST JOURNAL -----------------
+    // -------------------------------------------------------------
+    // REPLAY BACKTEST JOURNAL
+    // -------------------------------------------------------------
 
     function updateReplayJournalBadge() {
         const el = document.getElementById("mobileJournalBadgeCount");
@@ -1024,7 +1172,7 @@
         tbody.innerHTML = mSimJournal.map((t, idx) => {
             const isWin = t.roePct > 0;
             const outcomeBadge = t.outcome === "TAKE_PROFIT" 
-                ? '<span style="color:var(--buy-green); font-weight:800;">🏆 TP HIT (+14%)</span>'
+                ? '<span style="color:var(--buy-green); font-weight:800;">🏆 TP (+14%)</span>'
                 : (t.outcome === "TRAILING_SL" 
                     ? `<span style="color:var(--gold); font-weight:800;">🛡️ TRAIL (+${t.lockedRoi}%)</span>`
                     : (t.outcome === "STOP_LOSS" 
@@ -1046,7 +1194,61 @@
         }).join("");
     }
 
-    // ----------------- CUSTOMIZABLE DRAG RULER MEASURE TOOL -----------------
+    // -------------------------------------------------------------
+    // ROBUST LANDSCAPE & FULLSCREEN ROTATION CONTROLLER
+    // -------------------------------------------------------------
+
+    async function toggleMobileLandscape() {
+        const chartWrapper = document.getElementById("mobileChartSectionWrapper");
+        const canvas = document.getElementById("mobileChartCanvas");
+        const btn = document.getElementById("btnMobileLandscape");
+        if (!chartWrapper || !canvas) return;
+
+        mIsLandscape = !mIsLandscape;
+
+        if (mIsLandscape) {
+            chartWrapper.classList.add("chart-forced-landscape");
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-compress"></i> Portrait';
+
+            // Try native screen orientation lock
+            try {
+                if (screen.orientation && screen.orientation.lock) {
+                    await screen.orientation.lock('landscape');
+                }
+            } catch(e) {}
+
+            // Resize canvas to full window dimensions
+            setTimeout(() => {
+                const w = window.innerHeight || screen.height || 640;
+                const h = window.innerWidth || screen.width || 360;
+                if (mChart) {
+                    mChart.applyOptions({ width: w, height: h - 90 });
+                    mChart.timeScale().fitContent();
+                }
+            }, 150);
+        } else {
+            chartWrapper.classList.remove("chart-forced-landscape");
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button" style="transform:rotate(90deg);"></i> Landscape';
+
+            try {
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            } catch(e) {}
+
+            setTimeout(() => {
+                const w = chartWrapper.clientWidth || 360;
+                if (mChart) {
+                    mChart.applyOptions({ width: w, height: 340 });
+                    mChart.timeScale().fitContent();
+                }
+            }, 150);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // CUSTOMIZABLE DRAG RULER MEASURE TOOL (ENLARGED TOUCH HANDLES)
+    // -------------------------------------------------------------
 
     function initMeasureToolOverlay() {
         const overlay = document.getElementById("mobileMeasureOverlay");
@@ -1302,6 +1504,7 @@
         init: initHermesChart,
         setTimeframe: setMobileTimeframe,
         setSymbol: setMobileSymbol,
+        toggleLandscape: toggleMobileLandscape,
         toggleReplay: toggleMobileReplay,
         stepForward: stepMobileReplayForward,
         stepBackward: stepMobileReplayBackward,

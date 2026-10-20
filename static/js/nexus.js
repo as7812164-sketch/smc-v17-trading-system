@@ -127,20 +127,7 @@ function initChart() {
         }
     });
 
-    // 1. Volume Histogram Series (Dedicated isolated scale, never distorts candlestick prices)
-    volumeSeries = chart.addHistogramSeries({
-        priceFormat: { type: 'volume' },
-        priceScaleId: 'volume_scale',
-    });
-    chart.priceScale('volume_scale').applyOptions({
-        scaleMargins: {
-            top: 0.80,
-            bottom: 0,
-        },
-        visible: false,
-    });
-
-    // 2. Candlestick Series (Main Price)
+    // Pure Candlestick Series (No EMA lines, No Volume Series)
     candleSeries = chart.addCandlestickSeries({
         upColor: '#00C087',
         downColor: '#FF4B55',
@@ -149,37 +136,18 @@ function initChart() {
         wickDownColor: '#FF4B55'
     });
 
-    // Auto-scale right price scale dynamically for candlesticks with clean padding
+    volumeSeries = null;
+    ema20Series = null;
+    ema50Series = null;
+    ema200Series = null;
+
+    // Auto-scale right price scale dynamically with pure candlestick padding
     chart.priceScale('right').applyOptions({
         autoScale: true,
         scaleMargins: {
             top: 0.08,
-            bottom: 0.22,
+            bottom: 0.08,
         },
-    });
-
-    // 3. EMA 20 (Yellow / Fast Trend)
-    ema20Series = chart.addLineSeries({
-        color: '#FFB800',
-        lineWidth: 1.5,
-        title: 'EMA 20',
-        priceLineVisible: false,
-    });
-
-    // 4. EMA 50 (Cyan / Dynamic Base)
-    ema50Series = chart.addLineSeries({
-        color: '#00DFC0',
-        lineWidth: 1.5,
-        title: 'EMA 50',
-        priceLineVisible: false,
-    });
-
-    // 5. EMA 200 (Purple / Institutional Macro)
-    ema200Series = chart.addLineSeries({
-        color: '#A78BFA',
-        lineWidth: 2,
-        title: 'EMA 200',
-        priceLineVisible: false,
     });
 
     // Crosshair Live Tracker for OHLCV Tooltip Bar
@@ -230,50 +198,203 @@ function calculateEMA(candles, period) {
 function renderIndicators(candles) {
     if (!candles || candles.length === 0) return;
 
-    // 1. Candlesticks
+    // 1. Pure Candlesticks
     if (candleSeries) candleSeries.setData(candles);
 
-    // 2. Volume
-    if (volumeSeries) {
-        if (indicatorsState.vol) {
-            const volData = candles.map(c => ({
-                time: c.time,
-                value: c.volume || 0,
-                color: (c.close >= c.open) ? 'rgba(0, 192, 135, 0.45)' : 'rgba(255, 75, 85, 0.45)'
-            }));
-            volumeSeries.setData(volData);
-        } else {
-            volumeSeries.setData([]);
+    // 2. Automated SMC Levels (PDH, PDL, 15m Extreme OB, 50% MT)
+    updateSmcLevels(candles);
+
+    // 3. Hermes 3.0 Strategy Markers & Live Open Position Markers
+    renderNexusStrategyMarkers(candles);
+}
+
+function scanAllHermes30Setups(candles) {
+    const setups = [];
+    if (!candles || candles.length < 20) return setups;
+
+    let minDisp = 0.012;
+    if (currentTimeframe === '1h') minDisp = 0.020;
+    else if (currentTimeframe === '4h' || currentTimeframe === '1d') minDisp = 0.035;
+
+    const n = candles.length;
+    for (let i = 15; i < n - 2; i++) {
+        // BULLISH (LONG) SETUP CHECK
+        const priorLows = candles.slice(Math.max(0, i - 12), i + 1).map(c => c.low);
+        if (candles[i].low === Math.min(...priorLows)) {
+            const subWindow = candles.slice(i, Math.min(i + 14, n));
+            const subHighs = subWindow.map(c => c.high);
+            const maxHigh = Math.max(...subHighs);
+            const peakIdx = i + subHighs.indexOf(maxHigh);
+
+            if (peakIdx > i + 2) {
+                const originL = candles[i].low;
+                const gain = (maxHigh - originL) / originL;
+
+                if (gain >= minDisp) {
+                    const idmLow = candles[peakIdx - 1].low;
+                    let bestMid = -1;
+                    let maxRange = 0;
+
+                    for (let mid = i + 1; mid < peakIdx; mid++) {
+                        const cMid = candles[mid];
+                        const fib = (cMid.low - originL) / (maxHigh - originL);
+                        if (fib >= 0.25 && fib <= 0.75) {
+                            const r = cMid.high - cMid.low;
+                            if (r > maxRange) {
+                                maxRange = r;
+                                bestMid = mid;
+                            }
+                        }
+                    }
+
+                    if (bestMid !== -1) {
+                        const decC = candles[bestMid - 1] || candles[bestMid];
+                        const decTop = Math.max(decC.open, decC.close);
+                        const decBot = decC.low;
+                        const mt = (decTop + decBot) / 2.0;
+
+                        for (let t = peakIdx + 1; t < Math.min(peakIdx + 20, n); t++) {
+                            const tapC = candles[t];
+                            const isTapping = (tapC.low <= mt * 1.003 && tapC.close >= mt * 0.994);
+                            const swept = candles.slice(peakIdx, t + 1).some(c => c.low <= idmLow);
+                            const cRange = tapC.high - tapC.low;
+                            const lowerWick = Math.min(tapC.open, tapC.close) - tapC.low;
+                            const wickRatio = cRange > 0 ? (lowerWick / cRange) : 0;
+
+                            if (isTapping && swept && wickRatio >= 0.15) {
+                                setups.push({
+                                    side: "BUY",
+                                    type: "LONG",
+                                    entryPrice: mt,
+                                    tpPrice: mt * 1.028,
+                                    hardSlPrice: mt * 0.972,
+                                    candleIndex: t,
+                                    candleTime: tapC.time
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // BEARISH (SHORT) SETUP CHECK
+        const priorHighs = candles.slice(Math.max(0, i - 12), i + 1).map(c => c.high);
+        if (candles[i].high === Math.max(...priorHighs)) {
+            const subWindow = candles.slice(i, Math.min(i + 14, n));
+            const subLows = subWindow.map(c => c.low);
+            const minLow = Math.min(...subLows);
+            const troughIdx = i + subLows.indexOf(minLow);
+
+            if (troughIdx > i + 2) {
+                const originH = candles[i].high;
+                const drop = (originH - minLow) / originH;
+
+                if (drop >= minDisp) {
+                    const idmHigh = candles[troughIdx - 1].high;
+                    let bestMid = -1;
+                    let maxRange = 0;
+
+                    for (let mid = i + 1; mid < troughIdx; mid++) {
+                        const cMid = candles[mid];
+                        const fib = (originH - cMid.high) / (originH - minLow);
+                        if (fib >= 0.25 && fib <= 0.75) {
+                            const r = cMid.high - cMid.low;
+                            if (r > maxRange) {
+                                maxRange = r;
+                                bestMid = mid;
+                            }
+                        }
+                    }
+
+                    if (bestMid !== -1) {
+                        const decC = candles[bestMid - 1] || candles[bestMid];
+                        const decTop = decC.high;
+                        const decBot = Math.min(decC.open, decC.close);
+                        const mt = (decTop + decBot) / 2.0;
+
+                        for (let t = troughIdx + 1; t < Math.min(troughIdx + 20, n); t++) {
+                            const tapC = candles[t];
+                            const isTapping = (tapC.high >= mt * 0.997 && tapC.close <= mt * 1.006);
+                            const swept = candles.slice(troughIdx, t + 1).some(c => c.high >= idmHigh);
+                            const cRange = tapC.high - tapC.low;
+                            const upperWick = tapC.high - Math.max(tapC.open, tapC.close);
+                            const wickRatio = cRange > 0 ? (upperWick / cRange) : 0;
+
+                            if (isTapping && swept && wickRatio >= 0.15) {
+                                setups.push({
+                                    side: "SELL",
+                                    type: "SHORT",
+                                    entryPrice: mt,
+                                    tpPrice: mt * 0.972,
+                                    hardSlPrice: mt * 1.028,
+                                    candleIndex: t,
+                                    candleTime: tapC.time
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return setups;
+}
+
+function renderNexusStrategyMarkers(candles) {
+    if (!candleSeries || !candles || candles.length === 0) return;
+    const markers = [];
+
+    // 1. Live Active Position Marker (if coin is in open position)
+    const symUpper = currentSymbol ? currentSymbol.toUpperCase() : '';
+    const activePos = (cachedActivePositions || []).find(p => (p.symbol || '').toUpperCase() === symUpper);
+    if (activePos) {
+        let entryTimeSec = activePos.entry_time || 0;
+        if (entryTimeSec > 1e11) entryTimeSec = Math.floor(entryTimeSec / 1000);
+        let closestCandle = null;
+        if (entryTimeSec > 0) {
+            closestCandle = candles.find(c => c.time >= entryTimeSec);
+        }
+        if (!closestCandle) closestCandle = candles[candles.length - 1];
+
+        const isLong = (activePos.side || '').toUpperCase() === 'BUY' || (activePos.side_raw || '').toUpperCase() === 'LONG';
+        const ep = activePos.entry_price || 0;
+        const roe = activePos.roe_str || (activePos.pnl_pct ? `${activePos.pnl_pct}%` : '+0.00%');
+
+        markers.push({
+            time: closestCandle.time,
+            position: isLong ? 'belowBar' : 'aboveBar',
+            color: isLong ? '#00DFC0' : '#FF4B55',
+            shape: isLong ? 'arrowUp' : 'arrowDown',
+            text: `${isLong ? '🟢 ACTIVE BUY' : '🔴 ACTIVE SELL'} @ $${ep.toFixed(ep < 1 ? 4 : 2)} (${roe})`,
+            size: 2
+        });
+    }
+
+    // 2. Hermes 3.0 Model 2A Strategy Setup Markers
+    const setups = scanAllHermes30Setups(candles);
+    const maxTime = (isReplayMode && replayIndex > 0 && replayCandles[replayIndex - 1]) ? replayCandles[replayIndex - 1].time : Infinity;
+    for (const s of setups) {
+        if (s.candleTime <= maxTime) {
+            const isLong = s.side === 'BUY';
+            const ep = s.entryPrice;
+            markers.push({
+                time: s.candleTime,
+                position: isLong ? 'belowBar' : 'aboveBar',
+                color: isLong ? '#00C087' : '#FF4B55',
+                shape: isLong ? 'arrowUp' : 'arrowDown',
+                text: `Hermes 3.0 ${s.type} @ $${ep.toFixed(ep < 1 ? 4 : 2)}`,
+                size: 1.5
+            });
         }
     }
 
-    // 3. EMA 20, 50, 200
-    if (indicatorsState.ema) {
-        const ema20 = calculateEMA(candles, 20);
-        const ema50 = calculateEMA(candles, 50);
-        const ema200 = calculateEMA(candles, Math.min(200, Math.max(20, Math.floor(candles.length * 0.7))));
-        if (ema20Series) ema20Series.setData(ema20);
-        if (ema50Series) ema50Series.setData(ema50);
-        if (ema200Series) ema200Series.setData(ema200);
-
-        // Update OHLC Bar EMA Labels
-        const lastEma20 = ema20.length > 0 ? ema20[ema20.length - 1].value : '--';
-        const lastEma50 = ema50.length > 0 ? ema50[ema50.length - 1].value : '--';
-        const lastEma200 = ema200.length > 0 ? ema200[ema200.length - 1].value : '--';
-        const e20El = document.getElementById("ohlcEma20");
-        const e50El = document.getElementById("ohlcEma50");
-        const e200El = document.getElementById("ohlcEma200");
-        if (e20El) e20El.innerText = lastEma20;
-        if (e50El) e50El.innerText = lastEma50;
-        if (e200El) e200El.innerText = lastEma200;
-    } else {
-        if (ema20Series) ema20Series.setData([]);
-        if (ema50Series) ema50Series.setData([]);
-        if (ema200Series) ema200Series.setData([]);
-    }
-
-    // 4. Automated SMC Levels (PDH, PDL, 15m Extreme OB, 50% MT)
-    updateSmcLevels(candles);
+    markers.sort((a, b) => a.time - b.time);
+    try {
+        candleSeries.setMarkers(markers);
+    } catch(e) {}
 }
 
 function updateSmcLevels(candles) {

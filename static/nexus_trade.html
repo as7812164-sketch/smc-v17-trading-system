@@ -139,15 +139,9 @@
                     
                     <span style="color:var(--border-subtle); margin:0 2px;">|</span>
                     
-                    <!-- Indicators -->
-                    <button id="btnToggleEma" class="chart-tool-btn active" onclick="toggleEmaIndicator()" title="Toggle EMA 20/50/200 Ribbon">
-                        <i class="fa-solid fa-water"></i> EMA
-                    </button>
-                    <button id="btnToggleVol" class="chart-tool-btn active" onclick="toggleVolumeIndicator()" title="Toggle Volume Histogram">
-                        <i class="fa-solid fa-chart-column"></i> Vol
-                    </button>
-                    <button id="btnToggleSmc" class="chart-tool-btn active" onclick="toggleSmcLevels()" title="Toggle Auto PDH/PDL & 15m Extreme OB Levels">
-                        <i class="fa-solid fa-crosshairs" style="color:var(--gold);"></i> SMC
+                    <!-- Strategy Mode & Levels -->
+                    <button id="btnToggleSmc" class="chart-tool-btn active" onclick="toggleSmcLevels()" title="Toggle Auto 50% MT Levels & Strategy Markers">
+                        <i class="fa-solid fa-crosshairs" style="color:var(--gold);"></i> Hermes 3.0 Levels
                     </button>
                     
                     <span style="color:var(--border-subtle); margin:0 2px;">|</span>
@@ -176,18 +170,15 @@
                     </div>
                 </div>
 
-                <!-- Real-Time Crosshair OHLCV & Indicators Bar -->
+                <!-- Real-Time Crosshair OHLC Bar (Pure Candlesticks) -->
                 <div class="chart-ohlc-bar" id="chartOhlcBar">
                     <span class="ohlc-item"><span class="ohlc-lbl">O:</span> <span class="ohlc-val" id="ohlcO">--</span></span>
                     <span class="ohlc-item"><span class="ohlc-lbl">H:</span> <span class="ohlc-val" id="ohlcH">--</span></span>
                     <span class="ohlc-item"><span class="ohlc-lbl">L:</span> <span class="ohlc-val" id="ohlcL">--</span></span>
                     <span class="ohlc-item"><span class="ohlc-lbl">C:</span> <span class="ohlc-val" id="ohlcC">--</span></span>
                     <span class="ohlc-item"><span class="ohlc-lbl">CHG:</span> <span class="ohlc-val" id="ohlcChg">--</span></span>
-                    <span class="ohlc-item"><span class="ohlc-lbl">VOL:</span> <span class="ohlc-val" id="ohlcVol">--</span></span>
                     <span style="color:var(--border-subtle); margin:0 4px;">|</span>
-                    <span class="ohlc-item"><span class="ohlc-lbl" style="color:#FFB800;">EMA20:</span> <span class="ohlc-val gold" id="ohlcEma20">--</span></span>
-                    <span class="ohlc-item"><span class="ohlc-lbl" style="color:#00DFC0;">EMA50:</span> <span class="ohlc-val cyan" id="ohlcEma50">--</span></span>
-                    <span class="ohlc-item"><span class="ohlc-lbl" style="color:#A78BFA;">EMA200:</span> <span class="ohlc-val purple" id="ohlcEma200">--</span></span>
+                    <span class="ohlc-item"><span class="ohlc-lbl" style="color:var(--brand-teal);">HERMES 3.0 MODEL 2A</span> <span class="ohlc-val" style="color:#00C087;">ACTIVE</span></span>
                 </div>
             </div>
 
