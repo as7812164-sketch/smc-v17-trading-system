@@ -464,24 +464,7 @@ class BB20LiveSniper:
         self.ledger.data["active_setups"][symbol] = setup_data
         print(f"🔥 [NEW PENDING SETUP] {symbol} {side} @ 50% MT ${mt:.4f} (Section #{sec_id})")
 
-        # Telegram Alert (Clean Option 1 - Continuous ROI Stepped Trailing)
-        emoji = "🟢 LONG" if side == "LONG" else "🔴 SHORT"
-        msg = (
-            f"🎯 <b>BB 3.0 • LIMIT SETUP</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🪙 <b>#{symbol}</b> {emoji} (5x)\n\n"
-            f"🎯 <b>Entry</b>  : <code>${mt:.4f}</code> (50% MT)\n"
-            f"🛑 <b>Stop</b>   : <code>${sl:.4f}</code> (Risk: ${risk_usd:.2f})\n"
-            f"🛡️ <b>Trailing</b> : Infinite Stepped ROI Armor Active\n\n"
-            f"🪜 <b>ROI Trailing Ladder</b>:\n"
-            f"• +4.8% ROI (<code>${trigger_t1_price:.4f}</code>) ➔ Move SL to +1.0% (Risk-Free)\n"
-            f"• +9.8% ROI (<code>${trigger_t2_price:.4f}</code>) ➔ Lock +5.1% Pure Profit\n"
-            f"• +14.8% ROI (<code>${trigger_t3_price:.4f}</code>) ➔ Lock +10.1% Pure Profit\n"
-            f"• +5.0% Step ➔ Continuous Trailing\n\n"
-            f"💼 <b>Section #{sec_id}</b> (${sec['balance']:.2f} USDT)\n"
-            f"━━━━━━━━━━━━━━━━━━━━"
-        )
-        send_telegram_alert(msg, symbol=symbol, setup_or_pos=setup_data, candles=candles_15m)
+        # Pending setup saved to ledger & UI radar silently (no Telegram alert until filled as per 2-alert rule)
         _sync_to_cloud_terminals("SETUP", setup_data)
 
 
@@ -580,14 +563,25 @@ class BB20LiveSniper:
 
             print(f"✅ [LIMIT FILLED] {symbol} {side} @ ${entry:.4f}! Trade is LIVE!")
 
+            emoji = "🟢 LONG (BUY)" if side == "LONG" else "🔴 SHORT (SELL)"
+            trigger_t1_price = calculate_trailing_sl_price(entry, side, 4.80, 5.0)
+            trigger_t2_price = calculate_trailing_sl_price(entry, side, 9.80, 5.0)
+            trigger_t3_price = calculate_trailing_sl_price(entry, side, 14.80, 5.0)
+
             msg = (
-                f"⚡ <b>BB 3.0 • ORDER FILLED</b>\n"
+                f"⚡ <b>BB 3.0 • ENTRY FILLED & POSITION LIVE</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🪙 <b>#{symbol}</b> {'🟢 LONG' if side == 'LONG' else '🔴 SHORT'} (5x)\n\n"
-                f"🎯 <b>Fill Price</b> : <code>${entry:.4f}</code>\n"
+                f"🪙 <b>#{symbol}</b> {emoji} (5x Isolated)\n\n"
+                f"🎯 <b>Fill Price</b> : <code>${entry:.4f}</code> (50% MT Tap Confirmed)\n"
                 f"🛑 <b>Active SL</b>  : <code>${sl:.4f}</code>\n"
-                f"💰 <b>Risk Amount</b>: ${setup['risk_usd']:.2f} USDT (5%)\n\n"
-                f"🛡️ <b>Status</b>: Continuous ROI Trailing Active (Section #{sec_id})\n"
+                f"💰 <b>Risk Amount</b>: ${setup.get('risk_usd', sec['balance'] * 0.05):.2f} USDT (5%)\n"
+                f"💼 <b>Compounding</b>: Section #{sec_id} (${sec['balance']:.2f} USDT)\n\n"
+                f"🛡️ <b>Trailing Plan</b>: Continuous Stepped ROI Armor Active (Silent Background Protection)\n"
+                f"🪜 <b>Milestones</b>:\n"
+                f"• +4.8% ROI (<code>${trigger_t1_price:.4f}</code>) ➔ Move SL to +1.0% (Risk-Free Fee Shield)\n"
+                f"• +9.8% ROI (<code>${trigger_t2_price:.4f}</code>) ➔ Lock +5.1% Pure Profit\n"
+                f"• +14.8% ROI (<code>${trigger_t3_price:.4f}</code>) ➔ Lock +10.1% Pure Profit\n\n"
+                f"🟢 <i>Position Officially Open & Live | Alert 1 of 2</i>\n"
                 f"━━━━━━━━━━━━━━━━━━━━"
             )
             send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos_data, candles=candles)
@@ -651,17 +645,8 @@ class BB20LiveSniper:
             tier_label = "+1.0% ROI Fee Shield (Risk-Free)" if tier_candidate == 1 else f"+{locked_roi:.2f}% ROI Pure Profit Locked"
             print(f"🛡️ [ROI TRAILING SL UPDATE] {symbol} {side}: Tier {tier_candidate} Locked! (SL ➔ ${new_sl:.4f} | +{locked_roi:.2f}% ROI)")
 
-            msg = (
-                f"🪜 <b>BB 3.0 • PROFIT LOCKED</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🪙 <b>#{symbol}</b> {'🟢 LONG' if side == 'LONG' else '🔴 SHORT'}\n\n"
-                f"⚡ <b>Milestone</b> : Tier {tier_candidate} Hit (Peak: +{curr_peak_roi:.2f}% ROI)\n"
-                f"🛡️ <b>New SL</b>    : <code>${new_sl:.4f}</code> ({tier_label})\n"
-                f"🔒 <b>Protection</b>: Guaranteed Locked\n\n"
-                f"💼 <b>Section #{sec_id}</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━"
-            )
-            send_telegram_alert(msg, symbol=symbol, setup_or_pos=pos, candles=candles)
+            # Trailing SL executes silently in background (no Telegram message spam: only 2 alerts per trade: Entry Fill & Exit)
+            pass
 
     def _close_position(self, symbol: str, reason: str, exit_price: float):
         pos = self.ledger.data["active_positions"][symbol]
@@ -763,7 +748,8 @@ class BB20LiveSniper:
             f"🏁 <b>Exit</b>    : <code>${exit_price:.4f}</code> ({outcome})\n"
             f"⏱️ <b>Time</b>    : {dur_str}\n\n"
             f"💼 <b>Sec #{sec_id} Bal</b>: ${prev_bal:.2f} ➔ <b>${sec['balance']:.2f}</b>\n"
-            f"📊 <b>Total Equity</b>: <b>${self.ledger.data['total_current_equity']:.2f} USDT</b>\n"
+            f"📊 <b>Total Equity</b>: <b>${self.ledger.data['total_current_equity']:.2f} USDT</b>\n\n"
+            f"🏁 <i>Trade Finalized | Compounding Slot Available | Alert 2 of 2</i>\n"
             f"━━━━━━━━━━━━━━━━━━━━"
         )
         send_telegram_alert(msg, symbol=symbol, setup_or_pos=closed_rec)

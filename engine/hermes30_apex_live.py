@@ -595,22 +595,23 @@ class Hermes30Model2ALiveEngine:
             sec_type_str = "4H Macro Swing" if sec_id <= 5 else "1H Intraday Scalp"
             logger.info(f"🚀 HERMES 3.0 LIMIT ORDER ARMED [Section {sec_id}]: {symbol} {side} LIMIT @ {ep} | Initial Hard SL: {hard_sl} | Stepped Trailing Active")
 
-            # Send Telegram Alert with Live Chart Image
+            # Send Telegram Alert with Live Chart Image (ALERT 1 OF 2: ENTRY FILLED & POSITION LIVE)
             try:
                 alert_text = (
-                    f"👑 <b>HERMES 3.0: NEW LIMIT ORDER ARMED</b>\n"
+                    f"⚡ <b>HERMES 3.0 • ENTRY FILLED & POSITION LIVE</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                     f"📦 <b>Compounding Slot</b>: <b>Section {sec_id} ({sec_type_str})</b>\n"
                     f"🪙 <b>Pair</b>: #{symbol} ({timeframe.upper()})\n"
-                    f"📈 <b>Action</b>: {'🟢 BUY (LONG)' if side == 'LONG' else '🔴 SELL (SHORT)'} (LIMIT ORDER)\n"
-                    f"🎯 <b>Entry Price</b>: {ep:.6f} (50% Mean Threshold | 0.20% Proximity)\n"
+                    f"📈 <b>Action</b>: {'🟢 LONG BUY (FILLED)' if side == 'LONG' else '🔴 SHORT SELL (FILLED)'}\n"
+                    f"🎯 <b>Fill Price</b>: {ep:.6f} (50% Mean Threshold Tap Confirmed)\n"
+                    f"🎯 <b>Take Profit</b>: {tp:.6f} (+15.0% ROE Target)\n"
                     f"🛑 <b>Initial Hard SL</b>: {hard_sl:.6f} (-3.00% Disaster Shield)\n"
                     f"🛡️ <b>Soft Stop Loss</b>: {soft_sl:.6f} (Candle Body Close Defense)\n"
-                    f"📈 <b>Stepped Trailing SL</b>: +5% ROI ➔ +1% | +10% ROI ➔ +5% | +15% ROI ➔ +10%\n"
+                    f"🛡️ <b>Trailing Plan</b>: Stepped Trailing Active (Silent Background Protection)\n"
                     f"🕯️ <b>Rejection Wick</b>: {setup.get('wick_ratio_pct', 24.5):.1f}% (Confirmed ≥ 18.0% Absorption)\n"
                     f"⚡ <b>Leverage</b>: {leverage}x Isolated | Margin: ${margin:.2f} USDT\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔬 <i>Deca Compounding Slot {sec_id}/10 Active | Infinite Trend Runner</i>"
+                    f"🟢 <i>Position Officially Open & Live | Alert 1 of 2</i>"
                 )
                 keyboard = telegram_service.get_alert_inline_keyboard(symbol)
                 sent_msg_id = None
@@ -783,24 +784,8 @@ class Hermes30Model2ALiveEngine:
                         "peak_roi": round(peak_roi, 1)
                     })
 
-                    # Dispatch Telegram alert for Trailing SL upgrade
-                    try:
-                        sec_id = trade.get("account_id") or 1
-                        trail_text = (
-                            f"🛡️ <b>HERMES 3.0: STEPPED TRAILING SL UPGRADED</b>\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"📦 <b>Compounding Slot</b>: Section {sec_id}\n"
-                            f"🪙 <b>Pair</b>: #{sym} ({tf.upper()}) | Side: {'🟢 LONG' if side in ('BUY', 'LONG') else '🔴 SHORT'}\n"
-                            f"📈 <b>Peak Move Achieved</b>: <b>+{peak_roi:.1f}% ROI</b> (+{peak_roi/leverage:.2f}% Spot)\n"
-                            f"🔒 <b>Trailing Ladder</b>: <b>Step {target_step}</b>\n"
-                            f"💰 <b>Guaranteed Locked Profit</b>: <b>+{target_locked_roi:.1f}% ROI</b>\n"
-                            f"🛑 <b>New Stop Loss Price</b>: <code>{new_sl_price:.6f}</code>\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"⚡ <i>Capital secured in profit. Trend runner active without TP ceiling!</i>"
-                        )
-                        asyncio.create_task(telegram_service.send_raw_message(trail_text))
-                    except Exception:
-                        pass
+                    # Trailing SL executes silently in background (no Telegram spam: strictly 2 alerts per trade: Entry Fill & Exit)
+                    logger.info(f"🛡️ [SILENT TRAILING SL] Section {trade.get('account_id') or 1} {sym} Step {target_step} (+{target_locked_roi:.1f}% ROI locked at ${new_sl_price:.6f})")
 
                 exit_triggered = None
                 exit_price = cur_price

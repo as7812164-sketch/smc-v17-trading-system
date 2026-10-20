@@ -420,19 +420,8 @@ class Hermes40LiveEngine:
                         conn.execute("UPDATE paper_trades SET sl_price = ? WHERE id = ?", (ep, tid))
                         conn.commit()
                     logger.info(f"🛡️ [HERMES 4.0] Trade #{tid} {sym} locked to Break-Even at ${ep}")
-                    try:
-                        be_msg = (
-                            f"🛡️ <b>[HERMES 4.0 COUNCIL] BREAK-EVEN LOCK ACTIVATED</b>\n"
-                            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"🪙 <b>Pair:</b> #{sym} (LONG)\n"
-                            f"🏛️ <b>Section:</b> Hermes 4.0 Section #{acc_id}\n"
-                            f"⚡ <b>Condition:</b> Price reached +1.50% (+7.5% ROE / +1.0R)\n"
-                            f"🔒 <b>Action:</b> Stop Loss moved to Entry Price (<code>${ep}</code>)\n"
-                            f"✨ <b>Risk:</b> ZERO RISK POSITION ACTIVE"
-                        )
-                        await send_hermes40_telegram_alert(be_msg)
-                    except Exception as be_err:
-                        logger.warning(f"Telegram BE alert error: {be_err}")
+                    # Break-Even lock executes silently in background (no Telegram spam as per 2-alert rule)
+                    logger.info(f"🛡️ [HERMES 4.0 SILENT BE] Trade #{tid} {sym} locked to Break-Even at ${ep}")
 
                 # Check TP hit (+3.00% spot / +15% ROE)
                 if cur_p >= tp:
