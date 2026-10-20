@@ -1215,8 +1215,11 @@
                 const marginUsdt = Number(pos.margin_usdt || 50).toFixed(4);
                 const coinName = pos.coin_name || (pos.symbol || '').replace('USDT', '');
                 const duration = pos.duration_str || pos.duration || 'Live';
-                const mae = pos.mae_pct ? `-${Number(pos.mae_pct).toFixed(2)}%` : '0.00%';
-                const mfe = pos.mfe_pct ? `+${Number(pos.mfe_pct).toFixed(2)}%` : '0.00%';
+                const currentDrawdown = (pos.roi_pct && Number(pos.roi_pct) < 0) ? Math.abs(Number(pos.roi_pct)) : ((pos.pnl_pct && Number(pos.pnl_pct) < 0) ? Math.abs(Number(pos.pnl_pct)) : 0);
+                const maeVal = Math.max(Number(pos.mae_pct || 0), currentDrawdown).toFixed(2);
+                const mfeVal = Math.max(Number(pos.mfe_pct || 0), Math.max(0, Number(pos.roi_pct || pos.pnl_pct || 0))).toFixed(2);
+                const mae = -%;
+                const mfe = +%;
 
                 return `
                     <div class="bitget-pos-card" id="card-${pos.id}">

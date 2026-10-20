@@ -1830,6 +1830,12 @@ async def get_futures_positions(timeframe: Optional[str] = None):
             live_mfe = round(max(0.0, (entry - lowest_p) / entry * 100.0 * leverage), 2)
             live_mae = round(max(0.0, (highest_p - entry) / entry * 100.0 * leverage), 2)
 
+        # Dynamic Guarantee: MAE must always reflect at least the current drawdown if negative, MFE if positive
+        if roi_pct < 0:
+            live_mae = max(live_mae, round(abs(roi_pct), 2))
+        else:
+            live_mfe = max(live_mfe, round(roi_pct, 2))
+
         total_unrealized_pnl += pnl_usdt
         total_margin += margin
 

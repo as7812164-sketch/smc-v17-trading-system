@@ -618,12 +618,20 @@ class BB20LiveSniper:
 
         if side == "LONG":
             fav_spot_gain = (high_price - entry) / entry
+            adv_spot_loss = (entry - low_price) / entry if low_price < entry else 0.0
         else:
             fav_spot_gain = (entry - low_price) / entry
+            adv_spot_loss = (high_price - entry) / entry if high_price > entry else 0.0
 
         curr_peak_roi = round(fav_spot_gain * leverage * 100.0, 2)
+        curr_mae_roi = round(adv_spot_loss * leverage * 100.0, 2)
+
         if curr_peak_roi > pos.get("peak_roi", 0.0):
             pos["peak_roi"] = curr_peak_roi
+            pos["mfe_pct"] = curr_peak_roi
+
+        if curr_mae_roi > pos.get("mae_pct", 0.0):
+            pos["mae_pct"] = curr_mae_roi
 
         # 3. Continuous Stepped Trailing SL Check
         tier_candidate = get_roi_trailing_tier(curr_peak_roi)
@@ -639,7 +647,9 @@ class BB20LiveSniper:
                 "trailing_sl": new_sl,
                 "stage": tier_candidate,
                 "locked_roi": locked_roi,
-                "peak_roi": curr_peak_roi
+                "peak_roi": curr_peak_roi,
+                "mfe_pct": curr_peak_roi,
+                "mae_pct": pos.get("mae_pct", 0.0)
             })
 
             tier_label = "+1.0% ROI Fee Shield (Risk-Free)" if tier_candidate == 1 else f"+{locked_roi:.2f}% ROI Pure Profit Locked"
