@@ -499,26 +499,54 @@ class BB20LiveSniper:
             except Exception:
                 pass
 
-        # Check Invalidation
-        if side == "LONG" and last_c["low"] <= sl:
-            del self.ledger.data["active_setups"][symbol]
-            _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
-            print(f"⚠️ Setup {symbol} Invalidated before fill (hit SL level)")
-            return
-        elif side == "SHORT" and last_c["high"] >= sl:
-            del self.ledger.data["active_setups"][symbol]
-            _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
-            print(f"⚠️ Setup {symbol} Invalidated before fill (hit SL level)")
-            return
+        # Check Invalidation (SL breached or TP already hit before fill)
+        tp_target = float(setup.get("tp_price") or setup.get("target_1r") or 0.0)
+        if side == "LONG":
+            if last_c["low"] <= sl:
+                del self.ledger.data["active_setups"][symbol]
+                _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
+                print(f"⚠️ Setup {symbol} Invalidated before fill (hit SL level)")
+                return
+            if tp_target > 0 and last_c["high"] >= tp_target:
+                del self.ledger.data["active_setups"][symbol]
+                _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
+                print(f"⚠️ Setup {symbol} Invalidated before fill (target already reached)")
+                return
+        elif side == "SHORT":
+            if last_c["high"] >= sl:
+                del self.ledger.data["active_setups"][symbol]
+                _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
+                print(f"⚠️ Setup {symbol} Invalidated before fill (hit SL level)")
+                return
+            if tp_target > 0 and last_c["low"] <= tp_target:
+                del self.ledger.data["active_setups"][symbol]
+                _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
+                print(f"⚠️ Setup {symbol} Invalidated before fill (target already reached)")
+                return
 
-        # Check Fill
+        # Check Fill (Strict Tap: touched 50% MT, but candle close must remain safe within buffer)
         filled = False
         if side == "LONG" and last_c["low"] <= entry:
-            filled = True
+            if float(last_c["close"]) > sl and float(last_c["close"]) >= entry * 0.9975:
+                filled = True
+            elif float(last_c["close"]) <= sl:
+                del self.ledger.data["active_setups"][symbol]
+                _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
+                print(f"⚠️ Setup {symbol} Invalidated on fill bar (plunged through SL)")
+                return
         elif side == "SHORT" and last_c["high"] >= entry:
-            filled = True
+            if float(last_c["close"]) < sl and float(last_c["close"]) <= entry * 1.0025:
+                filled = True
+            elif float(last_c["close"]) >= sl:
+                del self.ledger.data["active_setups"][symbol]
+                _sync_to_cloud_terminals("REMOVE_SETUP", {"symbol": symbol})
+                print(f"⚠️ Setup {symbol} Invalidated on fill bar (surged through SL)")
+                return
 
         if filled:
+            sec_id = str(setup["section_id"])
+            sec = self.ledger.data["sections"][sec_id]
+
             # Move from active_setups to active_positions
             del self.ledger.data["active_setups"][symbol]
             day_key = self.get_day_key()
@@ -539,8 +567,8 @@ class BB20LiveSniper:
             pos_data["leverage"] = 5.0
             self.ledger.data["active_positions"][symbol] = pos_data
 
-            sec_id = setup["section_id"]
             self.ledger.data["sections"][sec_id]["status"] = f"IN TRADE ({symbol} {side})"
+            self.ledger.save()
             _sync_to_sqlite("OPEN", pos_data)
             _sync_to_nexuspro_render("OPEN", pos_data)
 
@@ -569,8 +597,11 @@ class BB20LiveSniper:
         sec = self.ledger.data["sections"][sec_id]
         leverage = float(pos.get("leverage", 5.0))
 
-        # 1. Check SL Hit across recent bars
-        recent_bars = candles[-2:] if len(candles) >= 2 else candles
+        # 1. Check SL Hit strictly on bars during or after entry (never evaluate pre-entry historical bars!)
+        pos_open_ms = int(float(pos.get("open_time", time.time())) * 1000)
+        valid_bars = [b for b in candles if b.get("time", 0) >= pos_open_ms - 60000]
+        recent_bars = valid_bars if valid_bars else [candles[-1]]
+
         sl_hit = False
         if side == "LONG":
             sl_hit = any(b["low"] <= active_sl for b in recent_bars)
