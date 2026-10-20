@@ -192,23 +192,28 @@
             </div>
 
             <!-- INTERACTIVE BAR REPLAY FLOATING CONTROLLER -->
-            <div id="replayControllerBar" class="replay-controller-bar" style="display:none;">
-                <div style="display:flex; align-items:center; gap:8px;">
+            <div id="replayControllerBar" class="replay-controller-bar" style="display:none; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:6px;">
                     <span class="replay-badge"><i class="fa-solid fa-circle-play"></i> REPLAY SIMULATOR</span>
                     <button class="replay-ctrl-btn" onclick="resetReplayToStart()" title="Jump to Replay Start"><i class="fa-solid fa-backward-fast"></i></button>
                     <button class="replay-ctrl-btn" onclick="stepReplayBackward()" title="Step 1 Bar Backward"><i class="fa-solid fa-backward-step"></i></button>
                     <button class="replay-ctrl-btn" id="btnReplayPlayPause" onclick="toggleReplayPlayPause()" title="Play / Pause Replay"><i class="fa-solid fa-play"></i> Play</button>
                     <button class="replay-ctrl-btn" onclick="stepReplayForward()" title="Step 1 Bar Forward"><i class="fa-solid fa-forward-step"></i></button>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px; flex:1; max-width:320px;">
+                <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:170px; max-width:280px;">
                     <input type="range" id="replayScrubber" min="1" max="100" value="1" class="replay-slider" oninput="onReplayScrubberChange(this.value)">
-                    <span id="replayCounterText" style="font-size:10px; color:#fff; min-width:70px;">Bar 1 / 100</span>
+                    <span id="replayCounterText" style="font-size:10px; color:#fff; min-width:65px;">Bar 1 / 100</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:6px;">
+                <div style="display:flex; align-items:center; gap:5px;">
                     <span style="font-size:10px; color:var(--text-muted);">SPEED:</span>
                     <button class="replay-speed-pill active" onclick="setReplaySpeed(1, this)">1x</button>
                     <button class="replay-speed-pill" onclick="setReplaySpeed(2, this)">2x</button>
                     <button class="replay-speed-pill" onclick="setReplaySpeed(5, this)">5x</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button id="btnReplayHermesStrat" class="replay-ctrl-btn active-strat" onclick="toggleReplayHermesStrategy()" title="Hermes 3.0 Model 2A Auto-Detector & Backtester"><i class="fa-solid fa-brain" style="color:var(--brand-teal);"></i> <span id="replayStratText">Hermes 2A: ON</span></button>
+                    <button id="btnReplayAutoTrade" class="replay-ctrl-btn" onclick="toggleReplayAutoTrade()" title="Auto-Execute 50% MT Orders on Signals"><i class="fa-solid fa-bolt" style="color:#F59E0B;"></i> <span id="replayAutoText">Auto: OFF</span></button>
+                    <button id="btnReplayJournal" class="replay-ctrl-btn replay-journal-pill" onclick="openReplayJournalModal()" title="View Replay Backtest Journal"><i class="fa-solid fa-book-bookmark"></i> Journal (<span id="replayJournalBadgeCount">0</span>)</button>
                     <button class="replay-ctrl-btn" onclick="exitReplayMode()" style="background:rgba(255,75,85,0.2); color:var(--sell-red); border-color:rgba(255,75,85,0.4);" title="Exit Replay"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </div>
@@ -255,6 +260,72 @@
             </div>
 
             <div id="tradingview_chart" onclick="onChartAreaClick(event)" style="position:relative;">
+                <!-- FLOATING HERMES 3.0 MODEL 2A SIGNAL CARD -->
+                <div id="replaySignalHUD" class="replay-signal-card" style="display:none;">
+                    <div class="rsc-header">
+                        <div class="rsc-title-group">
+                            <span id="rscSignalBadge" class="rsc-badge rsc-badge-long">🟢 HERMES 3.0 MODEL 2A • LONG</span>
+                            <span class="rsc-prob-badge">94.8% QUANT PROB</span>
+                        </div>
+                        <button onclick="dismissReplaySignal()" class="rsc-close-btn">&times;</button>
+                    </div>
+                    <div class="rsc-body">
+                        <div class="rsc-metrics-grid">
+                            <div class="rsc-metric">
+                                <span class="rsc-label">50% MT LIMIT ENTRY</span>
+                                <span class="rsc-val val-cyan" id="rscEntryPrice">$0.0000</span>
+                            </div>
+                            <div class="rsc-metric">
+                                <span class="rsc-label">TAKE PROFIT (1:2 R:R)</span>
+                                <span class="rsc-val val-green" id="rscTpPrice">$0.0000 (+14.0% ROE)</span>
+                            </div>
+                            <div class="rsc-metric">
+                                <span class="rsc-label">STOP LOSS (INITIAL)</span>
+                                <span class="rsc-val val-red" id="rscSlPrice">$0.0000 (-14.0% ROE)</span>
+                            </div>
+                            <div class="rsc-metric">
+                                <span class="rsc-label">DISPLACEMENT / WICK</span>
+                                <span class="rsc-val val-gold" id="rscDispWick">+3.20% / 28.5%</span>
+                            </div>
+                        </div>
+                        <div class="rsc-actions">
+                            <button id="btnExecuteReplayTrade" onclick="executeCurrentReplaySignal()" class="rsc-btn rsc-btn-execute">
+                                <i class="fa-solid fa-bolt"></i> Execute Simulated Trade @ 50% MT
+                            </button>
+                            <button onclick="dismissReplaySignal()" class="rsc-btn rsc-btn-skip">
+                                Skip
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FLOATING REPLAY ACTIVE SIMULATED TRADE HUD -->
+                <div id="replayActiveTradeHUD" class="replay-active-hud" style="display:none;">
+                    <div class="rah-header">
+                        <span id="rahSideBadge" class="rah-badge rah-long">LONG 5X (SIMULATED)</span>
+                        <span id="rahStatusBadge" class="rah-status-badge">ACTIVE FILLED</span>
+                        <button onclick="closeReplayTradeManual()" class="rah-close-trade-btn" title="Close Position at Market">Close &times;</button>
+                    </div>
+                    <div class="rah-metrics">
+                        <div><span class="rah-lbl">Entry:</span> <b id="rahEntry">$0.0000</b></div>
+                        <div><span class="rah-lbl">Current:</span> <b id="rahCurrent">$0.0000</b></div>
+                        <div><span class="rah-lbl">Unrealized ROE:</span> <b id="rahRoe" class="val-green">+0.00%</b></div>
+                        <div><span class="rah-lbl">Peak ROI:</span> <b id="rahPeakRoi" class="val-gold">0.00%</b></div>
+                    </div>
+                    <div class="rah-trailing-ladder" id="rahTrailingLadder">
+                        <i class="fa-solid fa-shield-halved"></i> Armor: <span id="rahArmorStatus">Initial Risk Shield (-14% ROE)</span>
+                    </div>
+                </div>
+
+                <!-- FLOATING REPLAY OUTCOME BANNER -->
+                <div id="replayOutcomeBanner" class="replay-outcome-banner" style="display:none;">
+                    <div id="replayOutcomeIcon" class="rob-icon"><i class="fa-solid fa-trophy"></i></div>
+                    <div class="rob-content">
+                        <div id="replayOutcomeTitle" class="rob-title">TAKE PROFIT REACHED!</div>
+                        <div id="replayOutcomeSubtitle" class="rob-subtitle">+14.00% ROE ($+7.00) @ $0.1420</div>
+                    </div>
+                </div>
+
                 <!-- TRADINGVIEW PRICE RANGE / MEASURE TOOL OVERLAY -->
                 <div id="measureToolOverlay" class="measure-tool-overlay" style="display:none;">
                     <svg id="measureToolSvg" class="measure-tool-svg">
@@ -270,8 +341,8 @@
                         <line id="measureLineTop" class="measure-bound-line" x1="0" y1="0" x2="0" y2="0" />
                         <line id="measureLineBottom" class="measure-bound-line" x1="0" y1="0" x2="0" y2="0" />
                         <line id="measureLineCenter" class="measure-center-line" x1="0" y1="0" x2="0" y2="0" />
-                        <circle id="measureHandle1" class="measure-handle" cx="-999" cy="-999" r="7" />
-                        <circle id="measureHandle2" class="measure-handle" cx="-999" cy="-999" r="7" />
+                        <circle id="measureHandle1" class="measure-handle" cx="-999" cy="-999" r="9" style="touch-action:none; cursor:grab;" />
+                        <circle id="measureHandle2" class="measure-handle" cx="-999" cy="-999" r="9" style="touch-action:none; cursor:grab;" />
                     </svg>
                     <!-- Floating Info Badge Pill -->
                     <div id="measureBadge" class="measure-badge" style="display:none;">
@@ -666,6 +737,60 @@
             <i class="fa-solid fa-wallet" style="font-size:16px;"></i>
             <span>Assets</span>
         </a>
+    </div>
+
+    <!-- HERMES 3.0 MODEL 2A REPLAY BACKTEST JOURNAL MODAL -->
+    <div id="replayJournalModal" class="replay-journal-modal" style="display:none;">
+        <div class="rjm-content">
+            <div class="rjm-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-brain" style="color:var(--brand-teal); font-size:18px;"></i>
+                    <span style="font-size:15px; font-weight:800; color:#fff;">Hermes 3.0 Model 2A Replay Backtest Journal</span>
+                </div>
+                <button onclick="closeReplayJournalModal()" class="rjm-close-btn">&times;</button>
+            </div>
+            <div class="rjm-stats-row">
+                <div class="rjm-stat-card">
+                    <span class="rjm-stat-label">TOTAL TRADES</span>
+                    <span class="rjm-stat-val" id="rjmTotalTrades">0</span>
+                </div>
+                <div class="rjm-stat-card">
+                    <span class="rjm-stat-label">WIN RATE</span>
+                    <span class="rjm-stat-val val-green" id="rjmWinRate">0.0%</span>
+                </div>
+                <div class="rjm-stat-card">
+                    <span class="rjm-stat-label">WINS / LOSSES</span>
+                    <span class="rjm-stat-val"><b id="rjmWins" style="color:var(--buy-green);">0</b> / <b id="rjmLosses" style="color:var(--sell-red);">0</b></span>
+                </div>
+                <div class="rjm-stat-card">
+                    <span class="rjm-stat-label">NET ROE RETURN</span>
+                    <span class="rjm-stat-val val-green" id="rjmNetReturn">+0.00%</span>
+                </div>
+            </div>
+            <div class="rjm-table-wrapper">
+                <table class="rjm-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Side</th>
+                            <th>Entry (50% MT)</th>
+                            <th>Exit Price</th>
+                            <th>Outcome</th>
+                            <th>ROE %</th>
+                            <th>P&L ($50 Marg)</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rjmTableBody">
+                        <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No trades simulated yet. Run Bar Replay to trigger Hermes 3.0 setups!</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="rjm-footer">
+                <button onclick="clearReplayJournal()" class="rjm-btn-clear"><i class="fa-solid fa-trash-can"></i> Reset Journal</button>
+                <button onclick="closeReplayJournalModal()" class="rjm-btn-done">Done</button>
+            </div>
+        </div>
     </div>
 
     <script src="/static/js/nexus.js"></script>

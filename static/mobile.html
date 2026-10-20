@@ -13,6 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- TradingView Lightweight Charts & Nexus Styles -->
+    <link rel="stylesheet" href="/static/css/nexus.css">
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
     <!-- PWA & Mobile App Support -->
     <meta name="theme-color" content="#080b11">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2063,19 +2067,219 @@
         <div class="hero-wallet-card" style="padding: 12px 14px; margin-bottom: 10px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:16px; font-weight:900;" id="tradeSymbol">DOGEUSDT</span>
-                    <span class="bpc-tag-short">SHORT ONLY</span>
+                    <span style="font-size:16px; font-weight:900;" id="tradeSymbol">BTCUSDT</span>
+                    <span class="bpc-tag-short">HERMES 3.0 2A</span>
                     <span class="bpc-tag-isolated">5x ISOLATED</span>
                 </div>
-                <div style="text-align:right;">
-                    <span style="font-size:15px; font-weight:900; font-family:var(--font-mono);" id="tradeMarkPrice">$0.2145</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:15px; font-weight:900; font-family:var(--font-mono);" id="tradeMarkPrice">$0.00</span>
+                    <a href="/trade" class="bpc-tag-isolated" style="text-decoration:none; background:rgba(0,223,192,0.18); border-color:var(--brand-teal); color:var(--brand-teal); font-weight:800; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-expand"></i> Fullscreen
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Embedded Native TradingView Chart -->
-        <div style="height: 340px; border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom:14px; background:#0B0E14;" id="tvChartContainer">
-            <iframe id="tvIframe" style="width:100%; height:100%; border:none;" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=BINANCE%3ADOGEUSDT&interval=240&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=080B11&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=localhost"></iframe>
+        <!-- SUPERCHARGED HERMES 3.0 CHART & REPLAY BACKTESTER SUITE -->
+        <div class="chart-container" style="position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom:12px; background:#0B0E14;">
+            
+            <!-- Controls Toolbar -->
+            <div class="chart-controls-wrapper" style="padding:6px 8px; background:#0F1420; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <button class="tf-btn m-tf-btn active" onclick="HermesMobileChart.setTimeframe('15m', this)">15m</button>
+                    <button class="tf-btn m-tf-btn" onclick="HermesMobileChart.setTimeframe('1h', this)">1H</button>
+                    <button class="tf-btn m-tf-btn" onclick="HermesMobileChart.setTimeframe('4h', this)">4H</button>
+                    <button class="tf-btn m-tf-btn" onclick="HermesMobileChart.setTimeframe('1d', this)">1D</button>
+                    <button class="tf-btn m-tf-btn" onclick="HermesMobileChart.setTimeframe('1w', this)">1W</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <button id="btnMobileReplay" class="chart-tool-btn" onclick="HermesMobileChart.toggleReplay()" title="Free Bar Replay Simulator">
+                        <i class="fa-solid fa-backward-step" style="color:#F59E0B;"></i> Replay
+                    </button>
+                    <button id="btnMobileMeasure" class="chart-tool-btn" onclick="HermesMobileChart.toggleMeasure()" title="Measure Ruler Tool">
+                        <i class="fa-solid fa-ruler-combined" style="color:#38BDF8;"></i> Ruler
+                    </button>
+                    <button class="chart-tool-btn replay-journal-pill" onclick="HermesMobileChart.openJournal()" title="Replay Backtest Journal">
+                        <i class="fa-solid fa-book-bookmark"></i> (<span id="mobileJournalBadgeCount">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <!-- OHLC Crosshair Strip -->
+            <div class="chart-ohlc-bar" style="padding:4px 8px; font-size:10px; display:flex; gap:6px; flex-wrap:wrap; background:rgba(0,0,0,0.3); border-bottom:1px solid rgba(255,255,255,0.04);">
+                <span>O: <b id="mOhlcO" style="color:#fff;">--</b></span>
+                <span>H: <b id="mOhlcH" style="color:#fff;">--</b></span>
+                <span>L: <b id="mOhlcL" style="color:#fff;">--</b></span>
+                <span>C: <b id="mOhlcC" style="color:#fff;">--</b></span>
+                <span>CHG: <b id="mOhlcChg" style="color:#00C087;">--</b></span>
+            </div>
+
+            <!-- REPLAY FLOATING CONTROLLER BAR -->
+            <div id="mobileReplayBar" class="replay-controller-bar" style="display:none; flex-wrap:wrap; gap:6px; padding:6px 8px;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <button class="replay-ctrl-btn" onclick="HermesMobileChart.resetStart()" title="Start"><i class="fa-solid fa-backward-fast"></i></button>
+                    <button class="replay-ctrl-btn" onclick="HermesMobileChart.stepBackward()" title="Step Back"><i class="fa-solid fa-backward-step"></i></button>
+                    <button class="replay-ctrl-btn" id="btnMobileReplayPlay" onclick="HermesMobileChart.togglePlay()"><i class="fa-solid fa-play"></i> Play</button>
+                    <button class="replay-ctrl-btn" onclick="HermesMobileChart.stepForward()" title="Step Forward"><i class="fa-solid fa-forward-step"></i></button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:140px;">
+                    <input type="range" id="mReplayScrubber" min="1" max="100" value="1" class="replay-slider" oninput="HermesMobileChart.onScrubberChange(this.value)">
+                    <span id="mReplayCounterText" style="font-size:9.5px; color:#fff; min-width:55px;">Bar 1/1</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <button class="replay-speed-pill m-speed-pill active" onclick="HermesMobileChart.setSpeed(1, this)">1x</button>
+                    <button class="replay-speed-pill m-speed-pill" onclick="HermesMobileChart.setSpeed(2, this)">2x</button>
+                    <button class="replay-speed-pill m-speed-pill" onclick="HermesMobileChart.setSpeed(5, this)">5x</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px; margin-left:auto;">
+                    <button id="btnMobileHermesStrat" class="replay-ctrl-btn active-strat" onclick="HermesMobileChart.toggleStrategy()"><i class="fa-solid fa-brain" style="color:var(--brand-teal);"></i> <span id="mReplayStratText">Hermes 2A: ON</span></button>
+                    <button id="btnMobileAutoTrade" class="replay-ctrl-btn" onclick="HermesMobileChart.toggleAutoTrade()"><i class="fa-solid fa-bolt" style="color:#F59E0B;"></i> <span id="mReplayAutoText">Auto: OFF</span></button>
+                    <button class="replay-ctrl-btn" onclick="HermesMobileChart.exitReplay()" style="background:rgba(255,75,85,0.2); color:var(--sell-red); border-color:rgba(255,75,85,0.4);"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <!-- Chart Canvas Container -->
+            <div id="mobileChartCanvas" style="width:100%; height:340px; position:relative;">
+                
+                <!-- SVG Ruler Measure Overlay -->
+                <div id="mobileMeasureOverlay" class="measure-tool-overlay" style="display:none;">
+                    <svg id="mMeasureSvg" class="measure-tool-svg">
+                        <rect id="mMeasureBox" class="measure-box" x="0" y="0" width="0" height="0" />
+                        <line id="mMeasureLineTop" class="measure-bound-line" x1="0" y1="0" x2="0" y2="0" />
+                        <line id="mMeasureLineBottom" class="measure-bound-line" x1="0" y1="0" x2="0" y2="0" />
+                        <line id="mMeasureLineCenter" class="measure-center-line" x1="0" y1="0" x2="0" y2="0" />
+                        <circle id="mMeasureHandle1" class="measure-handle" cx="-999" cy="-999" r="9" style="touch-action:none; cursor:grab;" />
+                        <circle id="mMeasureHandle2" class="measure-handle" cx="-999" cy="-999" r="9" style="touch-action:none; cursor:grab;" />
+                    </svg>
+                    <div id="mMeasureBadge" class="measure-badge" style="display:none;">
+                        <span id="mMeasureBadgeText">-0.00 (-0.00%)</span>
+                    </div>
+                    <div id="mMeasureActionBar" class="measure-action-bar" style="display:none;">
+                        <button type="button" class="measure-action-btn" onclick="HermesMobileChart.clearMeasure()" title="Delete">
+                            <i class="fa-solid fa-trash-can" style="color:#FF4B55;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Floating Hermes 3.0 Signal Card -->
+                <div id="mobileReplaySignalCard" class="replay-signal-card" style="display:none;">
+                    <div class="rsc-header">
+                        <div class="rsc-title-group">
+                            <span id="mRscBadge" class="rsc-badge rsc-badge-long">🟢 HERMES 3.0 MODEL 2A • LONG</span>
+                            <span class="rsc-prob-badge">94.8% QUANT</span>
+                        </div>
+                        <button onclick="HermesMobileChart.dismissSignal()" class="rsc-close-btn">&times;</button>
+                    </div>
+                    <div class="rsc-body">
+                        <div class="rsc-metrics-grid">
+                            <div class="rsc-metric">
+                                <span class="rsc-label">50% MT LIMIT ENTRY</span>
+                                <span class="rsc-val val-cyan" id="mRscEntry">$0.0000</span>
+                            </div>
+                            <div class="rsc-metric">
+                                <span class="rsc-label">TAKE PROFIT (+14% ROE)</span>
+                                <span class="rsc-val val-green" id="mRscTp">$0.0000</span>
+                            </div>
+                            <div class="rsc-metric">
+                                <span class="rsc-label">STOP LOSS (-14% ROE)</span>
+                                <span class="rsc-val val-red" id="mRscSl">$0.0000</span>
+                            </div>
+                            <div class="rsc-metric">
+                                <span class="rsc-label">DISPLACEMENT / WICK</span>
+                                <span class="rsc-val val-gold" id="mRscDisp">+3.20% / 28%</span>
+                            </div>
+                        </div>
+                        <div class="rsc-actions">
+                            <button id="btnMobileExecuteSignal" onclick="HermesMobileChart.executeSignal()" class="rsc-btn rsc-btn-execute">
+                                <i class="fa-solid fa-bolt"></i> Execute Simulated Trade @ 50% MT
+                            </button>
+                            <button onclick="HermesMobileChart.dismissSignal()" class="rsc-btn rsc-btn-skip">Skip</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Active Trade Simulation HUD -->
+                <div id="mobileReplayActiveHUD" class="replay-active-hud" style="display:none; max-width:260px;">
+                    <div class="rah-header">
+                        <span id="mRahSide" class="rah-badge rah-long">LONG 5X (SIM)</span>
+                        <span class="rah-status-badge">FILLED</span>
+                        <button onclick="HermesMobileChart.closeTrade()" class="rah-close-trade-btn">Close &times;</button>
+                    </div>
+                    <div class="rah-metrics">
+                        <div><span class="rah-lbl">Entry:</span> <b id="mRahEntry">$0.00</b></div>
+                        <div><span class="rah-lbl">Mark:</span> <b id="mRahCur">$0.00</b></div>
+                        <div><span class="rah-lbl">ROE:</span> <b id="mRahRoe" class="val-green">+0.00%</b></div>
+                        <div><span class="rah-lbl">Peak:</span> <b id="mRahPeak" class="val-gold">0.0%</b></div>
+                    </div>
+                    <div class="rah-trailing-ladder" id="mRahArmor">
+                        Initial Shield (-14% ROE)
+                    </div>
+                </div>
+
+                <!-- Floating Outcome Banner -->
+                <div id="mobileReplayBanner" class="replay-outcome-banner" style="display:none;">
+                    <div id="mRobIcon" class="rob-icon"><i class="fa-solid fa-trophy"></i></div>
+                    <div class="rob-content">
+                        <div id="mRobTitle" class="rob-title">TAKE PROFIT REACHED!</div>
+                        <div id="mRobSubtitle" class="rob-subtitle">+14.00% ROE</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Replay Backtest Journal Modal -->
+        <div id="mobileJournalModal" class="replay-journal-modal" style="display:none;">
+            <div class="rjm-content">
+                <div class="rjm-header">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-brain" style="color:var(--brand-teal); font-size:18px;"></i>
+                        <span style="font-size:15px; font-weight:800; color:#fff;">Hermes 3.0 Model 2A Backtest Journal</span>
+                    </div>
+                    <button onclick="HermesMobileChart.closeJournal()" class="rjm-close-btn">&times;</button>
+                </div>
+                <div class="rjm-stats-row">
+                    <div class="rjm-stat-card">
+                        <span class="rjm-stat-label">TOTAL TRADES</span>
+                        <span class="rjm-stat-val" id="mRjmTotal">0</span>
+                    </div>
+                    <div class="rjm-stat-card">
+                        <span class="rjm-stat-label">WIN RATE</span>
+                        <span class="rjm-stat-val val-green" id="mRjmWinRate">0.0%</span>
+                    </div>
+                    <div class="rjm-stat-card">
+                        <span class="rjm-stat-label">WINS / LOSSES</span>
+                        <span class="rjm-stat-val"><b id="mRjmWins" style="color:var(--buy-green);">0</b> / <b id="mRjmLosses" style="color:var(--sell-red);">0</b></span>
+                    </div>
+                    <div class="rjm-stat-card">
+                        <span class="rjm-stat-label">NET ROE RETURN</span>
+                        <span class="rjm-stat-val val-green" id="mRjmNet">+0.00%</span>
+                    </div>
+                </div>
+                <div class="rjm-table-wrapper">
+                    <table class="rjm-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Side</th>
+                                <th>Entry</th>
+                                <th>Exit</th>
+                                <th>Result</th>
+                                <th>ROE %</th>
+                                <th>P&L</th>
+                                <th>Bars</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mRjmTableBody">
+                            <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No trades simulated yet. Run Bar Replay to trigger Hermes 3.0 setups!</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="rjm-footer">
+                    <button onclick="HermesMobileChart.clearJournal()" class="rjm-btn-clear"><i class="fa-solid fa-trash-can"></i> Reset</button>
+                    <button onclick="HermesMobileChart.closeJournal()" class="rjm-btn-done">Done</button>
+                </div>
+            </div>
         </div>
 
         <!-- Execution Desk & Rules -->
@@ -2242,6 +2446,16 @@
             if (navIndex !== -1) {
                 document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
             }
+            
+            if (tabId === 'trade') {
+                if (window.HermesMobileChart) {
+                    const currentSym = document.getElementById('tradeSymbol') ? document.getElementById('tradeSymbol').innerText : 'BTCUSDT';
+                    setTimeout(() => {
+                        HermesMobileChart.init('mobileChartCanvas', currentSym || 'BTCUSDT');
+                    }, 50);
+                }
+            }
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -2509,11 +2723,10 @@
         function openRadarChart(symbol, timeframe) {
             if (!symbol) return;
             openCoinTrade(symbol);
-            const tf = (timeframe || '4h').toLowerCase();
-            const interval = tf === '1h' ? '60' : '240';
-            const iframe = document.getElementById('tvIframe');
-            if (iframe) {
-                iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=BINANCE%3A${symbol}&interval=${interval}&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=080B11&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=en`;
+            const tf = (timeframe || '15m').toLowerCase();
+            if (window.HermesMobileChart) {
+                HermesMobileChart.setSymbol(symbol);
+                HermesMobileChart.setTimeframe(tf);
             }
         }
 
@@ -2933,9 +3146,8 @@
                 }
             }
 
-            const iframe = document.getElementById('tvIframe');
-            if (iframe) {
-                iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=BINANCE%3A${symbol}&interval=240&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=080B11&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=en`;
+            if (window.HermesMobileChart) {
+                HermesMobileChart.setSymbol(symbol);
             }
             switchTab('trade');
         }
@@ -3313,6 +3525,15 @@
         setInterval(fetchMarketsData, 5000);
         setInterval(fetchPositions, 3000);
         setInterval(fetchTradesHistory, 6000);
+    </script>
+    <script src="/static/js/hermes_chart_replay.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const activeTab = document.querySelector('.tab-panel.active');
+            if (activeTab && activeTab.id === 'tab-trade' && window.HermesMobileChart) {
+                HermesMobileChart.init('mobileChartCanvas', 'BTCUSDT');
+            }
+        });
     </script>
 </body>
 </html>

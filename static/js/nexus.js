@@ -415,7 +415,15 @@ function updateOhlcHeader(bar) {
     }
 }
 
-// ----------------- FREE BAR REPLAY SIMULATOR -----------------
+// ----------------- FREE BAR REPLAY & HERMES 3.0 MODEL 2A BACKTEST ENGINE -----------------
+
+let isHermesReplayStratActive = true;
+let isReplayAutoTrade = false;
+let replaySimTrade = null; // { active, side, entryPrice, slPrice, hardSlPrice, tpPrice, peakRoi, currentStep, lockedRoi, durationBars, filled }
+let replayCurrentSetup = null;
+let replaySimJournal = []; // [ { id, symbol, side, entryPrice, exitPrice, outcome, roePct, pnlUsdt, durationBars, exitTime, lockedRoi } ]
+let replayPriceLines = { entry: null, tp: null, sl: null, trailing: null };
+let bannerTimeout = null;
 
 function toggleReplayMode() {
     if (isReplayMode) {
@@ -432,7 +440,7 @@ function startReplayMode() {
     }
     isReplayMode = true;
     replayCandles = [...currentFullCandles];
-    replayIndex = Math.max(15, replayCandles.length - 35); // Start 35 bars back
+    replayIndex = Math.max(25, replayCandles.length - 45); // Start 45 bars back for rich backtesting
     
     const bar = document.getElementById("replayControllerBar");
     if (bar) bar.style.display = "flex";
@@ -441,7 +449,7 @@ function startReplayMode() {
 
     const scrubber = document.getElementById("replayScrubber");
     if (scrubber) {
-        scrubber.min = 15;
+        scrubber.min = 25;
         scrubber.max = replayCandles.length;
         scrubber.value = replayIndex;
     }
@@ -451,7 +459,20 @@ function startReplayMode() {
 function updateReplayDisplay() {
     const visible = replayCandles.slice(0, replayIndex);
     renderIndicators(visible);
-    if (visible.length > 0) updateOhlcHeader(visible[visible.length - 1]);
+    if (visible.length > 0) {
+        const lastBar = visible[visible.length - 1];
+        updateOhlcHeader(lastBar);
+        
+        // Strategy Setup Evaluation on visible bars
+        if (isHermesReplayStratActive) {
+            checkHermes30SetupOnReplay(visible);
+        }
+        
+        // Active Trade Simulation Evaluation
+        if (replaySimTrade && replaySimTrade.active) {
+            evaluateActiveReplaySimTrade(lastBar);
+        }
+    }
     
     const cnt = document.getElementById("replayCounterText");
     if (cnt) cnt.innerText = `Bar ${replayIndex} / ${replayCandles.length}`;
@@ -470,7 +491,7 @@ function toggleReplayPlayPause() {
         }
     } else {
         if (replayIndex >= replayCandles.length) {
-            replayIndex = Math.max(15, replayCandles.length - 35);
+            replayIndex = Math.max(25, replayCandles.length - 45);
         }
         if (btn) {
             btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
@@ -492,24 +513,37 @@ function stepReplayForward() {
             });
         }
         updateOhlcHeader(nextCandle);
+        
         const cnt = document.getElementById("replayCounterText");
         if (cnt) cnt.innerText = `Bar ${replayIndex} / ${replayCandles.length}`;
         const scrubber = document.getElementById("replayScrubber");
         if (scrubber) scrubber.value = replayIndex;
+        
+        const visible = replayCandles.slice(0, replayIndex);
+        
+        // Hermes 3.0 Model 2A Check
+        if (isHermesReplayStratActive) {
+            checkHermes30SetupOnReplay(visible);
+        }
+        
+        // Live Simulated Trade Evaluation
+        if (replaySimTrade && replaySimTrade.active) {
+            evaluateActiveReplaySimTrade(nextCandle);
+        }
     } else {
         toggleReplayPlayPause();
     }
 }
 
 function stepReplayBackward() {
-    if (replayIndex > 15) {
+    if (replayIndex > 25) {
         replayIndex--;
         updateReplayDisplay();
     }
 }
 
 function resetReplayToStart() {
-    replayIndex = Math.max(15, replayCandles.length - 35);
+    replayIndex = Math.max(25, replayCandles.length - 45);
     updateReplayDisplay();
 }
 
@@ -531,6 +565,37 @@ function setReplaySpeed(speed, btn) {
     }
 }
 
+function toggleReplayHermesStrategy() {
+    isHermesReplayStratActive = !isHermesReplayStratActive;
+    const btn = document.getElementById("btnReplayHermesStrat");
+    const txt = document.getElementById("replayStratText");
+    if (btn) {
+        if (isHermesReplayStratActive) {
+            btn.classList.add("active-strat");
+            if (txt) txt.innerText = "Hermes 2A: ON";
+        } else {
+            btn.classList.remove("active-strat");
+            if (txt) txt.innerText = "Hermes 2A: OFF";
+            dismissReplaySignal();
+        }
+    }
+}
+
+function toggleReplayAutoTrade() {
+    isReplayAutoTrade = !isReplayAutoTrade;
+    const btn = document.getElementById("btnReplayAutoTrade");
+    const txt = document.getElementById("replayAutoText");
+    if (btn) {
+        if (isReplayAutoTrade) {
+            btn.classList.add("active-auto");
+            if (txt) txt.innerText = "Auto: ON";
+        } else {
+            btn.classList.remove("active-auto");
+            if (txt) txt.innerText = "Auto: OFF";
+        }
+    }
+}
+
 function exitReplayMode() {
     if (replayTimer) {
         clearInterval(replayTimer);
@@ -546,11 +611,651 @@ function exitReplayMode() {
         playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
         playBtn.classList.remove('active-play');
     }
+    dismissReplaySignal();
+    clearReplayChartPriceLines();
+    const activeHud = document.getElementById("replayActiveTradeHUD");
+    if (activeHud) activeHud.style.display = "none";
+    
     if (candleSeries && currentFullCandles) {
         renderIndicators(currentFullCandles);
         if (currentFullCandles.length > 0) updateOhlcHeader(currentFullCandles[currentFullCandles.length - 1]);
     }
 }
+
+// ----------------- HERMES 3.0 MODEL 2A DETECTION ENGINE -----------------
+
+function checkHermes30SetupOnReplay(candles) {
+    if (!candles || candles.length < 25) return;
+    
+    // Don't show new signal if trade is currently active
+    if (replaySimTrade && replaySimTrade.active) {
+        dismissReplaySignal();
+        return;
+    }
+    
+    const setup = detectHermes30Setup(candles);
+    if (setup) {
+        // If this is a fresh setup or hasn't been executed
+        if (!replayCurrentSetup || replayCurrentSetup.candleIndex !== setup.candleIndex || replayCurrentSetup.side !== setup.side) {
+            replayCurrentSetup = setup;
+            showReplaySignalCard(setup);
+            playInstitutionalChime("signal");
+            
+            // Auto execute if enabled
+            if (isReplayAutoTrade) {
+                executeCurrentReplaySignal();
+            }
+        }
+    } else {
+        // Only dismiss if the current setup is more than 3 bars old
+        if (replayCurrentSetup && (candles.length - 1 - replayCurrentSetup.candleIndex > 4)) {
+            dismissReplaySignal();
+            replayCurrentSetup = null;
+        }
+    }
+}
+
+function detectHermes30Setup(candles) {
+    const n = candles.length;
+    const curr = candles[n - 1];
+    
+    let minDisp = 0.025; // 2.5% default
+    if (currentInterval === '15m') minDisp = 0.015;
+    else if (currentInterval === '1h') minDisp = 0.022;
+    else if (currentInterval === '4h' || currentInterval === '1d') minDisp = 0.038;
+    
+    const lookback = Math.min(35, n - 4);
+    const startIdx = Math.max(0, n - lookback);
+    
+    // 1. BULLISH (BUY / LONG) MODEL 2A CHECK
+    let originLow = Infinity;
+    let originIdx = -1;
+    for (let i = startIdx; i < n - 6; i++) {
+        if (candles[i].low < originLow) {
+            originLow = candles[i].low;
+            originIdx = i;
+        }
+    }
+    
+    if (originIdx !== -1 && originLow > 0) {
+        let peakHigh = -Infinity;
+        let peakIdx = -1;
+        for (let i = originIdx + 2; i < n - 2; i++) {
+            if (candles[i].high > peakHigh) {
+                peakHigh = candles[i].high;
+                peakIdx = i;
+            }
+        }
+        
+        if (peakIdx > originIdx + 2) {
+            const gain = (peakHigh - originLow) / originLow;
+            if (gain >= minDisp) {
+                const idmLow = candles[peakIdx - 1].low;
+                let bestMid = -1;
+                let maxR = 0;
+                for (let mid = originIdx + 1; mid < peakIdx; mid++) {
+                    const cMid = candles[mid];
+                    const fib = (cMid.low - originLow) / (peakHigh - originLow);
+                    if (fib >= 0.28 && fib <= 0.72) {
+                        const r = cMid.high - cMid.low;
+                        const hasFvg = (mid + 1 < n && mid - 1 >= 0) ? (candles[mid + 1].low > candles[mid - 1].high) : true;
+                        if (hasFvg && r > maxR) {
+                            maxR = r;
+                            bestMid = mid;
+                        }
+                    }
+                }
+                
+                if (bestMid !== -1) {
+                    const decC = candles[bestMid - 1] || candles[bestMid];
+                    const decTop = Math.max(decC.open, decC.close);
+                    const decBot = decC.low;
+                    const mt = (decTop + decBot) / 2.0;
+                    
+                    const sweptIdm = candles.slice(peakIdx, n).some(c => c.low < idmLow);
+                    const isTapping = (curr.low <= mt * 1.0025 && curr.close >= mt * 0.995);
+                    const cRange = curr.high - curr.low;
+                    const lowerWick = Math.min(curr.open, curr.close) - curr.low;
+                    const wickRatio = cRange > 0 ? (lowerWick / cRange) : 0;
+                    
+                    if (sweptIdm && isTapping && wickRatio >= 0.18) {
+                        const tpPrice = mt * (1.0 + 0.028); // +2.80% price move = +14% ROE @ 5x
+                        const softSlPrice = mt * (1.0 - 0.015);
+                        const hardSlPrice = mt * (1.0 - 0.028);
+                        return {
+                            symbol: currentSymbol,
+                            side: "BUY",
+                            type: "LONG",
+                            entryPrice: mt,
+                            obHigh: decTop,
+                            obLow: decBot,
+                            tpPrice: tpPrice,
+                            softSlPrice: softSlPrice,
+                            hardSlPrice: hardSlPrice,
+                            displacementPct: (gain * 100).toFixed(2),
+                            wickRatioPct: (wickRatio * 100).toFixed(1),
+                            candleIndex: n - 1,
+                            candleTime: curr.time
+                        };
+                    }
+                }
+            }
+        }
+    }
+    
+    // 2. BEARISH (SELL / SHORT) MODEL 2A CHECK
+    let originHigh = -Infinity;
+    let originHighIdx = -1;
+    for (let i = startIdx; i < n - 6; i++) {
+        if (candles[i].high > originHigh) {
+            originHigh = candles[i].high;
+            originHighIdx = i;
+        }
+    }
+    
+    if (originHighIdx !== -1 && originHigh > 0) {
+        let troughLow = Infinity;
+        let troughIdx = -1;
+        for (let i = originHighIdx + 2; i < n - 2; i++) {
+            if (candles[i].low < troughLow) {
+                troughLow = candles[i].low;
+                troughIdx = i;
+            }
+        }
+        
+        if (troughIdx > originHighIdx + 2) {
+            const drop = (originHigh - troughLow) / originHigh;
+            if (drop >= minDisp) {
+                const idmHigh = candles[troughIdx - 1].high;
+                let bestMid = -1;
+                let maxR = 0;
+                for (let mid = originHighIdx + 1; mid < troughIdx; mid++) {
+                    const cMid = candles[mid];
+                    const fib = (originHigh - cMid.high) / (originHigh - troughLow);
+                    if (fib >= 0.28 && fib <= 0.72) {
+                        const r = cMid.high - cMid.low;
+                        const hasBearFvg = (mid + 1 < n && mid - 1 >= 0) ? (candles[mid + 1].high < candles[mid - 1].low) : true;
+                        if (hasBearFvg && r > maxR) {
+                            maxR = r;
+                            bestMid = mid;
+                        }
+                    }
+                }
+                
+                if (bestMid !== -1) {
+                    const decC = candles[bestMid - 1] || candles[bestMid];
+                    const decTop = decC.high;
+                    const decBot = Math.min(decC.open, decC.close);
+                    const mt = (decTop + decBot) / 2.0;
+                    
+                    const sweptIdm = candles.slice(troughIdx, n).some(c => c.high > idmHigh);
+                    const isTapping = (curr.high >= mt * 0.9975 && curr.close <= mt * 1.005);
+                    const cRange = curr.high - curr.low;
+                    const upperWick = curr.high - Math.max(curr.open, curr.close);
+                    const wickRatio = cRange > 0 ? (upperWick / cRange) : 0;
+                    
+                    if (sweptIdm && isTapping && wickRatio >= 0.18) {
+                        const tpPrice = mt * (1.0 - 0.028); // -2.80% move = +14.0% ROE @ 5x
+                        const softSlPrice = mt * (1.0 + 0.015);
+                        const hardSlPrice = mt * (1.0 + 0.028);
+                        return {
+                            symbol: currentSymbol,
+                            side: "SELL",
+                            type: "SHORT",
+                            entryPrice: mt,
+                            obHigh: decTop,
+                            obLow: decBot,
+                            tpPrice: tpPrice,
+                            softSlPrice: softSlPrice,
+                            hardSlPrice: hardSlPrice,
+                            displacementPct: (drop * 100).toFixed(2),
+                            wickRatioPct: (wickRatio * 100).toFixed(1),
+                            candleIndex: n - 1,
+                            candleTime: curr.time
+                        };
+                    }
+                }
+            }
+        }
+    }
+    
+    return null;
+}
+
+function showReplaySignalCard(setup) {
+    const card = document.getElementById("replaySignalHUD");
+    if (!card) return;
+    
+    const isLong = setup.side === "BUY";
+    const badge = document.getElementById("rscSignalBadge");
+    if (badge) {
+        badge.className = `rsc-badge ${isLong ? 'rsc-badge-long' : 'rsc-badge-short'}`;
+        badge.innerHTML = isLong 
+            ? '<i class="fa-solid fa-arrow-trend-up"></i> HERMES 3.0 MODEL 2A • LONG BUY' 
+            : '<i class="fa-solid fa-arrow-trend-down"></i> HERMES 3.0 MODEL 2A • SHORT SELL';
+    }
+    
+    const ep = document.getElementById("rscEntryPrice");
+    if (ep) ep.innerText = `$${setup.entryPrice.toFixed(4)}`;
+    const tp = document.getElementById("rscTpPrice");
+    if (tp) tp.innerText = `$${setup.tpPrice.toFixed(4)} (+14% ROE)`;
+    const sl = document.getElementById("rscSlPrice");
+    if (sl) sl.innerText = `$${setup.hardSlPrice.toFixed(4)} (-14% ROE)`;
+    const dw = document.getElementById("rscDispWick");
+    if (dw) dw.innerText = `+${setup.displacementPct}% / ${setup.wickRatioPct}% Wick`;
+    
+    const btn = document.getElementById("btnExecuteReplayTrade");
+    if (btn) {
+        btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Execute Simulated ${isLong ? 'LONG BUY' : 'SHORT SELL'} @ 50% MT`;
+    }
+    
+    card.style.display = "block";
+}
+
+function dismissReplaySignal() {
+    const card = document.getElementById("replaySignalHUD");
+    if (card) card.style.display = "none";
+}
+
+// ----------------- INTERACTIVE SIMULATION & STEPPED TRAILING SL -----------------
+
+function executeCurrentReplaySignal() {
+    if (!replayCurrentSetup) return;
+    const setup = replayCurrentSetup;
+    
+    replaySimTrade = {
+        active: true,
+        symbol: setup.symbol,
+        side: setup.side,
+        entryPrice: setup.entryPrice,
+        tpPrice: setup.tpPrice,
+        slPrice: setup.hardSlPrice,
+        hardSlPrice: setup.hardSlPrice,
+        softSlPrice: setup.softSlPrice,
+        peakRoi: 0.0,
+        lockedRoi: 0.0,
+        currentStep: 0,
+        durationBars: 0,
+        filled: true, // filled at MT tap
+        fillPrice: setup.entryPrice,
+        entryTime: setup.candleTime
+    };
+    
+    dismissReplaySignal();
+    updateReplayChartPriceLines();
+    renderReplayActiveTradeHUD();
+    showOutcomeBanner("⚡ ORDER EXECUTED", `${setup.side === 'BUY' ? 'LONG' : 'SHORT'} 5X Filled @ $${setup.entryPrice.toFixed(4)} (50% MT)`, "info");
+    playInstitutionalChime("shield");
+}
+
+function updateReplayChartPriceLines() {
+    clearReplayChartPriceLines();
+    if (!candleSeries || !replaySimTrade) return;
+    
+    const trade = replaySimTrade;
+    try {
+        replayPriceLines.entry = candleSeries.createPriceLine({
+            price: trade.entryPrice,
+            color: '#00DFC0',
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Dashed,
+            axisLabelVisible: true,
+            title: '50% MT ENTRY'
+        });
+        
+        replayPriceLines.tp = candleSeries.createPriceLine({
+            price: trade.tpPrice,
+            color: '#00C087',
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Solid,
+            axisLabelVisible: true,
+            title: 'TP (+14% ROE)'
+        });
+        
+        const isTrailing = (trade.lockedRoi || 0) > 0;
+        replayPriceLines.sl = candleSeries.createPriceLine({
+            price: trade.slPrice,
+            color: isTrailing ? '#FFB800' : '#FF4B55',
+            lineWidth: 2,
+            lineStyle: isTrailing ? LightweightCharts.LineStyle.Solid : LightweightCharts.LineStyle.Dashed,
+            axisLabelVisible: true,
+            title: isTrailing ? `ARMOR SL (+${trade.lockedRoi.toFixed(1)}% ROI)` : 'STOP LOSS (-14% ROE)'
+        });
+    } catch(e) {}
+}
+
+function clearReplayChartPriceLines() {
+    if (!candleSeries) return;
+    try {
+        if (replayPriceLines.entry) candleSeries.removePriceLine(replayPriceLines.entry);
+        if (replayPriceLines.tp) candleSeries.removePriceLine(replayPriceLines.tp);
+        if (replayPriceLines.sl) candleSeries.removePriceLine(replayPriceLines.sl);
+        if (replayPriceLines.trailing) candleSeries.removePriceLine(replayPriceLines.trailing);
+    } catch(e) {}
+    replayPriceLines = { entry: null, tp: null, sl: null, trailing: null };
+}
+
+function evaluateActiveReplaySimTrade(candle) {
+    if (!replaySimTrade || !replaySimTrade.active) return;
+    
+    const trade = replaySimTrade;
+    const isLong = trade.side === "BUY" || trade.side === "LONG";
+    const leverage = 5.0;
+    trade.durationBars = (trade.durationBars || 0) + 1;
+    
+    const barHigh = candle.high;
+    const barLow = candle.low;
+    const barClose = candle.close;
+    
+    // Calculate Current Peak ROI
+    let currentHighRoi = isLong 
+        ? ((barHigh - trade.entryPrice) / trade.entryPrice) * 100 * leverage
+        : ((trade.entryPrice - barLow) / trade.entryPrice) * 100 * leverage;
+    
+    if (currentHighRoi > trade.peakRoi) {
+        trade.peakRoi = currentHighRoi;
+    }
+    
+    // Live Bar Close ROE %
+    const currRoe = isLong
+        ? ((barClose - trade.entryPrice) / trade.entryPrice) * 100 * leverage
+        : ((trade.entryPrice - barClose) / trade.entryPrice) * 100 * leverage;
+    trade.currRoe = currRoe;
+    
+    // STEPPED TRAILING SL LADDER (+5% -> +1%, +9.5% -> +5%, +14.5% -> +10%)
+    let targetLockedRoi = trade.lockedRoi || 0;
+    let targetStep = trade.currentStep || 0;
+    
+    if (trade.peakRoi >= 5.0 && targetLockedRoi < 1.0) {
+        targetLockedRoi = 1.0;
+        targetStep = 1;
+    }
+    if (trade.peakRoi >= 9.5 && targetLockedRoi < 5.0) {
+        targetLockedRoi = 5.0;
+        targetStep = 2;
+    }
+    if (trade.peakRoi >= 14.5 && targetLockedRoi < 10.0) {
+        targetLockedRoi = 10.0;
+        targetStep = 3;
+    }
+    if (trade.peakRoi >= 19.5 && targetLockedRoi < 15.0) {
+        targetLockedRoi = 15.0;
+        targetStep = 4;
+    }
+    if (trade.peakRoi >= 24.5 && targetLockedRoi < 20.0) {
+        targetLockedRoi = 20.0;
+        targetStep = 5;
+    }
+    
+    if (targetLockedRoi > (trade.lockedRoi || 0)) {
+        trade.lockedRoi = targetLockedRoi;
+        trade.currentStep = targetStep;
+        
+        const spotShift = (targetLockedRoi / 100.0) / leverage;
+        trade.slPrice = isLong 
+            ? trade.entryPrice * (1.0 + spotShift)
+            : trade.entryPrice * (1.0 - spotShift);
+        
+        updateReplayChartPriceLines();
+        renderReplayActiveTradeHUD();
+        showOutcomeBanner(`🛡️ PROFIT ARMOR STEP ${targetStep}`, `SL Raised to +${targetLockedRoi.toFixed(1)}% ROI Protected`, "shield");
+        playInstitutionalChime("shield");
+    }
+    
+    // CHECK TAKE PROFIT HIT (+14.0% ROE)
+    const tpHit = isLong ? (barHigh >= trade.tpPrice) : (barLow <= trade.tpPrice);
+    if (tpHit) {
+        resolveReplayTrade("TAKE_PROFIT", trade.tpPrice, +14.0, candle);
+        return;
+    }
+    
+    // CHECK TRAILING STOP LOSS HIT
+    if (trade.lockedRoi > 0) {
+        const trailingHit = isLong ? (barLow <= trade.slPrice) : (barHigh >= trade.slPrice);
+        if (trailingHit) {
+            resolveReplayTrade("TRAILING_SL", trade.slPrice, trade.lockedRoi, candle);
+            return;
+        }
+    }
+    
+    // CHECK INITIAL HARD STOP LOSS HIT (-14.0% ROE)
+    const slHit = isLong ? (barLow <= trade.hardSlPrice) : (barHigh >= trade.hardSlPrice);
+    if (slHit) {
+        resolveReplayTrade("STOP_LOSS", trade.hardSlPrice, -14.0, candle);
+        return;
+    }
+    
+    renderReplayActiveTradeHUD();
+}
+
+function renderReplayActiveTradeHUD() {
+    const hud = document.getElementById("replayActiveTradeHUD");
+    if (!hud || !replaySimTrade) return;
+    
+    const trade = replaySimTrade;
+    const isLong = trade.side === "BUY" || trade.side === "LONG";
+    
+    const b = document.getElementById("rahSideBadge");
+    if (b) {
+        b.className = `rah-badge ${isLong ? 'rah-long' : 'rah-short'}`;
+        b.innerText = `${isLong ? 'LONG' : 'SHORT'} 5X (SIM)`;
+    }
+    
+    const ep = document.getElementById("rahEntry");
+    if (ep) ep.innerText = `$${trade.entryPrice.toFixed(4)}`;
+    
+    const curP = replayCandles && replayIndex > 0 ? replayCandles[replayIndex - 1].close : trade.entryPrice;
+    const cur = document.getElementById("rahCurrent");
+    if (cur) cur.innerText = `$${curP.toFixed(4)}`;
+    
+    const roeEl = document.getElementById("rahRoe");
+    if (roeEl) {
+        const roe = trade.currRoe || 0.0;
+        roeEl.className = roe >= 0 ? "val-green" : "val-red";
+        roeEl.innerText = `${roe >= 0 ? '+' : ''}${roe.toFixed(2)}%`;
+    }
+    
+    const pkEl = document.getElementById("rahPeakRoi");
+    if (pkEl) pkEl.innerText = `+${(trade.peakRoi || 0).toFixed(1)}%`;
+    
+    const armEl = document.getElementById("rahArmorStatus");
+    if (armEl) {
+        if (trade.currentStep > 0) {
+            armEl.innerHTML = `<span style="color:var(--gold); font-weight:800;">Step ${trade.currentStep}: +${trade.lockedRoi.toFixed(1)}% Locked</span>`;
+        } else {
+            armEl.innerText = "Initial Shield (-14% ROE)";
+        }
+    }
+    
+    hud.style.display = "block";
+}
+
+function closeReplayTradeManual() {
+    if (!replaySimTrade) return;
+    const curP = replayCandles && replayIndex > 0 ? replayCandles[replayIndex - 1].close : replaySimTrade.entryPrice;
+    const curC = replayCandles && replayIndex > 0 ? replayCandles[replayIndex - 1] : { time: Math.floor(Date.now() / 1000) };
+    resolveReplayTrade("MANUAL_EXIT", curP, replaySimTrade.currRoe || 0.0, curC);
+}
+
+function resolveReplayTrade(outcome, exitPrice, roePct, candle) {
+    if (!replaySimTrade) return;
+    const trade = replaySimTrade;
+    const pnlUsdt = 50.0 * (roePct / 100.0);
+    
+    const record = {
+        id: replaySimJournal.length + 1,
+        symbol: currentSymbol,
+        side: trade.side === "BUY" ? "LONG" : "SHORT",
+        entryPrice: trade.entryPrice,
+        exitPrice: exitPrice,
+        outcome: outcome,
+        roePct: roePct,
+        pnlUsdt: pnlUsdt,
+        lockedRoi: trade.lockedRoi || 0,
+        durationBars: trade.durationBars || 1,
+        exitTime: candle.time
+    };
+    
+    replaySimJournal.unshift(record);
+    updateReplayJournalBadge();
+    
+    if (outcome === "TAKE_PROFIT") {
+        showOutcomeBanner("🏆 TAKE PROFIT REACHED!", `+${roePct.toFixed(2)}% ROE (+$${pnlUsdt.toFixed(2)}) Target Hit!`, "win");
+        playInstitutionalChime("win");
+    } else if (outcome === "TRAILING_SL") {
+        showOutcomeBanner("🛡️ TRAILING SL SECURED!", `+${roePct.toFixed(2)}% ROE Profit Protected (+$${pnlUsdt.toFixed(2)})`, "win");
+        playInstitutionalChime("shield");
+    } else if (outcome === "STOP_LOSS") {
+        showOutcomeBanner("🛑 STOP LOSS HIT", `${roePct.toFixed(2)}% ROE (-$${Math.abs(pnlUsdt).toFixed(2)}) Defense Triggered`, "loss");
+    } else {
+        showOutcomeBanner("⚡ MANUAL EXIT", `${roePct >= 0 ? '+' : ''}${roePct.toFixed(2)}% ROE ($${pnlUsdt.toFixed(2)})`, "info");
+    }
+    
+    replaySimTrade = null;
+    clearReplayChartPriceLines();
+    const hud = document.getElementById("replayActiveTradeHUD");
+    if (hud) hud.style.display = "none";
+}
+
+function showOutcomeBanner(title, subtitle, type = "win") {
+    const banner = document.getElementById("replayOutcomeBanner");
+    if (!banner) return;
+    
+    banner.className = `replay-outcome-banner ${type}`;
+    const t = document.getElementById("replayOutcomeTitle");
+    if (t) t.innerText = title;
+    const s = document.getElementById("replayOutcomeSubtitle");
+    if (s) s.innerText = subtitle;
+    
+    const ic = document.getElementById("replayOutcomeIcon");
+    if (ic) {
+        if (type === "win") ic.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+        else if (type === "shield") ic.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
+        else if (type === "loss") ic.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+        else ic.innerHTML = '<i class="fa-solid fa-bolt"></i>';
+    }
+    
+    banner.style.display = "flex";
+    if (bannerTimeout) clearTimeout(bannerTimeout);
+    bannerTimeout = setTimeout(() => {
+        banner.style.display = "none";
+    }, 2800);
+}
+
+function playInstitutionalChime(type = "signal") {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        if (type === "win") {
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+            osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.38);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.38);
+        } else if (type === "shield") {
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+        } else {
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.25);
+        }
+    } catch(e) {}
+}
+
+// ----------------- REPLAY BACKTEST JOURNAL -----------------
+
+function updateReplayJournalBadge() {
+    const el = document.getElementById("replayJournalBadgeCount");
+    if (el) el.innerText = replaySimJournal.length;
+}
+
+function openReplayJournalModal() {
+    renderReplayJournalTable();
+    const m = document.getElementById("replayJournalModal");
+    if (m) m.style.display = "flex";
+}
+
+function closeReplayJournalModal() {
+    const m = document.getElementById("replayJournalModal");
+    if (m) m.style.display = "none";
+}
+
+function clearReplayJournal() {
+    if (confirm("Reset Replay Backtest Journal and start fresh?")) {
+        replaySimJournal = [];
+        updateReplayJournalBadge();
+        renderReplayJournalTable();
+    }
+}
+
+function renderReplayJournalTable() {
+    const total = replaySimJournal.length;
+    const wins = replaySimJournal.filter(x => x.roePct > 0).length;
+    const losses = replaySimJournal.filter(x => x.roePct < 0).length;
+    const winRate = total > 0 ? ((wins / total) * 100).toFixed(1) : "0.0";
+    const netReturn = replaySimJournal.reduce((acc, x) => acc + x.roePct, 0);
+    
+    const totEl = document.getElementById("rjmTotalTrades");
+    if (totEl) totEl.innerText = total;
+    const wrEl = document.getElementById("rjmWinRate");
+    if (wrEl) wrEl.innerText = `${winRate}%`;
+    const wEl = document.getElementById("rjmWins");
+    if (wEl) wEl.innerText = wins;
+    const lEl = document.getElementById("rjmLosses");
+    if (lEl) lEl.innerText = losses;
+    const netEl = document.getElementById("rjmNetReturn");
+    if (netEl) {
+        netEl.className = `rjm-stat-val ${netReturn >= 0 ? 'val-green' : 'val-red'}`;
+        netEl.innerText = `${netReturn >= 0 ? '+' : ''}${netReturn.toFixed(2)}%`;
+    }
+    
+    const tbody = document.getElementById("rjmTableBody");
+    if (!tbody) return;
+    
+    if (replaySimJournal.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No trades simulated yet. Run Bar Replay to trigger Hermes 3.0 setups!</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = replaySimJournal.map((t, idx) => {
+        const isWin = t.roePct > 0;
+        const outcomeBadge = t.outcome === "TAKE_PROFIT" 
+            ? '<span style="color:var(--buy-green); font-weight:800;">🏆 TP HIT (+14%)</span>'
+            : (t.outcome === "TRAILING_SL" 
+                ? `<span style="color:var(--gold); font-weight:800;">🛡️ TRAIL SL (+${t.lockedRoi}%)</span>`
+                : (t.outcome === "STOP_LOSS" 
+                    ? '<span style="color:var(--sell-red); font-weight:800;">🛑 SL HIT (-14%)</span>' 
+                    : '<span style="color:#94A3B8;">⚡ MANUAL</span>'));
+        
+        return `
+            <tr>
+                <td style="color:var(--text-muted);">${total - idx}</td>
+                <td><span style="font-weight:800; color:${t.side === 'LONG' ? 'var(--buy-green)' : 'var(--sell-red)'};">${t.side}</span></td>
+                <td style="color:var(--brand-teal); font-weight:700;">$${t.entryPrice.toFixed(4)}</td>
+                <td style="color:#fff;">$${t.exitPrice.toFixed(4)}</td>
+                <td>${outcomeBadge}</td>
+                <td style="font-weight:800; color:${isWin ? 'var(--buy-green)' : 'var(--sell-red)'};">${t.roePct >= 0 ? '+' : ''}${t.roePct.toFixed(2)}%</td>
+                <td style="font-weight:800; color:${t.pnlUsdt >= 0 ? 'var(--buy-green)' : 'var(--sell-red)'};">${t.pnlUsdt >= 0 ? '+' : ''}$${t.pnlUsdt.toFixed(2)}</td>
+                <td style="color:var(--text-muted);">${t.durationBars} bars</td>
+            </tr>
+        `;
+    }).join("");
+}
+
 
 // ==========================================================================
 // TRADINGVIEW PRICE RANGE / RULER / MEASURE TOOL ENGINE
