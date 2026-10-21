@@ -2242,6 +2242,21 @@
             </div>
         </div>
 
+                <!-- HERO LIVE BITGET POSITIONS WIDGET (FRONT & CENTER) -->
+        <div id="homePositionsSection" style="margin-top:14px; margin-bottom:14px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:0 2px;">
+                <span style="font-size:18px; font-weight:900; color:#FFFFFF; display:flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-chart-line" style="color:var(--green);"></i> Live Bitget Positions (<span id="homePosCount">0</span>)
+                </span>
+                <button onclick="switchTab('positions')" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:#38BDF8; font-size:13.5px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
+                    View All &rarr;
+                </button>
+            </div>
+            <div id="homePositionsContainer">
+                <!-- Dynamically injected Bitget Pro cards -->
+            </div>
+        </div>
+
         <!-- Horizontal Ticker Chips Carousel -->
         <div class="chips-scroll" id="homeTickerChips">
             <div class="ticker-chip"><span class="tc-coin">BTC</span><span class="tc-price">$87,400</span><span class="tc-badge badge-green">+2.4%</span></div>
@@ -3519,6 +3534,7 @@
                 renderActivePositionsStrip(window.lastPositionsData);
 
                 if (!data || !data.positions || data.positions.length === 0) {
+                    const homeSec = document.getElementById('homePositionsSection'); if (homeSec) homeSec.style.display = 'none';
                     container.innerHTML = `
                         <div class="empty-radar">
                             <i class="fa-solid fa-radar" style="font-size:36px;"></i>
@@ -3527,7 +3543,7 @@
                         </div>
                     `;
                 } else {
-                    container.innerHTML = data.positions.map(p => {
+                    const cardsHtml = data.positions.map(p => {
                         const pnl = Number(p.unrealized_pnl || 0);
                         const isPos = pnl >= 0;
                         const pnlColor = isPos ? 'green' : 'red';
@@ -3681,6 +3697,15 @@
                             </div>
                         `;
                     }).join('');
+                    container.innerHTML = cardsHtml;
+                    const homeContainer = document.getElementById('homePositionsContainer');
+                    const homeSection = document.getElementById('homePositionsSection');
+                    const homePosCount = document.getElementById('homePosCount');
+                    if (homeContainer && homeSection) {
+                        homeContainer.innerHTML = cardsHtml;
+                        homeSection.style.display = data.positions.length > 0 ? 'block' : 'none';
+                        if (homePosCount) homePosCount.textContent = data.positions.length;
+                    }
                 }
             } catch (e) {
                 console.error("Positions fetch error:", e);
