@@ -514,8 +514,8 @@ class Hermes30Model2ALiveEngine:
 
             # Fetch account balance for this specific section
             acc = get_paper_account(account_id=sec_id)
-            curr_balance = float(acc.get("current_balance", 50.0) or 50.0)
-            if curr_balance < 5.0:
+            curr_balance = float(acc.get("current_balance", 5.0) or 5.0)
+            if curr_balance < 4.50:
                 logger.warning(f"⚠️ Section {sec_id} balance too low (${curr_balance}). Suppressing entry.")
                 return
 
@@ -911,7 +911,7 @@ class Hermes30Model2ALiveEngine:
 
         pnl_usdt = close_res.get("pnl_usdt", 0.0)
         pnl_pct = close_res.get("pnl_pct", 0.0)
-        new_b = close_res.get("new_balance", 50.0)
+        new_b = close_res.get("new_balance", 5.0)
         duration_str = close_res.get("duration", "")
 
         # Real exchange position close (Bitget / Binance)

@@ -325,10 +325,10 @@ class BinanceTrader:
                 except Exception:
                     pass
 
-                # 4. CAPITAL ALLOCATION & POSITION SIZING (Strict $35.00 USDT Floor)
+                # 4. CAPITAL ALLOCATION & POSITION SIZING (Strict $4.50 USDT Floor)
                 bal = self.fetch_futures_balance()
                 free_usdt = float(bal.get("free_usdt", 0.0) or 0.0)
-                MIN_COMPOUNDING_FLOOR = 35.0
+                MIN_COMPOUNDING_FLOOR = 4.50
                 if free_usdt < MIN_COMPOUNDING_FLOOR:
                     msg = f"Insufficient Binance free balance (${free_usdt:.2f} USDT). Minimum ${MIN_COMPOUNDING_FLOOR:.2f} required for compounding trade."
                     print(f"[COMPOUNDING BALANCE GUARD] {msg}")
