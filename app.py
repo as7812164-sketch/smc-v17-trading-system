@@ -1780,7 +1780,8 @@ async def get_futures_positions(timeframe: Optional[str] = None):
 
         size_usdt = round(pos_size_raw, 2)
         margin = round(size_usdt / leverage, 4)
-        size_coin = round(size_usdt / entry, 2) if entry > 0 else 0.0
+        raw_coin = (size_usdt / entry) if entry > 0 else 0.0
+        size_coin = int(round(raw_coin)) if raw_coin >= 10 else round(raw_coin, 2)
 
         mark_price = tickers.get(sym, 0.0) if tickers else 0.0
         if mark_price <= 0:
@@ -1796,10 +1797,10 @@ async def get_futures_positions(timeframe: Optional[str] = None):
         # Floating PnL & ROE calculation
         if is_buy:
             pnl_pct = ((mark_price - entry) / entry * 100.0) if entry > 0 else 0.0
-            liq_price = round(entry * 0.805, 4)
+            liq_price = round(entry * (1.0 - (1.0 / leverage) + 0.0125), 4)
         else:
             pnl_pct = ((entry - mark_price) / entry * 100.0) if entry > 0 else 0.0
-            liq_price = round(entry * 1.195, 4)
+            liq_price = round(entry * (1.0 + (1.0 / leverage) - 0.0125), 4)
 
         pnl_usdt = round(size_usdt * (pnl_pct / 100.0), 4)
         roi_pct = round(pnl_pct * leverage, 2)  # ROE % on margin
@@ -1850,14 +1851,14 @@ async def get_futures_positions(timeframe: Optional[str] = None):
             "side_raw": "LONG" if is_buy else "SHORT",
             "side_pill": "BUY" if is_buy else "SELL",
             "badge": "Long" if is_buy else "Short",
-            "margin_mode": "Cross",
+            "margin_mode": "Isolated",
             "leverage": f"{leverage}x",
             "timeframe": tf,
             "size_usdt": size_usdt,
             "position_size_usdt": size_usdt,
             "size_coin": size_coin,
             "margin_usdt": margin,
-            "mmr": "0.39%",
+            "mmr": "5.30%",
             "margin_ratio": "0.07%",
             "entry_price": entry,
             "mark_price": mark_price,
@@ -1869,8 +1870,8 @@ async def get_futures_positions(timeframe: Optional[str] = None):
             "pnl_pct": roi_pct,
             "roi_pct": roi_pct,
             "roe_str": roe_str,
-            "realized_pnl": -0.0115,
-            "realized_pnl_str": "-0.0115",
+            "realized_pnl": -0.005,
+            "realized_pnl_str": "-0.005",
             "mae_pct": live_mae,
             "mfe_pct": live_mfe,
             "duration": duration_str,

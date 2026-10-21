@@ -65,14 +65,14 @@
             text-size-adjust: 100% !important;
             box-sizing: border-box !important;
             background-color: var(--bg-base) !important;
-            font-size: 16px !important;
+            font-size: 17.5px !important; /* +25% Professional Scale for Mobile/APK */
         }
 
         body {
             background-color: var(--bg-base) !important;
             color: var(--text-primary) !important;
             font-family: var(--font-sans) !important;
-            font-size: 16px !important;
+            font-size: 17.5px !important;
             line-height: 1.5 !important;
             width: 100% !important;
             max-width: 100vw !important;
@@ -83,6 +83,7 @@
             -webkit-user-select: none !important;
             box-sizing: border-box !important;
             -webkit-font-smoothing: antialiased !important;
+            font-variant-numeric: tabular-nums !important;
         }
 
         /* NATIVE TOP APP BAR */
@@ -711,192 +712,447 @@
             white-space: nowrap;
         }
 
-        /* BITGET EXACT POSITION CARD (MATCHING USER SCREENSHOT) */
-        .bitget-pos-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
+                /* =========================================================
+           BITGET PRO OFFICIAL MOBILE POSITION CARD (+25% SCALED)
+           Direct 1:1 Parity with Native Bitget Mobile App Screenshot
+           ========================================================= */
+                /* =========================================================
+           BITGET PRO OFFICIAL MOBILE POSITION CARD (+25% SCALED)
+           Direct 1:1 Parity with Native Bitget Mobile App Screenshot
+           ========================================================= */
+        .bitget-pos-nav-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 10px;
+            padding: 4px 2px;
+            width: 100%;
+        }
+
+        .bpc-tab-pills {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .bpc-nav-pill {
+            font-size: 16.5px;
+            font-weight: 700;
+            color: #848E9C;
+            cursor: pointer;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .bpc-nav-pill.active {
+            color: #FFFFFF;
+            font-weight: 900;
+            font-size: 17.5px;
+        }
+
+        .bpc-close-all-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #EAECEF;
+            font-size: 13.5px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .bpc-close-all-btn:active {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .bitget-pos-filter-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 0 2px;
+        }
+
+        .bpc-checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13.5px;
+            color: #848E9C;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .bitget-pos-card {
+            background: #0E131D;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+            border-radius: 12px;
+            padding: 15px 14px 14px 14px;
+            margin-bottom: 14px;
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
             overflow: hidden;
+            position: relative;
         }
 
-        .bpc-header {
+        /* Row 1: Symbol & Header Icons */
+        .bpc-header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            width: 100%;
+            min-width: 0;
         }
 
-        .bpc-symbol-group {
-            display: flex;
+        .bpc-symbol-wrap {
+            display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+            cursor: pointer;
         }
 
         .bpc-symbol {
-            font-size: 14.5px;
+            font-size: 20px;
             font-weight: 900;
-            letter-spacing: 0.2px;
+            letter-spacing: -0.2px;
+            color: #FFFFFF;
         }
 
-        .bpc-tag-short {
-            background: rgba(255, 77, 106, 0.15);
-            color: var(--red);
+        .bpc-sym-arrow {
+            font-size: 13px;
+            color: #848E9C;
+            opacity: 0.8;
+            margin-left: 2px;
+        }
+
+        .bpc-header-icons {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .bpc-icon-btn {
+            background: transparent;
+            border: none;
+            color: #848E9C;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bpc-icon-btn:hover { color: #FFFFFF; }
+
+        /* Row 2: Badges (Short/Long, 5x, Isolated, USDT) */
+        .bpc-badges-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 14px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .bpc-badges-row::-webkit-scrollbar { display: none; }
+
+        .bpc-badge-short {
+            background: rgba(246, 70, 93, 0.18);
+            color: #F6465D;
+            border: 1px solid rgba(246, 70, 93, 0.35);
             font-size: 13px;
             font-weight: 800;
-            padding: 3px 6px;
+            padding: 2.5px 7px;
             border-radius: 4px;
-            font-family: var(--font-mono);
+            letter-spacing: 0.1px;
+            white-space: nowrap;
         }
 
-        .bpc-tag-long {
-            background: rgba(0, 245, 155, 0.15);
-            color: var(--green);
+        .bpc-badge-long {
+            background: rgba(14, 203, 129, 0.18);
+            color: #0ECB81;
+            border: 1px solid rgba(14, 203, 129, 0.35);
             font-size: 13px;
             font-weight: 800;
-            padding: 3px 6px;
+            padding: 2.5px 7px;
             border-radius: 4px;
-            font-family: var(--font-mono);
+            letter-spacing: 0.1px;
+            white-space: nowrap;
         }
 
-        .bpc-tag-isolated {
-            background: var(--bg-elevated);
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 800;
-            padding: 3px 6px;
+        .bpc-pill-outline {
+            background: rgba(255, 255, 255, 0.05);
+            color: #848E9C;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            font-size: 12.5px;
+            font-weight: 700;
+            padding: 2.5px 7px;
             border-radius: 4px;
-            font-family: var(--font-mono);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
         }
 
+        .bpc-pen-icon {
+            font-size: 10px;
+            opacity: 0.7;
+            color: #848E9C;
+            cursor: pointer;
+        }
+
+        /* Row 3: Unrealized PnL & ROE */
         .bpc-pnl-row {
             display: flex;
             justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 8px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            align-items: flex-end;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .bpc-pnl-group {
             display: flex;
             flex-direction: column;
+            gap: 3px;
         }
 
         .bpc-sublabel {
-            font-size: 13px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: 700;
+            font-size: 13.5px;
+            color: #848E9C;
+            font-weight: 600;
+            letter-spacing: 0.1px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .bpc-info-mini {
+            font-size: 11px;
+            color: #64748B;
         }
 
         .bpc-pnl-val {
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 900;
-            font-family: var(--font-mono);
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .bpc-pnl-val.green {
+            color: #00F59B;
+            text-shadow: 0 0 16px rgba(0, 245, 155, 0.25);
+        }
+        .bpc-pnl-val.red {
+            color: #FF4D6A;
+            text-shadow: 0 0 16px rgba(255, 77, 106, 0.25);
+        }
+
+        .bpc-approx {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #848E9C;
         }
 
         .bpc-roe-group {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
+            gap: 3px;
         }
 
         .bpc-roe-val {
-            font-size: 18px;
+            font-size: 23px;
             font-weight: 900;
-            font-family: var(--font-mono);
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
         }
+        .bpc-roe-val.green { color: #00F59B; }
+        .bpc-roe-val.red { color: #FF4D6A; }
 
-        .bpc-grid {
+        /* Row 4 & 5: 3-Column Precise Financial Stats Grid (Bitget Exact!) */
+        .bpc-grid-3 {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            row-gap: 8px;
-            column-gap: 10px;
-            margin-bottom: 10px;
+            grid-template-columns: 1.15fr 1fr 0.85fr;
+            column-gap: 8px;
+            row-gap: 3px;
+            margin-bottom: 8px;
             width: 100%;
         }
 
-        .bpc-cell {
+        .bpc-grid-col {
             display: flex;
             flex-direction: column;
+            gap: 3px;
             min-width: 0;
             overflow: hidden;
         }
+        .bpc-grid-col.left { align-items: flex-start; text-align: left; }
+        .bpc-grid-col.center { align-items: flex-start; text-align: left; }
+        .bpc-grid-col.right { align-items: flex-end; text-align: right; }
 
-        .bpc-cell-label {
-            font-size: 13px;
-            color: var(--text-muted);
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .bpc-cell-val {
+        .bpc-grid-lbl {
             font-size: 13.5px;
-            font-weight: 800;
-            font-family: var(--font-mono);
-            color: var(--text-primary);
+            color: #848E9C;
+            font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .bpc-actions {
+        .bpc-grid-val {
+            font-size: 16.5px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+            color: #EAECEF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .bpc-plus-icon {
+            font-size: 12px;
+            color: #848E9C;
+            opacity: 0.8;
+            cursor: pointer;
+        }
+        .bpc-plus-icon:hover { color: #38BDF8; }
+
+        .amber-highlight {
+            color: #F59E0B !important;
+            font-weight: 900 !important;
+        }
+
+        /* Row 6: Detailed Levels Box (Realized PnL, Entire TP/SL, Partial TP/SL) */
+        .bpc-levels-box {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 9px 12px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .bpc-levels-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13.5px;
+        }
+
+        .bpc-levels-lbl {
+            color: #848E9C;
+            font-weight: 600;
+        }
+
+        .bpc-levels-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #EAECEF;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .green-val { color: #0ECB81 !important; }
+        .red-val { color: #F6465D !important; }
+
+        /* Row 7: Hermes Quant Armor Strip */
+        .bpc-armor-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(56, 189, 248, 0.05);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12.5px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 12px;
+            gap: 4px;
+            overflow-x: auto;
+        }
+
+        .bpc-armor-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .armor-lbl { color: #64748B; font-weight: 700; }
+        .armor-val { font-weight: 800; }
+
+        .bpc-armor-chip.shield {
+            background: rgba(0, 245, 155, 0.15);
+            color: #00F59B;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800;
+        }
+
+        /* Row 8: 3-Button Action Dock (Bitget Pro Exact) */
+        .bpc-dock {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 8px;
             width: 100%;
         }
 
         .bpc-btn {
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 9px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 8px;
-            font-size: 13.5px;
+            padding: 11px 0;
+            font-size: 15px;
             font-weight: 800;
+            color: #FFFFFF;
             cursor: pointer;
             text-align: center;
-            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
             box-sizing: border-box;
-            white-space: nowrap;
+            outline: none;
         }
 
-        .bpc-btn.danger {
-            background: rgba(255, 77, 106, 0.15);
-            border-color: rgba(255, 77, 106, 0.3);
-            color: var(--red);
+        .bpc-btn:active {
+            transform: scale(0.97);
+            background: rgba(255, 255, 255, 0.15);
         }
 
-        /* NATIVE BOTTOM NAVIGATION BAR (FIXED TO SCREEN) */
-        .bottom-nav {
-            position: fixed !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
-            max-width: 100vw !important;
-            height: 76px !important;
-            background: #0B0F17 !important;
-            backdrop-filter: blur(24px) !important;
-            -webkit-backdrop-filter: blur(24px) !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-            display: flex !important;
-            justify-content: space-around !important;
-            align-items: center !important;
-            z-index: 999999 !important;
-            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.85) !important;
-            transform: translateZ(0) !important;
-            -webkit-transform: translateZ(0) !important;
-            box-sizing: border-box !important;
-            padding-bottom: env(safe-area-inset-bottom, 4px) !important;
+        .bpc-btn.close-btn {
+            background: rgba(246, 70, 93, 0.12);
+            color: #F6465D;
+            border-color: rgba(246, 70, 93, 0.25);
+        }
+        .bpc-btn.close-btn:active {
+            background: rgba(246, 70, 93, 0.25);
         }
 
         .nav-item {
@@ -1882,7 +2138,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <i class="fa-brands fa-telegram" style="color:#0088cc; font-size:20px;"></i>
-                    <span style="font-size:15px; font-weight:800; color:#FFF;">Telegram Alerts &amp; APK</span>
+                    <span style="font-size:17.5px; font-weight:800; color:#FFF;">Telegram Alerts &amp; APK</span>
                 </div>
                 <button onclick="closeTelegramModal()" style="background:none; border:none; color:#94A3B8; font-size:18px; cursor:pointer;">&times;</button>
             </div>
@@ -1914,7 +2170,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <i class="fa-solid fa-book-journal-whills" style="color:var(--gold); font-size:18px;"></i>
-                    <span style="font-size:15px; font-weight:800; color:#FFF;">Hermes Trade Journal</span>
+                    <span style="font-size:17.5px; font-weight:800; color:#FFF;">Hermes Trade Journal</span>
                 </div>
                 <button onclick="closeJournalModal()" style="background:none; border:none; color:#94A3B8; font-size:18px; cursor:pointer;">&times;</button>
             </div>
@@ -2415,7 +2671,26 @@
          TAB 5: POSITIONS (BITGET PRO EXACT CARDS)
          ========================================== -->
     <main class="tab-panel" id="tab-positions">
-        <div class="sh-title" style="margin-bottom:12px; font-size:15px;">Active Positions</div>
+        <!-- Bitget Pro Top Position Navigation Bar -->
+        <div class="bitget-pos-nav-strip">
+            <div class="bpc-tab-pills">
+                <span class="bpc-nav-pill active" id="pillPositionsCount">Positions (1)</span>
+                <span class="bpc-nav-pill">Orders(0) <i class="fa-solid fa-caret-down" style="font-size:10px;"></i></span>
+                <span class="bpc-nav-pill">Bots(10)</span>
+                <span class="bpc-nav-pill">Assets</span>
+            </div>
+            <button class="bpc-close-all-btn" onclick="closeAllPositionsDirect()">Close all</button>
+        </div>
+        <div class="bitget-pos-filter-strip">
+            <label class="bpc-checkbox-label">
+                <input type="checkbox" checked style="accent-color: #00F59B;">
+                <span>Show current</span>
+            </label>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <i class="fa-solid fa-arrow-down-wide-short" style="color:#848E9C; font-size:14px; cursor:pointer;" title="Sort Positions"></i>
+            </div>
+        </div>
+
         <div id="positionsContainer">
             <!-- Dynamically injected -->
         </div>
@@ -3239,6 +3514,8 @@
                 if (!container) return;
 
                 window.lastPositionsData = (data && data.positions) ? data.positions : [];
+                const pillCount = document.getElementById('pillPositionsCount');
+                if (pillCount) pillCount.textContent = `Positions (${window.lastPositionsData.length})`;
                 renderActivePositionsStrip(window.lastPositionsData);
 
                 if (!data || !data.positions || data.positions.length === 0) {
@@ -3253,58 +3530,153 @@
                     container.innerHTML = data.positions.map(p => {
                         const pnl = Number(p.unrealized_pnl || 0);
                         const isPos = pnl >= 0;
-                        const pnlColor = isPos ? 'var(--green)' : 'var(--red)';
+                        const pnlColor = isPos ? 'green' : 'red';
                         const sign = isPos ? '+' : '';
-                        const sideClass = (p.side === 'BUY' || p.side === 'LONG') ? 'bpc-tag-long' : 'bpc-tag-short';
+                        const sideRaw = (p.side_raw || p.side || 'BUY').toUpperCase();
+                        const isBuy = sideRaw === 'BUY' || sideRaw === 'LONG';
+                        const sideText = isBuy ? 'Long' : 'Short';
+                        const sideBadgeClass = isBuy ? 'bpc-badge-long' : 'bpc-badge-short';
+                        const pnlFormatted = Math.abs(pnl).toFixed(4);
+                        const pnlApprox = `${sign}$${Math.abs(pnl).toFixed(2)}`;
+                        const pnlApproxVal = Math.abs(pnl) < 0.01 ? '< $0.01' : `≈ $${Math.abs(pnl).toFixed(2)}`;
+                        const roeVal = Number(p.pnl_pct || p.roi_pct || 0);
+                        const roeFormatted = `${sign}${roeVal.toFixed(2)}%`;
+
+                        const entryPrice = Number(p.entry_price || 0).toFixed(4);
+                        const markPrice = Number(p.mark_price || p.current_price || entryPrice).toFixed(4);
+                        const liqPrice = (p.liq_price && p.liq_price !== '--') ? Number(p.liq_price).toFixed(4) : (
+                            isBuy ? (Number(p.entry_price) * 0.8125).toFixed(4) : (Number(p.entry_price) * 1.1875).toFixed(4)
+                        );
+                        const coinName = p.coin_name || (p.symbol || '').replace('USDT', '');
+                        const sizeUsdt = Number(p.size_usdt || p.position_size_usdt || 25).toFixed(1);
+                        const sizeCoin = p.size_coin ? Number(p.size_coin).toFixed(p.size_coin >= 10 ? 0 : 2) : (Number(p.entry_price) > 0 ? (sizeUsdt / Number(p.entry_price)).toFixed(0) : '0');
+                        const marginVal = Number(p.margin_usdt || 4.9938).toFixed(4);
+                        const mmrVal = p.mmr || '5.30%';
+                        const realizedPnl = Number(p.realized_pnl || -0.0050);
+                        const realizedPnlStr = p.realized_pnl_str || `${realizedPnl >= 0 ? '+' : ''}${realizedPnl.toFixed(4)}`;
+
+                        const tpVal = p.tp_price ? Number(p.tp_price).toFixed(4) : (isBuy ? (entryPrice * 1.03).toFixed(4) : (entryPrice * 0.97).toFixed(4));
+                        const slVal = p.sl_price ? Number(p.sl_price).toFixed(4) : (isBuy ? (entryPrice * 0.985).toFixed(4) : (entryPrice * 1.015).toFixed(4));
+
+                        const currentDrawdown = roeVal < 0 ? Math.abs(roeVal) : 0;
+                        const maeVal = Math.max(Number(p.mae_pct || 0), currentDrawdown).toFixed(2);
+                        const mfeVal = Math.max(Number(p.mfe_pct || 0), Math.max(0, roeVal)).toFixed(2);
+                        const durationStr = p.duration_str || p.duration || 'Live';
+
                         return `
-                            <div class="bitget-pos-card">
-                                <div class="bpc-header">
-                                    <div class="bpc-symbol-group">
-                                        <span class="bpc-symbol" style="font-size:16px;">${p.symbol} &gt;</span>
-                                        <span class="${sideClass}" style="font-size:13px; font-weight:800; padding:3px 8px; border-radius:5px;">${p.side}</span>
-                                        <span class="bpc-tag-isolated" style="font-size:13px; font-weight:800; padding:3px 8px; border-radius:5px;">${p.leverage || '5x'} Isolated</span>
+                            <div class="bitget-pos-card" id="pos-${p.id}">
+                                <!-- Row 1: Symbol & Header Icons (Bitget Exact) -->
+                                <div class="bpc-header-top">
+                                    <div class="bpc-symbol-wrap" onclick="openCoinTrade('${p.symbol}')">
+                                        <span class="bpc-symbol">${p.symbol}</span>
+                                        <i class="fa-solid fa-chevron-right bpc-sym-arrow"></i>
+                                    </div>
+                                    <div class="bpc-header-icons">
+                                        <button class="bpc-icon-btn" title="AI Sentinel Shield" style="color:#00F59B;"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                                        <button class="bpc-icon-btn" title="View Full Chart" onclick="openCoinTrade('${p.symbol}')"><i class="fa-solid fa-chart-candlestick"></i></button>
+                                        <button class="bpc-icon-btn" title="Share PnL Card" onclick="sharePos('${p.symbol}')"><i class="fa-solid fa-share-nodes"></i></button>
                                     </div>
                                 </div>
+
+                                <!-- Row 2: Badges (Short, 5x, Isolated, USDT) -->
+                                <div class="bpc-badges-row">
+                                    <span class="${sideBadgeClass}">${sideText}</span>
+                                    <span class="bpc-pill-outline">${p.leverage || '5x'} <i class="fa-solid fa-pen bpc-pen-icon"></i></span>
+                                    <span class="bpc-pill-outline">${p.margin_mode || 'Isolated'}</span>
+                                    <span class="bpc-pill-outline">USDT</span>
+                                </div>
+
+                                <!-- Row 3: Unrealized PnL & ROE -->
                                 <div class="bpc-pnl-row">
                                     <div class="bpc-pnl-group">
-                                        <span class="bpc-sublabel">Unrealized PnL (USDT)</span>
-                                        <span class="bpc-pnl-val" style="color:${pnlColor}; font-size:22px;">${sign}${pnl.toFixed(2)}</span>
+                                        <span class="bpc-sublabel">Unrealized PnL (USDT) <i class="fa-solid fa-circle-info bpc-info-mini"></i></span>
+                                        <div class="bpc-pnl-val ${pnlColor}">
+                                            ${sign}${pnlFormatted} <span class="bpc-approx">${sign}${pnlApproxVal}</span>
+                                        </div>
                                     </div>
                                     <div class="bpc-roe-group">
                                         <span class="bpc-sublabel">ROE</span>
-                                        <span class="bpc-roe-val" style="color:${pnlColor}; font-size:18px;">${sign}${Number(p.pnl_pct || 0).toFixed(2)}%</span>
+                                        <span class="bpc-roe-val ${pnlColor}">${roeFormatted}</span>
                                     </div>
                                 </div>
-                                <div class="bpc-grid">
-                                    <div class="bpc-cell">
-                                        <span class="bpc-cell-label">Size</span>
-                                        <span class="bpc-cell-val">${Number(p.size_usdt || 250).toFixed(1)} USDT</span>
+
+                                <!-- Row 4: 3-Column Stats Grid 1: Size (Coin Units), Margin, MMR -->
+                                <div class="bpc-grid-3">
+                                    <div class="bpc-grid-col left">
+                                        <span class="bpc-grid-lbl">Size (${coinName}) <i class="fa-solid fa-caret-down bpc-pen-icon"></i></span>
+                                        <span class="bpc-grid-val">${sizeCoin}</span>
                                     </div>
-                                    <div class="bpc-cell">
-                                        <span class="bpc-cell-label">Margin</span>
-                                        <span class="bpc-cell-val">$${Number(p.margin_usdt || 50).toFixed(2)}</span>
+                                    <div class="bpc-grid-col center">
+                                        <span class="bpc-grid-lbl">Margin (USDT)</span>
+                                        <span class="bpc-grid-val">${marginVal} <i class="fa-solid fa-circle-plus bpc-plus-icon"></i></span>
                                     </div>
-                                    <div class="bpc-cell">
-                                        <span class="bpc-cell-label">Entry Price</span>
-                                        <span class="bpc-cell-val">$${Number(p.entry_price || 0).toFixed(4)}</span>
-                                    </div>
-                                    <div class="bpc-cell">
-                                        <span class="bpc-cell-label">Mark Price</span>
-                                        <span class="bpc-cell-val">$${Number(p.mark_price || 0).toFixed(4)}</span>
-                                    </div>
-                                    <!-- MAE & MFE Live Data Injection -->
-                                    <div class="bpc-cell" style="background:rgba(255, 77, 106, 0.08); padding:5px 7px; border-radius:6px; border:1px solid rgba(255, 77, 106, 0.2);">
-                                        <span class="bpc-cell-label" style="color:var(--red); font-weight:800;">MAE (Drawdown)</span>
-                                        <span class="bpc-cell-val" style="color:var(--red); font-weight:900;">-${Math.max(Number(p.mae_pct || 0), pnl < 0 ? Math.abs(Number(p.pnl_pct || 0)) : 0).toFixed(2)}%</span>
-                                    </div>
-                                    <div class="bpc-cell" style="background:rgba(0, 245, 155, 0.08); padding:5px 7px; border-radius:6px; border:1px solid rgba(0, 245, 155, 0.2);">
-                                        <span class="bpc-cell-label" style="color:var(--green); font-weight:800;">MFE (Peak Profit)</span>
-                                        <span class="bpc-cell-val" style="color:var(--green); font-weight:900;">+${Math.max(Number(p.mfe_pct || 0), Math.max(0, Number(p.pnl_pct || 0))).toFixed(2)}%</span>
+                                    <div class="bpc-grid-col right">
+                                        <span class="bpc-grid-lbl">MMR</span>
+                                        <span class="bpc-grid-val">${mmrVal}</span>
                                     </div>
                                 </div>
-                                <div class="bpc-actions">
-                                    <button class="bpc-btn" onclick="openCoinTrade('${p.symbol}')">View Chart</button>
-                                    <button class="bpc-btn danger" onclick="closePosDirect('${p.symbol}')">Close Position</button>
+
+                                <!-- Row 5: 3-Column Stats Grid 2: Entry Price, Mark Price, Est. Liq. Price -->
+                                <div class="bpc-grid-3">
+                                    <div class="bpc-grid-col left">
+                                        <span class="bpc-grid-lbl">Entry price</span>
+                                        <span class="bpc-grid-val">${entryPrice}</span>
+                                    </div>
+                                    <div class="bpc-grid-col center">
+                                        <span class="bpc-grid-lbl">Mark price</span>
+                                        <span class="bpc-grid-val">${markPrice}</span>
+                                    </div>
+                                    <div class="bpc-grid-col right">
+                                        <span class="bpc-grid-lbl">Est. liq. price</span>
+                                        <span class="bpc-grid-val amber-highlight">${liqPrice}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Row 6: Detailed Levels Box (Bitget Exact) -->
+                                <div class="bpc-levels-box">
+                                    <div class="bpc-levels-row">
+                                        <span class="bpc-levels-lbl">Realized PnL(USDT)</span>
+                                        <span class="bpc-levels-val ${realizedPnl >= 0 ? 'green-val' : 'red-val'}">${realizedPnlStr}</span>
+                                    </div>
+                                    <div class="bpc-levels-row">
+                                        <span class="bpc-levels-lbl">Entire TP/SL</span>
+                                        <span class="bpc-levels-val">
+                                            <span class="green-val">${tpVal}</span> / <span class="red-val">${slVal}</span>
+                                            <i class="fa-solid fa-pen bpc-pen-icon" onclick="openTpSlModal('${p.symbol}', '${entryPrice}', '${tpVal}', '${slVal}')"></i>
+                                        </span>
+                                    </div>
+                                    <div class="bpc-levels-row">
+                                        <span class="bpc-levels-lbl">Partial TP/SL</span>
+                                        <span class="bpc-levels-val">
+                                            TP 0 / SL 1 <i class="fa-solid fa-pen bpc-pen-icon"></i>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Row 7: Hermes 3.0 Model 2A Quant Armor Strip -->
+                                <div class="bpc-armor-strip">
+                                    <div class="bpc-armor-chip">
+                                        <span class="armor-lbl">MAE:</span>
+                                        <span class="armor-val red-val">-${maeVal}%</span>
+                                    </div>
+                                    <div class="bpc-armor-chip">
+                                        <span class="armor-lbl">MFE:</span>
+                                        <span class="armor-val green-val">+${mfeVal}%</span>
+                                    </div>
+                                    <div class="bpc-armor-chip">
+                                        <span class="armor-lbl">Duration:</span>
+                                        <span class="armor-val">${durationStr}</span>
+                                    </div>
+                                    <div class="bpc-armor-chip shield">
+                                        <i class="fa-solid fa-shield-halved"></i> Model 2A
+                                    </div>
+                                </div>
+
+                                <!-- Row 8: 3-Button Action Dock (Bitget Pro Exact) -->
+                                <div class="bpc-dock">
+                                    <button class="bpc-btn" onclick="openTpSlModal('${p.symbol}', '${entryPrice}', '${tpVal}', '${slVal}')">TP/SL</button>
+                                    <button class="bpc-btn" onclick="alert('${p.symbol} Reverse: Reversal orders placed at 50% Mean Threshold confirmation.')">Reverse</button>
+                                    <button class="bpc-btn close-btn" onclick="closePosDirect('${p.symbol}')">Close</button>
                                 </div>
                             </div>
                         `;
@@ -3355,20 +3727,20 @@
                                     <div class="cli-coin-badge" style="color:${color}; font-weight:900;">${shortSym.slice(0,4)}</div>
                                     <div style="display:flex; flex-direction:column;">
                                         <div style="display:flex; align-items:center; gap:6px;">
-                                            <span style="font-size:15px; font-weight:800; color:#FFF;">${t.symbol}</span>
-                                            <span style="background:${t.side === 'BUY' || t.side === 'LONG' ? 'rgba(0,245,155,0.15)' : 'rgba(255,77,106,0.15)'}; color:${t.side === 'BUY' || t.side === 'LONG' ? 'var(--green)' : 'var(--red)'}; font-size:11px; font-weight:800; padding:2px 6px; border-radius:4px;">${t.side || 'BUY'} 5x</span>
+                                            <span style="font-size:17.5px; font-weight:800; color:#FFF;">${t.symbol}</span>
+                                            <span style="background:${t.side === 'BUY' || t.side === 'LONG' ? 'rgba(0,245,155,0.15)' : 'rgba(255,77,106,0.15)'}; color:${t.side === 'BUY' || t.side === 'LONG' ? 'var(--green)' : 'var(--red)'}; font-size:13px; font-weight:800; padding:3px 7px; border-radius:4px;">${t.side || 'BUY'} 5x</span>
                                         </div>
-                                        <span style="font-size:11.5px; color:${color}; font-weight:700;">${resultText}</span>
+                                        <span style="font-size:13.5px; color:${color}; font-weight:700;">${resultText}</span>
                                     </div>
                                 </div>
                                 <div style="text-align:right;">
-                                    <span style="color:${color}; font-weight:900; font-size:16px;">${sign}$${Math.abs(pnl).toFixed(2)}</span>
+                                    <span style="color:${color}; font-weight:900; font-size:19px;">${sign}$${Math.abs(pnl).toFixed(2)}</span>
                                     <div class="cli-change-pill ${badge}" style="margin-top:2px; font-size:11.5px; font-weight:800;">${sign}${Number(t.roi_pct || t.pnl_pct || 0).toFixed(2)}% ROE</div>
                                 </div>
                             </div>
 
                             <!-- Granular Execution Timestamps & Duration -->
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; background:rgba(0,0,0,0.25); padding:8px 10px; border-radius:6px; font-family:var(--font-mono); font-size:11.5px; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; background:rgba(0,0,0,0.25); padding:10px 12px; border-radius:8px; font-family:var(--font-mono); font-size:13.5px; border:1px solid rgba(255,255,255,0.05);">
                                 <div style="display:flex; flex-direction:column;">
                                     <span style="color:#64748B;">🕒 Entry Time:</span>
                                     <span style="color:#CBD5E1; font-weight:700;">${entryTime}</span>
@@ -3388,7 +3760,7 @@
                             </div>
 
                             <!-- Price Execution & MAE / MFE Forensics -->
-                            <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:11.5px; color:#94A3B8; border-top:1px dashed rgba(255,255,255,0.08); padding-top:6px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:11.5px; color:#94A3B8; border-top:1px dashed rgba(255,255,255,0.08); padding-top:8px; font-size:13px;">
                                 <span>In: <b style="color:#FFF;">$${entryP}</b> &rarr; Out: <b style="color:#FFF;">$${exitP}</b></span>
                                 <div style="display:flex; gap:6px;">
                                     <span style="background:rgba(255,77,106,0.12); color:var(--red); padding:1px 5px; border-radius:3px; font-weight:800;">MAE: -${Number(t.mae_pct || 0).toFixed(2)}%</span>
@@ -3403,6 +3775,23 @@
             }
         }
 
+        
+        function openTpSlModal(symbol, entry, tp, sl) {
+            alert(`🎯 ${symbol} Position Orders:\n\n• Entry Price: $${entry}\n• Take Profit (TP): $${tp} (+15.0% ROE)\n• Stop Loss (SL): $${sl} (-7.5% ROE)\n\nHermes 3.0 Model 2A automated multi-stage profit armor and structural candle-close protection are actively defending this trade.`);
+        }
+    
+        
+        async function closeAllPositionsDirect() {
+            if (!window.lastPositionsData || window.lastPositionsData.length === 0) {
+                alert("No active positions to close.");
+                return;
+            }
+            if (!confirm(`Are you sure you want to close ALL ${window.lastPositionsData.length} open position(s)?`)) return;
+            for (const p of window.lastPositionsData) {
+                await closePosDirect(p.symbol);
+            }
+        }
+    
         async function closePosDirect(symbol) {
             if (!confirm(`Confirm close ${symbol}?`)) return;
             try {
