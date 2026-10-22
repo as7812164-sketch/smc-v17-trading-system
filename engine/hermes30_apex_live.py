@@ -468,6 +468,63 @@ class Hermes30Model2ALiveEngine:
         logger.warning(f"🚨 MASTER EMERGENCY KILL SWITCH: {'ACTIVATED (ALL TRADES HALTED)' if enabled else 'DEACTIVATED (TRADING RESUMED)'}")
         return enabled
 
+    async def dispatch_entry_filled_alert(self, setup: Dict[str, Any], sec_id: int, sec_type_str: str, ep: float, tp: float, soft_sl: float, hard_sl: float, leverage: int, margin: float, timeframe: str, symbol: str, side: str, trade_id: Optional[int] = None):
+        """Dispatches official Telegram Alert ONLY when the limit order is actually FILLED into a live position on exchange."""
+        try:
+            alert_text = (
+                f"⚡ <b>HERMES 3.0 • LIMIT ORDER FILLED & POSITION LIVE</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"📦 <b>Compounding Slot</b>: <b>Section {sec_id} ({sec_type_str})</b>\n"
+                f"🪙 <b>Pair</b>: #{symbol} ({timeframe.upper()})\n"
+                f"📈 <b>Action</b>: {'🟢 LONG BUY (FILLED)' if side == 'LONG' else '🔴 SHORT SELL (FILLED)'}\n"
+                f"🎯 <b>Fill Price</b>: {ep:.6f} (50% Mean Threshold Tap Confirmed)\n"
+                f"🎯 <b>Take Profit</b>: {tp:.6f} (+15.0% ROE Target)\n"
+                f"🛑 <b>Initial Hard SL</b>: {hard_sl:.6f} (-3.00% Disaster Shield)\n"
+                f"🛡️ <b>Soft Stop Loss</b>: {soft_sl:.6f} (Candle Body Close Defense)\n"
+                f"🛡️ <b>Trailing Plan</b>: Stepped Trailing Active (Silent Background Protection)\n"
+                f"🕯️ <b>Rejection Wick</b>: {setup.get('wick_ratio_pct', 24.5):.1f}% (Confirmed ≥ 18.0% Absorption)\n"
+                f"⚡ <b>Leverage</b>: {leverage}x Isolated | Margin: ${margin:.2f} USDT\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🟢 <i>Position Officially Open & Live on Exchange | Alert 1 of 2</i>"
+            )
+            keyboard = telegram_service.get_alert_inline_keyboard(symbol)
+            sent_msg_id = None
+            sent = False
+            try:
+                candles = await binance_feed.fetch_klines(symbol, interval=timeframe, limit=50)
+                if candles:
+                    chart_bytes = render_smc_chart_image(
+                        symbol,
+                        candles,
+                        setup,
+                        zones=[setup],
+                        timeframe=timeframe.upper()
+                    )
+                    resp = await telegram_service.send_photo(
+                        chart_bytes,
+                        alert_text,
+                        parse_mode="HTML",
+                        reply_markup=keyboard
+                    )
+                    if resp and resp.get("ok"):
+                        sent_msg_id = resp["result"]["message_id"]
+                        sent = True
+            except Exception as ce:
+                logger.error(f"Error generating/sending chart photo for {symbol}: {ce}")
+
+            if not sent:
+                resp = await telegram_service.send_raw_message(alert_text, parse_mode="HTML", reply_markup=keyboard)
+                if resp and resp.get("ok"):
+                    sent_msg_id = resp["result"]["message_id"]
+
+            if sent_msg_id:
+                set_setting(f"trade_msg_{symbol}_{side}", str(sent_msg_id))
+                if trade_id:
+                    set_setting(f"trade_rec_msg_{trade_id}", str(sent_msg_id))
+            logger.info(f"💎 Telegram LIVE FILLED alert dispatched for {symbol}")
+        except Exception as e:
+            logger.warning(f"Telegram alert error: {e}")
+
     async def execute_apex_entry(self, setup: Dict[str, Any]):
         """Executes a qualified Model 2A trade under Deca Compounding (10 independent slots)."""
         async with self._order_execution_lock:
@@ -603,60 +660,27 @@ class Hermes30Model2ALiveEngine:
             sec_type_str = "4H Macro Swing" if sec_id <= 5 else "1H Intraday Scalp"
             logger.info(f"🚀 HERMES 3.0 LIMIT ORDER ARMED [Section {sec_id}]: {symbol} {side} LIMIT @ {ep} | Initial Hard SL: {hard_sl} | Stepped Trailing Active")
 
-            # Send Telegram Alert with Live Chart Image (ALERT 1 OF 2: ENTRY FILLED & POSITION LIVE)
+            # Check if order is immediately filled on exchange or resting limit
+            is_filled = False
             try:
-                alert_text = (
-                    f"⚡ <b>HERMES 3.0 • ENTRY FILLED & POSITION LIVE</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"📦 <b>Compounding Slot</b>: <b>Section {sec_id} ({sec_type_str})</b>\n"
-                    f"🪙 <b>Pair</b>: #{symbol} ({timeframe.upper()})\n"
-                    f"📈 <b>Action</b>: {'🟢 LONG BUY (FILLED)' if side == 'LONG' else '🔴 SHORT SELL (FILLED)'}\n"
-                    f"🎯 <b>Fill Price</b>: {ep:.6f} (50% Mean Threshold Tap Confirmed)\n"
-                    f"🎯 <b>Take Profit</b>: {tp:.6f} (+15.0% ROE Target)\n"
-                    f"🛑 <b>Initial Hard SL</b>: {hard_sl:.6f} (-3.00% Disaster Shield)\n"
-                    f"🛡️ <b>Soft Stop Loss</b>: {soft_sl:.6f} (Candle Body Close Defense)\n"
-                    f"🛡️ <b>Trailing Plan</b>: Stepped Trailing Active (Silent Background Protection)\n"
-                    f"🕯️ <b>Rejection Wick</b>: {setup.get('wick_ratio_pct', 24.5):.1f}% (Confirmed ≥ 18.0% Absorption)\n"
-                    f"⚡ <b>Leverage</b>: {leverage}x Isolated | Margin: ${margin:.2f} USDT\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🟢 <i>Position Officially Open & Live | Alert 1 of 2</i>"
-                )
-                keyboard = telegram_service.get_alert_inline_keyboard(symbol)
-                sent_msg_id = None
-                sent = False
-                try:
-                    candles = await binance_feed.fetch_klines(symbol, interval=timeframe, limit=50)
-                    if candles:
-                        chart_bytes = render_smc_chart_image(
-                            symbol,
-                            candles,
-                            setup,
-                            zones=[setup],
-                            timeframe=timeframe.upper()
-                        )
-                        resp = await telegram_service.send_photo(
-                            chart_bytes,
-                            alert_text,
-                            parse_mode="HTML",
-                            reply_markup=keyboard
-                        )
-                        if resp and resp.get("ok"):
-                            sent_msg_id = resp["result"]["message_id"]
-                            sent = True
-                except Exception as ce:
-                    logger.error(f"Error generating/sending chart photo for {symbol}: {ce}")
+                from engine.bitget_trader import bitget_trader
+                if bitget_trader.is_configured() and bitget_trader.is_auto_trade_enabled():
+                    is_filled = bitget_trader.is_symbol_active_on_exchange(symbol)
+                else:
+                    is_filled = True
+            except Exception:
+                is_filled = True
 
-                if not sent:
-                    resp = await telegram_service.send_raw_message(alert_text, parse_mode="HTML", reply_markup=keyboard)
-                    if resp and resp.get("ok"):
-                        sent_msg_id = resp["result"]["message_id"]
-
-                if sent_msg_id:
-                    set_setting(f"trade_msg_{symbol}_{side}", str(sent_msg_id))
-                    if trade_id:
-                        set_setting(f"trade_rec_msg_{trade_id}", str(sent_msg_id))
-            except Exception as e:
-                logger.warning(f"Telegram alert error: {e}")
+            if is_filled:
+                await self.dispatch_entry_filled_alert(setup, sec_id, sec_type_str, ep, tp, soft_sl, hard_sl, leverage, margin, timeframe, symbol, side, trade_id)
+            else:
+                self._pending_limit_alerts[symbol] = {
+                    "setup": setup, "sec_id": sec_id, "sec_type_str": sec_type_str,
+                    "ep": ep, "tp": tp, "soft_sl": soft_sl, "hard_sl": hard_sl,
+                    "leverage": leverage, "margin": margin, "timeframe": timeframe,
+                    "symbol": symbol, "side": side, "trade_id": trade_id
+                }
+                logger.info(f"⏳ Limit order placed on Bitget for {symbol}. Alert will be sent when filled!")
 
     async def check_live_price_and_exits(self):
         """
@@ -669,6 +693,23 @@ class Hermes30Model2ALiveEngine:
         open_trades = get_open_paper_trades()
         if not open_trades:
             return
+
+        # Check if any pending limit orders were just filled on Bitget!
+        if getattr(self, "_pending_limit_alerts", None):
+            for p_sym in list(self._pending_limit_alerts.keys()):
+                try:
+                    from engine.bitget_trader import bitget_trader
+                    if bitget_trader.is_symbol_active_on_exchange(p_sym):
+                        p_info = self._pending_limit_alerts.pop(p_sym)
+                        await self.dispatch_entry_filled_alert(
+                            p_info["setup"], p_info["sec_id"], p_info["sec_type_str"],
+                            p_info["ep"], p_info["tp"], p_info["soft_sl"], p_info["hard_sl"],
+                            p_info["leverage"], p_info["margin"], p_info["timeframe"],
+                            p_info["symbol"], p_info["side"], p_info.get("trade_id")
+                        )
+                        logger.info(f"🎯 PENDING LIMIT FILLED on Bitget for {p_sym}! Alert dispatched!")
+                except Exception as p_err:
+                    pass
 
         tickers = await binance_feed.fetch_all_tickers() or {}
         leverage = 5.0

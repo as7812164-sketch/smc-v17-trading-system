@@ -2292,12 +2292,27 @@
                 <span style="font-size:18px; font-weight:900; color:#FFFFFF; display:flex; align-items:center; gap:6px;">
                     <i class="fa-solid fa-chart-line" style="color:var(--green);"></i> Live Bitget Positions (<span id="homePosCount">0</span>)
                 </span>
-                <button onclick="switchTab('positions')" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:#38BDF8; font-size:13.5px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
+                <button onclick="setPosTabMode('positions'); switchTab('positions');" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:#38BDF8; font-size:13.5px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
                     View All &rarr;
                 </button>
             </div>
             <div id="homePositionsContainer">
                 <!-- Dynamically injected Bitget Pro cards -->
+            </div>
+        </div>
+
+        <!-- HERO BITGET OPEN ORDERS / LIMIT PENDING WIDGET (FRONT & CENTER) -->
+        <div id="homeOpenOrdersSection" style="margin-top:14px; margin-bottom:14px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:0 2px;">
+                <span style="font-size:17px; font-weight:900; color:#FFFFFF; display:flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:#F59E0B;"></i> Bitget Limit Orders Pending (<span id="homeOpenOrdersCount">0</span>)
+                </span>
+                <button onclick="setPosTabMode('orders'); switchTab('positions');" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#F59E0B; font-size:13px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
+                    View All &rarr;
+                </button>
+            </div>
+            <div id="homeOpenOrdersContainer">
+                <!-- Dynamically injected Open Orders cards -->
             </div>
         </div>
 
@@ -2733,25 +2748,31 @@
         <!-- Bitget Pro Top Position Navigation Bar -->
         <div class="bitget-pos-nav-strip">
             <div class="bpc-tab-pills">
-                <span class="bpc-nav-pill active" id="pillPositionsCount">Positions (1)</span>
-                <span class="bpc-nav-pill">Orders(0) <i class="fa-solid fa-caret-down" style="font-size:10px;"></i></span>
-                <span class="bpc-nav-pill">Bots(10)</span>
-                <span class="bpc-nav-pill">Assets</span>
+                <span class="bpc-nav-pill active" id="pillPositionsCount" onclick="setPosTabMode('positions')" style="cursor:pointer;">Positions (<span id="pillPositionsNum">0</span>)</span>
+                <span class="bpc-nav-pill" id="pillOrdersCount" onclick="setPosTabMode('orders')" style="cursor:pointer; position:relative;">
+                    Open Orders (<span id="pillOpenOrdersNum">0</span>)
+                </span>
+                <span class="bpc-nav-pill" onclick="switchTab('compounding')" style="cursor:pointer;">Bots(10)</span>
+                <span class="bpc-nav-pill" onclick="switchTab('markets')" style="cursor:pointer;">Assets</span>
             </div>
-            <button class="bpc-close-all-btn" onclick="closeAllPositionsDirect()">Close all</button>
+            <button class="bpc-close-all-btn" id="btnPosActionTop" onclick="handlePosTopAction()">Close all</button>
         </div>
         <div class="bitget-pos-filter-strip">
             <label class="bpc-checkbox-label">
                 <input type="checkbox" checked style="accent-color: #00F59B;">
-                <span>Show current</span>
+                <span id="posFilterLabel">Show current</span>
             </label>
             <div style="display:flex; align-items:center; gap:12px;">
-                <i class="fa-solid fa-arrow-down-wide-short" style="color:#848E9C; font-size:14px; cursor:pointer;" title="Sort Positions"></i>
+                <i class="fa-solid fa-arrow-down-wide-short" style="color:#848E9C; font-size:14px; cursor:pointer;" title="Sort"></i>
             </div>
         </div>
 
         <div id="positionsContainer">
-            <!-- Dynamically injected -->
+            <!-- Dynamically injected filled positions -->
+        </div>
+
+        <div id="openOrdersContainer" style="display:none;">
+            <!-- Dynamically injected resting limit orders -->
         </div>
 
         <div class="section-header" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
@@ -3565,6 +3586,211 @@
             switchTab('trade');
         }
 
+        let currentPosTabMode = 'positions';
+        window.lastOpenOrdersData = [];
+
+        function setPosTabMode(mode) {
+            currentPosTabMode = mode;
+            const pillPos = document.getElementById('pillPositionsCount');
+            const pillOrd = document.getElementById('pillOrdersCount');
+            const posCont = document.getElementById('positionsContainer');
+            const ordCont = document.getElementById('openOrdersContainer');
+            const btnTop = document.getElementById('btnPosActionTop');
+            const filterLbl = document.getElementById('posFilterLabel');
+
+            if (mode === 'positions') {
+                if (pillPos) pillPos.classList.add('active');
+                if (pillOrd) pillOrd.classList.remove('active');
+                if (posCont) posCont.style.display = 'block';
+                if (ordCont) ordCont.style.display = 'none';
+                if (filterLbl) filterLbl.textContent = 'Show active positions';
+                if (btnTop) {
+                    btnTop.textContent = 'Close all';
+                    btnTop.style.background = 'rgba(239,68,68,0.2)';
+                    btnTop.style.color = '#EF4444';
+                }
+            } else {
+                if (pillPos) pillPos.classList.remove('active');
+                if (pillOrd) pillOrd.classList.add('active');
+                if (posCont) posCont.style.display = 'none';
+                if (ordCont) ordCont.style.display = 'block';
+                if (filterLbl) filterLbl.textContent = 'Show resting limit orders';
+                if (btnTop) {
+                    btnTop.textContent = 'Cancel all';
+                    btnTop.style.background = 'rgba(245,158,11,0.2)';
+                    btnTop.style.color = '#F59E0B';
+                }
+                fetchOpenOrders();
+            }
+        }
+
+        function handlePosTopAction() {
+            if (currentPosTabMode === 'positions') {
+                closeAllPositionsDirect();
+            } else {
+                cancelAllOpenOrdersDirect();
+            }
+        }
+
+        async function cancelOpenOrderDirect(orderId, symbol) {
+            if (!confirm(`Cancel resting limit order for ${symbol}?`)) return;
+            try {
+                const res = await fetch('/api/bitget/cancel_order', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({order_id: orderId, symbol: symbol})
+                });
+                const d = await res.json();
+                if (d.success) {
+                    alert(`Order for ${symbol} successfully cancelled on Bitget.`);
+                    fetchOpenOrders();
+                } else {
+                    alert(`Error cancelling order: ${d.error || 'Unknown error'}`);
+                }
+            } catch (e) {
+                alert(`Request error: ${e.message}`);
+            }
+        }
+
+        async function cancelAllOpenOrdersDirect() {
+            if (!window.lastOpenOrdersData || window.lastOpenOrdersData.length === 0) {
+                alert("No resting limit orders to cancel.");
+                return;
+            }
+            if (!confirm(`Cancel ALL ${window.lastOpenOrdersData.length} resting limit order(s) on Bitget?`)) return;
+            try {
+                const res = await fetch('/api/bitget/cancel_all_orders', { method: 'POST' });
+                const d = await res.json();
+                if (d.success) {
+                    alert(`Cancelled ${d.cancelled} limit order(s) on Bitget.`);
+                    fetchOpenOrders();
+                } else {
+                    alert(`Error: ${d.error || 'Failed'}`);
+                }
+            } catch (e) {
+                alert(`Error: ${e.message}`);
+            }
+        }
+
+        async function fetchOpenOrders() {
+            try {
+                const res = await fetch('/api/bitget/open_orders?t=' + Date.now());
+                const data = await res.json();
+                const orders = (data && data.orders) ? data.orders : [];
+                window.lastOpenOrdersData = orders;
+
+                const countNum = orders.length;
+                const pillOrdNum = document.getElementById('pillOpenOrdersNum');
+                if (pillOrdNum) pillOrdNum.textContent = countNum;
+
+                const homeSec = document.getElementById('homeOpenOrdersSection');
+                const homeCount = document.getElementById('homeOpenOrdersCount');
+                const homeContainer = document.getElementById('homeOpenOrdersContainer');
+                const ordContainer = document.getElementById('openOrdersContainer');
+
+                if (homeCount) homeCount.textContent = countNum;
+                if (homeSec) homeSec.style.display = countNum > 0 ? 'block' : 'none';
+
+                if (countNum === 0) {
+                    const emptyHtml = `
+                        <div class="empty-radar" style="border:1px dashed rgba(245,158,11,0.25); background:rgba(245,158,11,0.03); padding:24px 16px; text-align:center; border-radius:12px; margin-top:8px;">
+                            <i class="fa-solid fa-clock" style="font-size:32px; color:#F59E0B; margin-bottom:10px;"></i>
+                            <h4 style="color:#FFF; font-size:15px; margin-bottom:4px;">No Pending Limit Orders</h4>
+                            <p style="color:#94A3B8; font-size:12.5px;">All qualified setups are filled into live positions or waiting for the next 50% Mean Threshold confirmation.</p>
+                        </div>
+                    `;
+                    if (homeContainer) homeContainer.innerHTML = '';
+                    if (ordContainer) ordContainer.innerHTML = emptyHtml;
+                    return;
+                }
+
+                const cardsHtml = orders.map(o => {
+                    const isBuy = o.side === 'LONG';
+                    const sideText = isBuy ? 'Limit Long' : 'Limit Short';
+                    const sideBadgeClass = isBuy ? 'bpc-badge-long' : 'bpc-badge-short';
+                    const limitPrice = Number(o.price || 0).toFixed(4);
+                    const curPrice = Number(o.current_price || limitPrice).toFixed(4);
+                    const distPct = Number(o.distance_pct || 0).toFixed(2);
+                    const amount = Number(o.amount || 0);
+                    const leverage = o.leverage || '5x Isolated';
+                    const estUsdt = (amount * Number(o.price || 0)).toFixed(2);
+
+                    return `
+                        <div class="bitget-pos-card" style="border-left: 3px solid #F59E0B;" id="order-${o.id}">
+                            <!-- Row 1: Symbol & Status Badge -->
+                            <div class="bpc-header-top">
+                                <div class="bpc-symbol-wrap" onclick="openCoinTrade('${o.symbol}')">
+                                    <span class="bpc-symbol">${o.symbol}</span>
+                                    <i class="fa-solid fa-chevron-right bpc-sym-arrow"></i>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:11px; font-weight:800; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#F59E0B; padding:3px 8px; border-radius:12px; display:flex; align-items:center; gap:4px;">
+                                        <i class="fa-solid fa-hourglass-half fa-spin"></i> WAITING FILL
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Badges (Limit Long/Short, 5x Isolated, 50% MT) -->
+                            <div class="bpc-badges-row">
+                                <span class="${sideBadgeClass}">${sideText}</span>
+                                <span class="bpc-pill-outline">${leverage}</span>
+                                <span class="bpc-pill-outline" style="border-color:rgba(245,158,11,0.4); color:#F59E0B;">50% Mean Threshold</span>
+                                <span class="bpc-pill-outline">Resting on Bitget</span>
+                            </div>
+
+                            <!-- Row 3: Price Levels & Proximity Distance -->
+                            <div class="bpc-grid-3" style="margin-top:10px; background:rgba(255,255,255,0.02); padding:10px 12px; border-radius:8px;">
+                                <div class="bpc-grid-col left">
+                                    <span class="bpc-grid-lbl">Limit Price (MT)</span>
+                                    <span class="bpc-grid-val" style="color:#00F59B; font-weight:800;">$${limitPrice}</span>
+                                </div>
+                                <div class="bpc-grid-col center">
+                                    <span class="bpc-grid-lbl">Market Price</span>
+                                    <span class="bpc-grid-val" style="color:#FFF;">$${curPrice}</span>
+                                </div>
+                                <div class="bpc-grid-col right">
+                                    <span class="bpc-grid-lbl">Distance</span>
+                                    <span class="bpc-grid-val" style="color:#F59E0B; font-weight:800;">${distPct}% Away</span>
+                                </div>
+                            </div>
+
+                            <!-- Row 4: Order Size & Allocation -->
+                            <div class="bpc-grid-3" style="margin-top:6px;">
+                                <div class="bpc-grid-col left">
+                                    <span class="bpc-grid-lbl">Amount</span>
+                                    <span class="bpc-grid-val">${amount} ${o.symbol.replace('USDT','')}</span>
+                                </div>
+                                <div class="bpc-grid-col center">
+                                    <span class="bpc-grid-lbl">Order Value</span>
+                                    <span class="bpc-grid-val">≈ $${estUsdt} USDT</span>
+                                </div>
+                                <div class="bpc-grid-col right">
+                                    <span class="bpc-grid-lbl">Fill Trigger</span>
+                                    <span class="bpc-grid-val" style="color:var(--cyan);">Tap MT</span>
+                                </div>
+                            </div>
+
+                            <!-- Row 5: Action Buttons -->
+                            <div class="bpc-dock" style="margin-top:12px;">
+                                <button class="bpc-btn" onclick="openCoinTrade('${o.symbol}')" style="flex:1;">
+                                    <i class="fa-solid fa-chart-candlestick"></i> View Chart
+                                </button>
+                                <button class="bpc-btn close-btn" onclick="cancelOpenOrderDirect('${o.id}', '${o.symbol}')" style="flex:1; border-color:rgba(245,158,11,0.5); color:#F59E0B; background:rgba(245,158,11,0.08);">
+                                    <i class="fa-solid fa-ban"></i> Cancel Order
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                if (homeContainer) homeContainer.innerHTML = cardsHtml;
+                if (ordContainer) ordContainer.innerHTML = cardsHtml;
+
+            } catch (e) {
+                console.error("Open orders fetch error:", e);
+            }
+        }
+
         async function fetchPositions() {
             try {
                 const res = await fetch('/api/paper/positions?t=' + Date.now());
@@ -3574,7 +3800,9 @@
 
                 window.lastPositionsData = (data && data.positions) ? data.positions : [];
                 const pillCount = document.getElementById('pillPositionsCount');
-                if (pillCount) pillCount.textContent = `Positions (${window.lastPositionsData.length})`;
+                const pillPosNum = document.getElementById('pillPositionsNum');
+                if (pillPosNum) pillPosNum.textContent = window.lastPositionsData.length;
+                else if (pillCount) pillCount.textContent = `Positions (${window.lastPositionsData.length})`;
                 renderActivePositionsStrip(window.lastPositionsData);
 
                 if (!data || !data.positions || data.positions.length === 0) {
@@ -4055,6 +4283,7 @@
         loadRecentSignals();
         fetchMarketsData();
         fetchPositions();
+        fetchOpenOrders();
         fetchTradesHistory();
 
         setInterval(checkKillSwitchStatus, 4000);
@@ -4062,6 +4291,7 @@
         setInterval(loadRecentSignals, 3500);
         setInterval(fetchMarketsData, 5000);
         setInterval(fetchPositions, 3000);
+        setInterval(fetchOpenOrders, 3000);
         setInterval(fetchTradesHistory, 6000);
     </script>
     <script src="/static/js/hermes_chart_replay.js"></script>

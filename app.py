@@ -1906,8 +1906,43 @@ async def get_futures_positions(timeframe: Optional[str] = None):
         "total_margin": round(total_margin, 2)
     }
 
+@app.get("/api/bitget/open_orders")
+@app.get("/api/trade/open_orders")
 @app.get("/api/futures/open_orders")
 async def get_futures_open_orders():
+    """Returns real live open limit orders currently resting in Bitget orderbook."""
+    orders = []
+    try:
+        from engine.bitget_trader import bitget_trader
+        if bitget_trader.is_configured():
+            raw_orders = bitget_trader.exchange.fetch_open_orders()
+            tickers = await get_live_tickers()
+            for o in raw_orders:
+                raw_sym = o.get('symbol', '')
+                sym = raw_sym.replace('/', '').replace(':USDT', '').upper()
+                side = str(o.get('side', 'buy')).upper()
+                lim_p = float(o.get('price') or 0.0)
+                amount = float(o.get('amount') or 0.0)
+                cur_p = float(tickers.get(sym, lim_p) or lim_p)
+                dist_pct = (abs(cur_p - lim_p) / cur_p * 100.0) if cur_p > 0 else 0.0
+                orders.append({
+                    "id": o.get('id'),
+                    "symbol": sym,
+                    "side": "LONG" if side == "BUY" else "SHORT",
+                    "badge": "L" if side == "BUY" else "S",
+                    "order_type": "Limit (50% MT)",
+                    "price": lim_p,
+                    "current_price": cur_p,
+                    "distance_pct": round(dist_pct, 2),
+                    "amount": amount,
+                    "status": "WAITING_FILL",
+                    "leverage": "5x Isolated",
+                    "timestamp": o.get('timestamp')
+                })
+            orders.sort(key=lambda x: x["distance_pct"])
+            return {"orders": orders, "count": len(orders)}
+    except Exception as e:
+        logger.warning(f"Error fetching Bitget open orders: {e}")
     """Returns active qualified limit orders from 2nd OBs waiting for First-Tap."""
     active_zones = get_active_zones()
     tickers = scanner.last_tickers or {}
@@ -1947,6 +1982,48 @@ async def get_futures_open_orders():
 
     orders.sort(key=lambda o: o["distance_pct"])
     return {"orders": orders, "count": len(orders)}
+
+@app.post("/api/bitget/cancel_order")
+@app.post("/api/trade/cancel_order")
+async def cancel_bitget_order_endpoint(body: Optional[Dict[str, Any]] = Body(None)):
+    """Cancels a specific resting limit order on Bitget."""
+    b = body or {}
+    order_id = b.get("order_id") or b.get("id")
+    sym = b.get("symbol", "")
+    if not order_id:
+        return {"success": False, "error": "Order ID required"}
+    try:
+        from engine.bitget_trader import bitget_trader
+        if bitget_trader.is_configured():
+            ccxt_sym = bitget_trader.format_symbol_for_bitget(sym) if sym else None
+            res = bitget_trader.exchange.cancel_order(order_id, ccxt_sym)
+            logger.info(f"🗑️ Bitget limit order {order_id} ({sym}) cancelled successfully.")
+            return {"success": True, "result": res}
+    except Exception as e:
+        logger.error(f"Error cancelling Bitget order {order_id}: {e}")
+        return {"success": False, "error": str(e)}
+    return {"success": False, "error": "Bitget not configured"}
+
+@app.post("/api/bitget/cancel_all_orders")
+@app.post("/api/trade/cancel_all_orders")
+async def cancel_all_bitget_orders_endpoint():
+    """Cancels all resting limit orders on Bitget."""
+    try:
+        from engine.bitget_trader import bitget_trader
+        if bitget_trader.is_configured():
+            raw_orders = bitget_trader.exchange.fetch_open_orders()
+            cancelled = 0
+            for o in raw_orders:
+                try:
+                    bitget_trader.exchange.cancel_order(o['id'], o.get('symbol'))
+                    cancelled += 1
+                except Exception:
+                    pass
+            logger.info(f"🗑️ Cancelled {cancelled} Bitget resting limit orders.")
+            return {"success": True, "cancelled": cancelled}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    return {"success": False, "error": "Bitget not configured"}
 
 @app.post("/api/futures/close_position")
 @app.post("/api/paper/close")

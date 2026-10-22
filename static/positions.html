@@ -794,11 +794,11 @@
                 <!-- Header Tabs matching Screenshot -->
                 <div class="bitget-tabs-strip">
                     <div class="bitget-main-tabs">
-                        <button class="bitget-tab-item active" id="tabPositionsHeader">
+                        <button class="bitget-tab-item active" id="tabPositionsHeader" onclick="switchDeskPosTab('positions')">
                             Positions(<span id="openPosCountNum">0</span>)
                         </button>
-                        <button class="bitget-tab-item" onclick="showToast('Open Limit Orders (2nd OB) are armed in background')">
-                            Orders(0) <i class="fa-solid fa-caret-down" style="font-size:10px; margin-left:2px;"></i>
+                        <button class="bitget-tab-item" id="tabOrdersHeader" onclick="switchDeskPosTab('orders')">
+                            Orders(<span id="openOrdersCountNum">0</span>) <i class="fa-solid fa-caret-down" style="font-size:10px; margin-left:2px;"></i>
                         </button>
                         <button class="bitget-tab-item" onclick="showToast('Autonomous Quantitative Bots Active')">
                             Bots (0)
@@ -844,6 +844,9 @@
                         <h4>No Open Positions</h4>
                         <p>Hermes 3.0 Model 2A 4-Sentries Engine is continuously scanning Top-22 Champions on 4H &amp; 1H timeframes.</p>
                     </div>
+                </div>
+                <div class="bitget-card-container" id="bitgetOrdersContainer" style="display:none;">
+                    <!-- Populated dynamically via fetchDeskOpenOrders() -->
                 </div>
             </section>
 
@@ -1704,6 +1707,127 @@
             }
         }
 
+        let currentDeskPosTab = 'positions';
+        window.lastDeskOrdersData = [];
+
+        function switchDeskPosTab(tab) {
+            currentDeskPosTab = tab;
+            const tabPos = document.getElementById('tabPositionsHeader');
+            const tabOrd = document.getElementById('tabOrdersHeader');
+            const posCont = document.getElementById('bitgetPositionsContainer');
+            const ordCont = document.getElementById('bitgetOrdersContainer');
+
+            if (tab === 'positions') {
+                if (tabPos) tabPos.classList.add('active');
+                if (tabOrd) tabOrd.classList.remove('active');
+                if (posCont) posCont.style.display = 'block';
+                if (ordCont) ordCont.style.display = 'none';
+            } else {
+                if (tabPos) tabPos.classList.remove('active');
+                if (tabOrd) tabOrd.classList.add('active');
+                if (posCont) posCont.style.display = 'none';
+                if (ordCont) ordCont.style.display = 'block';
+                fetchDeskOpenOrders();
+            }
+        }
+
+        async function fetchDeskOpenOrders() {
+            try {
+                const res = await fetch('/api/bitget/open_orders?t=' + Date.now());
+                const data = await res.json();
+                const orders = (data && data.orders) ? data.orders : [];
+                window.lastDeskOrdersData = orders;
+
+                const countElem = document.getElementById('openOrdersCountNum');
+                if (countElem) countElem.textContent = orders.length;
+
+                const container = document.getElementById('bitgetOrdersContainer');
+                if (!container) return;
+
+                if (orders.length === 0) {
+                    container.innerHTML = `
+                        <div class="bitget-empty-state" style="border: 1px dashed rgba(245,158,11,0.25); background: rgba(245,158,11,0.03);">
+                            <i class="fa-solid fa-clock" style="color:#F59E0B;"></i>
+                            <h4>No Open Limit Orders</h4>
+                            <p>All resting limit orders have filled or are waiting for new 50% Mean Threshold triggers.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = orders.map(o => {
+                    const isBuy = o.side === 'LONG';
+                    const sideClass = isBuy ? 'long' : 'short';
+                    const limPrice = Number(o.price || 0).toFixed(4);
+                    const curPrice = Number(o.current_price || limPrice).toFixed(4);
+                    const dist = Number(o.distance_pct || 0).toFixed(2);
+                    const amount = Number(o.amount || 0);
+                    const estUsdt = (amount * Number(o.price || 0)).toFixed(2);
+
+                    return `
+                        <div class="bitget-pos-card" style="border-left: 3px solid #F59E0B; margin-bottom: 14px;">
+                            <div class="bg-card-header">
+                                <div class="bg-card-symbol-row">
+                                    <span class="bg-sym-badge ${sideClass}">${o.badge || (isBuy ? 'L' : 'S')}</span>
+                                    <span class="bg-sym-name">${o.symbol}</span>
+                                    <span class="bg-sub-tag">USDT-M</span>
+                                    <span class="bg-sub-tag" style="background:rgba(245,158,11,0.15); color:#F59E0B; border:1px solid rgba(245,158,11,0.4); font-weight:800;">
+                                        <i class="fa-solid fa-hourglass-half fa-spin"></i> WAITING FILL
+                                    </span>
+                                    <span class="bg-sub-tag">${o.leverage || '5x Isolated'}</span>
+                                </div>
+                            </div>
+                            <div class="bg-metrics-grid" style="margin-top:12px;">
+                                <div class="bg-metric-col">
+                                    <span class="bg-m-label">Limit Entry (50% MT)</span>
+                                    <span class="bg-m-val" style="color:#00F59B; font-weight:800;">$${limPrice}</span>
+                                </div>
+                                <div class="bg-metric-col">
+                                    <span class="bg-m-label">Current Market Price</span>
+                                    <span class="bg-m-val">$${curPrice}</span>
+                                </div>
+                                <div class="bg-metric-col">
+                                    <span class="bg-m-label">Distance to Fill</span>
+                                    <span class="bg-m-val" style="color:#F59E0B; font-weight:800;">${dist}% Away</span>
+                                </div>
+                                <div class="bg-metric-col">
+                                    <span class="bg-m-label">Order Size</span>
+                                    <span class="bg-m-val">${amount} ${o.symbol.replace('USDT','')} (≈ $${estUsdt})</span>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px; border-top:1px dashed rgba(255,255,255,0.08); padding-top:10px;">
+                                <button class="bg-action-btn" onclick="cancelDeskOrder('${o.id}', '${o.symbol}')" style="background:rgba(245,158,11,0.15); color:#F59E0B; border:1px solid rgba(245,158,11,0.4); padding:4px 12px; border-radius:6px; cursor:pointer;">
+                                    <i class="fa-solid fa-ban"></i> Cancel Order
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.warn("fetchDeskOpenOrders error:", e);
+            }
+        }
+
+        async function cancelDeskOrder(orderId, symbol) {
+            if (!confirm(`Cancel resting limit order for ${symbol}?`)) return;
+            try {
+                const res = await fetch('/api/bitget/cancel_order', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({order_id: orderId, symbol: symbol})
+                });
+                const d = await res.json();
+                if (d.success) {
+                    showToast(`Order for ${symbol} cancelled.`);
+                    fetchDeskOpenOrders();
+                } else {
+                    showToast(`Error: ${d.error || 'Failed'}`);
+                }
+            } catch (e) {
+                showToast(`Request error: ${e.message}`);
+            }
+        }
+
         // ==========================================
         // INITIALIZATION & REAL-TIME POLLING
         // ==========================================
@@ -1711,12 +1835,14 @@
             checkKillSwitchStatus();
             await fetchDualAccounts();
             await fetchPositions();
+            await fetchDeskOpenOrders();
             await fetchTradeHistory();
 
             // Real-time synchronization loop every 2.5 seconds
             setInterval(async () => {
                 await fetchDualAccounts();
                 await fetchPositions();
+                await fetchDeskOpenOrders();
             }, 2500);
 
             // History & Kill switch refresh every 5 seconds
