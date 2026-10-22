@@ -51,6 +51,10 @@ class BitgetTrader:
                     },
                     'enableRateLimit': True,
                 })
+                try:
+                    self.exchange.load_markets()
+                except Exception as lme:
+                    pass
             except Exception as e:
                 print(f"[BITGET INIT ERROR] {e}")
                 self.exchange = None
@@ -314,11 +318,23 @@ class BitgetTrader:
                 notional = margin * BITGET_DEFAULT_LEVERAGE
                 raw_amount = notional / entry_price
 
-                # Precision rounding
+                # Precision rounding with strict market rule enforcement
+                if not getattr(self.exchange, 'markets', None):
+                    try:
+                        self.exchange.load_markets()
+                    except Exception:
+                        pass
+
                 try:
                     amount = float(self.exchange.amount_to_precision(ccxt_sym, raw_amount))
                 except Exception:
-                    amount = round(raw_amount, 4)
+                    # Fallback check for integer contract markets (e.g. UNI, SOL, ETH on certain futures tiers)
+                    m = self.exchange.markets.get(ccxt_sym) if getattr(self.exchange, 'markets', None) else None
+                    prec = m.get('precision', {}).get('amount') if m else None
+                    if prec is not None and prec == 1.0:
+                        amount = float(int(raw_amount))
+                    else:
+                        amount = round(raw_amount, 2)
 
                 # 4. Create Order on Bitget with Preset TP and Disaster SL attached
                 order_params = {
@@ -497,10 +513,22 @@ class BitgetTrader:
                 notional = margin * BITGET_DEFAULT_LEVERAGE
                 raw_amount = notional / entry_price
 
+                # Precision rounding with strict market rule enforcement
+                if not getattr(self.exchange, 'markets', None):
+                    try:
+                        self.exchange.load_markets()
+                    except Exception:
+                        pass
+
                 try:
                     amount = float(self.exchange.amount_to_precision(ccxt_sym, raw_amount))
                 except Exception:
-                    amount = round(raw_amount, 4)
+                    m = self.exchange.markets.get(ccxt_sym) if getattr(self.exchange, 'markets', None) else None
+                    prec = m.get('precision', {}).get('amount') if m else None
+                    if prec is not None and prec == 1.0:
+                        amount = float(int(raw_amount))
+                    else:
+                        amount = round(raw_amount, 2)
 
                 order_params = {
                     'marginMode': 'isolated',

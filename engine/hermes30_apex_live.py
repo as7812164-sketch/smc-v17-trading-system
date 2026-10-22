@@ -573,10 +573,18 @@ class Hermes30Model2ALiveEngine:
                 if bitget_trader.is_configured() and bitget_trader.is_auto_trade_enabled():
                     setup_copy = {**setup, "managed_by_hermes": True}
                     if "4h" in timeframe:
-                        await bitget_trader.execute_4h_trade(setup_copy)
+                        bg_res = await bitget_trader.execute_4h_trade(setup_copy)
                     else:
-                        await bitget_trader.execute_1h_trade(setup_copy)
-                    logger.info(f"💎 Bitget real trade submitted for {symbol}")
+                        bg_res = await bitget_trader.execute_1h_trade(setup_copy)
+                    
+                    if bg_res and not bg_res.get("success"):
+                        err_reason = bg_res.get("error") or bg_res.get("reason", "Bitget rejected order")
+                        logger.error(f"Bitget execution failed for {symbol}: {err_reason}")
+                        from database.db import close_paper_trade
+                        close_paper_trade(setup, outcome="EXCHANGE_REJECTED", exit_price=ep)
+                        return
+                    else:
+                        logger.info(f"Bitget real trade submitted for {symbol}")
             except Exception as bge:
                 logger.error(f"Error executing real Bitget trade: {bge}")
 
