@@ -80,6 +80,7 @@ class BitgetTrader:
         # Aliases / Special Bitget swap tickers
         symbol_map = {
             "MKRUSDT": "AMKR/USDT:USDT",
+            "1000PEPEUSDT": "PEPE/USDT:USDT",
         }
         if clean in symbol_map:
             return symbol_map[clean]
@@ -263,6 +264,13 @@ class BitgetTrader:
             soft_sl_price = float(setup["sl_price"])
         if setup.get("hard_sl_price"):
             hard_disaster_sl = float(setup["hard_sl_price"])
+
+        # Scale 1000PEPEUSDT to PEPE/USDT:USDT (Bitget trades standard 1x PEPE)
+        if "1000PEPE" in sym.upper():
+            entry_price /= 1000.0
+            tp_price /= 1000.0
+            soft_sl_price /= 1000.0
+            hard_disaster_sl /= 1000.0
 
         if not self.exchange:
             self._init_exchange()
@@ -461,6 +469,13 @@ class BitgetTrader:
             soft_sl_price = float(setup["sl_price"])
         if setup.get("hard_sl_price"):
             hard_disaster_sl = float(setup["hard_sl_price"])
+
+        # Scale 1000PEPEUSDT to PEPE/USDT:USDT (Bitget trades standard 1x PEPE)
+        if "1000PEPE" in sym.upper():
+            entry_price /= 1000.0
+            tp_price /= 1000.0
+            soft_sl_price /= 1000.0
+            hard_disaster_sl /= 1000.0
 
         if not self.exchange:
             self._init_exchange()
