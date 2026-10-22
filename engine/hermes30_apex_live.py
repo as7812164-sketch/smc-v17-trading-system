@@ -642,6 +642,15 @@ class Hermes30Model2ALiveEngine:
                         return
                     else:
                         logger.info(f"Bitget real trade submitted for {symbol}")
+                        # If executed at CMP Market, synchronize exact fill price
+                        actual_ep = float(bg_res.get("entry_price") or 0.0)
+                        if actual_ep and actual_ep > 0:
+                            ep = actual_ep
+                            try:
+                                with get_connection() as conn:
+                                    conn.execute("UPDATE paper_trades SET entry_price = ? WHERE id = ?", (ep, trade_id))
+                            except Exception:
+                                pass
             except Exception as bge:
                 logger.error(f"Error executing real Bitget trade: {bge}")
 

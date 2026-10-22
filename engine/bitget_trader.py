@@ -25,7 +25,8 @@ from config import (
     BITGET_MARGIN_MODE,
     BITGET_4H_TP_PCT,
     BITGET_4H_SL_PCT,
-    BITGET_HARD_DISASTER_SL_PCT
+    BITGET_HARD_DISASTER_SL_PCT,
+    BITGET_EXECUTION_TYPE
 )
 from database.db import get_setting, set_setting, get_connection
 
@@ -352,18 +353,29 @@ class BitgetTrader:
                     'presetStopLossPrice': str(round(hard_disaster_sl, 4))
                 }
 
-                print(f"[BITGET 4H ORDER] Placing {trade_side.upper()} on {ccxt_sym} | Amount: {amount} | Price: {entry_price} | TP: {tp_price} | SL: {hard_disaster_sl} (5x ISOLATED)")
-
-                order = self.exchange.create_order(
-                    symbol=ccxt_sym,
-                    type='limit',
-                    side=trade_side,
-                    amount=amount,
-                    price=entry_price,
-                    params=order_params
-                )
+                exec_type = getattr(self, 'execution_type', BITGET_EXECUTION_TYPE).lower()
+                if exec_type == 'market':
+                    print(f"[BITGET 4H ORDER] Placing MARKET (CMP) {trade_side.upper()} on {ccxt_sym} | Amount: {amount} | TP: {tp_price} | SL: {hard_disaster_sl} (5x ISOLATED)")
+                    order = self.exchange.create_order(
+                        symbol=ccxt_sym,
+                        type='market',
+                        side=trade_side,
+                        amount=amount,
+                        params=order_params
+                    )
+                else:
+                    print(f"[BITGET 4H ORDER] Placing LIMIT {trade_side.upper()} on {ccxt_sym} | Amount: {amount} | Price: {entry_price} | TP: {tp_price} | SL: {hard_disaster_sl} (5x ISOLATED)")
+                    order = self.exchange.create_order(
+                        symbol=ccxt_sym,
+                        type='limit',
+                        side=trade_side,
+                        amount=amount,
+                        price=entry_price,
+                        params=order_params
+                    )
 
                 order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
+                actual_fill_price = float(order.get("average") or order.get("price") or entry_price)
 
                 # Place Exchange Position TP & SL via Bitget V2 PlacePosTpsl API
                 try:
@@ -390,7 +402,7 @@ class BitgetTrader:
                     "order_id": order_id,
                     "symbol": sym,
                     "side": side,
-                    "entry_price": entry_price,
+                    "entry_price": actual_fill_price,
                     "tp_price": tp_price,
                     "soft_sl_price": soft_sl_price,
                     "hard_disaster_sl": hard_disaster_sl,
@@ -552,17 +564,28 @@ class BitgetTrader:
                     'presetStopLossPrice': str(round(hard_disaster_sl, 4))
                 }
 
-                print(f"[BITGET 1H ORDER] Placing {trade_side.upper()} on {ccxt_sym} | Amount: {amount} | Price: {entry_price} | TP: {tp_price} | SL: {hard_disaster_sl} (5x ISOLATED)")
-
-                order = self.exchange.create_order(
-                    symbol=ccxt_sym,
-                    type='limit',
-                    side=trade_side,
-                    amount=amount,
-                    price=entry_price,
-                    params=order_params
-                )
+                exec_type = getattr(self, 'execution_type', BITGET_EXECUTION_TYPE).lower()
+                if exec_type == 'market':
+                    print(f"[BITGET 1H ORDER] Placing MARKET (CMP) {trade_side.upper()} on {ccxt_sym} | Amount: {amount} | TP: {tp_price} | SL: {hard_disaster_sl} (5x ISOLATED)")
+                    order = self.exchange.create_order(
+                        symbol=ccxt_sym,
+                        type='market',
+                        side=trade_side,
+                        amount=amount,
+                        params=order_params
+                    )
+                else:
+                    print(f"[BITGET 1H ORDER] Placing LIMIT {trade_side.upper()} on {ccxt_sym} | Amount: {amount} | Price: {entry_price} | TP: {tp_price} | SL: {hard_disaster_sl} (5x ISOLATED)")
+                    order = self.exchange.create_order(
+                        symbol=ccxt_sym,
+                        type='limit',
+                        side=trade_side,
+                        amount=amount,
+                        price=entry_price,
+                        params=order_params
+                    )
                 order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
+                actual_fill_price = float(order.get("average") or order.get("price") or entry_price)
 
                 # Place Exchange Position TP & SL via Bitget V2 PlacePosTpsl API
                 try:
@@ -589,7 +612,7 @@ class BitgetTrader:
                     "order_id": order_id,
                     "symbol": sym,
                     "side": side,
-                    "entry_price": entry_price,
+                    "entry_price": actual_fill_price,
                     "tp_price": tp_price,
                     "soft_sl_price": soft_sl_price,
                     "hard_disaster_sl": hard_disaster_sl,

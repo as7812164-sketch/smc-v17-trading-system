@@ -164,6 +164,7 @@ BITGET_4H_TP_PCT = 0.0220  # +2.20% price move (+11.00% ROE @ 5x)
 BITGET_4H_SL_PCT = 0.0280  # -2.80% soft SL on 4H candle close
 BITGET_HARD_DISASTER_SL_PCT = 0.0380  # 3.80% emergency disaster stop on exchange
 BITGET_MIN_CONFLUENCE = int(os.getenv("BITGET_MIN_CONFLUENCE", "80"))
+BITGET_EXECUTION_TYPE = os.getenv("BITGET_EXECUTION_TYPE", "market")  # "market" = CMP instant fill (zero missed trades), "limit" = resting limit
 
 # --- Binance Real Auto-Trading Config (Decommissioned - Waiting for TP exit on open positions) ---
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", "")
