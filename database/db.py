@@ -1439,6 +1439,26 @@ def update_paper_trade_mark_price(trade_id: int, mark_price: float):
 
         conn.commit()
 
+def sync_paper_trade_exchange_fill(trade_id: int, entry_price: float, position_size_usdt: Optional[float] = None, sl_price: Optional[float] = None, tp_price: Optional[float] = None):
+    """Synchronizes exact exchange filled entry price, position size, and exchange TP/SL into paper_trades."""
+    if not trade_id or entry_price <= 0:
+        return
+    with get_connection() as conn:
+        updates = ["entry_price = ?"]
+        params = [entry_price]
+        if position_size_usdt and position_size_usdt > 0:
+            updates.append("position_size_usdt = ?")
+            params.append(position_size_usdt)
+        if sl_price and sl_price > 0:
+            updates.append("sl_price = ?")
+            params.append(sl_price)
+        if tp_price and tp_price > 0:
+            updates.append("tp_price = ?")
+            params.append(tp_price)
+        params.append(trade_id)
+        conn.execute(f"UPDATE paper_trades SET {', '.join(updates)} WHERE id = ?", tuple(params))
+        conn.commit()
+
 def close_paper_trade(zone: Dict[str, Any], outcome: str, exit_price: Optional[float] = None) -> Optional[Dict[str, Any]]:
     """
     Closes open paper trade on TP_HIT, SL_HIT, or DYNAMIC ARMOR EXIT.

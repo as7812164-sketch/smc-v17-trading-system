@@ -375,11 +375,24 @@ class BitgetTrader:
                     )
 
                 order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
-                actual_fill_price = float(order.get("average") or order.get("price") or entry_price)
+                clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                actual_fill_price = float(order.get("average") or order.get("price") or 0.0)
+                if actual_fill_price <= 0:
+                    try:
+                        import time
+                        time.sleep(0.3)
+                        pos_res = self.exchange.privateMixGetV2MixPositionAllPosition({'productType': 'USDT-FUTURES', 'symbol': clean_sym})
+                        for p in pos_res.get('data', []):
+                            if float(p.get('total', 0) or 0) > 0 and str(p.get('holdSide', '')).lower() == hold_side.lower():
+                                actual_fill_price = float(p.get('openPriceAvg') or 0.0)
+                                break
+                    except Exception:
+                        pass
+                if actual_fill_price <= 0:
+                    actual_fill_price = entry_price
 
                 # Place Exchange Position TP & SL via Bitget V2 PlacePosTpsl API
                 try:
-                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
                     self.exchange.privateMixPostV2MixOrderPlacePosTpsl({
                         'marginCoin': 'USDT',
                         'symbol': clean_sym,
@@ -585,11 +598,24 @@ class BitgetTrader:
                         params=order_params
                     )
                 order_id = order.get("id") or order.get("info", {}).get("orderId", "BITGET_FILLED")
-                actual_fill_price = float(order.get("average") or order.get("price") or entry_price)
+                clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                actual_fill_price = float(order.get("average") or order.get("price") or 0.0)
+                if actual_fill_price <= 0:
+                    try:
+                        import time
+                        time.sleep(0.3)
+                        pos_res = self.exchange.privateMixGetV2MixPositionAllPosition({'productType': 'USDT-FUTURES', 'symbol': clean_sym})
+                        for p in pos_res.get('data', []):
+                            if float(p.get('total', 0) or 0) > 0 and str(p.get('holdSide', '')).lower() == hold_side.lower():
+                                actual_fill_price = float(p.get('openPriceAvg') or 0.0)
+                                break
+                    except Exception:
+                        pass
+                if actual_fill_price <= 0:
+                    actual_fill_price = entry_price
 
                 # Place Exchange Position TP & SL via Bitget V2 PlacePosTpsl API
                 try:
-                    clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
                     self.exchange.privateMixPostV2MixOrderPlacePosTpsl({
                         'marginCoin': 'USDT',
                         'symbol': clean_sym,

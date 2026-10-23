@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "updated_at": 1792573450401,
-  "updated_at_str": "2026-10-21 14:34:10 IST",
+  "updated_at": 1792574266986,
+  "updated_at_str": "2026-10-21 14:47:46 IST",
   "accounts": [
     {
       "id": 1,
@@ -162,6 +162,166 @@
       "win_streak": 0,
       "exchange": "BITGET",
       "channel": "sec_10"
+    },
+    {
+      "id": 11,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "4h",
+      "name": "Hermes 4.0 - Section 1 (4H Macro)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_1"
+    },
+    {
+      "id": 12,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "4h",
+      "name": "Hermes 4.0 - Section 2 (4H Macro)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_2"
+    },
+    {
+      "id": 13,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "4h",
+      "name": "Hermes 4.0 - Section 3 (4H Macro)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_3"
+    },
+    {
+      "id": 14,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "4h",
+      "name": "Hermes 4.0 - Section 4 (4H Macro)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_4"
+    },
+    {
+      "id": 15,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "4h",
+      "name": "Hermes 4.0 - Section 5 (4H Macro)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_5"
+    },
+    {
+      "id": 16,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "1h",
+      "name": "Hermes 4.0 - Section 6 (1H Intraday)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_6"
+    },
+    {
+      "id": 17,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "1h",
+      "name": "Hermes 4.0 - Section 7 (1H Intraday)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_7"
+    },
+    {
+      "id": 18,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "1h",
+      "name": "Hermes 4.0 - Section 8 (1H Intraday)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_8"
+    },
+    {
+      "id": 19,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "1h",
+      "name": "Hermes 4.0 - Section 9 (1H Intraday)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_9"
+    },
+    {
+      "id": 20,
+      "initial_balance": 50.0,
+      "current_balance": 50.0,
+      "total_pnl": 0.0,
+      "win_count": 0,
+      "loss_count": 0,
+      "vault_balance": 0.0,
+      "milestone_target": 2000.0,
+      "mode": "HERMES_4.0_BALANCED_APEX",
+      "timeframe": "1h",
+      "name": "Hermes 4.0 - Section 10 (1H Intraday)",
+      "win_streak": 0,
+      "exchange": "BITGET",
+      "channel": "hermes4_sec_10"
     }
   ],
   "paper_trades": [
@@ -4337,6 +4497,45 @@
       "locked_roi_pct": 0.0,
       "trailing_step": 0,
       "order_type": "LIMIT"
+    },
+    {
+      "id": 629,
+      "zone_id": null,
+      "symbol": "AEROUSDT",
+      "side": "SHORT",
+      "entry_price": 0.8435,
+      "position_size_usdt": 25.0,
+      "tp_price": 0.818195,
+      "sl_price": 0.8561525,
+      "status": "OPEN",
+      "entry_time": 1792574261675,
+      "exit_time": null,
+      "exit_price": null,
+      "pnl_usdt": null,
+      "pnl_pct": null,
+      "timeframe": "4h",
+      "hard_sl_price": 0.868805,
+      "vault_stashed_usdt": 0.0,
+      "sentry_reasons": "",
+      "highest_price": 0.8447,
+      "lowest_price": 0.8435,
+      "mae_pct": 0.71,
+      "mfe_pct": 0.0,
+      "duration_str": "",
+      "roi_pct": -0.71,
+      "exchange": "BITGET",
+      "channel": "sec_1",
+      "account_id": 1,
+      "mode": "HERMES_3.0_MODEL_2A",
+      "tier": "TIER_1",
+      "be_lock_pct": 0.015,
+      "trail_lock_pct": 0.018,
+      "autopsy_diagnosis": "",
+      "be_locked": 0,
+      "trailing_sl_price": 0.0,
+      "locked_roi_pct": 0.0,
+      "trailing_step": 0,
+      "order_type": "LIMIT"
     }
   ],
   "journal_trades": [],
@@ -4394,7 +4593,6 @@
     "hermes40_telegram_bot_token": "8946124868:AAGlempLJLV2YoEYfn8jBK5HuJD5O5N1RRs",
     "cooldown_OPUSDT": "1792097810.053961",
     "live_trading_start_time": "1792572921.2149076",
-    "strategy_version": "DUAL_ENGINE_3.5_AND_4.0",
     "hermes_entry_mode": "50% Mean Threshold (MT)",
     "hermes_margin_allocation_pct": "0.15",
     "binance_auto_trade": "false",
@@ -4404,12 +4602,17 @@
     "allow_local_live_trading": "true",
     "bitget_starting_margin": "5.0",
     "bitget_compounding_balance": "5.0",
-    "bitget_1h_compounding_balance": "5.0"
+    "bitget_1h_compounding_balance": "5.0",
+    "strategy_version": "DUAL_ENGINE_3.5_AND_4.0",
+    "hermes35_entry_mode": "50% Mean Threshold (MT)",
+    "cooldown_AEROUSDT": "1792577861.0669017",
+    "trade_msg_AEROUSDT_SHORT": "2201",
+    "trade_rec_msg_629": "2201"
   },
   "bb20_shadow_ledger": {
     "created_at": "2026-10-14T08:11:07.723719+00:00",
     "total_initial_capital": 500.0,
-    "total_current_equity": 553.62,
+    "total_current_equity": 552.75,
     "sections": {
       "1": {
         "section_id": 1,
@@ -4433,13 +4636,13 @@
           "BNBUSDT"
         ],
         "initial_balance": 50.0,
-        "balance": 58.38,
-        "trades_count": 4,
+        "balance": 57.14,
+        "trades_count": 5,
         "wins": 2,
         "saves": 2,
-        "losses": 0,
-        "pnl_usd": 8.38,
-        "status": "IN TRADE (BNBUSDT SHORT)"
+        "losses": 1,
+        "pnl_usd": 7.14,
+        "status": "IDLE"
       },
       "3": {
         "section_id": 3,
@@ -4493,12 +4696,12 @@
           "RENDERUSDT"
         ],
         "initial_balance": 50.0,
-        "balance": 46.16,
-        "trades_count": 8,
+        "balance": 46.53,
+        "trades_count": 9,
         "wins": 1,
-        "saves": 4,
+        "saves": 5,
         "losses": 3,
-        "pnl_usd": -3.84,
+        "pnl_usd": -3.47,
         "status": "IDLE"
       },
       "7": {
@@ -4563,29 +4766,6 @@
       }
     },
     "active_setups": {
-      "DOTUSDT": {
-        "symbol": "DOTUSDT",
-        "section_id": "4",
-        "side": "SHORT",
-        "mt_entry": 1.181,
-        "entry_price": 1.181,
-        "sl": 1.1898,
-        "sl_price": 1.1898,
-        "tp_price": 1.1547,
-        "target_1r": 1.1722,
-        "risk": 0.0088,
-        "risk_usd": 2.62,
-        "margin_usdt": 52.35,
-        "position_size_usdt": 261.75,
-        "leverage": 5,
-        "anchor_name": "PDH RESISTANCE",
-        "anchor_price": 1.182,
-        "armed_at": "2026-10-20T16:31:32.100418+00:00",
-        "trigger_t1_price": 1.169662,
-        "trigger_t2_price": 1.157852,
-        "trigger_t3_price": 1.146042,
-        "trailing_type": "CONTINUOUS_ROI_STEPPED"
-      },
       "SUIUSDT": {
         "symbol": "SUIUSDT",
         "section_id": "7",
@@ -4607,29 +4787,6 @@
         "trigger_t1_price": 1.025955,
         "trigger_t2_price": 1.015596,
         "trigger_t3_price": 1.005237,
-        "trailing_type": "CONTINUOUS_ROI_STEPPED"
-      },
-      "NEARUSDT": {
-        "symbol": "NEARUSDT",
-        "section_id": "5",
-        "side": "SHORT",
-        "mt_entry": 5.037,
-        "entry_price": 5.037,
-        "sl": 5.0886,
-        "sl_price": 5.0886,
-        "tp_price": 4.8821,
-        "target_1r": 4.9854,
-        "risk": 0.0516,
-        "risk_usd": 2.56,
-        "margin_usdt": 51.23,
-        "position_size_usdt": 256.15,
-        "leverage": 5,
-        "anchor_name": "PDH RESISTANCE",
-        "anchor_price": 5.141,
-        "armed_at": "2026-10-20T17:00:37.144476+00:00",
-        "trigger_t1_price": 4.988645,
-        "trigger_t2_price": 4.938275,
-        "trigger_t3_price": 4.887905,
         "trailing_type": "CONTINUOUS_ROI_STEPPED"
       },
       "UNIUSDT": {
@@ -4654,29 +4811,6 @@
         "trigger_t2_price": 7.367216,
         "trigger_t3_price": 7.292071,
         "trailing_type": "CONTINUOUS_ROI_STEPPED"
-      },
-      "BTCUSDT": {
-        "symbol": "BTCUSDT",
-        "section_id": "1",
-        "side": "LONG",
-        "mt_entry": 81549.115,
-        "entry_price": 81549.115,
-        "sl": 81200.2367,
-        "sl_price": 81200.2367,
-        "tp_price": 82595.75,
-        "target_1r": 81897.9933,
-        "risk": 348.8783,
-        "risk_usd": 2.44,
-        "margin_usdt": 48.87,
-        "position_size_usdt": 244.35,
-        "leverage": 5,
-        "anchor_name": "PDL SUPPORT",
-        "anchor_price": 81748.85,
-        "armed_at": "2026-10-20T18:30:14.647942+00:00",
-        "trigger_t1_price": 82331.986504,
-        "trigger_t2_price": 83147.477654,
-        "trigger_t3_price": 83962.968804,
-        "trailing_type": "CONTINUOUS_ROI_STEPPED"
       }
     },
     "active_positions": {
@@ -4700,65 +4834,10 @@
         "trailing_type": "CONTINUOUS_ROI_STEPPED",
         "open_time": 1792513873.6173697,
         "filled_at": "2026-10-20T16:31:13.617371+00:00",
-        "current_tier": 0,
-        "active_sl": 0.0711,
-        "peak_roi": 3.31
-      },
-      "BNBUSDT": {
-        "symbol": "BNBUSDT",
-        "section_id": "2",
-        "side": "SHORT",
-        "mt_entry": 738.935,
-        "entry_price": 738.935,
-        "sl": 741.6308,
-        "sl_price": 741.6308,
-        "tp_price": 730.8477,
-        "target_1r": 736.2392,
-        "risk": 2.6958,
-        "risk_usd": 2.92,
-        "margin_usdt": 58.38,
-        "position_size_usdt": 291.9,
-        "leverage": 5.0,
-        "anchor_name": "PDH RESISTANCE",
-        "anchor_price": 733.64,
-        "armed_at": "2026-10-20T18:12:53.365638+00:00",
-        "trigger_t1_price": 731.841224,
-        "trigger_t2_price": 724.451874,
-        "trigger_t3_price": 717.062524,
-        "trailing_type": "CONTINUOUS_ROI_STEPPED",
-        "open_time": 1792519973.580455,
-        "filled_at": "2026-10-20T18:12:53.580456+00:00",
-        "current_tier": 0,
-        "active_sl": 741.6308,
-        "peak_roi": 1.57
-      },
-      "WLDUSDT": {
-        "symbol": "WLDUSDT",
-        "section_id": "6",
-        "side": "SHORT",
-        "mt_entry": 0.5804,
-        "entry_price": 0.5804,
-        "sl": 0.5867,
-        "sl_price": 0.5867,
-        "tp_price": 0.5618,
-        "target_1r": 0.5742,
-        "risk": 0.0062,
-        "risk_usd": 2.29,
-        "margin_usdt": 45.79,
-        "position_size_usdt": 228.95,
-        "leverage": 5.0,
-        "anchor_name": "PDH RESISTANCE",
-        "anchor_price": 0.5375,
-        "armed_at": "2026-10-20T16:31:40.710335+00:00",
-        "trigger_t1_price": 0.574878,
-        "trigger_t2_price": 0.569073,
-        "trigger_t3_price": 0.563269,
-        "trailing_type": "CONTINUOUS_ROI_STEPPED",
-        "open_time": 1792518756.9197338,
-        "filled_at": "2026-10-20T17:52:36.919735+00:00",
         "current_tier": 1,
-        "active_sl": 0.5792,
-        "peak_roi": 5.0,
+        "active_sl": 0.0709,
+        "peak_roi": 5.7,
+        "mfe_pct": 5.7,
         "locked_roi": 1.0
       }
     },
@@ -6117,6 +6196,87 @@
         "realized_roi": 0.8,
         "dollar_pnl": 0.37,
         "section_new_balance": 46.16
+      },
+      {
+        "symbol": "BNBUSDT",
+        "section_id": "2",
+        "side": "SHORT",
+        "mt_entry": 738.935,
+        "entry_price": 738.935,
+        "sl": 741.6308,
+        "sl_price": 741.6308,
+        "tp_price": 730.8477,
+        "target_1r": 736.2392,
+        "risk": 2.6958,
+        "risk_usd": 2.92,
+        "margin_usdt": 58.38,
+        "position_size_usdt": 291.9,
+        "leverage": 5.0,
+        "anchor_name": "PDH RESISTANCE",
+        "anchor_price": 733.64,
+        "armed_at": "2026-10-20T18:12:53.365638+00:00",
+        "trigger_t1_price": 731.841224,
+        "trigger_t2_price": 724.451874,
+        "trigger_t3_price": 717.062524,
+        "trailing_type": "CONTINUOUS_ROI_STEPPED",
+        "open_time": 1792519973.580455,
+        "filled_at": "2026-10-20T18:12:53.580456+00:00",
+        "current_tier": 0,
+        "active_sl": 741.6308,
+        "peak_roi": 1.57,
+        "close_time": 1792574204.783308,
+        "duration_minutes": 903.9,
+        "duration_str": "15h 3m",
+        "entry_time_str": "20 Oct, 23:42:53 IST",
+        "exit_time_str": "21 Oct, 14:46:44 IST",
+        "be_status_str": "BE Inactive",
+        "closed_at": "2026-10-21T09:16:44.783308+00:00",
+        "exit_price": 741.6308,
+        "outcome": "LOSS (SL HIT)",
+        "realized_roi": -2.12,
+        "dollar_pnl": -1.24,
+        "section_new_balance": 57.14
+      },
+      {
+        "symbol": "WLDUSDT",
+        "section_id": "6",
+        "side": "SHORT",
+        "mt_entry": 0.5804,
+        "entry_price": 0.5804,
+        "sl": 0.5867,
+        "sl_price": 0.5867,
+        "tp_price": 0.5618,
+        "target_1r": 0.5742,
+        "risk": 0.0062,
+        "risk_usd": 2.29,
+        "margin_usdt": 45.79,
+        "position_size_usdt": 228.95,
+        "leverage": 5.0,
+        "anchor_name": "PDH RESISTANCE",
+        "anchor_price": 0.5375,
+        "armed_at": "2026-10-20T16:31:40.710335+00:00",
+        "trigger_t1_price": 0.574878,
+        "trigger_t2_price": 0.569073,
+        "trigger_t3_price": 0.563269,
+        "trailing_type": "CONTINUOUS_ROI_STEPPED",
+        "open_time": 1792518756.9197338,
+        "filled_at": "2026-10-20T17:52:36.919735+00:00",
+        "current_tier": 1,
+        "active_sl": 0.5792,
+        "peak_roi": 5.0,
+        "locked_roi": 1.0,
+        "close_time": 1792574250.8453693,
+        "duration_minutes": 924.9,
+        "duration_str": "15h 24m",
+        "entry_time_str": "20 Oct, 23:22:36 IST",
+        "exit_time_str": "21 Oct, 14:47:30 IST",
+        "be_status_str": "\ud83d\udee1\ufe0f BE Locked (+1.0% ROI Shield)",
+        "closed_at": "2026-10-21T09:17:30.845369+00:00",
+        "exit_price": 0.5792,
+        "outcome": "FEE SHIELD SAVE (+1.0% ROI)",
+        "realized_roi": 0.8,
+        "dollar_pnl": 0.37,
+        "section_new_balance": 46.53
       }
     ],
     "daily_single_shot": {
@@ -6812,6 +6972,80 @@
         "ONDOUSDT": {
           "LONG": true,
           "SHORT": true
+        }
+      },
+      "2026-10-21": {
+        "BTCUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "ETHUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "BCHUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "SOLUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "BNBUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "SEIUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "AVAXUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "DOGEUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "KAVAUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "DOTUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "LINKUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "ENSUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "LTCUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "NEARUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "DYDXUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "OPUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "RENDERUSDT": {
+          "LONG": false,
+          "SHORT": false
+        },
+        "WLDUSDT": {
+          "LONG": false,
+          "SHORT": false
         }
       }
     }

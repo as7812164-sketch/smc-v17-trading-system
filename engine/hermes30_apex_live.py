@@ -739,6 +739,38 @@ class Hermes30Model2ALiveEngine:
                 if not cur_price or cur_price <= 0:
                     continue
 
+                # Exchange Parity Guard: If trade was filled on Bitget and closed on exchange
+                try:
+                    from engine.bitget_trader import bitget_trader
+                    if bitget_trader.is_configured() and bitget_trader.is_auto_trade_enabled():
+                        entry_time_ms = int(trade.get("entry_time") or 0)
+                        if 0 < entry_time_ms < 100_000_000_000:
+                            entry_time_ms *= 1000
+                        now_ms = int(time.time() * 1000)
+                        # Check only after 30s of trade opening to avoid race conditions
+                        if (now_ms - entry_time_ms) > 30_000:
+                            clean_sym = sym.replace('/', '').replace(':USDT', '').upper()
+                            if not bitget_trader.is_symbol_active_on_exchange(clean_sym):
+                                # Position is no longer open on Bitget! Fetch closing info from history
+                                try:
+                                    hist = bitget_trader.exchange.privateMixGetV2MixPositionHistoryPosition({
+                                        'productType': 'USDT-FUTURES',
+                                        'symbol': clean_sym,
+                                        'pageSize': '1'
+                                    })
+                                    recent_closed = (hist.get('data', {}).get('list', []) or [None])[0]
+                                    if recent_closed:
+                                        close_avg = float(recent_closed.get('closeAvgPrice') or cur_price)
+                                        pnl_val = float(recent_closed.get('pnl') or 0.0)
+                                        outcome = "TP_HIT" if pnl_val >= 0 else "SL_HIT"
+                                        logger.info(f"⚡ Bitget exchange exit detected for {sym} {side}: Close Price {close_avg} | PnL {pnl_val} USDT ({outcome})")
+                                        await self.resolve_trade_exit(trade, outcome, close_avg)
+                                        continue
+                                except Exception as he:
+                                    logger.warning(f"Error checking Bitget closed history for {sym}: {he}")
+                except Exception as bge:
+                    logger.debug(f"Bitget exit parity check note for {sym}: {bge}")
+
                 update_paper_trade_mark_price(trade_id, cur_price)
 
                 highest_p = max(float(trade.get("highest_price") or entry_price), cur_price)

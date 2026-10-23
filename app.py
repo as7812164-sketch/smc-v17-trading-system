@@ -1762,8 +1762,9 @@ async def get_futures_positions(timeframe: Optional[str] = None):
     tickers = await get_live_tickers()
     open_trades_raw = get_open_paper_trades(timeframe=timeframe)
 
-    # 1:1 Live Exchange Parity Guard: If Bitget auto-trading is active, verify filled status on exchange
+    # 1:1 Live Exchange Parity Guard: If Bitget auto-trading is active, pull exact real live positions from exchange
     active_exchange_symbols = None
+    bg_pos_map = {}
     try:
         from engine.bitget_trader import bitget_trader
         if bitget_trader.is_configured() and bitget_trader.is_auto_trade_enabled():
@@ -1772,8 +1773,12 @@ async def get_futures_positions(timeframe: Optional[str] = None):
             for p in res.get('data', []):
                 if float(p.get('total', 0) or 0) > 0:
                     clean = p.get('symbol', '').replace('/', '').replace(':USDT', '').upper()
+                    hold = str(p.get('holdSide', '')).lower()
                     active_exchange_symbols.add(clean)
-    except Exception:
+                    bg_pos_map[(clean, hold)] = p
+                    bg_pos_map[clean] = p
+    except Exception as e:
+        logger.error(f"Error querying Bitget live positions: {e}")
         active_exchange_symbols = None
 
     positions = []
@@ -1787,42 +1792,85 @@ async def get_futures_positions(timeframe: Optional[str] = None):
         if active_exchange_symbols is not None and sym not in active_exchange_symbols:
             continue
         coin_name = sym.replace("USDT", "")
-        entry = float(ot.get("entry_price") or 0.0)
-        pos_size_raw = float(ot.get("position_size_usdt") or 250.0)
         side_raw = ot.get("side", "BUY").upper()
         is_buy = side_raw in ("BUY", "LONG")
+        hold_side = "long" if is_buy else "short"
         leverage = 5
         tf = (ot.get("timeframe") or "4h").upper()
 
-        size_usdt = round(pos_size_raw, 2)
-        margin = round(size_usdt / leverage, 4)
-        raw_coin = (size_usdt / entry) if entry > 0 else 0.0
-        size_coin = int(round(raw_coin)) if raw_coin >= 10 else round(raw_coin, 2)
+        bg_p = bg_pos_map.get((sym, hold_side)) or bg_pos_map.get(sym)
+        if bg_p:
+            # 1:1 Bitget Exchange Parity: pull exact real fill, mark, UPL and margin from exchange
+            bg_open_avg = float(bg_p.get("openPriceAvg") or 0.0)
+            entry = bg_open_avg if bg_open_avg > 0 else float(ot.get("entry_price") or 0.0)
 
-        mark_price = tickers.get(sym, 0.0) if tickers else 0.0
-        if mark_price <= 0:
-            mark_price = await binance_feed.fetch_symbol_price(sym) or 0.0
-        if mark_price <= 0:
-            mark_price = float(ot.get("mark_price") or entry)
-        if mark_price <= 0:
-            mark_price = entry
+            bg_mark = float(bg_p.get("markPrice") or 0.0)
+            mark_price = bg_mark if bg_mark > 0 else (tickers.get(sym, entry) or entry)
+
+            bg_margin = float(bg_p.get("marginSize") or 0.0)
+            bg_total = float(bg_p.get("total") or 0.0)
+            bg_upl = float(bg_p.get("unrealizedPL") or 0.0)
+            bg_lev = int(bg_p.get("leverage") or leverage)
+            leverage = bg_lev
+
+            if bg_margin > 0:
+                margin = round(bg_margin, 4)
+                size_usdt = round(margin * leverage, 2)
+            else:
+                pos_size_raw = float(ot.get("position_size_usdt") or 250.0)
+                size_usdt = round(pos_size_raw, 2)
+                margin = round(size_usdt / leverage, 4)
+
+            size_coin = int(bg_total) if bg_total >= 10 else round(bg_total, 2)
+            pnl_usdt = round(bg_upl, 4)
+            roi_pct = round((pnl_usdt / margin * 100.0), 2) if margin > 0 else 0.0
+
+            bg_liq = float(bg_p.get("liquidationPrice") or 0.0)
+            liq_price = round(bg_liq, 6) if bg_liq > 0 else (round(entry * (1.0 - (1.0 / leverage) + 0.0125), 4) if is_buy else round(entry * (1.0 + (1.0 / leverage) - 0.0125), 4))
+
+            bg_tp = float(bg_p.get("takeProfit") or 0.0)
+            bg_sl = float(bg_p.get("stopLoss") or 0.0)
+            tp_price = bg_tp if bg_tp > 0 else float(ot.get("tp_price") or (entry * 1.028 if is_buy else entry * 0.972))
+            sl_price = bg_sl if bg_sl > 0 else float(ot.get("sl_price") or (entry * 0.972 if is_buy else entry * 1.028))
+
+            # Synchronize real fill price & size into DB paper_trades
+            if bg_open_avg > 0 and abs(bg_open_avg - float(ot.get("entry_price") or 0.0)) > 1e-8:
+                try:
+                    from database.db import sync_paper_trade_exchange_fill
+                    sync_paper_trade_exchange_fill(trade_id, bg_open_avg, size_usdt, bg_sl, bg_tp)
+                except Exception:
+                    pass
+        else:
+            entry = float(ot.get("entry_price") or 0.0)
+            pos_size_raw = float(ot.get("position_size_usdt") or 250.0)
+            size_usdt = round(pos_size_raw, 2)
+            margin = round(size_usdt / leverage, 4)
+            raw_coin = (size_usdt / entry) if entry > 0 else 0.0
+            size_coin = int(round(raw_coin)) if raw_coin >= 10 else round(raw_coin, 2)
+
+            mark_price = tickers.get(sym, 0.0) if tickers else 0.0
+            if mark_price <= 0:
+                mark_price = await binance_feed.fetch_symbol_price(sym) or 0.0
+            if mark_price <= 0:
+                mark_price = float(ot.get("mark_price") or entry)
+            if mark_price <= 0:
+                mark_price = entry
+
+            if is_buy:
+                pnl_pct = ((mark_price - entry) / entry * 100.0) if entry > 0 else 0.0
+                liq_price = round(entry * (1.0 - (1.0 / leverage) + 0.0125), 4)
+            else:
+                pnl_pct = ((entry - mark_price) / entry * 100.0) if entry > 0 else 0.0
+                liq_price = round(entry * (1.0 + (1.0 / leverage) - 0.0125), 4)
+
+            pnl_usdt = round(size_usdt * (pnl_pct / 100.0), 4)
+            roi_pct = round(pnl_pct * leverage, 2)  # ROE % on margin
+
+            tp_price = float(ot.get("tp_price") or (entry * 1.028 if is_buy else entry * 0.972))
+            sl_price = float(ot.get("sl_price") or (entry * 0.972 if is_buy else entry * 1.028))
 
         # Update high/low & MAE/MFE in DB
         update_paper_trade_mark_price(trade_id, mark_price)
-
-        # Floating PnL & ROE calculation
-        if is_buy:
-            pnl_pct = ((mark_price - entry) / entry * 100.0) if entry > 0 else 0.0
-            liq_price = round(entry * (1.0 - (1.0 / leverage) + 0.0125), 4)
-        else:
-            pnl_pct = ((entry - mark_price) / entry * 100.0) if entry > 0 else 0.0
-            liq_price = round(entry * (1.0 + (1.0 / leverage) - 0.0125), 4)
-
-        pnl_usdt = round(size_usdt * (pnl_pct / 100.0), 4)
-        roi_pct = round(pnl_pct * leverage, 2)  # ROE % on margin
-
-        tp_price = float(ot.get("tp_price") or (entry * 1.028 if is_buy else entry * 0.972))
-        sl_price = float(ot.get("sl_price") or (entry * 0.972 if is_buy else entry * 1.028))
 
         # Format strings matching Bitget screenshot
         sign = "+" if pnl_usdt >= 0 else ""
@@ -1875,7 +1923,7 @@ async def get_futures_positions(timeframe: Optional[str] = None):
             "size_coin": size_coin,
             "margin_usdt": margin,
             "mmr": "5.30%",
-            "margin_ratio": "0.07%",
+            "margin_ratio": f"{float(bg_p.get('marginRatio', 0.0) or 0.0)*100:.2f}%" if bg_p else "0.07%",
             "entry_price": entry,
             "mark_price": mark_price,
             "current_price": mark_price,
