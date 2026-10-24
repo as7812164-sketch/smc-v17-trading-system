@@ -187,7 +187,7 @@ def init_db():
         # Legacy cleanup only if explicitly requested
 
         # 2. Delete any legacy accounts where id > 10
-        conn.execute("DELETE FROM paper_account WHERE id > 10;")
+        conn.execute("DELETE FROM paper_account WHERE id > 20;")
 
         # 3. Create / re-initialize 10 compounding sections in paper_account (IDs 1 through 10)
         # ID 1 to 5: 4H Macro Swing Sections (Section 1 to 5) ($50 start, 5x Isolated, $2,000 target)
@@ -206,31 +206,42 @@ def init_db():
         ]
 
         for s_id, s_tf, s_name, s_exch, s_ch in sections_config:
-            s_exists = conn.execute("SELECT id FROM paper_account WHERE id = ?", (s_id,)).fetchone()
+            s_exists = conn.execute("SELECT id, initial_balance, current_balance, total_pnl FROM paper_account WHERE id = ?", (s_id,)).fetchone()
             if not s_exists:
                 conn.execute("""
                 INSERT INTO paper_account 
                 (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode)
-                VALUES (?, ?, ?, ?, ?, 5.0, 5.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.0_MODEL_2A');
+                VALUES (?, ?, ?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.0_MODEL_2A');
                 """, (s_id, s_tf, s_name, s_exch, s_ch))
             else:
-                conn.execute("""
-                UPDATE paper_account SET
-                    timeframe = ?,
-                    name = ?,
-                    exchange = ?,
-                    channel = ?,
-                    initial_balance = 5.0,
-                    current_balance = 5.0,
-                    vault_balance = 0.0,
-                    total_pnl = 0.0,
-                    win_count = 0,
-                    loss_count = 0,
-                    win_streak = 0,
-                    milestone_target = 2000.0,
-                    mode = 'HERMES_3.0_MODEL_2A'
-                WHERE id = ?
-                """, (s_tf, s_name, s_exch, s_ch, s_id))
+                curr_init = float(s_exists["initial_balance"] or 0.0)
+                tot_pnl = float(s_exists["total_pnl"] or 0.0)
+                if curr_init < 50.0:
+                    new_init = 50.0
+                    new_bal = round(50.0 + tot_pnl, 2)
+                    conn.execute("""
+                    UPDATE paper_account SET
+                        timeframe = ?,
+                        name = ?,
+                        exchange = ?,
+                        channel = ?,
+                        initial_balance = ?,
+                        current_balance = ?,
+                        milestone_target = 2000.0,
+                        mode = 'HERMES_3.0_MODEL_2A'
+                    WHERE id = ?
+                    """, (s_tf, s_name, s_exch, s_ch, new_init, new_bal, s_id))
+                else:
+                    conn.execute("""
+                    UPDATE paper_account SET
+                        timeframe = ?,
+                        name = ?,
+                        exchange = ?,
+                        channel = ?,
+                        milestone_target = 2000.0,
+                        mode = 'HERMES_3.0_MODEL_2A'
+                    WHERE id = ?
+                    """, (s_tf, s_name, s_exch, s_ch, s_id))
 
         # Enforce universal HERMES_3.0_MODEL_2A settings across all 10 sections
         conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_MODEL_2A'")
@@ -240,12 +251,13 @@ def init_db():
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes_margin_allocation_pct', '0.15')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('binance_auto_trade', 'false')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_sections', '10')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_capital', '50.0')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('bitget_auto_trade', 'true')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('total_compounding_capital', '500.0')")
+        conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('bitget_auto_trade', 'false')")
+        conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('auto_trading_enabled', 'false')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('allow_local_live_trading', 'true')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('bitget_starting_margin', '5.0')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('bitget_compounding_balance', '5.0')")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('bitget_1h_compounding_balance', '5.0')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('bitget_starting_margin', '50.0')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('bitget_compounding_balance', '50.0')")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('bitget_1h_compounding_balance', '50.0')")
 
         # Initialize default metrics if not present
         default_metrics = {
@@ -625,8 +637,8 @@ def ensure_10_sections(reset_balances: bool = False) -> None:
                     name = ?,
                     channel = ?,
                     exchange = 'BITGET',
-                    initial_balance = 5.0,
-                    current_balance = 5.0,
+                    initial_balance = 50.0,
+                    current_balance = 50.0,
                     vault_balance = 0.0,
                     total_pnl = 0.0,
                     win_count = 0,
@@ -682,7 +694,7 @@ def reconcile_portfolio_from_trades() -> Dict[str, Any]:
                     streak = 0
 
             acc_row = conn.execute("SELECT initial_balance, vault_balance FROM paper_account WHERE id = ?", (sec_id,)).fetchone()
-            init_b = float(acc_row["initial_balance"] if acc_row else 5.0)
+            init_b = float(acc_row["initial_balance"] if acc_row else 50.0)
             vault_b = float(acc_row["vault_balance"] if acc_row and "vault_balance" in acc_row.keys() else 0.0)
 
             true_bal = round(init_b + pnl_sum + vault_b, 2)
@@ -725,7 +737,7 @@ def get_compounding_sections() -> Dict[str, Any]:
                 trade_pnl_sum = conn.execute("SELECT SUM(pnl_usdt) FROM paper_trades WHERE status != 'OPEN' AND (account_id <= 10 OR account_id IS NULL) AND entry_time >= ?", (live_start_ms,)).fetchone()[0] or 0.0
             else:
                 trade_pnl_sum = conn.execute("SELECT SUM(pnl_usdt) FROM paper_trades WHERE status != 'OPEN' AND (account_id <= 10 OR account_id IS NULL)").fetchone()[0] or 0.0
-            expected_bal = round(50.0 + max(0.0, trade_pnl_sum), 2)
+            expected_bal = round(500.0 + max(0.0, trade_pnl_sum), 2)
             if curr_acc_sum < (expected_bal - 5.0) and trade_pnl_sum > 0:
                 reconcile_portfolio_from_trades()
     except Exception:
@@ -892,8 +904,8 @@ def ensure_hermes40_sections(reset_balances: bool = False) -> None:
                     name = ?,
                     channel = ?,
                     exchange = 'BITGET',
-                    initial_balance = 5.0,
-                    current_balance = 5.0,
+                    initial_balance = 50.0,
+                    current_balance = 50.0,
                     vault_balance = 0.0,
                     total_pnl = 0.0,
                     win_count = 0,

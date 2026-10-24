@@ -66,13 +66,31 @@ class BitgetTrader:
         return self.exchange is not None
 
     def is_auto_trade_enabled(self) -> bool:
+        # 1. Master Kill Switch Safety Sentinel
+        kill_switch = get_setting("trading_kill_switch", "false")
+        if str(kill_switch).lower() == "true":
+            return False
+
+        # 2. Master Global Auto-Trading Switch
+        auto_enabled = get_setting("auto_trading_enabled", "false")
+        if str(auto_enabled).lower() != "true":
+            return False
+
+        # 3. Bitget-Specific Auto-Trading Switch
         enabled_setting = get_setting("bitget_auto_trade", str(BITGET_AUTO_TRADE))
         if str(enabled_setting).lower() != "true":
             return False
+
+        # 4. Config Flag Check
+        if not BITGET_AUTO_TRADE and str(enabled_setting).lower() != "true":
+            return False
+
+        # 5. Local Environment Live Trading Guard
         if not os.getenv("RENDER"):
             allow_local = get_setting("allow_local_live_trading", os.getenv("ALLOW_LOCAL_LIVE_TRADING", "true"))
             if str(allow_local).lower() != "true":
                 return False
+
         return True
 
     def format_symbol_for_bitget(self, symbol: str) -> str:
@@ -756,5 +774,30 @@ class BitgetTrader:
             err_msg = str(e)
             print(f"[BITGET CLOSE ERROR] Failed to close {symbol} {side}: {err_msg}")
             return {"success": False, "error": err_msg}
+
+    def place_order(self, symbol: str, side: str, size_usdt: float = 50.0, leverage: int = 5, tp_price: Optional[float] = None, sl_price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
+        """Synchronous / webhook entry point for placing Bitget orders. Enforces all kill switches and auto-trade safety."""
+        if not self.is_auto_trade_enabled():
+            return {"success": False, "skipped": True, "reason": "Bitget Auto-Trading is currently disabled (Kill Switch / Auto-Trading OFF)."}
+
+        if not self.exchange or not self.is_configured():
+            return {"success": False, "skipped": True, "reason": "Bitget exchange not configured."}
+
+        setup = {
+            "symbol": symbol,
+            "side": side,
+            "margin_usdt": size_usdt,
+            "tp_price": tp_price,
+            "sl_price": sl_price,
+            **kwargs
+        }
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                return asyncio.run_coroutine_threadsafe(self.execute_4h_trade(setup), loop).result(timeout=10)
+            else:
+                return loop.run_until_complete(self.execute_4h_trade(setup))
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
 bitget_trader = BitgetTrader()

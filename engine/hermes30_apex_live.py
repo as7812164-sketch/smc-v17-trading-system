@@ -389,6 +389,244 @@ class Hermes30Model2ALiveEngine:
 
         return list(unique_map.values())
 
+    def detect_hermes35_single_tier_zones(
+        self,
+        symbol: str,
+        candles: List[Dict[str, Any]],
+        interval: str = "4h"
+    ) -> List[Dict[str, Any]]:
+        """
+        Pure algorithmic implementation of HERMES 3.5 SINGLE TIER OFFICIAL
+        conforming 100% to HERMES_3_5_SINGLE_TIER_OFFICIAL.pine:
+        - 5% Boundary penetration entry:
+            Long:  o_high - (o_rng * 0.05)
+            Short: o_low + (o_rng * 0.05)
+        - 0.20% Proximity Radar price:
+            Long:  entry_p * 1.0020
+            Short: entry_p * 0.9980
+        - +8.0% ROE BE Armor:
+            Long:  entry_p * (1.0 + 0.0160)
+            Short: entry_p * (1.0 - 0.0160)
+        - +9.0% -> +4.5% Stepped Profit Harvest:
+            Trigger: Long: entry_p * (1.0 + 0.0180) | Short: entry_p * (1.0 - 0.0180)
+            Lock:    Long: entry_p * (1.0 + 0.0090) | Short: entry_p * (1.0 - 0.0090)
+        - +14.0% ROE TP:
+            Long:  entry_p * (1.0 + 0.0280)
+            Short: entry_p * (1.0 - 0.0280)
+        - Dynamic SL (-14.0% ROE):
+            Long:  entry_p * (1.0 - 0.0280)
+            Short: entry_p * (1.0 + 0.0280)
+        """
+        n = len(candles)
+        if n < 30:
+            return []
+
+        tf = interval.lower()
+        min_disp = 3.5 if tf in ("15m", "1h") else 5.0
+        effective_min_bars = 18 if tf in ("1h", "15m") else 8
+        effective_max_bars = 720 if tf in ("15m", "1h") else 360
+
+        cur_price = float(candles[-1]["close"])
+        active_zones = []
+
+        for i in range(20, n - 3):
+            c3 = candles[i]
+            c2 = candles[i+1]
+            c1 = candles[i+2]
+
+            impulse_h = max(float(c1["high"]), float(c2["high"]))
+            impulse_l = min(float(c1["low"]), float(c2["low"]))
+
+            # ---------------- BULLISH SETUP (LONG) ----------------
+            is_red = float(c3["close"]) < float(c3["open"])
+            has_bull_fvg = float(c1["low"]) > float(c3["high"])
+            bull_disp = ((impulse_h - float(c3["low"])) / float(c3["low"])) * 100.0 if float(c3["low"]) > 0 else 0.0
+
+            prior_lows = [float(candles[k]["low"]) for k in range(max(0, i - 20), i)]
+            is_origin_bull = float(c3["low"]) <= min(prior_lows) if prior_lows else False
+
+            if is_red and has_bull_fvg and bull_disp >= min_disp:
+                o_high = float(c3["high"])
+                o_low = float(c3["low"])
+                o_rng = o_high - o_low
+
+                ent_p = round(o_high - (o_rng * 0.05), 8)
+                rad_p = round(ent_p * 1.0020, 8)
+                tp_p = round(ent_p * (1.0 + 0.0280), 8)
+                be_armor_p = round(ent_p * (1.0 + 0.0160), 8)
+                step_trig_p = round(ent_p * (1.0 + 0.0180), 8)
+                step_lock_p = round(ent_p * (1.0 + 0.0090), 8)
+                sl_p = round(ent_p * (1.0 - 0.0280), 8)
+
+                peak_high = max(float(candles[k]["high"]) for k in range(i + 1, min(i + 30, n)))
+                runway_pct = ((peak_high - o_high) / o_high * 100.0) if o_high > 0 else 0.0
+
+                bars_alive = (n - 1) - i
+                if bars_alive > effective_max_bars:
+                    continue
+
+                invalidated = False
+                tapped = False
+                be_locked = False
+                profit_stepped = False
+                completed = False
+
+                for k in range(i + 3, n):
+                    bar = candles[k]
+                    b_high = float(bar["high"])
+                    b_low = float(bar["low"])
+                    b_close = float(bar["close"])
+
+                    if not tapped and b_close < o_low:
+                        invalidated = True
+                        break
+
+                    if not tapped and b_low <= ent_p and b_low >= sl_p:
+                        tapped = True
+
+                    if tapped:
+                        if b_high >= be_armor_p:
+                            be_locked = True
+                        if b_high >= step_trig_p:
+                            profit_stepped = True
+                        if b_high >= tp_p:
+                            completed = True
+                            break
+                        if b_low <= (step_lock_p if profit_stepped else (ent_p * 1.0010 if be_locked else sl_p)):
+                            completed = True
+                            break
+
+                if not invalidated and not completed:
+                    within_radar = (cur_price <= rad_p) and (cur_price >= ent_p)
+                    status = "RADAR_PRE_ARMED" if within_radar else ("ACTIVE_TAPPED" if tapped else "ACTIVE_UNMITIGATED")
+                    if profit_stepped:
+                        status = "STAGE2_HARVEST"
+                    elif be_locked:
+                        status = "STAGE1_ARMOR"
+
+                    active_zones.append({
+                        "symbol": symbol,
+                        "side": "BUY",
+                        "timeframe": tf.upper(),
+                        "ob_high": o_high,
+                        "ob_low": o_low,
+                        "origin_time": c3["time"],
+                        "entry_price": ent_p,
+                        "radar_price": rad_p,
+                        "tp_price": tp_p,
+                        "armor_stage1_price": be_armor_p,
+                        "armor_stage2_price": step_trig_p,
+                        "harvest_lock_price": step_lock_p,
+                        "sl_price": sl_p,
+                        "hard_sl_price": sl_p,
+                        "status": status,
+                        "displacement_pct": round(bull_disp, 2),
+                        "wick_ratio_pct": 20.0,
+                        "runway_void_pct": round(runway_pct, 1),
+                        "is_origin": is_origin_bull,
+                        "is_in_radar": within_radar,
+                        "tier_type": "SINGLE_TIER",
+                        "strategy": "HERMES_3.5_SINGLE_TIER",
+                        "prob_score": 97.2,
+                        "rank_label": f"🏛️ HERMES 3.5 RADAR HARVEST [5% Boundary Entry: ${ent_p}]"
+                    })
+
+            # ---------------- BEARISH SETUP (SHORT) ----------------
+            is_green = float(c3["close"]) > float(c3["open"])
+            has_bear_fvg = float(c1["high"]) < float(c3["low"])
+            bear_disp = ((float(c3["high"]) - impulse_l) / float(c3["high"])) * 100.0 if float(c3["high"]) > 0 else 0.0
+
+            prior_highs = [float(candles[k]["high"]) for k in range(max(0, i - 20), i)]
+            is_origin_bear = float(c3["high"]) >= max(prior_highs) if prior_highs else False
+
+            if is_green and has_bear_fvg and bear_disp >= min_disp:
+                o_high = float(c3["high"])
+                o_low = float(c3["low"])
+                o_rng = o_high - o_low
+
+                ent_p = round(o_low + (o_rng * 0.05), 8)
+                rad_p = round(ent_p * 0.9980, 8)
+                tp_p = round(ent_p * (1.0 - 0.0280), 8)
+                be_armor_p = round(ent_p * (1.0 - 0.0160), 8)
+                step_trig_p = round(ent_p * (1.0 - 0.0180), 8)
+                step_lock_p = round(ent_p * (1.0 - 0.0090), 8)
+                sl_p = round(ent_p * (1.0 + 0.0280), 8)
+
+                peak_low = min(float(candles[k]["low"]) for k in range(i + 1, min(i + 30, n)))
+                runway_pct = ((o_low - peak_low) / o_low * 100.0) if o_low > 0 else 0.0
+
+                bars_alive = (n - 1) - i
+                if bars_alive > effective_max_bars:
+                    continue
+
+                invalidated = False
+                tapped = False
+                be_locked = False
+                profit_stepped = False
+                completed = False
+
+                for k in range(i + 3, n):
+                    bar = candles[k]
+                    b_high = float(bar["high"])
+                    b_low = float(bar["low"])
+                    b_close = float(bar["close"])
+
+                    if not tapped and b_close > o_high:
+                        invalidated = True
+                        break
+
+                    if not tapped and b_high >= ent_p and b_high <= sl_p:
+                        tapped = True
+
+                    if tapped:
+                        if b_low <= be_armor_p:
+                            be_locked = True
+                        if b_low <= step_trig_p:
+                            profit_stepped = True
+                        if b_low <= tp_p:
+                            completed = True
+                            break
+                        if b_high >= (step_lock_p if profit_stepped else (ent_p * 0.9990 if be_locked else sl_p)):
+                            completed = True
+                            break
+
+                if not invalidated and not completed:
+                    within_radar = (cur_price >= rad_p) and (cur_price <= ent_p)
+                    status = "RADAR_PRE_ARMED" if within_radar else ("ACTIVE_TAPPED" if tapped else "ACTIVE_UNMITIGATED")
+                    if profit_stepped:
+                        status = "STAGE2_HARVEST"
+                    elif be_locked:
+                        status = "STAGE1_ARMOR"
+
+                    active_zones.append({
+                        "symbol": symbol,
+                        "side": "SELL",
+                        "timeframe": tf.upper(),
+                        "ob_high": o_high,
+                        "ob_low": o_low,
+                        "origin_time": c3["time"],
+                        "entry_price": ent_p,
+                        "radar_price": rad_p,
+                        "tp_price": tp_p,
+                        "armor_stage1_price": be_armor_p,
+                        "armor_stage2_price": step_trig_p,
+                        "harvest_lock_price": step_lock_p,
+                        "sl_price": sl_p,
+                        "hard_sl_price": sl_p,
+                        "status": status,
+                        "displacement_pct": round(bear_disp, 2),
+                        "wick_ratio_pct": 20.0,
+                        "runway_void_pct": round(runway_pct, 1),
+                        "is_origin": is_origin_bear,
+                        "is_in_radar": within_radar,
+                        "tier_type": "SINGLE_TIER",
+                        "strategy": "HERMES_3.5_SINGLE_TIER",
+                        "prob_score": 97.2,
+                        "rank_label": f"🏛️ HERMES 3.5 RADAR HARVEST [5% Boundary Entry: ${ent_p}]"
+                    })
+
+        return active_zones
+
     async def run_full_champion_scan(self) -> Dict[str, Any]:
         """Scans all configured champion assets on 1H and 4H."""
         btc_sentry = await self.evaluate_btc_macro_sentry()

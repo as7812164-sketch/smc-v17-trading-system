@@ -2956,7 +2956,10 @@ async def get_klines_with_analysis(
 
     # HERMES 3.5 RADAR HARVEST ENGINE (Official Single Tier with 5% Boundary & 0.20% Radar)
     btc_bias = hermes2_apex_engine.last_btc_bias if hasattr(hermes2_apex_engine, 'last_btc_bias') and hermes2_apex_engine.last_btc_bias else {"long_veto": False, "short_veto": False, "bias": "BULLISH"}
-    detected_setups = hermes2_apex_engine.detect_apex_setups_on_candles(symbol, candles, tf, btc_bias)
+    if hasattr(hermes2_apex_engine, "detect_hermes35_single_tier_zones"):
+        detected_setups = hermes2_apex_engine.detect_hermes35_single_tier_zones(symbol, candles, tf)
+    else:
+        detected_setups = hermes2_apex_engine.detect_apex_setups_on_candles(symbol, candles, tf, btc_bias)
 
     # Historical quant probability baseline
     COIN_PROB_MAP = {
@@ -2988,7 +2991,7 @@ async def get_klines_with_analysis(
             "timeframe": tf.upper(),
             "ob_high": ob_h,
             "ob_low": ob_l,
-            "origin_time": s.get("tap_time") or (candles[0]["time"] if candles else 0),
+            "origin_time": s.get("origin_time") or s.get("tap_time") or (candles[0]["time"] if candles else 0),
             "mean_threshold": mt_p,
             "entry_price": ent_p,
             "radar_price": rad_p,
@@ -2996,18 +2999,18 @@ async def get_klines_with_analysis(
             "armor_stage1_price": float(s.get("armor_stage1_price", 0.0)),
             "armor_stage2_price": float(s.get("armor_stage2_price", 0.0)),
             "harvest_lock_price": float(s.get("harvest_lock_price", 0.0)),
-            "sl_price": float(s.get("soft_sl_price", 0.0)),
-            "hard_sl_price": float(s.get("hard_sl_price", 0.0)),
+            "sl_price": float(s.get("sl_price") or s.get("soft_sl_price", 0.0)),
+            "hard_sl_price": float(s.get("hard_sl_price") or s.get("sl_price", 0.0)),
             "status": s.get("status", "ACTIVE"),
             "displacement_pct": s.get("displacement_pct", 5.0),
             "wick_ratio_pct": s.get("wick_ratio_pct", 18.0),
             "runway_void_pct": s.get("runway_void_pct", 5.0),
             "is_origin": s.get("is_origin", False),
             "is_in_radar": s.get("is_in_radar", False),
-            "tier_type": "MODEL_2A",
-            "strategy": "HERMES_3.0_MODEL_2A",
+            "tier_type": s.get("tier_type", "SINGLE_TIER"),
+            "strategy": s.get("strategy", "HERMES_3.5_SINGLE_TIER"),
             "prob_score": round(base_prob, 1),
-            "rank_label": f"🏛️ HERMES 3.0 MODEL 2A [50% MT Entry: ${mt_p}]"
+            "rank_label": s.get("rank_label") or f"🏛️ HERMES 3.5 RADAR HARVEST [5% Boundary Entry: ${ent_p}]"
         }
         active_zones.append(zone_dict)
 
@@ -3020,16 +3023,16 @@ async def get_klines_with_analysis(
         "candles": candles,
         "zones": active_zones,
         "indicator_status": {
-            "strategy": "HERMES 3.0 MODEL 2A",
-            "entry_method": "50% Mean Threshold (MT)",
+            "strategy": "HERMES 3.5 SINGLE TIER RADAR HARVEST",
+            "entry_method": "5% Boundary Penetration Entry",
             "radar_threshold": "0.20% Proximity Pre-Arm Radar",
             "leverage": "5x Isolated",
-            "target_roe": "+15.00% ROE (+3.00% price move)",
-            "armor_stage1_roe": "+7.50% ROE (+1.50% -> BE Lock)",
-            "armor_stage2_roe": "Risk-Free Breakeven Protected",
-            "dynamic_sl_roe": "-7.50% ROE (-1.50% Candle Body Close SL) | -15.0% Emergency Hard Circuit",
-            "maturation": "Freshness <= 28 bars",
-            "airspace": "Displacement >= 5.0% + Fair Value Gap",
+            "target_roe": "+14.00% ROE (+2.80% price move)",
+            "armor_stage1_roe": "+8.00% ROE (+1.60% -> BE Lock +0.10%)",
+            "armor_stage2_roe": "+9.00% -> +4.50% Stepped Profit Harvest (+0.90% locked)",
+            "dynamic_sl_roe": "-14.00% ROE (-2.80% price move)",
+            "maturation": "1H >= 18 bars / 4H >= 8 bars",
+            "airspace": "Displacement >= 5.0% + Fair Value Gap (FVG)",
             "sentries": "4/4 SENTRIES VERIFIED"
         }
     }

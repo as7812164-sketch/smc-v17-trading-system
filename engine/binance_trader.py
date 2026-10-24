@@ -102,13 +102,31 @@ class BinanceTrader:
         return self.exchange is not None
 
     def is_auto_trade_enabled(self) -> bool:
+        # 1. Master Kill Switch Safety Sentinel
+        kill_switch = get_setting("trading_kill_switch", "false")
+        if str(kill_switch).lower() == "true":
+            return False
+
+        # 2. Master Global Auto-Trading Switch
+        auto_enabled = get_setting("auto_trading_enabled", "false")
+        if str(auto_enabled).lower() != "true":
+            return False
+
+        # 3. Binance-Specific Auto-Trading Switch
         enabled_setting = get_setting("binance_auto_trade", str(BINANCE_AUTO_TRADE))
         if str(enabled_setting).lower() != "true":
             return False
+
+        # 4. Config Flag Check
+        if not BINANCE_AUTO_TRADE and str(enabled_setting).lower() != "true":
+            return False
+
+        # 5. Local Environment Live Trading Guard
         if not os.getenv("RENDER"):
             allow_local = get_setting("allow_local_live_trading", os.getenv("ALLOW_LOCAL_LIVE_TRADING", "true"))
             if str(allow_local).lower() != "true":
                 return False
+
         return True
 
     def fetch_futures_balance(self) -> Dict[str, Any]:
