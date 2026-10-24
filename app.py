@@ -3528,7 +3528,25 @@ async def tradingview_webhook(request: Request):
         except Exception as te:
             logger.warning(f"Telegram webhook notification failed: {te}")
 
-        # 3. Execute Exchange Order if Auto-Trading is ON
+        # 3. Always open in $500 Deca Compounding Paper Portfolio (Live Tracking)
+        paper_res = None
+        try:
+            from database.db import open_paper_trade
+            zone_data = {
+                "symbol": raw_sym,
+                "side": side,
+                "entry_price": price if price > 0 else 1.0,
+                "timeframe": "1h",
+                "tp_price": tp_price if tp_price > 0 else None,
+                "soft_sl_price": sl_price if sl_price > 0 else None,
+                "order_type": "MARKET" if price > 0 else "LIMIT",
+                "source": "TradingView (Hermes 3.5 Radar Harvest)"
+            }
+            paper_res = open_paper_trade(zone_data)
+        except Exception as pe:
+            logger.warning(f"Error opening paper trade from TradingView webhook: {pe}")
+
+        # 4. Execute Exchange Order ONLY IF Live Auto-Trading is ON
         exec_res = None
         if auto_enabled:
             if bitget_trader and bitget_trader.is_configured:
@@ -3546,7 +3564,8 @@ async def tradingview_webhook(request: Request):
             "message": f"TradingView webhook received for {raw_sym} ({side})",
             "auto_trading_enabled": auto_enabled,
             "audit": audit,
-            "execution": exec_res
+            "paper_compounding_trade": paper_res,
+            "bitget_execution": exec_res
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
