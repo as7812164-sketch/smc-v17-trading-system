@@ -3470,31 +3470,53 @@ async def tradingview_webhook(request: Request):
     Combines TradingView alert + Mike AI 4H Order Block logic for Dual-Confluence Execution!
     """
     try:
-        body = await request.body()
+        body_raw = await request.body()
+        raw_text = body_raw.decode("utf-8", errors="ignore").strip()
+        
         data = {}
         try:
-            data = json.loads(body.decode("utf-8"))
+            data = json.loads(raw_text)
         except Exception:
-            text = body.decode("utf-8").strip()
-            data = {"message": text}
+            data = {"message": raw_text}
 
-        raw_sym = str(data.get("symbol") or data.get("ticker") or "1000SHIBUSDT").upper().replace(".P", "").replace("BINANCE:", "")
+        raw_sym = None
+        side = None
+        price = 0.0
+        tp_price = 0.0
+        sl_price = 0.0
+
+        # 1. Check if structured JSON fields exist
+        if data.get("symbol") or data.get("ticker"):
+            raw_sym = str(data.get("symbol") or data.get("ticker")).upper().replace(".P", "").replace("BINANCE:", "")
+            action = str(data.get("action") or data.get("side") or "BUY").upper()
+            side = "BUY" if ("BUY" in action or "LONG" in action) else "SELL"
+            price = float(data.get("price") or data.get("entry_price") or 0.0)
+            tp_price = float(data.get("tp_price") or data.get("tp") or 0.0)
+            sl_price = float(data.get("sl_price") or data.get("sl") or 0.0)
+
+        # 2. Smart Regex fallback: parses TradingView default text alerts automatically!
+        if not raw_sym:
+            sym_match = re.search(r'\b([A-Z0-9]+USDT)\b', raw_text, re.I)
+            if sym_match:
+                raw_sym = sym_match.group(1).upper()
+            else:
+                raw_sym = "XRPUSDT"
+
+            if re.search(r'\b(BUY|LONG)\b', raw_text, re.I):
+                side = "BUY"
+            elif re.search(r'\b(SELL|SHORT)\b', raw_text, re.I):
+                side = "SELL"
+            else:
+                side = "BUY"
+
+            p_match = re.search(r'(?:Entry:\s*|at\s*\$?|price:\s*)(\d+\.?\d*)', raw_text, re.I)
+            if p_match:
+                price = float(p_match.group(1))
+
         if not raw_sym.endswith("USDT"):
             raw_sym += "USDT"
-        
-        # Map raw SHIB to 1000SHIBUSDT for futures
         if raw_sym == "SHIBUSDT":
-            raw_sym = "1000SHIBUSDT"
-
-        action = str(data.get("action") or data.get("side") or "SELL").upper()
-        if "BUY" in action:
-            side = "BUY"
-        else:
-            side = "SELL"
-
-        price = float(data.get("price") or data.get("entry_price") or 0.0)
-        tp_price = float(data.get("tp_price") or data.get("tp") or 0.0)
-        sl_price = float(data.get("sl_price") or data.get("sl") or 0.0)
+            raw_sym = "1000SHIBUSDT" 
 
         # 1. TradingView Indicator Signal Receipt
         ist_tz = timezone(timedelta(hours=5, minutes=30))
