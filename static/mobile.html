@@ -2442,6 +2442,16 @@
             </div>
         </div>
 
+        <!-- HERMES 3.5 RADAR HARVEST COIN SEARCH BAR -->
+        <div style="position:relative; margin-bottom:8px; z-index:90;">
+            <div style="display:flex; align-items:center; background:#141B2B; border:1px solid rgba(0,245,155,0.3); border-radius:8px; padding:6px 12px; gap:8px;">
+                <i class="fa-solid fa-magnifying-glass" style="color:var(--green); font-size:13px;"></i>
+                <input type="text" id="mobileChartCoinSearch" placeholder="🔍 Search Coin (e.g. XRP, SOL, PEPE, DOGE, BTC)..." style="background:transparent; border:none; outline:none; color:#fff; font-size:13px; font-weight:700; width:100%; font-family:var(--font-sans);" oninput="handleMobileCoinSearch(this.value)" autocomplete="off">
+                <button type="button" onclick="document.getElementById('mobileChartCoinSearch').value=''; document.getElementById('mobileChartSearchResults').style.display='none';" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="mobileChartSearchResults" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:9999; background:#0F1420; border:1px solid rgba(0,245,155,0.4); border-radius:8px; max-height:220px; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.85); margin-top:4px;"></div>
+        </div>
+
         <!-- ACTIVE POSITIONS QUICK STRIP (TAP TO VIEW CHART & BAR REPLAY) -->
         <div id="mobileActivePosStrip" style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:2px 2px 8px 2px; margin-bottom:6px; -webkit-overflow-scrolling:touch;">
             <span style="font-size:10px; font-weight:800; color:var(--text-muted); white-space:nowrap;"><i class="fa-solid fa-crosshairs" style="color:#F59E0B;"></i> POSITIONS:</span>
@@ -2835,6 +2845,36 @@
         }
 
         
+        function handleMobileCoinSearch(val) {
+            const resBox = document.getElementById('mobileChartSearchResults');
+            if (!resBox) return;
+            const query = (val || '').trim().toUpperCase();
+            if (!query) {
+                resBox.style.display = 'none';
+                resBox.innerHTML = '';
+                return;
+            }
+            const pool = (window.allCoinsData && window.allCoinsData.length > 0) ? window.allCoinsData : [
+                { symbol: 'BTCUSDT', price: 68500 }, { symbol: 'ETHUSDT', price: 2500 }, { symbol: 'SOLUSDT', price: 175 },
+                { symbol: 'XRPUSDT', price: 0.52 }, { symbol: 'DOGEUSDT', price: 0.14 }, { symbol: 'PEPEUSDT', price: 0.000009 },
+                { symbol: 'ADAUSDT', price: 0.35 }, { symbol: 'AVAXUSDT', price: 26 }, { symbol: 'SUIUSDT', price: 1.95 },
+                { symbol: 'NEARUSDT', price: 4.8 }, { symbol: 'LINKUSDT', price: 11.2 }, { symbol: 'FETUSDT', price: 1.3 }
+            ];
+            const filtered = pool.filter(c => c.symbol.toUpperCase().includes(query));
+            if (filtered.length === 0) {
+                const targetSym = query.endsWith('USDT') ? query : query + 'USDT';
+                resBox.innerHTML = `<div style="padding:10px 14px; font-size:12px; color:var(--text-muted);">No match found. <button onclick="selectMobileCoin('${targetSym}'); document.getElementById('mobileChartSearchResults').style.display='none';" style="background:var(--green); color:#000; font-weight:800; border:none; border-radius:4px; padding:2px 8px; margin-left:6px; cursor:pointer;">Load ${targetSym}</button></div>`;
+            } else {
+                resBox.innerHTML = filtered.slice(0, 8).map(c => `
+                    <div onclick="selectMobileCoin('${c.symbol}'); document.getElementById('mobileChartCoinSearch').value='${c.symbol}'; document.getElementById('mobileChartSearchResults').style.display='none';" style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+                        <span style="font-weight:800; color:#fff; font-size:13px;">${c.symbol}</span>
+                        <span style="font-size:12px; color:var(--green); font-family:var(--font-mono);">$${Number(c.price || c.last_price || 0).toFixed(4)}</span>
+                    </div>
+                `).join('');
+            }
+            resBox.style.display = 'block';
+        }
+
         function selectMobileCoin(sym) {
             if (window.HermesMobileChart) {
                 HermesMobileChart.setSymbol(sym);
@@ -4304,9 +4344,25 @@
     <script src="/static/js/hermes_chart_replay.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const activeTab = document.querySelector('.tab-panel.active');
-            if (activeTab && activeTab.id === 'tab-trade' && window.HermesMobileChart) {
-                HermesMobileChart.init('mobileChartCanvas', 'BTCUSDT');
+            const urlParams = new URLSearchParams(window.location.search);
+            const querySym = urlParams.get('symbol');
+            const queryTab = urlParams.get('tab');
+            if (querySym) {
+                setTimeout(() => {
+                    if (typeof openCoinTrade === 'function') {
+                        openCoinTrade(querySym.toUpperCase());
+                    } else {
+                        selectMobileCoin(querySym.toUpperCase());
+                        switchTab('trade');
+                    }
+                }, 350);
+            } else if (queryTab) {
+                switchTab(queryTab);
+            } else {
+                const activeTab = document.querySelector('.tab-panel.active');
+                if (activeTab && activeTab.id === 'tab-trade' && window.HermesMobileChart) {
+                    HermesMobileChart.init('mobileChartCanvas', 'BTCUSDT');
+                }
             }
         });
     </script>
