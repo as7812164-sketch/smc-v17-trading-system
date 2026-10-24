@@ -632,6 +632,13 @@
 
         <!-- Right: Actions & Account Pill -->
         <div class="top-bar-right" style="display: flex; align-items: center; gap: 8px;">
+
+            <!-- Auto-Trading Live Toggle Pill Button -->
+            <button id="btnAutoTradingToggle" class="autotrade-toggle-btn off" onclick="toggleAutoTradingState()" title="Auto Trading Switch (Click to Toggle ON/OFF)" style="display:inline-flex; align-items:center; gap:7px; padding:5px 13px; border-radius:20px; font-size:11.5px; font-weight:800; font-family:var(--font-mono, monospace); cursor:pointer; transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1); border:1px solid rgba(239, 68, 68, 0.7); background:rgba(239, 68, 68, 0.16); color:#FCA5A5; box-shadow:0 0 10px rgba(239, 68, 68, 0.25); outline:none; white-space:nowrap; z-index:10;">
+                <span class="autotrade-dot" style="width:8px; height:8px; border-radius:50%; background:#EF4444; display:inline-block; box-shadow:0 0 8px #EF4444;"></span>
+                <span id="autotradeLabelText">AUTO: OFF</span>
+            </button>
+
             <button class="top-icon-btn" id="btnTopSearch" title="Search Markets" onclick="window.location.href='/markets';">
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
@@ -1852,5 +1859,86 @@
 
         document.addEventListener('DOMContentLoaded', initPage);
     </script>
+
+
+<!-- Auto-Trading Toggle Engine Script -->
+<script>
+async function refreshAutoTradingUI() {
+    try {
+        const res = await fetch('/api/autotrade/status');
+        const data = await res.json();
+        updateAutoTradingButtonUI(data.is_auto_trading_on);
+    } catch (e) {
+        console.error("Error fetching autotrade status:", e);
+    }
+}
+
+function updateAutoTradingButtonUI(isOn) {
+    const btns = document.querySelectorAll('.autotrade-toggle-btn');
+    btns.forEach(btn => {
+        const dot = btn.querySelector('.autotrade-dot');
+        const label = btn.querySelector('#autotradeLabelText, .autotrade-label');
+        if (isOn) {
+            btn.className = 'autotrade-toggle-btn on';
+            btn.style.border = '1px solid rgba(16, 185, 129, 0.8)';
+            btn.style.background = 'rgba(16, 185, 129, 0.18)';
+            btn.style.color = '#6EE7B7';
+            btn.style.boxShadow = '0 0 14px rgba(16, 185, 129, 0.35)';
+            if (dot) {
+                dot.style.background = '#10B981';
+                dot.style.boxShadow = '0 0 8px #10B981';
+            }
+            if (label) label.textContent = 'AUTO: ON';
+        } else {
+            btn.className = 'autotrade-toggle-btn off';
+            btn.style.border = '1px solid rgba(239, 68, 68, 0.7)';
+            btn.style.background = 'rgba(239, 68, 68, 0.16)';
+            btn.style.color = '#FCA5A5';
+            btn.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.25)';
+            if (dot) {
+                dot.style.background = '#EF4444';
+                dot.style.boxShadow = '0 0 8px #EF4444';
+            }
+            if (label) label.textContent = 'AUTO: OFF';
+        }
+    });
+}
+
+async function toggleAutoTradingState() {
+    try {
+        const statusRes = await fetch('/api/autotrade/status');
+        const statusData = await statusRes.json();
+        const currentlyOn = statusData.is_auto_trading_on;
+        
+        const confirmMsg = currentlyOn
+            ? "⚠️ AUTO-TRADING BAND (OFF) KARNA CHAHTE HO?\n\nSare automated orders turant ruk jayenge. Engine koi new trade execute nahi karega."
+            : "✅ AUTO-TRADING CHALU (ON) KARNA CHAHTE HO?\n\nScanner active ho jayega aur Order Block confirmation par trade execute karega.";
+            
+        if (!confirm(confirmMsg)) return;
+        
+        const res = await fetch('/api/autotrade/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: !currentlyOn })
+        });
+        const result = await res.json();
+        updateAutoTradingButtonUI(result.is_auto_trading_on);
+        
+        if (typeof showToast === 'function') {
+            showToast(result.message, result.is_auto_trading_on ? 'success' : 'warning');
+        } else {
+            alert(result.message);
+        }
+    } catch (e) {
+        alert("Failed to toggle auto trading: " + e.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    refreshAutoTradingUI();
+    setInterval(refreshAutoTradingUI, 8000);
+});
+</script>
+
 </body>
 </html>

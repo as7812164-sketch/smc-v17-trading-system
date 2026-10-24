@@ -29,6 +29,11 @@ HERMES_3_MULTI_STAGE_ARMOR = True
 HERMES_3_BTC_EMERGENCY_SHIELD = True
 HERMES_3_DYNAMIC_ATR_BUFFER = True
 
+# --- HERMES 3.5 RADAR HARVEST PARAMETERS ---
+HERMES_3_5_MIN_MATURATION_1H = 18          # 18 bars (Next-Day) maturation horizon
+HERMES_3_5_MIN_MATURATION_4H = 8           # 8 bars macro maturation horizon
+HERMES_3_5_BTC_TREND_FILTER = False        # Independent Asset SMC mode
+
 # --- STEPPED TRAILING SL & PROXIMITY LIMIT ORDER ARCHITECTURE ---
 HERMES_3_LIMIT_PROXIMITY_PCT = 0.0020     # 0.20% proximity triggers Limit Order pre-placement
 HERMES_3_ENABLE_STEPPED_TRAILING = True   # Replaces static break-even with Stepped Trailing SL
@@ -154,7 +159,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 BITGET_API_KEY = os.getenv("BITGET_API_KEY", "")
 BITGET_SECRET = os.getenv("BITGET_SECRET", "")
 BITGET_PASSPHRASE = os.getenv("BITGET_PASSPHRASE", "")
-BITGET_AUTO_TRADE = True  # LIVE AUTO-TRADING OFF: Preserving capital for strategy R&D & Copy-Trading mode
+BITGET_AUTO_TRADE = False  # LIVE AUTO-TRADING DISABLED (User Toggled OFF)
 BITGET_DEFAULT_LEVERAGE = 5
 BITGET_STARTING_MARGIN = 5.0  # $50 USDT compounding starting size
 BITGET_COMPOUNDING_TARGET = 2000.0  # $2,000 USDT Milestone Target Goal

@@ -2300,6 +2300,83 @@ async def toggle_system_kill_switch(body: Dict[str, Any] = Body(...)):
         "message": f"Kill Switch {'ACTIVATED (Trading Halted)' if enable else 'DEACTIVATED (Trading Resumed)'}"
     }
 
+
+# --- Dedicated Auto-Trading ON / OFF Switch Endpoints ---
+@app.get("/api/autotrade/status")
+async def get_autotrade_status():
+    """Returns whether auto-trading is currently ON or OFF."""
+    kill_switch = get_setting("trading_kill_switch", "false").lower() == "true"
+    auto_enabled = get_setting("auto_trading_enabled", "false").lower() == "true"
+    bg_auto = get_setting("bitget_auto_trade", "false").lower() == "true"
+    
+    is_on = (not kill_switch) and auto_enabled and bg_auto
+    return {
+        "status": "ok",
+        "is_auto_trading_on": is_on,
+        "state_label": "ON" if is_on else "OFF",
+        "kill_switch_active": kill_switch,
+        "bitget_auto_trade": bg_auto,
+        "message": "Auto-Trading is LIVE and ACTIVE" if is_on else "Auto-Trading is STOPPED (OFF)"
+    }
+
+@app.post("/api/autotrade/toggle")
+async def toggle_autotrade_switch(body: Dict[str, Any] = Body(default={})):
+    """Toggles or sets Auto-Trading ON or OFF."""
+    import config
+    kill_switch = get_setting("trading_kill_switch", "false").lower() == "true"
+    auto_enabled = get_setting("auto_trading_enabled", "false").lower() == "true"
+    current_on = (not kill_switch) and auto_enabled
+    
+    if "enabled" in body and body["enabled"] is not None:
+        turn_on = bool(body["enabled"])
+    else:
+        turn_on = not current_on
+        
+    if turn_on:
+        set_setting("trading_kill_switch", "false")
+        set_setting("auto_trading_enabled", "true")
+        set_setting("bitget_auto_trade", "true")
+        config.BITGET_AUTO_TRADE = True
+        hermes2_apex_engine.set_kill_switch(False)
+    else:
+        set_setting("trading_kill_switch", "true")
+        set_setting("auto_trading_enabled", "false")
+        set_setting("bitget_auto_trade", "false")
+        config.BITGET_AUTO_TRADE = False
+        hermes2_apex_engine.set_kill_switch(True)
+        
+    try:
+        await ws_broadcast({
+            "type": "AUTO_TRADE_STATUS",
+            "enabled": turn_on,
+            "state_label": "ON" if turn_on else "OFF"
+        })
+    except Exception:
+        pass
+        
+    try:
+        tg_text = (
+            "🟢 <b>AUTO-TRADING ACTIVATED (ON)!</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "✅ The website button was toggled ON.\n"
+            "📡 Scanner is actively evaluating Order Blocks and executing trades."
+            if turn_on else
+            "🔴 <b>AUTO-TRADING STOPPED (OFF)!</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "🛑 The website button was toggled OFF.\n"
+            "🔒 No new trades will be placed until toggled ON."
+        )
+        await telegram_service.send_raw_message(tg_text)
+    except Exception:
+        pass
+        
+    return {
+        "success": True,
+        "is_auto_trading_on": turn_on,
+        "state_label": "ON" if turn_on else "OFF",
+        "message": f"Auto-Trading is now {'ACTIVATED (ON)' if turn_on else 'STOPPED (OFF)'}"
+    }
+
 @app.get("/api/system/health-audit")
 @app.post("/api/system/health-audit")
 async def run_system_health_audit_and_self_heal():
