@@ -3496,47 +3496,57 @@ async def tradingview_webhook(request: Request):
         tp_price = float(data.get("tp_price") or data.get("tp") or 0.0)
         sl_price = float(data.get("sl_price") or data.get("sl") or 0.0)
 
-        # 1. Dual-Confluence Audit with Mike AI
+        # 1. TradingView Indicator Signal Receipt
+        ist_tz = timezone(timedelta(hours=5, minutes=30))
+        now_str = datetime.now(ist_tz).strftime("%Y-%m-%d %H:%M:%S")
+        auto_enabled = get_setting("auto_trading_enabled", "false").lower() == "true"
+
         audit = {
             "status": "APPROVED",
-            "confluence_score": 94,
-            "source": "TradingView Indicator + Mike AI",
-            "timestamp": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+            "source": "TradingView (Hermes 3.5 Radar Harvest)",
+            "timestamp": now_str,
+            "auto_trading_enabled": auto_enabled
         }
 
         # 2. Telegram Broadcast
+        status_tag = "🚀 <b>AUTO-EXECUTION TRIGGERED</b>" if auto_enabled else "⚠️ <b>SIGNAL RECEIVED (AUTO-TRADE OFF)</b>"
         msg = (
-            f"🎯 <b>DUAL-CONFLUENCE SIGNAL TRIGGERED!</b>\n"
+            f"🎯 <b>TRADINGVIEW RADAR HARVEST SIGNAL!</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{status_tag}\n"
             f"🪙 <b>Pair:</b> #{raw_sym}\n"
-            f"⚡ <b>Action:</b> {side} (5x Isolated)\n"
-            f"📊 <b>TradingView Indicator:</b> Confirmed\n"
-            f"🧠 <b>Mike AI Confluence:</b> 94/100 (A+ Grade)\n"
-            f"💰 <b>Margin:</b> $50.00 USDT\n"
-            f"🎯 <b>Target TP:</b> +10% ROI (+2% Move)\n"
-            f"🛑 <b>Hard SL:</b> -20% ROI (-4% Move)\n"
+            f"⚡ <b>Action:</b> {side} (5x Leverage)\n"
+            f"📊 <b>Source:</b> Hermes 3.5 Radar Harvest\n"
+            f"💵 <b>Price:</b> {price}\n"
+            f"💰 <b>Allocated Margin:</b> $50.00 USDT\n"
+            f"⏰ <b>Time:</b> {now_str} IST\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🤖 <i>Automated Dual-Filter Execution Active</i>"
+            f"🤖 <i>Live TradingView Webhook Sync</i>"
         )
-        await telegram_service.send_raw_message(msg)
+        try:
+            await telegram_service.send_raw_message(msg)
+        except Exception as te:
+            logger.warning(f"Telegram webhook notification failed: {te}")
 
-        # 3. Execute Bitget Order if configured
+        # 3. Execute Exchange Order if Auto-Trading is ON
         exec_res = None
-        if bitget_trader and bitget_trader.is_configured:
-            exec_res = bitget_trader.place_order(
-                symbol=raw_sym,
-                side=side,
-                size_usdt=50.0,
-                leverage=5,
-                tp_price=tp_price if tp_price > 0 else None,
-                sl_price=sl_price if sl_price > 0 else None
-            )
+        if auto_enabled:
+            if bitget_trader and bitget_trader.is_configured:
+                exec_res = bitget_trader.place_order(
+                    symbol=raw_sym,
+                    side=side,
+                    size_usdt=50.0,
+                    leverage=5,
+                    tp_price=tp_price if tp_price > 0 else None,
+                    sl_price=sl_price if sl_price > 0 else None
+                )
 
         return {
             "success": True,
-            "message": f"Dual-Confluence webhook received for {raw_sym} ({side})",
+            "message": f"TradingView webhook received for {raw_sym} ({side})",
+            "auto_trading_enabled": auto_enabled,
             "audit": audit,
-            "bitget_execution": exec_res
+            "execution": exec_res
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
