@@ -36,6 +36,16 @@ let drawingDragStartPos = null;
 
 // --- Application Bootstrap ---
 document.addEventListener("DOMContentLoaded", () => {
+    // Parse symbol from URL query parameter (?symbol=...)
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const symParam = urlParams.get('symbol');
+        if (symParam) {
+            currentSymbol = symParam.trim().toUpperCase();
+        }
+    } catch (symErr) {
+        console.warn("URL symbol param parse error:", symErr);
+    }
     // Telegram WebApp Viewport & Swipe Stability (Eliminates mobile screen flickering & bounce)
     try {
         if (window.Telegram && window.Telegram.WebApp) {
@@ -49,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("Telegram WebApp init notice:", tgErr);
     }
 
+    try { initChartCoinSearch(); } catch (e) { console.error("initChartCoinSearch error:", e); }
     try { initChart(); } catch (e) { console.error("initChart error:", e); }
     try { initWebSocket(); } catch (e) { console.error("initWebSocket error:", e); }
     try { loadCoinsList(); } catch (e) { console.error("loadCoinsList error:", e); }
@@ -603,7 +614,7 @@ function drawSmcZoneBoxes() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // 1. Render Hermes 3.0 Model 2A Radar Harvest Unmitigated Order Block Zones
+    // 1. Render Hermes 3.5 Radar Harvest Unmitigated Order Block Zones
     if (showSmcZones && mainSeries && tvChart && rawZonesData && rawZonesData.length > 0) {
         const timeScale = tvChart.timeScale();
         const visibleRange = timeScale.getVisibleRange();
@@ -647,7 +658,7 @@ function drawSmcZoneBoxes() {
 
             if (maxY < 0 || minY > height) return;
 
-            // Hermes 3.0 Model 2A Radar Harvest Order Block Shading
+            // Hermes 3.5 Radar Harvest Order Block Shading
             const fillColor = isBuySide ? 'rgba(0, 245, 155, 0.12)' : 'rgba(255, 59, 105, 0.12)';
             const borderColor = isBuySide ? '#00F59B' : '#FF3B69';
             const textColor = isBuySide ? '#00F59B' : '#FF3B69';
@@ -666,7 +677,7 @@ function drawSmcZoneBoxes() {
             ctx.font = "bold 10px 'JetBrains Mono', monospace";
             ctx.fillStyle = textColor;
             
-            const tagTitle = isBuySide ? '🏛️ HERMES 3.0 MODEL 2A DEMAND OB' : '🏛️ HERMES 3.0 MODEL 2A SUPPLY OB';
+            const tagTitle = isBuySide ? '🏛️ HERMES 3.5 DEMAND OB' : '🏛️ HERMES 3.5 SUPPLY OB';
             const statTitle = z.status === 'RADAR_PRE_ARMED' ? ' [📡 0.20% RADAR ARMED]' : (z.status === 'ACTIVE' || z.status === 'FRESH_TRIGGERED' ? ' [⚡ 5% BOUNDARY TAP]' : ' [FRESH UNMITIGATED]');
             const originTitle = z.is_origin ? ' [BEDROCK]' : '';
             const tagText = `${tagTitle}${statTitle}${originTitle} [${formatPrice(z.ob_low)} - ${formatPrice(z.ob_high)}]`;
@@ -686,7 +697,7 @@ function drawSmcZoneBoxes() {
             }
             ctx.restore();
 
-            // HERMES 3.0 MODEL 2A RADAR HARVEST PROJECTION LINES (STAGGERED ANTI-COLLISION)
+            // HERMES 3.5 RADAR HARVEST PROJECTION LINES (STAGGERED ANTI-COLLISION)
             const tpPx = z.tp_price || (isBuySide ? entPx * 1.0280 : entPx * 0.9720);
             const harvestPx = z.harvest_lock_price || (isBuySide ? entPx * 1.0090 : entPx * 0.9910);
             const armorPx = z.armor_stage1_price || (isBuySide ? entPx * 1.0160 : entPx * 0.9840);
@@ -697,10 +708,10 @@ function drawSmcZoneBoxes() {
 
             const projItems = [
                 { id: 'tp', label: `🎯 TP (+14% ROE): $${formatPrice(tpPx)}`, price: tpPx, color: '#00F59B', dash: [6, 4], bg: 'rgba(0, 245, 155, 0.22)' },
-                { id: 'harvest', label: `🌾 Harvest SL (+4.5% ROE): $${formatPrice(harvestPx)}`, price: harvestPx, color: '#00E5FF', dash: [4, 3], bg: 'rgba(0, 229, 255, 0.22)' },
+                { id: 'harvest', label: `🌾 Harvest Lock (+9% ➔ +4.5% ROE): $${formatPrice(harvestPx)}`, price: harvestPx, color: '#00E5FF', dash: [4, 3], bg: 'rgba(0, 229, 255, 0.22)' },
                 { id: 'armor', label: `🛡️ Armor BE (+8% ROE): $${formatPrice(armorPx)}`, price: armorPx, color: '#2DD4BF', dash: [3, 3], bg: 'rgba(45, 212, 191, 0.22)' },
                 { id: 'radar', label: `📡 0.20% Radar: $${formatPrice(radPx)}`, price: radPx, color: '#38BDF8', dash: [2, 3], bg: 'rgba(56, 189, 248, 0.22)' },
-                { id: 'entry', label: `⚡ 5% Entry: $${formatPrice(entPx)}`, price: entPx, color: '#F59E0B', dash: [5, 2], bg: 'rgba(245, 158, 11, 0.25)' },
+                { id: 'entry', label: `⚡ 5% Boundary Entry: $${formatPrice(entPx)}`, price: entPx, color: '#F59E0B', dash: [5, 2], bg: 'rgba(245, 158, 11, 0.25)' },
                 { id: 'sl', label: `🛑 Dynamic SL (-14% ROE): $${formatPrice(slPx)}`, price: slPx, color: '#FF3B69', dash: [5, 4], bg: 'rgba(255, 59, 105, 0.22)' }
             ];
 
@@ -1963,25 +1974,26 @@ function updateSmcChartHud(data) {
 
     const tfEl = document.getElementById("hudTimeframe");
     const targetSlEl = document.getElementById("hudTargetSl");
+    const harvestLockEl = document.getElementById("hudHarvestLock");
     const gateStatusEl = document.getElementById("hudGateStatus");
 
     const tf = (currentTimeframe || "4h").toUpperCase();
-    const targetRoe = "+14.00% ROE (+2.80%)";
-    const slRoe = "-14.00% ROE (-2.80%)";
 
-    if (tfEl) tfEl.innerText = `${tf} SINGLE TIER (5X)`;
-    if (targetSlEl) targetSlEl.innerHTML = `<span style="color:#00F59B; font-weight:700;">${targetRoe}</span> / <span style="color:#FF3B69; font-weight:700;">${slRoe}</span>`;
+    if (tfEl) tfEl.innerHTML = `5% BOUNDARY &bull; 5X &bull; ${tf}`;
+    if (targetSlEl) targetSlEl.innerHTML = `<span style="color:#00F59B; font-weight:700;">+14.0% ROE</span> / <span style="color:#FF3B69; font-weight:700;">-14.0% SL</span>`;
+    if (harvestLockEl) harvestLockEl.innerHTML = `<span style="color:#00E5FF; font-weight:700;">+9.0% &rarr; +4.5% Locked</span>`;
 
     const zones = (data && data.zones) ? data.zones : (rawZonesData || []);
-    const activeZone = zones.find(z => z.status === 'ACTIVE' || z.status === 'QUALIFIED');
+    const activeZone = zones.find(z => z.status === 'ACTIVE' || z.status === 'QUALIFIED' || z.status === 'RADAR_PRE_ARMED');
 
     if (activeZone && gateStatusEl) {
-        const isBuy = activeZone.side === "BUY";
-        const mtVal = activeZone.mean_threshold || activeZone.entry_price || ((activeZone.ob_high + activeZone.ob_low) / 2.0);
+        const isBuy = (activeZone.side === "BUY" || activeZone.side === "LONG");
+        const obRange = Math.abs((activeZone.ob_high || 0) - (activeZone.ob_low || 0));
+        const entVal = activeZone.entry_price || (isBuy ? (activeZone.ob_high - obRange * 0.05) : (activeZone.ob_low + obRange * 0.05));
         const sideColor = isBuy ? '#00F59B' : '#FF3B69';
-        gateStatusEl.innerHTML = `<span style="color:#FFD700; font-weight:800;"><i class="fa-solid fa-crosshairs"></i> 50% MT <span style="color:${sideColor};">${activeZone.side}</span>: $${formatPrice(mtVal)}</span>`;
+        gateStatusEl.innerHTML = `<span style="color:#FFD700; font-weight:800;"><i class="fa-solid fa-crosshairs"></i> 5% Boundary <span style="color:${sideColor};">${activeZone.side}</span>: $${formatPrice(entVal)}</span>`;
     } else if (gateStatusEl) {
-        gateStatusEl.innerHTML = `<span style="color:#00F59B;"><i class="fa-solid fa-shield-halved"></i> 4/4 Sentries Active &amp; Guarded</span>`;
+        gateStatusEl.innerHTML = `<span style="color:#00F59B;"><i class="fa-solid fa-shield-halved"></i> 0.20% Radar Pre-Armed</span>`;
     }
 }
 
@@ -3547,7 +3559,7 @@ function setupEventListeners() {
                 const hud = document.getElementById("smcChartHud");
                 if (hud) hud.style.display = showSmcZones ? "block" : "none";
                 scheduleDrawSmcZoneBoxes();
-                showToast(`Hermes 3.0 Model 2A Radar Harvest Overlay ${showSmcZones ? 'ON' : 'OFF'}`);
+                showToast(`Hermes 3.5 Radar Harvest Overlay ${showSmcZones ? 'ON' : 'OFF'}`);
                 return;
             }
             activeIndicators[ind] = !activeIndicators[ind];
@@ -5534,3 +5546,148 @@ window.loadHermesData = async function(tab) {
 
 
 
+
+
+// --- Direct Chart Coin Search Bar with Instant Clickable Auto-Complete Dropdown ---
+function initChartCoinSearch() {
+    const input = document.getElementById("chartCoinSearch");
+    const dropdown = document.getElementById("chartCoinSearchResults");
+    if (!input || !dropdown) return;
+
+    const fallbackSymbols = [
+        "BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "PEPEUSDT", "1000PEPEUSDT",
+        "ADAUSDT", "SUIUSDT", "AVAXUSDT", "LINKUSDT", "NEARUSDT", "BNBUSDT", "SHIBUSDT",
+        "1000BONKUSDT", "ARBUSDT", "OPUSDT", "INJUSDT", "TIAUSDT", "FETUSDT", "RENDERUSDT",
+        "FILUSDT", "LDOUSDT", "UNIUSDT", "AAVEUSDT", "GALAUSDT", "ICPUSDT", "PYTHUSDT",
+        "ORDIUSDT", "ETCUSDT", "MANAUSDT", "AXSUSDT", "ATOMUSDT", "SANDUSDT", "DOTUSDT",
+        "CRVUSDT", "DYDXUSDT", "WLDUSDT", "TAOUSDT", "ENAUSDT", "SEIUSDT", "ONDOUSDT",
+        "BCHUSDT", "LTCUSDT", "PENDLEUSDT", "AEROUSDT", "STXUSDT", "JUPUSDT"
+    ];
+
+    function getAllAvailableSymbols() {
+        const set = new Set();
+        if (Array.isArray(allCoinsData) && allCoinsData.length > 0) {
+            allCoinsData.forEach(c => {
+                if (c && c.symbol) set.add(c.symbol.toUpperCase());
+            });
+        }
+        fallbackSymbols.forEach(s => set.add(s.toUpperCase()));
+        return Array.from(set);
+    }
+
+    function renderResults(query) {
+        const q = (query || "").trim().toUpperCase();
+        if (!q) {
+            dropdown.style.display = "none";
+            dropdown.innerHTML = "";
+            return;
+        }
+
+        const syms = getAllAvailableSymbols();
+        const matches = syms.filter(s => {
+            const base = s.replace(/USDT$/, '');
+            return s.includes(q) || base.includes(q);
+        }).sort((a, b) => {
+            const aStarts = a.startsWith(q) || a.replace(/USDT$/, '').startsWith(q);
+            const bStarts = b.startsWith(q) || b.replace(/USDT$/, '').startsWith(q);
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            return a.localeCompare(b);
+        }).slice(0, 15);
+
+        if (matches.length === 0) {
+            const directSym = q.endsWith("USDT") ? q : (q + "USDT");
+            dropdown.innerHTML = `
+                <div class="search-item direct-select" style="padding: 8px 10px; border-radius: 6px; cursor: pointer; color: #38BDF8; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; background: rgba(56, 189, 248, 0.08);">
+                    <span><i class="fa-solid fa-magnifying-glass" style="margin-right: 6px;"></i> Load ${directSym}</span>
+                    <span style="font-size: 9px; opacity: 0.8; background: rgba(56, 189, 248, 0.2); padding: 2px 6px; border-radius: 4px;">Enter</span>
+                </div>
+            `;
+            dropdown.style.display = "block";
+            const row = dropdown.querySelector(".direct-select");
+            if (row) {
+                row.addEventListener("click", () => {
+                    selectCoin(directSym);
+                    input.value = "";
+                    dropdown.style.display = "none";
+                });
+            }
+            return;
+        }
+
+        dropdown.innerHTML = matches.map(s => {
+            const coinObj = Array.isArray(allCoinsData) ? allCoinsData.find(c => c.symbol === s) : null;
+            const priceText = coinObj && coinObj.price ? `$${formatPrice(coinObj.price)}` : '';
+            const isCurr = s === currentSymbol;
+            return `
+                <div class="chart-search-row" data-sym="${s}" style="padding: 6px 10px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: ${isCurr ? '#00F59B' : '#E2E8F0'}; font-family: var(--font-mono); transition: background 0.15s; margin-bottom: 2px; ${isCurr ? 'background: rgba(0,245,155,0.1); font-weight: 700;' : ''}">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-weight: 700;">${s}</span>
+                        ${isCurr ? '<span style="font-size: 9px; color: #00F59B;">ACTIVE</span>' : ''}
+                    </div>
+                    <span style="color: #94A3B8; font-size: 10.5px;">${priceText}</span>
+                </div>
+            `;
+        }).join("");
+
+        dropdown.style.display = "block";
+
+        dropdown.querySelectorAll(".chart-search-row").forEach(row => {
+            row.addEventListener("mouseenter", () => {
+                row.style.background = "rgba(56, 189, 248, 0.18)";
+            });
+            row.addEventListener("mouseleave", () => {
+                const s = row.dataset.sym;
+                row.style.background = (s === currentSymbol) ? "rgba(0,245,155,0.1)" : "transparent";
+            });
+            row.addEventListener("click", () => {
+                const sym = row.dataset.sym;
+                if (sym) {
+                    selectCoin(sym);
+                    input.value = "";
+                    dropdown.style.display = "none";
+                }
+            });
+        });
+    }
+
+    input.addEventListener("input", (e) => {
+        renderResults(e.target.value);
+    });
+
+    input.addEventListener("focus", () => {
+        if (input.value.trim()) {
+            renderResults(input.value);
+        } else {
+            renderResults(" ");
+        }
+    });
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            const val = input.value.trim().toUpperCase();
+            if (!val) return;
+            const firstRow = dropdown.querySelector(".chart-search-row");
+            if (firstRow && firstRow.dataset.sym) {
+                selectCoin(firstRow.dataset.sym);
+            } else {
+                const sym = val.endsWith("USDT") ? val : (val + "USDT");
+                selectCoin(sym);
+            }
+            input.value = "";
+            dropdown.style.display = "none";
+            input.blur();
+        } else if (e.key === "Escape") {
+            dropdown.style.display = "none";
+            input.blur();
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = "none";
+        }
+    });
+}
+window.initChartCoinSearch = initChartCoinSearch;

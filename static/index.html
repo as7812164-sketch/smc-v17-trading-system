@@ -876,6 +876,14 @@
                                 <span class="current-price" id="symbolPrice" style="font-size:13px; font-weight:800; color:#00F59B; font-family:var(--font-mono); margin-left:4px;">$118,642.5</span>
                                 <div class="chart-active-trade-pill" id="chartActiveTradePill" style="display: none;"></div>
                             </div>
+                            <!-- DIRECT COIN SEARCH BAR WITH DROPDOWN -->
+                            <div class="chart-coin-search-container" style="position: relative; display: inline-flex; align-items: center; margin-left: 6px;">
+                                <div class="chart-search-input-box" style="position: relative; display: flex; align-items: center;">
+                                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 8px; font-size: 11px; color: #64748B; pointer-events: none;"></i>
+                                    <input type="text" id="chartCoinSearch" placeholder="Search (e.g. XRP, SOL, PEPE)..." autocomplete="off" spellcheck="false" style="padding: 4px 8px 4px 26px; font-size: 11px; font-family: var(--font-mono); background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; color: #F8FAFC; width: 185px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;">
+                                </div>
+                                <div id="chartCoinSearchResults" class="chart-coin-search-results" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 240px; max-height: 280px; overflow-y: auto; background: #0b0f19; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8); z-index: 2000; padding: 4px;"></div>
+                            </div>
 
                             <!-- TIMEFRAME SELECTOR BUTTONS (5m, 15m, 1h, 4h, 1d) -->
                             <div class="dch-timeframes" id="timeframeGroup" title="Select Timeframe">
@@ -889,7 +897,7 @@
 
                         <div class="dch-right">
                             <button class="indicator-chip active" id="chipHermesRadar" data-ind="hermes_radar" style="border-color:#F59E0B; color:#F59E0B; background:rgba(245,158,11,0.12); font-weight:800; font-size:11px; padding:4px 9px;">
-                                <i class="fa-solid fa-crosshairs" style="color:#00F59B;"></i> <span>HERMES 3.0 MODEL 2A RADAR HARVEST</span>
+                                <i class="fa-solid fa-crosshairs" style="color:#00F59B;"></i> <span>HERMES 3.5 RADAR HARVEST</span>
                             </button>
                             <div class="tv-dropdown" id="chartStyleDropdown" title="Chart Display Style">
                                 <button class="tv-dropdown-btn" id="btnChartStyle" style="padding:4px 8px; font-size:11px;">
@@ -906,7 +914,7 @@
                             <button class="btn btn-icon btn-xs" id="btnChartSnapshot" title="Snapshot"><i class="fa-solid fa-camera"></i></button>
                             <button class="btn btn-icon btn-xs" id="btnToggleZones" title="Toggle Zones"><i class="fa-solid fa-eye" id="zonesEyeIcon"></i></button>
                             <button class="btn btn-icon btn-xs" id="btnFullscreenChart" title="Fullscreen"><i class="fa-solid fa-expand" id="fullscreenBtnIcon"></i><span id="fullscreenBtnText" style="display:none;"></span></button>
-                            <button class="btn btn-ai btn-xs" id="btnAnalyzeAI" title="Ask Mike AI" style="padding:3px 8px; font-size:10px;"><i class="fa-solid fa-robot"></i> Mike AI</button>
+                            
                         </div>
                     </div>
 
@@ -940,10 +948,10 @@
 
                     <!-- LIGHTWEIGHT CHART CONTAINER -->
                     <div class="chart-container" id="tvChartContainer" style="flex:1; min-height:380px; position:relative;">
-                        <!-- Floating HERMES 3.0 MODEL 2A RADAR HARVEST HUD Badge -->
+                        <!-- Floating HERMES 3.5 RADAR HARVEST HUD Badge -->
                         <div class="smc-chart-hud" id="smcChartHud">
                             <div class="hud-header">
-                                <span class="hud-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);"><i class="fa-solid fa-crosshairs"></i> HERMES 3.0 MODEL 2A RADAR HARVEST</span>
+                                <span class="hud-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);"><i class="fa-solid fa-crosshairs"></i> HERMES 3.5 RADAR HARVEST</span>
                                 <span class="hud-tf" id="hudTimeframe">5% BOUNDARY &bull; 5X</span>
                             </div>
                             <div class="hud-body">
@@ -1276,11 +1284,7 @@
                         <i class="fa-solid fa-expand" id="fullscreenBtnIcon"></i>
                         <span id="fullscreenBtnText">Full Screen</span>
                     </button>
-                    <!-- AI ANALYZE -->
-                    <button class="btn btn-ai" id="btnAnalyzeAI" title="Analyze with Mike AI (Hermes 3.0 Model 2A)">
-                        <i class="fa-solid fa-robot"></i>
-                        <span>Ask Mike AI</span>
-                    </button>
+
                 </div>
             </div>
 
@@ -1288,7 +1292,7 @@
             <div class="chart-sub-toolbar">
                 <div class="sub-toolbar-left">
                     <span class="sub-label"><i class="fa-solid fa-chart-simple"></i></span>
-                    <button class="indicator-chip active" id="chipHermesRadar2" data-ind="hermes_radar" title="Hermes 3.0 Model 2A Radar Harvest (50% Mean Threshold (MT))" style="border-color: #F59E0B; color: #F59E0B; background: rgba(245, 158, 11, 0.12); font-weight: 700;"><i class="fa-solid fa-crosshairs" style="color:#00F59B;"></i> Hermes 3.0 Model 2A Radar Harvest</button>
+                    <button class="indicator-chip active" id="chipHermesRadar2" data-ind="hermes_radar" title="HERMES 3.5 RADAR HARVEST (50% Mean Threshold (MT))" style="border-color: #F59E0B; color: #F59E0B; background: rgba(245, 158, 11, 0.12); font-weight: 700;"><i class="fa-solid fa-crosshairs" style="color:#00F59B;"></i> HERMES 3.5 RADAR HARVEST</button>
                     
                     <div class="toolbar-divider"></div>
 
