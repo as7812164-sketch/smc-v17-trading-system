@@ -824,7 +824,14 @@ class Hermes30Model2ALiveEngine:
                     candles = await binance_feed.fetch_klines(symbol, interval=interval, limit=120)
                     if candles and len(candles) >= 40:
                         detected = self.detect_hermes35_single_tier_zones(symbol, candles, interval)
-                        all_setups.extend(detected)
+                        # Filter strictly for TRUE unmitigated active setups waiting for 1st tap!
+                        unmitigated = [
+                            z for z in detected 
+                            if not z.get("completed", False) 
+                            and not z.get("tapped", False) 
+                            and z.get("status") in ("ACTIVE_UNMITIGATED", "RADAR_PRE_ARMED")
+                        ]
+                        all_setups.extend(unmitigated)
                 except Exception as e:
                     logger.debug(f"Scan error for {symbol} {interval}: {e}")
 

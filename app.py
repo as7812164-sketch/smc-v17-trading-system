@@ -5712,6 +5712,15 @@ async def get_live_signals_radar():
 
         sym = s.get("symbol", "").upper()
 
+        # STRICT UNMITIGATED 1ST-TAP ONLY FILTER
+        if s.get("completed") is True or s.get("tapped") is True:
+            continue
+        status_val = str(s.get("status", "")).upper()
+        if status_val.startswith("COMPLETED") or status_val in ("INVALIDATED", "MITIGATED", "BROKEN"):
+            continue
+        if status_val not in ("ACTIVE_UNMITIGATED", "RADAR_PRE_ARMED", "QUALIFIED", "ACTIVE"):
+            continue
+
         if not sym or sym in busy_symbols:
 
             continue
