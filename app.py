@@ -5793,21 +5793,23 @@ async def get_live_signals_radar():
 
 
 
-        cur_p = float(tickers.get(sym, entry_p) or entry_p)
+        cur_p = float(tickers.get(sym, 0.0) or 0.0)
+        if cur_p <= 0 and sym.startswith("1000"):
+            base_sym = sym[4:]
+            if base_sym in tickers:
+                cur_p = float(tickers[base_sym]) * 1000.0
+        has_real_tick = (cur_p > 0)
+        if cur_p <= 0:
+            cur_p = entry_p
 
         diff = abs(cur_p - entry_p)
-
         dist_pct = round((diff / entry_p) * 100.0, 2)
-
         dist_usd = round(diff, 4)
 
-
-
         # Proximity Classification
-
         in_ob = (min(ob_low, ob_high) * 0.999 <= cur_p <= max(ob_low, ob_high) * 1.001) if (ob_high > 0 and ob_low > 0) else False
 
-        if in_ob or dist_pct <= 0.25:
+        if has_real_tick and (in_ob or dist_pct <= 0.20):
 
             prox_state = "IMMINENT_TAP"
 
