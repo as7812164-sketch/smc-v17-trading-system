@@ -273,9 +273,23 @@ function initChart() {
         },
 
         crosshair: {
-
             mode: LightweightCharts.CrosshairMode.Normal,
-
+            vertLine: {
+                color: 'rgba(255, 255, 255, 0.45)',
+                width: 1,
+                style: 2,
+                visible: true,
+                labelVisible: true,
+                labelBackgroundColor: '#1E293B'
+            },
+            horzLine: {
+                color: 'rgba(255, 255, 255, 0.45)',
+                width: 1,
+                style: 2,
+                visible: true,
+                labelVisible: true,
+                labelBackgroundColor: '#1E293B'
+            }
         },
 
         rightPriceScale: {
@@ -295,13 +309,12 @@ function initChart() {
         },
 
         timeScale: {
-
             borderColor: '#1E273A',
-
             timeVisible: true,
-
             secondsVisible: false,
-
+            rightOffset: 18,
+            barSpacing: 9,
+            minBarSpacing: 3
         },
 
     });

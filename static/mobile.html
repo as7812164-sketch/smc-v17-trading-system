@@ -1960,7 +1960,47 @@
             background: rgba(20, 27, 43, 0.95);
             border-color: rgba(255, 215, 0, 0.35);
         }
+        /* HERMES 3.5 TRADINGVIEW 1:1 ENHANCEMENTS */
+        #mobileChartCanvas {
+            width: 100%;
+            height: 480px;
+            min-height: 480px;
+            position: relative;
+        }
 
+        body.landscape-locked {
+            overflow: hidden !important;
+            padding: 0 !important;
+        }
+
+        #mobileChartSectionWrapper.chart-forced-landscape {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            z-index: 99999 !important;
+            border-radius: 0 !important;
+            border: none !important;
+            margin: 0 !important;
+            background: #0B0E14 !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        #mobileChartSectionWrapper.chart-forced-landscape #mobileChartCanvas {
+            flex: 1 1 auto !important;
+            width: 100vw !important;
+            height: calc(100vh - 84px) !important;
+            min-height: calc(100vh - 84px) !important;
+        }
+
+        #mobileChartSectionWrapper.chart-forced-landscape .chart-controls-wrapper {
+            padding: 4px 10px !important;
+            background: #0F1420 !important;
+        }
     </style>
 </head>
 <body>
@@ -2520,7 +2560,25 @@
 
         <!-- HERMES 3.5 RADAR HARVEST CHART & REPLAY BACKTESTER SUITE -->
         <div id="mobileChartSectionWrapper" class="chart-container" style="position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom:12px; background:#0B0E14;">
-            
+            <!-- TRADINGVIEW SINGLE-LINE HEADER STRIP (Item 11 & Item 2) -->
+            <div id="mChartTvHeaderStrip" style="padding:6px 10px; background:#0B0F19; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                <div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700;">
+                    <span id="mTvHeaderSymbol" style="color:#FFFFFF; font-weight:900;">BTC / USDT</span>
+                    <span style="color:var(--text-muted);">•</span>
+                    <span id="mTvHeaderTf" style="color:var(--green); font-weight:800;">15M</span>
+                    <span style="color:var(--text-muted);">•</span>
+                    <span style="color:#94A3B8; font-size:10px;">BINANCE</span>
+                    <span style="color:var(--text-muted);">•</span>
+                    <span style="color:#F59E0B; font-weight:800; font-size:10px; letter-spacing:0.5px;">HERMES 3.5 RADAR HARVEST</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <!-- Item 2: Live Candle Countdown Timer -->
+                    <span class="candle-timer-badge" style="display:inline-flex; align-items:center; gap:4px; background:rgba(0,245,155,0.12); border:1px solid rgba(0,245,155,0.3); border-radius:4px; padding:2px 7px; color:var(--green); font-family:var(--font-mono); font-size:11px; font-weight:800;" title="Live candle countdown timer">
+                        <i class="fa-regular fa-clock" style="font-size:10px;"></i>
+                        <span id="mCandleCountdownTimer">00:00:00</span>
+                    </span>
+                </div>
+            </div>
             <!-- Controls Toolbar -->
             <div class="chart-controls-wrapper" style="padding:6px 8px; background:#0F1420; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
                 <div style="display:flex; align-items:center; gap:4px;">
@@ -2577,7 +2635,7 @@
             </div>
 
             <!-- Chart Canvas Container -->
-            <div id="mobileChartCanvas" style="width:100%; height:340px; position:relative;">
+            <div id="mobileChartCanvas" style="width:100%; height:480px; min-height:480px; position:relative;">
                 
                 <!-- SVG Ruler Measure Overlay -->
                 <div id="mobileMeasureOverlay" class="measure-tool-overlay" style="display:none;">
@@ -2937,6 +2995,10 @@
             if (symEl) symEl.innerText = sym;
             const symText = document.getElementById('mobileChartSymbolText');
             if (symText) symText.innerText = sym;
+            const tvSym = document.getElementById('mTvHeaderSymbol');
+            if (tvSym) tvSym.innerText = sym.replace('USDT', '') + ' / USDT';
+            const searchInput = document.getElementById('mobileChartCoinSearch');
+            if (searchInput) searchInput.value = sym;
         }
 
         function renderActivePositionsStrip(positions) {

@@ -46,6 +46,49 @@
 
     // Landscape Fullscreen State
     let mIsLandscape = false;
+    let mCountdownTimerInterval = null;
+
+    // -------------------------------------------------------------
+    // LIVE CANDLE COUNTDOWN TIMER (Item 2)
+    // -------------------------------------------------------------
+    function startLiveCountdownTimer() {
+        if (mCountdownTimerInterval) clearInterval(mCountdownTimerInterval);
+        updateLiveCountdownTimer();
+        mCountdownTimerInterval = setInterval(updateLiveCountdownTimer, 1000);
+    }
+
+    function updateLiveCountdownTimer() {
+        const timerEl = document.getElementById("mCandleCountdownTimer");
+        if (!timerEl) return;
+
+        const nowSec = Math.floor(Date.now() / 1000);
+        let intervalSec = 900;
+        const tf = (mInterval || '15m').toLowerCase();
+        if (tf.includes('1m') && !tf.includes('15m')) intervalSec = 60;
+        else if (tf.includes('3m')) intervalSec = 180;
+        else if (tf.includes('5m')) intervalSec = 300;
+        else if (tf.includes('15m')) intervalSec = 900;
+        else if (tf.includes('30m')) intervalSec = 1800;
+        else if (tf.includes('1h')) intervalSec = 3600;
+        else if (tf.includes('2h')) intervalSec = 7200;
+        else if (tf.includes('4h')) intervalSec = 14400;
+        else if (tf.includes('6h')) intervalSec = 21600;
+        else if (tf.includes('8h')) intervalSec = 28800;
+        else if (tf.includes('12h')) intervalSec = 43200;
+        else if (tf.includes('1d')) intervalSec = 86400;
+        else if (tf.includes('1w')) intervalSec = 604800;
+
+        const rem = intervalSec - (nowSec % intervalSec);
+        const hrs = Math.floor(rem / 3600);
+        const mins = Math.floor((rem % 3600) / 60);
+        const secs = rem % 60;
+
+        const timerStr = hrs > 0 
+            ? `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+            : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        timerEl.innerText = timerStr;
+    }
 
     // -------------------------------------------------------------
     // INITIALIZATION & PURE CANDLESTICK CHART SETUP
@@ -66,7 +109,7 @@
         // PURE CANDLESTICK CHART (NO EMA LINES, NO VOLUME SERIES)
         mChart = window.LightweightCharts.createChart(container, {
             width: container.clientWidth || 360,
-            height: container.clientHeight || 340,
+            height: container.clientHeight || 480,
             layout: {
                 background: { type: 'solid', color: '#0B0E14' },
                 textColor: '#94A3B8',
@@ -79,18 +122,38 @@
             },
             crosshair: {
                 mode: window.LightweightCharts.CrosshairMode.Normal,
-                vertLine: { color: '#38BDF8', width: 1, style: 2 },
-                horzLine: { color: '#38BDF8', width: 1, style: 2 }
+                vertLine: {
+                    color: 'rgba(255, 255, 255, 0.45)',
+                    width: 1,
+                    style: 2,
+                    visible: true,
+                    labelVisible: true,
+                    labelBackgroundColor: '#1E293B'
+                },
+                horzLine: {
+                    color: 'rgba(255, 255, 255, 0.45)',
+                    width: 1,
+                    style: 2,
+                    visible: true,
+                    labelVisible: true,
+                    labelBackgroundColor: '#1E293B'
+                }
             },
             rightPriceScale: {
                 borderColor: 'rgba(255, 255, 255, 0.08)',
                 autoScale: true,
-                scaleMargins: { top: 0.08, bottom: 0.08 }
+                scaleMargins: { top: 0.10, bottom: 0.10 },
+                alignLabels: true
             },
             timeScale: {
                 borderColor: 'rgba(255, 255, 255, 0.08)',
                 timeVisible: true,
-                secondsVisible: false
+                secondsVisible: false,
+                rightOffset: 18,
+                barSpacing: 9,
+                minBarSpacing: 3,
+                fixLeftEdge: false,
+                fixRightEdge: false
             }
         });
 
@@ -125,6 +188,7 @@
         ro.observe(container);
 
         initMeasureToolOverlay();
+        startLiveCountdownTimer();
         fetchLivePositionAndLoad();
     }
 
@@ -166,6 +230,20 @@
             mFullCandles = data.candles;
             mCandleSeries.setData(mFullCandles);
 
+            // Item 5: Dynamic 4-decimal precision for sub-dollar coins (e.g. WLD, PEPE, DOGE)
+            if (mFullCandles.length > 0) {
+                const lastClose = mFullCandles[mFullCandles.length - 1].close;
+                const precision = lastClose < 0.1 ? 6 : (lastClose < 1 ? 4 : (lastClose < 10 ? 3 : 2));
+                const minMove = Number((1 / Math.pow(10, precision)).toFixed(precision));
+                mCandleSeries.applyOptions({
+                    priceFormat: {
+                        type: 'price',
+                        precision: precision,
+                        minMove: minMove
+                    }
+                });
+            }
+
             // Hermes 3.5 Radar Harvest Single Tier Zones from Backend Engine
             if (data.zones && data.zones.length > 0) {
                 mDetectedSetups = data.zones.map(z => {
@@ -196,15 +274,33 @@
                 updateChartHeaderOHLC(mFullCandles[mFullCandles.length - 1]);
             }
 
-            mChart.timeScale().fitContent();
+            // Item 8: Right Breathing Space (rightOffset: 18) - Do NOT call fitContent()
+            const totalBars = mFullCandles.length;
+            if (totalBars > 0) {
+                mChart.timeScale().applyOptions({ rightOffset: 18 });
+                mChart.timeScale().setVisibleLogicalRange({
+                    from: Math.max(0, totalBars - 75),
+                    to: totalBars + 18
+                });
+            }
 
-            // Update UI headers
+            // Item 11: Top Header Strip & Search Bar Sync
             const symEl = document.getElementById("mobileChartSymbolText");
             if (symEl) symEl.innerText = mSymbol;
+            const tvSym = document.getElementById("mTvHeaderSymbol");
+            if (tvSym) tvSym.innerText = mSymbol.replace('USDT', '') + ' / USDT';
+            const tvTf = document.getElementById("mTvHeaderTf");
+            if (tvTf) tvTf.innerText = mInterval.toUpperCase();
+            const searchInput = document.getElementById("mobileChartCoinSearch");
+            if (searchInput && !searchInput.matches(':focus')) searchInput.value = mSymbol;
+            const tradeSym = document.getElementById("tradeSymbol");
+            if (tradeSym) tradeSym.innerText = mSymbol;
+
             const priceEl = document.getElementById("mobileChartPriceText");
             if (priceEl && mFullCandles.length > 0) {
                 const last = mFullCandles[mFullCandles.length - 1];
-                priceEl.innerText = `$${last.close.toFixed(last.close < 1 ? 4 : 2)}`;
+                const dec = last.close < 0.1 ? 6 : (last.close < 1 ? 4 : (last.close < 10 ? 3 : 2));
+                priceEl.innerText = `$${last.close.toFixed(dec)}`;
             }
         } catch(e) {
             console.warn("Mobile klines load error:", e);
@@ -224,7 +320,7 @@
         const l = bar.low || 0;
         const c = bar.close || 0;
         const chg = o > 0 ? ((c - o) / o) * 100 : 0;
-        const dec = c < 1 ? 4 : 2;
+        const dec = c < 0.1 ? 6 : (c < 1 ? 4 : (c < 10 ? 3 : 2));
 
         if (oEl) oEl.innerText = o.toFixed(dec);
         if (hEl) hEl.innerText = h.toFixed(dec);
@@ -243,12 +339,21 @@
         mInterval = tf;
         document.querySelectorAll(".m-tf-btn").forEach(b => b.classList.remove("active"));
         if (btn) btn.classList.add("active");
+        const tvTf = document.getElementById("mTvHeaderTf");
+        if (tvTf) tvTf.innerText = tf.toUpperCase();
         if (mIsReplayMode) exitMobileReplay();
         loadKlinesData();
+        updateLiveCountdownTimer();
     }
 
     function setMobileSymbol(sym) {
         mSymbol = sym.toUpperCase();
+        const tvSym = document.getElementById("mTvHeaderSymbol");
+        if (tvSym) tvSym.innerText = mSymbol.replace('USDT', '') + ' / USDT';
+        const searchInput = document.getElementById("mobileChartCoinSearch");
+        if (searchInput) searchInput.value = mSymbol;
+        const tradeSym = document.getElementById("tradeSymbol");
+        if (tradeSym) tradeSym.innerText = mSymbol;
         if (mIsReplayMode) exitMobileReplay();
         fetchLivePositionAndLoad();
     }
@@ -427,12 +532,22 @@
         const timeScale = mChart.timeScale();
         const visibleRange = timeScale.getVisibleRange();
         const plotWidth = width - 55;
+        const lastCandle = mFullCandles && mFullCandles.length > 0 ? mFullCandles[mFullCandles.length - 1] : null;
+        const lastCandleX = lastCandle ? timeScale.timeToCoordinate(lastCandle.time) : null;
 
         mDetectedSetups.forEach(z => {
             if (!z.ob_high || !z.ob_low) return;
             const isBuySide = (z.side === 'BUY' || z.side === 'LONG');
             const originSec = z.origin_time > 1e11 ? Math.floor(z.origin_time / 1000) : (z.originTime || z.candleTime);
             if (!originSec) return;
+
+            // Item 6: Detect if historical zone is mitigated / completed
+            const isMitigated = Boolean(
+                z.status === 'MITIGATED' || 
+                z.status === 'BROKEN' || 
+                z.completed === true || 
+                (z.fill_time && lastCandle && z.fill_time < lastCandle.time && z.status !== 'ACTIVE_PENDING')
+            );
 
             let endSec = z.end_time ? (z.end_time > 1e11 ? Math.floor(z.end_time / 1000) : z.end_time) : null;
             if (!endSec && z.fill_time) endSec = z.fill_time > 1e11 ? Math.floor(z.fill_time / 1000) : z.fill_time;
@@ -445,11 +560,19 @@
                 x1 = Math.max(0, x1);
             }
 
+            // Item 3: Order Block Future Extension into empty space (TradingView Parity)
             let x2 = plotWidth;
-            if (endSec) {
+            if (isMitigated && endSec) {
                 const coordEnd = timeScale.timeToCoordinate(endSec);
                 if (coordEnd !== null && coordEnd !== undefined) {
-                    x2 = Math.max(x1 + 6, coordEnd);
+                    x2 = Math.max(x1 + 6, Math.min(plotWidth, coordEnd));
+                }
+            } else {
+                // UNMITIGATED ACTIVE ZONE: Project forward ~18 bars ahead of current candle into rightOffset airspace
+                if (lastCandleX !== null && lastCandleX !== undefined) {
+                    x2 = Math.min(plotWidth, lastCandleX + 18 * 8);
+                } else {
+                    x2 = plotWidth;
                 }
             }
 
@@ -468,21 +591,32 @@
             const entPx = z.entry_price || (isBuySide ? (z.ob_high - obRange * 0.05) : (z.ob_low + obRange * 0.05));
             const radPx = z.radar_price || (isBuySide ? entPx * 1.0020 : entPx * 0.9980);
 
-            // 1. Shaded Translucent Order Block Box
+            // Item 6: Purane Mitigated Boxes ka Fade (80% opacity reduction & faint dotted border)
             ctx.save();
-            ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.14)' : 'rgba(255, 59, 105, 0.14)';
-            ctx.fillRect(x1, minY, boxWidth, boxHeight);
-            ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.45)' : 'rgba(255, 59, 105, 0.45)';
-            ctx.lineWidth = 1.2;
-            ctx.strokeRect(x1, minY, boxWidth, boxHeight);
+            if (isMitigated) {
+                ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.03)' : 'rgba(255, 59, 105, 0.03)';
+                ctx.fillRect(x1, minY, boxWidth, boxHeight);
+                ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.18)' : 'rgba(255, 59, 105, 0.18)';
+                ctx.lineWidth = 1.0;
+                ctx.setLineDash([3, 4]);
+                ctx.strokeRect(x1, minY, boxWidth, boxHeight);
+            } else {
+                // Fresh Active Order Block Box
+                ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.16)' : 'rgba(255, 59, 105, 0.16)';
+                ctx.fillRect(x1, minY, boxWidth, boxHeight);
+                ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.65)' : 'rgba(255, 59, 105, 0.65)';
+                ctx.lineWidth = 1.3;
+                ctx.setLineDash([]);
+                ctx.strokeRect(x1, minY, boxWidth, boxHeight);
+            }
             ctx.restore();
 
             // 2. 5% Boundary Penetration Line (Amber Gold #F59E0B dashed)
             const yEnt = mCandleSeries.priceToCoordinate(entPx);
             if (yEnt !== null && !isNaN(yEnt)) {
                 ctx.save();
-                ctx.strokeStyle = '#F59E0B';
-                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = isMitigated ? 'rgba(245, 158, 11, 0.25)' : '#F59E0B';
+                ctx.lineWidth = isMitigated ? 0.8 : 1.2;
                 ctx.setLineDash([4, 3]);
                 ctx.beginPath();
                 ctx.moveTo(x1, yEnt);
@@ -495,7 +629,7 @@
             const yRad = mCandleSeries.priceToCoordinate(radPx);
             if (yRad !== null && !isNaN(yRad)) {
                 ctx.save();
-                ctx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
+                ctx.strokeStyle = isMitigated ? 'rgba(56, 189, 248, 0.25)' : 'rgba(56, 189, 248, 0.90)';
                 ctx.lineWidth = 1.0;
                 ctx.setLineDash([2, 3]);
                 ctx.beginPath();
@@ -504,8 +638,6 @@
                 ctx.stroke();
                 ctx.restore();
             }
-
-            // 4. Box Title Label removed: pure clean Order Block box & boundary lines
         });
     }
 
@@ -1270,6 +1402,7 @@
 
         if (mIsLandscape) {
             chartWrapper.classList.add("chart-forced-landscape");
+            document.body.classList.add("landscape-locked");
             if (btn) btn.innerHTML = '<i class="fa-solid fa-compress"></i> Portrait';
 
             // Try native screen orientation lock
@@ -1279,17 +1412,30 @@
                 }
             } catch(e) {}
 
-            // Resize canvas to full window dimensions
+            // Resize canvas to full window dimensions (100vw x 100vh)
             setTimeout(() => {
-                const w = window.innerHeight || screen.height || 640;
-                const h = window.innerWidth || screen.width || 360;
+                const w = window.innerWidth || screen.width;
+                const h = window.innerHeight || screen.height;
+                const topBar = chartWrapper.querySelector('.chart-controls-wrapper');
+                const tvBar = document.getElementById('mChartTvHeaderStrip');
+                const ohlcBar = chartWrapper.querySelector('.chart-ohlc-bar');
+                const overhead = (topBar ? topBar.offsetHeight : 40) + (tvBar ? tvBar.offsetHeight : 30) + (ohlcBar ? ohlcBar.offsetHeight : 24);
+                const chartH = Math.max(260, h - overhead);
                 if (mChart) {
-                    mChart.applyOptions({ width: w, height: h - 90 });
-                    mChart.timeScale().fitContent();
+                    mChart.applyOptions({ width: w, height: chartH });
+                    if (mFullCandles.length > 0) {
+                        mChart.timeScale().applyOptions({ rightOffset: 18 });
+                        mChart.timeScale().setVisibleLogicalRange({
+                            from: Math.max(0, mFullCandles.length - 85),
+                            to: mFullCandles.length + 18
+                        });
+                    }
+                    drawMobileHermes35Boxes();
                 }
             }, 150);
         } else {
             chartWrapper.classList.remove("chart-forced-landscape");
+            document.body.classList.remove("landscape-locked");
             if (btn) btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button" style="transform:rotate(90deg);"></i> Landscape';
 
             try {
@@ -1298,11 +1444,19 @@
                 }
             } catch(e) {}
 
+            // Restore portrait 480px height (Item 9)
             setTimeout(() => {
                 const w = chartWrapper.clientWidth || 360;
                 if (mChart) {
-                    mChart.applyOptions({ width: w, height: 340 });
-                    mChart.timeScale().fitContent();
+                    mChart.applyOptions({ width: w, height: 480 });
+                    if (mFullCandles.length > 0) {
+                        mChart.timeScale().applyOptions({ rightOffset: 18 });
+                        mChart.timeScale().setVisibleLogicalRange({
+                            from: Math.max(0, mFullCandles.length - 75),
+                            to: mFullCandles.length + 18
+                        });
+                    }
+                    drawMobileHermes35Boxes();
                 }
             }, 150);
         }
