@@ -1103,7 +1103,7 @@ def reset_compounding_sections(starting_balance: float = 50.0) -> Dict[str, Any]
     with get_connection() as conn:
         # Delete ALL trades for sections 1-10 so old history and PnL are completely wiped clean
         conn.execute("DELETE FROM paper_trades WHERE account_id IS NULL OR account_id <= 10")
-        conn.execute("DELETE FROM trade_journal WHERE channel IN ('sec_1', 'sec_2', 'sec_3', 'sec_4', 'sec_5', 'sec_6', 'sec_7', 'sec_8', 'sec_9', 'sec_10') OR section_id <= 10")
+        conn.execute("DELETE FROM trade_journal WHERE channel IN ('sec_1', 'sec_2', 'sec_3', 'sec_4', 'sec_5', 'sec_6', 'sec_7', 'sec_8', 'sec_9', 'sec_10') OR account_id <= 10 OR account_id IS NULL")
         for i in range(1, 11):
             tf = "4h" if i <= 5 else "1h"
             name = f"Section {i} (4H Macro)" if i <= 5 else f"Section {i} (1H Intraday)"
