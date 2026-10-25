@@ -1,0 +1,82 @@
+{
+  "4h": {
+    "HERMES_2.5": {
+      "trades": 1608,
+      "wins": 1328,
+      "losses": 280,
+      "win_rate": 82.59,
+      "long_trades": 753,
+      "long_wins": 615,
+      "long_losses": 138,
+      "long_wr": 81.67,
+      "short_trades": 855,
+      "short_wins": 713,
+      "short_losses": 142,
+      "short_wr": 83.39,
+      "max_drawdown": 61.6,
+      "milestone_2k": {
+        "trade_num": 96,
+        "date": "2024-11-21"
+      }
+    },
+    "HERMES_3.0": {
+      "trades": 1904,
+      "wins": 1775,
+      "losses": 129,
+      "win_rate": 93.22,
+      "long_trades": 925,
+      "long_wins": 862,
+      "long_losses": 63,
+      "long_wr": 93.19,
+      "short_trades": 979,
+      "short_wins": 913,
+      "short_losses": 66,
+      "short_wr": 93.26,
+      "max_drawdown": 39.16,
+      "milestone_2k": {
+        "trade_num": 70,
+        "date": "2024-11-01"
+      }
+    }
+  },
+  "1h": {
+    "HERMES_2.5": {
+      "trades": 2620,
+      "wins": 2008,
+      "losses": 612,
+      "win_rate": 76.64,
+      "long_trades": 1281,
+      "long_wins": 967,
+      "long_losses": 314,
+      "long_wr": 75.49,
+      "short_trades": 1339,
+      "short_wins": 1041,
+      "short_losses": 298,
+      "short_wr": 77.74,
+      "max_drawdown": 67.65,
+      "milestone_2k": {
+        "trade_num": 780,
+        "date": "2025-02-21"
+      }
+    },
+    "HERMES_3.0": {
+      "trades": 3225,
+      "wins": 2792,
+      "losses": 433,
+      "win_rate": 86.57,
+      "long_trades": 1548,
+      "long_wins": 1319,
+      "long_losses": 229,
+      "long_wr": 85.21,
+      "short_trades": 1677,
+      "short_wins": 1473,
+      "short_losses": 204,
+      "short_wr": 87.84,
+      "max_drawdown": 57.44,
+      "milestone_2k": {
+        "trade_num": 175,
+        "date": "2024-11-11"
+      }
+    }
+  }
+}

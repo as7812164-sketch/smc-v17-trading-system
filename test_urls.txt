@@ -1,0 +1,8 @@
+74:             [{"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}],
+106:         {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
+626:                     {"text": "📱 Open In-App Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}},
+944:                     {"text": "📱 Open Mobile Terminal", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
+1379:                 {"text": "📱 Open Full Terminal (Positions HUD)", "web_app": {"url": "https://smc-ai-agent.onrender.com/?v=116"}}
+1555:                 "type": "web_app",
+1557:                 "web_app": {
+1558:                     "url": "https://smc-ai-agent.onrender.com"

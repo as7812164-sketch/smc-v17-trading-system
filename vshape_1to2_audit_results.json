@@ -1,0 +1,47 @@
+{
+  "var_a": {
+    "mode": "DIRECT_CLOSE",
+    "total_trades": 1035,
+    "missed": 0,
+    "tp_wins": 304,
+    "sl_losses": 731,
+    "win_rate_pct": 29.37,
+    "net_r": -123.0,
+    "profit_factor": 0.83,
+    "final_bal_100": -9.09,
+    "growth_100": -109.09,
+    "max_dd_100": 108.83,
+    "final_deca_500": 148.55,
+    "growth_deca": -70.29
+  },
+  "var_b": {
+    "mode": "RETEST_50",
+    "total_trades": 835,
+    "missed": 200,
+    "tp_wins": 257,
+    "sl_losses": 578,
+    "win_rate_pct": 30.78,
+    "net_r": -64.0,
+    "profit_factor": 0.89,
+    "final_bal_100": 39.51,
+    "growth_100": -60.49,
+    "max_dd_100": 62.67,
+    "final_deca_500": 270.86,
+    "growth_deca": -45.83
+  },
+  "var_c": {
+    "mode": "PURE_TOUCH",
+    "total_trades": 544,
+    "missed": 0,
+    "tp_wins": 197,
+    "sl_losses": 347,
+    "win_rate_pct": 36.21,
+    "net_r": 47.0,
+    "profit_factor": 1.14,
+    "final_bal_100": 108.05,
+    "growth_100": 8.05,
+    "max_dd_100": 38.56,
+    "final_deca_500": 799.55,
+    "growth_deca": 59.91
+  }
+}

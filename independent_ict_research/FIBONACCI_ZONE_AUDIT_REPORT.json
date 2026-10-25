@@ -1,0 +1,28 @@
+{
+  "total_trades": 600,
+  "total_losses": 131,
+  "wrong_range_zone_losses_count": 46,
+  "wrong_range_zone_losses_pct": 35.11,
+  "zone_breakdown": {
+    "Shallow (< 0.382)": {
+      "trades": 86,
+      "wins": 66,
+      "losses": 20
+    },
+    "Equilibrium (0.382 - 0.500)": {
+      "trades": 182,
+      "wins": 137,
+      "losses": 45
+    },
+    "Golden Pocket / OTE (0.500 - 0.786)": {
+      "trades": 332,
+      "wins": 266,
+      "losses": 66
+    },
+    "Deep Extreme (> 0.786)": {
+      "trades": 0,
+      "wins": 0,
+      "losses": 0
+    }
+  }
+}

@@ -1,0 +1,232 @@
+{
+  "summary": {
+    "start_equity": 500.0,
+    "final_equity": 503.6,
+    "net_profit": 3.6,
+    "growth_pct": 0.72,
+    "total_trades": 183,
+    "tp_wins": 88,
+    "harvest_wins": 25,
+    "be_saves": 28,
+    "losses": 42,
+    "cash_win_rate": 61.75,
+    "safe_win_rate": 77.05,
+    "profit_factor": 1.01,
+    "max_trades_in_day": 11
+  },
+  "sections": {
+    "1": {
+      "id": 1,
+      "name": "Section 1",
+      "balance": 39.9,
+      "peak_balance": 55.1,
+      "max_dd_pct": 49.0562613430127,
+      "busy_until": 1790841600000,
+      "trades": 19,
+      "wins": 11,
+      "losses": 5,
+      "be_saves": 3
+    },
+    "2": {
+      "id": 2,
+      "name": "Section 2",
+      "balance": 41.86,
+      "peak_balance": 58.08,
+      "max_dd_pct": 48.725895316804404,
+      "busy_until": 1790913600000,
+      "trades": 19,
+      "wins": 11,
+      "losses": 5,
+      "be_saves": 3
+    },
+    "3": {
+      "id": 3,
+      "name": "Section 3",
+      "balance": 56.11,
+      "peak_balance": 112.04,
+      "max_dd_pct": 58.75580149946449,
+      "busy_until": 1790870400000,
+      "trades": 19,
+      "wins": 12,
+      "losses": 4,
+      "be_saves": 3
+    },
+    "4": {
+      "id": 4,
+      "name": "Section 4",
+      "balance": 103.85,
+      "peak_balance": 103.85,
+      "max_dd_pct": 19.794704304210892,
+      "busy_until": 1790258400000,
+      "trades": 18,
+      "wins": 14,
+      "losses": 1,
+      "be_saves": 3
+    },
+    "5": {
+      "id": 5,
+      "name": "Section 5",
+      "balance": 42.53,
+      "peak_balance": 58.54,
+      "max_dd_pct": 28.476255551759483,
+      "busy_until": 1790258400000,
+      "trades": 18,
+      "wins": 11,
+      "losses": 4,
+      "be_saves": 3
+    },
+    "6": {
+      "id": 6,
+      "name": "Section 6",
+      "balance": 17.44,
+      "peak_balance": 50.0,
+      "max_dd_pct": 68.26,
+      "busy_until": 1790280000000,
+      "trades": 18,
+      "wins": 10,
+      "losses": 8,
+      "be_saves": 0
+    },
+    "7": {
+      "id": 7,
+      "name": "Section 7",
+      "balance": 65.09,
+      "peak_balance": 65.09,
+      "max_dd_pct": 35.6869881710646,
+      "busy_until": 1790283600000,
+      "trades": 18,
+      "wins": 13,
+      "losses": 3,
+      "be_saves": 2
+    },
+    "8": {
+      "id": 8,
+      "name": "Section 8",
+      "balance": 57.84,
+      "peak_balance": 67.22,
+      "max_dd_pct": 33.28493647912886,
+      "busy_until": 1790352000000,
+      "trades": 18,
+      "wins": 13,
+      "losses": 4,
+      "be_saves": 1
+    },
+    "9": {
+      "id": 9,
+      "name": "Section 9",
+      "balance": 43.63,
+      "peak_balance": 73.1,
+      "max_dd_pct": 44.67852257181942,
+      "busy_until": 1790575200000,
+      "trades": 18,
+      "wins": 10,
+      "losses": 4,
+      "be_saves": 4
+    },
+    "10": {
+      "id": 10,
+      "name": "Section 10",
+      "balance": 35.35,
+      "peak_balance": 50.0,
+      "max_dd_pct": 33.400000000000006,
+      "busy_until": 1790668800000,
+      "trades": 18,
+      "wins": 8,
+      "losses": 4,
+      "be_saves": 6
+    }
+  },
+  "monthly": {
+    "2025-10": {
+      "trades": 14,
+      "wins": 9,
+      "losses": 4,
+      "be": 1,
+      "pnl": -9.118225374824261
+    },
+    "2025-11": {
+      "trades": 14,
+      "wins": 7,
+      "losses": 4,
+      "be": 3,
+      "pnl": -6.926804579913155
+    },
+    "2025-12": {
+      "trades": 12,
+      "wins": 7,
+      "losses": 5,
+      "be": 0,
+      "pnl": -29.71030017917958
+    },
+    "2026-01": {
+      "trades": 12,
+      "wins": 8,
+      "losses": 3,
+      "be": 1,
+      "pnl": 0.4318821787506888
+    },
+    "2026-02": {
+      "trades": 17,
+      "wins": 13,
+      "losses": 1,
+      "be": 3,
+      "pnl": 36.56614886239452
+    },
+    "2026-03": {
+      "trades": 14,
+      "wins": 7,
+      "losses": 4,
+      "be": 3,
+      "pnl": -6.956109864253991
+    },
+    "2026-04": {
+      "trades": 6,
+      "wins": 6,
+      "losses": 0,
+      "be": 0,
+      "pnl": 26.255713231763867
+    },
+    "2026-05": {
+      "trades": 16,
+      "wins": 7,
+      "losses": 1,
+      "be": 8,
+      "pnl": 29.00923785872081
+    },
+    "2026-06": {
+      "trades": 17,
+      "wins": 11,
+      "losses": 4,
+      "be": 2,
+      "pnl": 1.9159346983808108
+    },
+    "2026-07": {
+      "trades": 14,
+      "wins": 7,
+      "losses": 5,
+      "be": 2,
+      "pnl": -41.22429053956222
+    },
+    "2026-08": {
+      "trades": 22,
+      "wins": 15,
+      "losses": 5,
+      "be": 2,
+      "pnl": -8.511058947786282
+    },
+    "2026-09": {
+      "trades": 22,
+      "wins": 13,
+      "losses": 6,
+      "be": 3,
+      "pnl": -0.9354784668883344
+    },
+    "2026-10": {
+      "trades": 3,
+      "wins": 3,
+      "losses": 0,
+      "be": 0,
+      "pnl": 12.762210943259827
+    }
+  }
+}

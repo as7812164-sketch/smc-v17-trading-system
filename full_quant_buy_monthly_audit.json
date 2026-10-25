@@ -1,0 +1,544 @@
+{
+  "q4h_monthly": {
+    "2025-10": {
+      "month": "2025-10",
+      "trades": 3,
+      "wins": 3,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 72.1
+    },
+    "2025-11": {
+      "month": "2025-11",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 66.14
+    },
+    "2026-01": {
+      "month": "2026-01",
+      "trades": 2,
+      "wins": 1,
+      "losses": 1,
+      "win_rate": 50.0,
+      "end_balance": 60.27
+    },
+    "2026-02": {
+      "month": "2026-02",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 67.77
+    },
+    "2026-04": {
+      "month": "2026-04",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 85.4
+    },
+    "2026-05": {
+      "month": "2026-05",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 95.72
+    },
+    "2026-06": {
+      "month": "2026-06",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 107.2
+    },
+    "2026-07": {
+      "month": "2026-07",
+      "trades": 6,
+      "wins": 6,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 159.1
+    },
+    "2026-08": {
+      "month": "2026-08",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 198.37
+    }
+  },
+  "qall_monthly": {
+    "2025-09": {
+      "month": "2025-09",
+      "trades": 2,
+      "wins": 1,
+      "losses": 1,
+      "win_rate": 50.0,
+      "end_balance": 42.02
+    },
+    "2025-10": {
+      "month": "2025-10",
+      "trades": 13,
+      "wins": 12,
+      "losses": 1,
+      "win_rate": 92.31,
+      "end_balance": 105.68
+    },
+    "2025-11": {
+      "month": "2025-11",
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 114.49
+    },
+    "2025-12": {
+      "month": "2025-12",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 136.26
+    },
+    "2026-01": {
+      "month": "2026-01",
+      "trades": 7,
+      "wins": 5,
+      "losses": 2,
+      "win_rate": 71.43,
+      "end_balance": 148.94
+    },
+    "2026-02": {
+      "month": "2026-02",
+      "trades": 3,
+      "wins": 3,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 168.24
+    },
+    "2026-03": {
+      "month": "2026-03",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 177.89
+    },
+    "2026-04": {
+      "month": "2026-04",
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 206.77
+    },
+    "2026-05": {
+      "month": "2026-05",
+      "trades": 7,
+      "wins": 6,
+      "losses": 1,
+      "win_rate": 85.71,
+      "end_balance": 206.15
+    },
+    "2026-06": {
+      "month": "2026-06",
+      "trades": 13,
+      "wins": 13,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 555.63
+    },
+    "2026-07": {
+      "month": "2026-07",
+      "trades": 9,
+      "wins": 9,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 947.82
+    },
+    "2026-08": {
+      "month": "2026-08",
+      "trades": 9,
+      "wins": 9,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 2089.67
+    },
+    "2026-09": {
+      "month": "2026-09",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "win_rate": 100.0,
+      "end_balance": 2272.2
+    }
+  },
+  "qall_executed_sample": [
+    {
+      "sym": "SUIUSDT",
+      "tf": "1h",
+      "time": 1758992400000,
+      "exit_time": 1759021200000,
+      "entry": 3.1519,
+      "exit": 3.1412,
+      "gross": -0.0033947777531012826,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "GALAUSDT",
+      "tf": "1h",
+      "time": 1759122000000,
+      "exit_time": 1759194000000,
+      "entry": 0.01467,
+      "exit": 0.01429,
+      "gross": -0.025903203817314254,
+      "res": "LOSS",
+      "side": "LONG",
+      "be_locked": false
+    },
+    {
+      "sym": "ICPUSDT",
+      "tf": "1h",
+      "time": 1760508000000,
+      "exit_time": 1760515200000,
+      "entry": 3.451,
+      "exit": 3.5269220000000003,
+      "gross": 0.02200000000000008,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "SANDUSDT",
+      "tf": "1h",
+      "time": 1760533200000,
+      "exit_time": 1760533200000,
+      "entry": 0.2165,
+      "exit": 0.22126300000000002,
+      "gross": 0.02200000000000008,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "FILUSDT",
+      "tf": "1h",
+      "time": 1760533200000,
+      "exit_time": 1760533200000,
+      "entry": 1.615,
+      "exit": 1.65053,
+      "gross": 0.022000000000000037,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "SHIBUSDT",
+      "tf": "1h",
+      "time": 1760533200000,
+      "exit_time": 1760605200000,
+      "entry": 1.045e-05,
+      "exit": 1.00738e-05,
+      "gross": -0.03599999999999999,
+      "res": "LOSS",
+      "side": "LONG",
+      "be_locked": false
+    },
+    {
+      "sym": "DOGEUSDT",
+      "tf": "1h",
+      "time": 1760918400000,
+      "exit_time": 1760929200000,
+      "entry": 0.19396,
+      "exit": 0.19822712,
+      "gross": 0.022000000000000068,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "PYTHUSDT",
+      "tf": "4h",
+      "time": 1761019200000,
+      "exit_time": 1761048000000,
+      "entry": 0.112,
+      "exit": 0.115136,
+      "gross": 0.027999999999999997,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "BTCUSDT",
+      "tf": "4h",
+      "time": 1761120000000,
+      "exit_time": 1761192000000,
+      "entry": 107275.79,
+      "exit": 110279.51212,
+      "gross": 0.028000000000000056,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "RENDERUSDT",
+      "tf": "1h",
+      "time": 1761220800000,
+      "exit_time": 1761224400000,
+      "entry": 2.391,
+      "exit": 2.4436020000000003,
+      "gross": 0.02200000000000011,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "GALAUSDT",
+      "tf": "1h",
+      "time": 1761562800000,
+      "exit_time": 1761584400000,
+      "entry": 0.01124,
+      "exit": 0.01148728,
+      "gross": 0.022000000000000068,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "SANDUSDT",
+      "tf": "4h",
+      "time": 1761681600000,
+      "exit_time": 1761724800000,
+      "entry": 0.2074,
+      "exit": 0.2132072,
+      "gross": 0.02800000000000006,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "FILUSDT",
+      "tf": "1h",
+      "time": 1761760800000,
+      "exit_time": 1761760800000,
+      "entry": 1.577,
+      "exit": 1.611694,
+      "gross": 0.022000000000000002,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "LDOUSDT",
+      "tf": "1h",
+      "time": 1761760800000,
+      "exit_time": 1761760800000,
+      "entry": 0.9122,
+      "exit": 0.9322684,
+      "gross": 0.021999999999999985,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "UNIUSDT",
+      "tf": "1h",
+      "time": 1761908400000,
+      "exit_time": 1762052400000,
+      "entry": 5.781,
+      "exit": 5.836,
+      "gross": 0.009513924926483413,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "LDOUSDT",
+      "tf": "1h",
+      "time": 1762506000000,
+      "exit_time": 1762509600000,
+      "entry": 0.7528,
+      "exit": 0.7516,
+      "gross": -0.001594048884165753,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "DOGEUSDT",
+      "tf": "1h",
+      "time": 1763254800000,
+      "exit_time": 1763258400000,
+      "entry": 0.16013,
+      "exit": 0.16365286,
+      "gross": 0.022000000000000103,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "DOGEUSDT",
+      "tf": "4h",
+      "time": 1763524800000,
+      "exit_time": 1763553600000,
+      "entry": 0.15698,
+      "exit": 0.15451,
+      "gross": -0.015734488469868774,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "FILUSDT",
+      "tf": "1h",
+      "time": 1763560800000,
+      "exit_time": 1763564400000,
+      "entry": 1.852,
+      "exit": 1.8927440000000002,
+      "gross": 0.02200000000000006,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "AAVEUSDT",
+      "tf": "1h",
+      "time": 1764662400000,
+      "exit_time": 1764680400000,
+      "entry": 168.2,
+      "exit": 171.9004,
+      "gross": 0.022000000000000013,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "AAVEUSDT",
+      "tf": "1h",
+      "time": 1765364400000,
+      "exit_time": 1765382400000,
+      "entry": 196.37,
+      "exit": 200.69014,
+      "gross": 0.022000000000000047,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "APTUSDT",
+      "tf": "1h",
+      "time": 1767747600000,
+      "exit_time": 1767769200000,
+      "entry": 1.907,
+      "exit": 1.948954,
+      "gross": 0.022000000000000023,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "DOGEUSDT",
+      "tf": "1h",
+      "time": 1767794400000,
+      "exit_time": 1767852000000,
+      "entry": 0.14721,
+      "exit": 0.1425,
+      "gross": -0.03199510902791943,
+      "res": "LOSS",
+      "side": "LONG",
+      "be_locked": false
+    },
+    {
+      "sym": "APTUSDT",
+      "tf": "4h",
+      "time": 1768737600000,
+      "exit_time": 1768766400000,
+      "entry": 1.809,
+      "exit": 1.7402579999999999,
+      "gross": -0.03800000000000005,
+      "res": "LOSS",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "UNIUSDT",
+      "tf": "1h",
+      "time": 1768996800000,
+      "exit_time": 1769004000000,
+      "entry": 4.803,
+      "exit": 4.908666,
+      "gross": 0.022000000000000054,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "APTUSDT",
+      "tf": "4h",
+      "time": 1769169600000,
+      "exit_time": 1769184000000,
+      "entry": 1.561,
+      "exit": 1.604708,
+      "gross": 0.028000000000000053,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "ICPUSDT",
+      "tf": "1h",
+      "time": 1769418000000,
+      "exit_time": 1769436000000,
+      "entry": 3.276,
+      "exit": 3.3480719999999997,
+      "gross": 0.021999999999999974,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "LDOUSDT",
+      "tf": "1h",
+      "time": 1769446800000,
+      "exit_time": 1769475600000,
+      "entry": 0.509,
+      "exit": 0.520198,
+      "gross": 0.022000000000000082,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "OPUSDT",
+      "tf": "1h",
+      "time": 1769954400000,
+      "exit_time": 1769958000000,
+      "entry": 0.2302,
+      "exit": 0.2271,
+      "gross": -0.013466550825369208,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    },
+    {
+      "sym": "DOGEUSDT",
+      "tf": "1h",
+      "time": 1769958000000,
+      "exit_time": 1769958000000,
+      "entry": 0.10274,
+      "exit": 0.10500028,
+      "gross": 0.022000000000000033,
+      "res": "WIN",
+      "side": "LONG",
+      "be_locked": true
+    }
+  ]
+}

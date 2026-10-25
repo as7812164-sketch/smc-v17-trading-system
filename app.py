@@ -237,7 +237,7 @@ async def lifespan(app: FastAPI):
     binance_heartbeat_task.cancel()
     await binance_feed.close()
 
-app = FastAPI(title="HERMES 3.0 MODEL 2A Autonomous Terminal & Quant Engine", lifespan=lifespan)
+app = FastAPI(title="HERMES 3.5 RADAR HARVEST Autonomous Terminal & Quant Engine", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/manifest.json")
@@ -685,7 +685,7 @@ async def get_nexus_deca_summary():
             "win_rate": wr,
             "target_capital": 47389.77,
             "progress_pct": round((tot_curr / 47389.77) * 100.0, 2),
-            "mode": "HERMES 3.0 MODEL 2A"
+            "mode": "HERMES 3.5 RADAR HARVEST"
         }
     except Exception as e:
         logger.error(f"Error in get_nexus_deca_summary: {e}")
@@ -695,7 +695,7 @@ async def get_nexus_deca_summary():
             "unrealized_pnl": 0.0, "total_pnl": 74.84, "pnl_pct": 14.97,
             "total_trades": 21, "total_wins": 20, "total_saves": 0, "total_losses": 1, "win_rate": 95.2,
             "target_capital": 47389.77, "progress_pct": 1.21,
-            "mode": "HERMES 3.0 MODEL 2A"
+            "mode": "HERMES 3.5 RADAR HARVEST"
         }
 
 @app.get("/api/deca/sections")
@@ -2235,7 +2235,7 @@ async def deploy_paper_position(body: Dict[str, Any] = Body(...)):
     try:
         acc_num = trade_res.get("account_id") or str(trade_res.get("channel", "sec_1")).replace("sec_", "")
         tg_msg = (
-            f"👑 <b>HERMES 3.0 MODEL 2A: EXECUTION DEPLOYED!</b>\n"
+            f"👑 <b>HERMES 3.5 RADAR HARVEST: EXECUTION DEPLOYED!</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🪙 <b>Pair:</b> #{sym}\n"
             f"⚡ <b>Action:</b> {side} (5x Isolated Perpetual)\n"
@@ -2246,7 +2246,7 @@ async def deploy_paper_position(body: Dict[str, Any] = Body(...)):
             f"🛡️ <b>Hard Emergency Stop:</b> ${hard_sl_price} (-15% ROE)\n"
             f"🏛️ <b>Section:</b> Deca Section {acc_num} ($50 Margin)\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🤖 <i>Hermes 3.0 Model 2A Dual-Threshold Engine</i>"
+            f"🤖 <i>Hermes 3.5 Radar Harvest Single Tier Engine</i>"
         )
         await telegram_service.send_raw_message(tg_msg)
     except Exception:
@@ -2723,7 +2723,7 @@ async def list_zones(symbol: Optional[str] = None, active_only: bool = True):
 @app.get("/api/signals/radar")
 async def get_live_signals_radar():
     """
-    HERMES 3.0 MODEL 2A - Live Setup Radar & Pending Execution Monitor.
+    HERMES 3.5 RADAR HARVEST - Live Setup Radar & Pending Execution Monitor.
     Returns:
     - Active running executions (if any)
     - Qualified setups approaching 50% Mean Threshold (MT) entry
@@ -3801,7 +3801,7 @@ async def get_hermes_apex_status():
     acc = hermes2_apex_engine.get_hermes_account()
     return {
         "status": "ONLINE_24_7",
-        "engine": "HERMES 3.0 MODEL 2A Master Unified",
+        "engine": "HERMES 3.5 RADAR HARVEST Master Unified",
         "account": acc,
         "active_position": hermes2_apex_engine.active_position,
         "btc_macro_sentry": hermes2_apex_engine.last_btc_bias,

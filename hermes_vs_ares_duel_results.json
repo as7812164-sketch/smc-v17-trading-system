@@ -1,0 +1,24 @@
+{
+  "hermes": {
+    "name": "HERMES 20X (User Master)",
+    "trades": 595,
+    "wins": 464,
+    "losses": 131,
+    "win_rate": 77.98319327731093,
+    "max_dd": 49.22023526615927,
+    "hit_1k": 72,
+    "final_cap": 7007247267.628521,
+    "pf": 1.6039191793429772
+  },
+  "ares": {
+    "name": "ARES QUANT-X (AI Challenger)",
+    "trades": 115,
+    "wins": 31,
+    "losses": 41,
+    "win_rate": 26.956521739130434,
+    "max_dd": 89.08184914615298,
+    "hit_1k": null,
+    "final_cap": 7.611872046091257,
+    "pf": 0.5561367042079909
+  }
+}

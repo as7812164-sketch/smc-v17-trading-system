@@ -1,0 +1,158 @@
+{
+  "filter1_previous_day_7pct": {
+    "1_to_2": {
+      "Option A (Trend-Aligned) - Method 1": {
+        "total": 96,
+        "tp": 21,
+        "be": 40,
+        "sl": 35,
+        "win_rate": 37.5,
+        "non_loss": 63.541666666666664,
+        "net_r": 6.079177303099092
+      },
+      "Option A (Trend-Aligned) - Method 2": {
+        "total": 61,
+        "tp": 11,
+        "be": 25,
+        "sl": 25,
+        "win_rate": 30.555555555555557,
+        "non_loss": 59.01639344262295,
+        "net_r": -2.8126351104127165
+      },
+      "Option B (Both Sides)   - Method 1": {
+        "total": 761,
+        "tp": 161,
+        "be": 245,
+        "sl": 355,
+        "win_rate": 31.2015503875969,
+        "non_loss": 53.350854139290405,
+        "net_r": -34.435260027564766
+      },
+      "Option B (Both Sides)   - Method 2": {
+        "total": 585,
+        "tp": 98,
+        "be": 247,
+        "sl": 240,
+        "win_rate": 28.994082840236686,
+        "non_loss": 58.97435897435898,
+        "net_r": -45.202160304406526
+      }
+    },
+    "1_to_3": {
+      "Option A (Trend-Aligned) - Method 1": {
+        "total": 96,
+        "tp": 11,
+        "be": 50,
+        "sl": 35,
+        "win_rate": 23.91304347826087,
+        "non_loss": 63.541666666666664,
+        "net_r": -5.949268930476459
+      },
+      "Option A (Trend-Aligned) - Method 2": {
+        "total": 61,
+        "tp": 6,
+        "be": 30,
+        "sl": 25,
+        "win_rate": 19.35483870967742,
+        "non_loss": 59.01639344262295,
+        "net_r": -6.8126351104127165
+      },
+      "Option B (Both Sides)   - Method 1": {
+        "total": 761,
+        "tp": 84,
+        "be": 321,
+        "sl": 356,
+        "win_rate": 19.090909090909093,
+        "non_loss": 53.21944809461235,
+        "net_r": -117.0235326072742
+      },
+      "Option B (Both Sides)   - Method 2": {
+        "total": 585,
+        "tp": 44,
+        "be": 301,
+        "sl": 240,
+        "win_rate": 15.492957746478872,
+        "non_loss": 58.97435897435898,
+        "net_r": -110.20216030440652
+      }
+    }
+  },
+  "filter2_wave_7pct": {
+    "1_to_2": {
+      "Option A (Trend-Aligned) - Method 1": {
+        "total": 41,
+        "tp": 2,
+        "be": 24,
+        "sl": 15,
+        "win_rate": 11.76470588235294,
+        "non_loss": 63.41463414634146,
+        "net_r": -11.841573809513575
+      },
+      "Option A (Trend-Aligned) - Method 2": {
+        "total": 24,
+        "tp": 6,
+        "be": 9,
+        "sl": 9,
+        "win_rate": 40.0,
+        "non_loss": 62.5,
+        "net_r": 2.269851147243161
+      },
+      "Option B (Both Sides)   - Method 1": {
+        "total": 123,
+        "tp": 20,
+        "be": 56,
+        "sl": 47,
+        "win_rate": 29.850746268656714,
+        "non_loss": 61.78861788617886,
+        "net_r": -7.142517925366354
+      },
+      "Option B (Both Sides)   - Method 2": {
+        "total": 93,
+        "tp": 20,
+        "be": 39,
+        "sl": 34,
+        "win_rate": 37.03703703703704,
+        "non_loss": 63.44086021505376,
+        "net_r": 5.26985114724316
+      }
+    },
+    "1_to_3": {
+      "Option A (Trend-Aligned) - Method 1": {
+        "total": 41,
+        "tp": 2,
+        "be": 24,
+        "sl": 15,
+        "win_rate": 11.76470588235294,
+        "non_loss": 63.41463414634146,
+        "net_r": -11.611088362609987
+      },
+      "Option A (Trend-Aligned) - Method 2": {
+        "total": 24,
+        "tp": 5,
+        "be": 10,
+        "sl": 9,
+        "win_rate": 35.714285714285715,
+        "non_loss": 62.5,
+        "net_r": 4.26985114724316
+      },
+      "Option B (Both Sides)   - Method 1": {
+        "total": 123,
+        "tp": 10,
+        "be": 66,
+        "sl": 47,
+        "win_rate": 17.543859649122805,
+        "non_loss": 61.78861788617886,
+        "net_r": -20.572647496840077
+      },
+      "Option B (Both Sides)   - Method 2": {
+        "total": 93,
+        "tp": 11,
+        "be": 48,
+        "sl": 34,
+        "win_rate": 24.444444444444443,
+        "non_loss": 63.44086021505376,
+        "net_r": -2.730148852756839
+      }
+    }
+  }
+}

@@ -1,0 +1,386 @@
+{
+  "2026-06": {
+    "bb30": {
+      "final_equity": 900.9099999999999,
+      "net_pnl": 400.90999999999985,
+      "roi_pct": 80.18199999999997,
+      "max_dd": 4.6684377062217886,
+      "total_trades": 381,
+      "wins": 166,
+      "saves": 73,
+      "losses": 142,
+      "win_rate": 43.569553805774284,
+      "green_rate": 62.72965879265092,
+      "loss_rate": 37.270341207349084,
+      "sections": {
+        "1": {
+          "balance": 64.88,
+          "busy_until": 1782760500000,
+          "wins": 15,
+          "saves": 4,
+          "losses": 13,
+          "trades": 32
+        },
+        "2": {
+          "balance": 105.66,
+          "busy_until": 1782823500000,
+          "wins": 15,
+          "saves": 10,
+          "losses": 13,
+          "trades": 38
+        },
+        "3": {
+          "balance": 48.72,
+          "busy_until": 1782857700000,
+          "wins": 17,
+          "saves": 8,
+          "losses": 19,
+          "trades": 44
+        },
+        "4": {
+          "balance": 156.52,
+          "busy_until": 1782830700000,
+          "wins": 18,
+          "saves": 12,
+          "losses": 5,
+          "trades": 35
+        },
+        "5": {
+          "balance": 58.58,
+          "busy_until": 1782766800000,
+          "wins": 15,
+          "saves": 8,
+          "losses": 17,
+          "trades": 40
+        },
+        "6": {
+          "balance": 147.57,
+          "busy_until": 1782836100000,
+          "wins": 22,
+          "saves": 5,
+          "losses": 17,
+          "trades": 44
+        },
+        "7": {
+          "balance": 90.05,
+          "busy_until": 1782710100000,
+          "wins": 18,
+          "saves": 6,
+          "losses": 12,
+          "trades": 36
+        },
+        "8": {
+          "balance": 48.28,
+          "busy_until": 1782830700000,
+          "wins": 16,
+          "saves": 2,
+          "losses": 19,
+          "trades": 37
+        },
+        "9": {
+          "balance": 129.61,
+          "busy_until": 1782829800000,
+          "wins": 16,
+          "saves": 14,
+          "losses": 10,
+          "trades": 40
+        },
+        "10": {
+          "balance": 51.04,
+          "busy_until": 1782791100000,
+          "wins": 14,
+          "saves": 4,
+          "losses": 17,
+          "trades": 35
+        }
+      }
+    },
+    "bb35": {
+      "final_equity": 790.5299999999999,
+      "net_pnl": 290.52999999999986,
+      "roi_pct": 58.105999999999966,
+      "max_dd": 10.488,
+      "total_trades": 404,
+      "wins": 168,
+      "saves": 82,
+      "losses": 154,
+      "win_rate": 41.584158415841586,
+      "green_rate": 61.88118811881188,
+      "loss_rate": 38.11881188118812,
+      "sections": {
+        "1": {
+          "balance": 102.91,
+          "busy_until": 1782835200000,
+          "wins": 14,
+          "saves": 3,
+          "losses": 5,
+          "trades": 22
+        },
+        "2": {
+          "balance": 64.07,
+          "busy_until": 1782843300000,
+          "wins": 12,
+          "saves": 5,
+          "losses": 12,
+          "trades": 29
+        },
+        "3": {
+          "balance": 115.35,
+          "busy_until": 1782835200000,
+          "wins": 18,
+          "saves": 11,
+          "losses": 14,
+          "trades": 43
+        },
+        "4": {
+          "balance": 90.22,
+          "busy_until": 1782851400000,
+          "wins": 16,
+          "saves": 10,
+          "losses": 14,
+          "trades": 40
+        },
+        "5": {
+          "balance": 66.89,
+          "busy_until": 1782819000000,
+          "wins": 14,
+          "saves": 13,
+          "losses": 14,
+          "trades": 41
+        },
+        "6": {
+          "balance": 56.96,
+          "busy_until": 1782804600000,
+          "wins": 19,
+          "saves": 10,
+          "losses": 21,
+          "trades": 50
+        },
+        "7": {
+          "balance": 110.93,
+          "busy_until": 1782867600000,
+          "wins": 26,
+          "saves": 5,
+          "losses": 19,
+          "trades": 50
+        },
+        "8": {
+          "balance": 87.41,
+          "busy_until": 1782835200000,
+          "wins": 16,
+          "saves": 4,
+          "losses": 12,
+          "trades": 32
+        },
+        "9": {
+          "balance": 35.93,
+          "busy_until": 1782833400000,
+          "wins": 14,
+          "saves": 10,
+          "losses": 23,
+          "trades": 47
+        },
+        "10": {
+          "balance": 59.86,
+          "busy_until": 1782835200000,
+          "wins": 19,
+          "saves": 11,
+          "losses": 20,
+          "trades": 50
+        }
+      }
+    }
+  },
+  "2026-07": {
+    "bb30": {
+      "final_equity": 472.78,
+      "net_pnl": -27.220000000000027,
+      "roi_pct": -5.444000000000006,
+      "max_dd": 20.994234554353675,
+      "total_trades": 416,
+      "wins": 133,
+      "saves": 91,
+      "losses": 192,
+      "win_rate": 31.971153846153843,
+      "green_rate": 53.84615384615385,
+      "loss_rate": 46.15384615384615,
+      "sections": {
+        "1": {
+          "balance": 47.59,
+          "busy_until": 1785503700000,
+          "wins": 10,
+          "saves": 4,
+          "losses": 19,
+          "trades": 33
+        },
+        "2": {
+          "balance": 58.11,
+          "busy_until": 1785534300000,
+          "wins": 17,
+          "saves": 7,
+          "losses": 19,
+          "trades": 43
+        },
+        "3": {
+          "balance": 58.06,
+          "busy_until": 1785489300000,
+          "wins": 16,
+          "saves": 15,
+          "losses": 16,
+          "trades": 47
+        },
+        "4": {
+          "balance": 53.25,
+          "busy_until": 1785505500000,
+          "wins": 18,
+          "saves": 8,
+          "losses": 19,
+          "trades": 45
+        },
+        "5": {
+          "balance": 37.41,
+          "busy_until": 1785523500000,
+          "wins": 11,
+          "saves": 10,
+          "losses": 23,
+          "trades": 44
+        },
+        "6": {
+          "balance": 28.68,
+          "busy_until": 1785499200000,
+          "wins": 12,
+          "saves": 10,
+          "losses": 22,
+          "trades": 44
+        },
+        "7": {
+          "balance": 48.0,
+          "busy_until": 1785526200000,
+          "wins": 14,
+          "saves": 10,
+          "losses": 17,
+          "trades": 41
+        },
+        "8": {
+          "balance": 39.01,
+          "busy_until": 1785522600000,
+          "wins": 11,
+          "saves": 9,
+          "losses": 19,
+          "trades": 39
+        },
+        "9": {
+          "balance": 41.28,
+          "busy_until": 1785523500000,
+          "wins": 13,
+          "saves": 7,
+          "losses": 22,
+          "trades": 42
+        },
+        "10": {
+          "balance": 61.39,
+          "busy_until": 1785464100000,
+          "wins": 11,
+          "saves": 11,
+          "losses": 16,
+          "trades": 38
+        }
+      }
+    },
+    "bb35": {
+      "final_equity": 986.2099999999998,
+      "net_pnl": 486.2099999999998,
+      "roi_pct": 97.24199999999996,
+      "max_dd": 5.042633874750662,
+      "total_trades": 345,
+      "wins": 136,
+      "saves": 80,
+      "losses": 129,
+      "win_rate": 39.42028985507247,
+      "green_rate": 62.60869565217392,
+      "loss_rate": 37.391304347826086,
+      "sections": {
+        "1": {
+          "balance": 42.64,
+          "busy_until": 1785402900000,
+          "wins": 5,
+          "saves": 6,
+          "losses": 10,
+          "trades": 21
+        },
+        "2": {
+          "balance": 40.81,
+          "busy_until": 1785542400000,
+          "wins": 4,
+          "saves": 5,
+          "losses": 9,
+          "trades": 18
+        },
+        "3": {
+          "balance": 85.99,
+          "busy_until": 1785528900000,
+          "wins": 17,
+          "saves": 9,
+          "losses": 16,
+          "trades": 42
+        },
+        "4": {
+          "balance": 72.38,
+          "busy_until": 1785399300000,
+          "wins": 12,
+          "saves": 8,
+          "losses": 10,
+          "trades": 30
+        },
+        "5": {
+          "balance": 307.05,
+          "busy_until": 1785547800000,
+          "wins": 22,
+          "saves": 7,
+          "losses": 10,
+          "trades": 39
+        },
+        "6": {
+          "balance": 71.77,
+          "busy_until": 1785434400000,
+          "wins": 18,
+          "saves": 5,
+          "losses": 12,
+          "trades": 35
+        },
+        "7": {
+          "balance": 184.95,
+          "busy_until": 1785526200000,
+          "wins": 18,
+          "saves": 11,
+          "losses": 13,
+          "trades": 42
+        },
+        "8": {
+          "balance": 44.16,
+          "busy_until": 1785496500000,
+          "wins": 11,
+          "saves": 8,
+          "losses": 14,
+          "trades": 33
+        },
+        "9": {
+          "balance": 80.91,
+          "busy_until": 1785506400000,
+          "wins": 17,
+          "saves": 7,
+          "losses": 21,
+          "trades": 45
+        },
+        "10": {
+          "balance": 55.55,
+          "busy_until": 1785474000000,
+          "wins": 12,
+          "saves": 14,
+          "losses": 14,
+          "trades": 40
+        }
+      }
+    }
+  }
+}

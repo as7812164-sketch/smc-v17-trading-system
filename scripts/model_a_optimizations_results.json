@@ -1,0 +1,79 @@
+{
+  "Baseline_2.0x_Double": {
+    "step_multiplier": 2.0,
+    "margin_pct": 0.1,
+    "profit_buffer_pct": 0.0,
+    "final_capital": 115008.83,
+    "trades_to_1cr": 4908,
+    "days_to_1cr": 1492.4,
+    "years_to_1cr": 4.09,
+    "max_dd_pct": 10.08,
+    "milestones_count": 7
+  },
+  "Golden_1.5x_Step": {
+    "step_multiplier": 1.5,
+    "margin_pct": 0.1,
+    "profit_buffer_pct": 0.0,
+    "final_capital": 115869.98,
+    "trades_to_1cr": 4204,
+    "days_to_1cr": 1145.7,
+    "years_to_1cr": 3.14,
+    "max_dd_pct": 12.29,
+    "milestones_count": 13
+  },
+  "Quarterly_1.25x_Step": {
+    "step_multiplier": 1.25,
+    "margin_pct": 0.1,
+    "profit_buffer_pct": 0.0,
+    "final_capital": 115044.78,
+    "trades_to_1cr": 3822,
+    "days_to_1cr": 1286.0,
+    "years_to_1cr": 3.52,
+    "max_dd_pct": 12.43,
+    "milestones_count": 24
+  },
+  "Model_A_ProfitBuffer_15pct": {
+    "step_multiplier": 2.0,
+    "margin_pct": 0.1,
+    "profit_buffer_pct": 0.15,
+    "final_capital": 115707.09,
+    "trades_to_1cr": 3011,
+    "days_to_1cr": 848.3,
+    "years_to_1cr": 2.32,
+    "max_dd_pct": 14.63,
+    "milestones_count": 7
+  },
+  "Golden_1.5x_ProfitBuffer_15pct": {
+    "step_multiplier": 1.5,
+    "margin_pct": 0.1,
+    "profit_buffer_pct": 0.15,
+    "final_capital": 115511.11,
+    "trades_to_1cr": 3064,
+    "days_to_1cr": 867.1,
+    "years_to_1cr": 2.37,
+    "max_dd_pct": 14.97,
+    "milestones_count": 13
+  },
+  "Model_A_12pct_Margin": {
+    "step_multiplier": 2.0,
+    "margin_pct": 0.12,
+    "profit_buffer_pct": 0.0,
+    "final_capital": 115528.8,
+    "trades_to_1cr": 4151,
+    "days_to_1cr": 1121.1,
+    "years_to_1cr": 3.07,
+    "max_dd_pct": 13.89,
+    "milestones_count": 7
+  },
+  "Golden_1.5x_12pct_Margin": {
+    "step_multiplier": 1.5,
+    "margin_pct": 0.12,
+    "profit_buffer_pct": 0.0,
+    "final_capital": 116542.43,
+    "trades_to_1cr": 3178,
+    "days_to_1cr": 917.1,
+    "years_to_1cr": 2.51,
+    "max_dd_pct": 14.68,
+    "milestones_count": 13
+  }
+}

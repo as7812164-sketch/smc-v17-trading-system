@@ -1,0 +1,68 @@
+{
+  "strategy": "MASTER_LIQUIDITY_SWEEP_OOS_AUDIT",
+  "in_sample": {
+    "total": 170,
+    "wins": 58,
+    "saves": 74,
+    "losses": 38,
+    "pure_wr": 60.4,
+    "green_rate": 77.6,
+    "net_r": 49.8,
+    "final_bal": 998.0,
+    "net_dollar_gain": 498.0,
+    "growth_pct": 99.6,
+    "max_dd_pct": 7.1
+  },
+  "out_of_sample": {
+    "total": 117,
+    "wins": 49,
+    "saves": 40,
+    "losses": 28,
+    "pure_wr": 63.6,
+    "green_rate": 76.1,
+    "net_r": 34.6,
+    "final_bal": 845.7,
+    "net_dollar_gain": 345.7,
+    "growth_pct": 69.1,
+    "max_dd_pct": 3.8
+  },
+  "august_oos": {
+    "total": 39,
+    "wins": 17,
+    "saves": 13,
+    "losses": 9,
+    "pure_wr": 65.4,
+    "green_rate": 76.9,
+    "net_r": 8.6,
+    "final_bal": 586.0,
+    "net_dollar_gain": 86.0,
+    "growth_pct": 17.2,
+    "max_dd_pct": 3.8
+  },
+  "september_oos": {
+    "total": 78,
+    "wins": 32,
+    "saves": 27,
+    "losses": 19,
+    "pure_wr": 62.7,
+    "green_rate": 75.6,
+    "net_r": 26.0,
+    "final_bal": 759.7,
+    "net_dollar_gain": 259.7,
+    "growth_pct": 51.9,
+    "max_dd_pct": 4.1
+  },
+  "all_months": {
+    "total": 287,
+    "wins": 107,
+    "saves": 114,
+    "losses": 66,
+    "pure_wr": 61.8,
+    "green_rate": 77.0,
+    "net_r": 84.4,
+    "final_bal": 1343.7,
+    "net_dollar_gain": 843.7,
+    "growth_pct": 168.7,
+    "max_dd_pct": 7.1
+  }
+}

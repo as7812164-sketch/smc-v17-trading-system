@@ -1,0 +1,98 @@
+{
+  "architecture": "10-SLOT DECA COMPOUNDING (5x 4H + 5x 1H)",
+  "starting_equity": 100.0,
+  "final_equity": 14423.15,
+  "growth_pct": 14323.15,
+  "total_trades": 712,
+  "tp_wins": 326,
+  "be_saves": 220,
+  "sl_losses": 166,
+  "pure_win_rate": 66.26,
+  "safe_win_rate": 76.69,
+  "max_drawdown_pct": 13.36,
+  "milestone_1000": [
+    379,
+    1032.93,
+    "2026-03-19 06:30"
+  ],
+  "monthly_breakdown": {
+    "September 2025": {
+      "trades": 6,
+      "tp": 3,
+      "be": 3,
+      "sl": 0
+    },
+    "October 2025": {
+      "trades": 71,
+      "tp": 33,
+      "be": 23,
+      "sl": 15
+    },
+    "November 2025": {
+      "trades": 52,
+      "tp": 22,
+      "be": 18,
+      "sl": 12
+    },
+    "December 2025": {
+      "trades": 57,
+      "tp": 31,
+      "be": 17,
+      "sl": 9
+    },
+    "January 2026": {
+      "trades": 73,
+      "tp": 29,
+      "be": 27,
+      "sl": 17
+    },
+    "February 2026": {
+      "trades": 73,
+      "tp": 33,
+      "be": 27,
+      "sl": 13
+    },
+    "March 2026": {
+      "trades": 83,
+      "tp": 43,
+      "be": 18,
+      "sl": 22
+    },
+    "April 2026": {
+      "trades": 64,
+      "tp": 26,
+      "be": 19,
+      "sl": 19
+    },
+    "May 2026": {
+      "trades": 43,
+      "tp": 22,
+      "be": 14,
+      "sl": 7
+    },
+    "June 2026": {
+      "trades": 54,
+      "tp": 31,
+      "be": 14,
+      "sl": 9
+    },
+    "July 2026": {
+      "trades": 56,
+      "tp": 20,
+      "be": 21,
+      "sl": 15
+    },
+    "August 2026": {
+      "trades": 37,
+      "tp": 14,
+      "be": 7,
+      "sl": 16
+    },
+    "September 2026": {
+      "trades": 43,
+      "tp": 19,
+      "be": 12,
+      "sl": 12
+    }
+  }
+}

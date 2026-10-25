@@ -1,0 +1,54 @@
+{
+  "config_a_raw": {
+    "total_trades": 103,
+    "missed_count": 0,
+    "filled_count": 0,
+    "tp_wins": 16,
+    "be_saves": 16,
+    "sl_losses": 71,
+    "pure_win_rate": 15.53,
+    "effective_win_rate": 31.07,
+    "final_balance": 13.05,
+    "net_growth_pct": -86.95,
+    "max_drawdown_pct": 88.06
+  },
+  "config_b_trend_aligned": {
+    "total_trades": 48,
+    "missed_count": 0,
+    "filled_count": 0,
+    "tp_wins": 7,
+    "be_saves": 9,
+    "sl_losses": 32,
+    "pure_win_rate": 14.58,
+    "effective_win_rate": 33.33,
+    "final_balance": 45.06,
+    "net_growth_pct": -54.94,
+    "max_drawdown_pct": 58.41
+  },
+  "config_c_trend_killzone_m1": {
+    "total_trades": 25,
+    "missed_count": 0,
+    "filled_count": 0,
+    "tp_wins": 4,
+    "be_saves": 3,
+    "sl_losses": 18,
+    "pure_win_rate": 16.0,
+    "effective_win_rate": 28.0,
+    "final_balance": 66.91,
+    "net_growth_pct": -33.09,
+    "max_drawdown_pct": 40.26
+  },
+  "config_d_trend_killzone_m2": {
+    "total_trades": 24,
+    "missed_count": 9,
+    "filled_count": 24,
+    "tp_wins": 3,
+    "be_saves": 0,
+    "sl_losses": 21,
+    "pure_win_rate": 12.5,
+    "effective_win_rate": 12.5,
+    "final_balance": 53.42,
+    "net_growth_pct": -46.58,
+    "max_drawdown_pct": 46.58
+  }
+}

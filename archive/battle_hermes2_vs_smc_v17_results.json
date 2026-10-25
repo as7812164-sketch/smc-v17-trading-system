@@ -1,0 +1,160 @@
+{
+  "dataset_1y_bars": 339512,
+  "dataset_2y_bars": 470532,
+  "sentry_saves_1y": {
+    "sentry_1_btc_macro": 109,
+    "sentry_2_weak_displacement": 0,
+    "sentry_3_no_idm_or_wick": 0,
+    "sentry_4_stale_tap": 0
+  },
+  "sentry_saves_2y": {
+    "sentry_1_btc_macro": 219,
+    "sentry_2_weak_displacement": 0,
+    "sentry_3_no_idm_or_wick": 0,
+    "sentry_4_stale_tap": 0
+  },
+  "compounding_results": {
+    "hermes_1y": {
+      "name": "HERMES 2.0 APEX (1-Year)",
+      "total_signals": 2039,
+      "executed_trades": 524,
+      "wins": 416,
+      "losses": 108,
+      "win_rate": 79.38931297709924,
+      "profit_factor": 1.863048795457105,
+      "max_drawdown_pct": 41.659628385939044,
+      "start_capital": 50.0,
+      "final_active_cap": 2460928762.8801384,
+      "final_vault": 1178434862.8359892,
+      "final_total_wealth": 3639363625.7161274,
+      "hit_1k": {
+        "trade_num": 58,
+        "date": "2025-10-31 11:00",
+        "total": 1020.8289006520847
+      },
+      "hit_2k": {
+        "trade_num": 66,
+        "date": "2025-11-10 08:00",
+        "total": 2153.4047459662515
+      }
+    },
+    "smc_native_1y": {
+      "name": "SMC V17 Native (1-Year)",
+      "total_signals": 2911,
+      "executed_trades": 836,
+      "wins": 581,
+      "losses": 255,
+      "win_rate": 69.49760765550239,
+      "profit_factor": 3.356675174517293,
+      "max_drawdown_pct": 59.53667953108715,
+      "start_capital": 50.0,
+      "final_active_cap": 9.197113626755776e+20,
+      "final_vault": 2.498825637664482e+20,
+      "final_total_wealth": 1.1695939264420257e+21,
+      "hit_1k": {
+        "trade_num": 79,
+        "date": "2025-10-21 20:00",
+        "total": 1072.5163455563265
+      },
+      "hit_2k": {
+        "trade_num": 91,
+        "date": "2025-10-31 19:00",
+        "total": 2283.4999322510757
+      }
+    },
+    "smc_norm_1y": {
+      "name": "SMC V17 Calibrated TP/SL (1-Year)",
+      "total_signals": 2911,
+      "executed_trades": 1217,
+      "wins": 987,
+      "losses": 230,
+      "win_rate": 81.10106820049302,
+      "profit_factor": 1.8406908242332087,
+      "max_drawdown_pct": 54.85700734455209,
+      "start_capital": 50.0,
+      "final_active_cap": 2.1181781017973544e+31,
+      "final_vault": 1.0358659367248002e+31,
+      "final_total_wealth": 3.1540440385221544e+31,
+      "hit_1k": {
+        "trade_num": 66,
+        "date": "2025-10-12 15:00",
+        "total": 1024.7911172121726
+      },
+      "hit_2k": {
+        "trade_num": 78,
+        "date": "2025-10-14 06:00",
+        "total": 2083.4662290430506
+      }
+    },
+    "hermes_2y": {
+      "name": "HERMES 2.0 APEX (2-Year)",
+      "total_signals": 4639,
+      "executed_trades": 1326,
+      "wins": 1055,
+      "losses": 271,
+      "win_rate": 79.56259426847662,
+      "profit_factor": 1.9259158547517414,
+      "max_drawdown_pct": 44.53351852708703,
+      "start_capital": 50.0,
+      "final_active_cap": 5.254733189376533e+21,
+      "final_vault": 2.3829799611692514e+21,
+      "final_total_wealth": 7.637713150545784e+21,
+      "hit_1k": {
+        "trade_num": 60,
+        "date": "2024-11-01 23:00",
+        "total": 1065.7970380283946
+      },
+      "hit_2k": {
+        "trade_num": 78,
+        "date": "2024-11-11 16:00",
+        "total": 2033.458022581675
+      }
+    },
+    "smc_native_2y": {
+      "name": "SMC V17 Native (2-Year)",
+      "total_signals": 7764,
+      "executed_trades": 2065,
+      "wins": 1387,
+      "losses": 678,
+      "win_rate": 67.16707021791768,
+      "profit_factor": 2.689245716851772,
+      "max_drawdown_pct": 66.01837937897963,
+      "start_capital": 50.0,
+      "final_active_cap": 1.9244394839950476e+42,
+      "final_vault": 6.03716022425063e+41,
+      "final_total_wealth": 2.5281555064201106e+42,
+      "hit_1k": {
+        "trade_num": 117,
+        "date": "2024-11-11 00:00",
+        "total": 1017.7214035172676
+      },
+      "hit_2k": {
+        "trade_num": 125,
+        "date": "2024-11-12 08:00",
+        "total": 2227.293529664039
+      }
+    }
+  },
+  "fixed_sizing_1y": {
+    "hermes_1y": {
+      "name": "HERMES 2.0 APEX (Fixed 10%)",
+      "executed_trades": 524,
+      "wins": 416,
+      "losses": 108,
+      "win_rate": 79.38931297709924,
+      "profit_factor": 2.532022750642471,
+      "max_drawdown_pct": 1.7444981975946985,
+      "final_balance": 174.0363998227489
+    },
+    "smc_native_1y": {
+      "name": "SMC V17 Native (Fixed 10%)",
+      "executed_trades": 836,
+      "wins": 581,
+      "losses": 255,
+      "win_rate": 69.49760765550239,
+      "profit_factor": 3.0266686377390712,
+      "max_drawdown_pct": 3.469336284682134,
+      "final_balance": 413.96105378569433
+    }
+  }
+}

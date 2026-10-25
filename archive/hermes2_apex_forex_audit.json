@@ -1,0 +1,242 @@
+{
+  "raw_crypto_4h_5x": {
+    "mode": "raw_crypto",
+    "interval": "4h",
+    "leverage": 5.0,
+    "coins_tested": 10,
+    "total_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "win_rate": 0.0,
+    "long_trades": 0,
+    "long_wr": 0.0,
+    "short_trades": 0,
+    "short_wr": 0.0,
+    "max_dd": 0.0,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth": 50.0,
+    "vault_stash": 0.0,
+    "profit_factor": 99.0,
+    "mae_stats": {
+      "median_pct": 0.0,
+      "median_pips": 0.0,
+      "median_winners_pct": 0.0,
+      "median_losers_pct": 0.0
+    },
+    "mfe_stats": {
+      "median_pct": 0.0,
+      "median_pips": 0.0
+    }
+  },
+  "raw_crypto_1h_5x": {
+    "mode": "raw_crypto",
+    "interval": "1h",
+    "leverage": 5.0,
+    "coins_tested": 10,
+    "total_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "win_rate": 0.0,
+    "long_trades": 0,
+    "long_wr": 0.0,
+    "short_trades": 0,
+    "short_wr": 0.0,
+    "max_dd": 0.0,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth": 50.0,
+    "vault_stash": 0.0,
+    "profit_factor": 99.0,
+    "mae_stats": {
+      "median_pct": 0.0,
+      "median_pips": 0.0,
+      "median_winners_pct": 0.0,
+      "median_losers_pct": 0.0
+    },
+    "mfe_stats": {
+      "median_pct": 0.0,
+      "median_pips": 0.0
+    }
+  },
+  "calibrated_4h_5x": {
+    "mode": "calibrated",
+    "interval": "4h",
+    "leverage": 5.0,
+    "coins_tested": 10,
+    "total_trades": 159,
+    "wins": 89,
+    "losses": 70,
+    "win_rate": 55.97,
+    "long_trades": 77,
+    "long_wr": 59.74,
+    "short_trades": 82,
+    "short_wr": 52.44,
+    "max_dd": 21.15,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth": 59.75,
+    "vault_stash": 16.19,
+    "profit_factor": 1.1,
+    "mae_stats": {
+      "median_pct": 0.355,
+      "median_pips": 29.6,
+      "median_winners_pct": 0.159,
+      "median_losers_pct": 0.51
+    },
+    "mfe_stats": {
+      "median_pct": 0.48,
+      "median_pips": 44.0
+    }
+  },
+  "calibrated_1h_5x": {
+    "mode": "calibrated",
+    "interval": "1h",
+    "leverage": 5.0,
+    "coins_tested": 10,
+    "total_trades": 434,
+    "wins": 248,
+    "losses": 186,
+    "win_rate": 57.14,
+    "long_trades": 232,
+    "long_wr": 58.19,
+    "short_trades": 202,
+    "short_wr": 55.94,
+    "max_dd": 20.95,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth": 69.24,
+    "vault_stash": 27.29,
+    "profit_factor": 1.12,
+    "mae_stats": {
+      "median_pct": 0.222,
+      "median_pips": 22.7,
+      "median_winners_pct": 0.112,
+      "median_losers_pct": 0.355
+    },
+    "mfe_stats": {
+      "median_pct": 0.324,
+      "median_pips": 29.2
+    }
+  },
+  "calibrated_4h_20x": {
+    "mode": "calibrated",
+    "interval": "4h",
+    "leverage": 20.0,
+    "coins_tested": 10,
+    "total_trades": 159,
+    "wins": 89,
+    "losses": 70,
+    "win_rate": 55.97,
+    "long_trades": 77,
+    "long_wr": 59.74,
+    "short_trades": 82,
+    "short_wr": 52.44,
+    "max_dd": 44.21,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth": 97.92,
+    "vault_stash": 79.85,
+    "profit_factor": 1.1,
+    "mae_stats": {
+      "median_pct": 0.355,
+      "median_pips": 29.6,
+      "median_winners_pct": 0.159,
+      "median_losers_pct": 0.51
+    },
+    "mfe_stats": {
+      "median_pct": 0.48,
+      "median_pips": 44.0
+    }
+  },
+  "calibrated_1h_20x": {
+    "mode": "calibrated",
+    "interval": "1h",
+    "leverage": 20.0,
+    "coins_tested": 10,
+    "total_trades": 434,
+    "wins": 248,
+    "losses": 186,
+    "win_rate": 57.14,
+    "long_trades": 232,
+    "long_wr": 58.19,
+    "short_trades": 202,
+    "short_wr": 55.94,
+    "max_dd": 38.23,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth": 115.11,
+    "vault_stash": 101.7,
+    "profit_factor": 1.11,
+    "mae_stats": {
+      "median_pct": 0.222,
+      "median_pips": 22.7,
+      "median_winners_pct": 0.112,
+      "median_losers_pct": 0.355
+    },
+    "mfe_stats": {
+      "median_pct": 0.324,
+      "median_pips": 29.2
+    }
+  },
+  "calibrated_4h_30x": {
+    "mode": "calibrated",
+    "interval": "4h",
+    "leverage": 30.0,
+    "coins_tested": 10,
+    "total_trades": 159,
+    "wins": 89,
+    "losses": 70,
+    "win_rate": 55.97,
+    "long_trades": 77,
+    "long_wr": 59.74,
+    "short_trades": 82,
+    "short_wr": 52.44,
+    "max_dd": 51.66,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth": 130.44,
+    "vault_stash": 123.75,
+    "profit_factor": 1.11,
+    "mae_stats": {
+      "median_pct": 0.355,
+      "median_pips": 29.6,
+      "median_winners_pct": 0.159,
+      "median_losers_pct": 0.51
+    },
+    "mfe_stats": {
+      "median_pct": 0.48,
+      "median_pips": 44.0
+    }
+  },
+  "calibrated_1h_30x": {
+    "mode": "calibrated",
+    "interval": "1h",
+    "leverage": 30.0,
+    "coins_tested": 10,
+    "total_trades": 434,
+    "wins": 248,
+    "losses": 186,
+    "win_rate": 57.14,
+    "long_trades": 232,
+    "long_wr": 58.19,
+    "short_trades": 202,
+    "short_wr": 55.94,
+    "max_dd": 48.28,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth": 137.6,
+    "vault_stash": 133.91,
+    "profit_factor": 1.11,
+    "mae_stats": {
+      "median_pct": 0.222,
+      "median_pips": 22.7,
+      "median_winners_pct": 0.112,
+      "median_losers_pct": 0.355
+    },
+    "mfe_stats": {
+      "median_pct": 0.324,
+      "median_pips": 29.2
+    }
+  }
+}

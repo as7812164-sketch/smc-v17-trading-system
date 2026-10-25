@@ -1,0 +1,72 @@
+{
+  "HERMES_2.5_APEX_HYBRID": {
+    "total_trades": 6386,
+    "wins": 5040,
+    "losses": 1346,
+    "win_rate": 78.92,
+    "long_trades": 3191,
+    "long_wr": 78.03,
+    "short_trades": 3195,
+    "short_wr": 79.81,
+    "1h_trades": 4015,
+    "1h_wr": 77.26,
+    "4h_trades": 2371,
+    "4h_wr": 81.74,
+    "max_drawdown": 61.82,
+    "milestone_2k": {
+      "trade_num": 187,
+      "date": "2023-11-15",
+      "days": 49.6,
+      "equity": 2081.76
+    },
+    "yearly": {
+      "Year 1 (2023-2024)": {
+        "wins": 1733,
+        "losses": 447
+      },
+      "Year 2 (2024-2025)": {
+        "wins": 1883,
+        "losses": 502
+      },
+      "Year 3 (2025-2026)": {
+        "wins": 1424,
+        "losses": 397
+      }
+    }
+  },
+  "HERMES_3.0_QUANTUM": {
+    "total_trades": 8284,
+    "wins": 7537,
+    "losses": 747,
+    "win_rate": 90.98,
+    "long_trades": 4242,
+    "long_wr": 90.85,
+    "short_trades": 4042,
+    "short_wr": 91.12,
+    "1h_trades": 5280,
+    "1h_wr": 89.43,
+    "4h_trades": 3004,
+    "4h_wr": 93.71,
+    "max_drawdown": 48.74,
+    "milestone_2k": {
+      "trade_num": 57,
+      "date": "2023-10-20",
+      "days": 23.2,
+      "equity": 2019.18
+    },
+    "yearly": {
+      "Year 1 (2023-2024)": {
+        "wins": 2461,
+        "losses": 257
+      },
+      "Year 2 (2024-2025)": {
+        "wins": 2885,
+        "losses": 249
+      },
+      "Year 3 (2025-2026)": {
+        "wins": 2191,
+        "losses": 241
+      }
+    }
+  }
+}

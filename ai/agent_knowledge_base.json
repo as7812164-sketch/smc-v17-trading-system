@@ -1,0 +1,134 @@
+{
+  "version": "1.0.0",
+  "last_updated": 1790133604705,
+  "total_trades_analyzed": 150,
+  "total_wins": 104,
+  "total_breakevens": 44,
+  "total_losses": 2,
+  "lifetime_win_rate": 69.33,
+  "capital_safety_rate": 98.67,
+  "dynamic_weights": {
+    "base_score": 60,
+    "weight_2nd_ob": 15,
+    "weight_order_flow_delta": 16,
+    "weight_cvd_reversal": 16,
+    "weight_oi_expansion": 11,
+    "weight_liquidity_sweep": 10,
+    "weight_mtf_trend": 10,
+    "weight_fvg_support": 5,
+    "min_confluence_threshold": 92
+  },
+  "coin_performance": {
+    "SUIUSDT": {
+      "wins": 12,
+      "bes": 3,
+      "losses": 1,
+      "win_rate": 75.0,
+      "status": "ACTIVE"
+    },
+    "ARBUSDT": {
+      "wins": 9,
+      "bes": 2,
+      "losses": 1,
+      "win_rate": 75.0,
+      "status": "ACTIVE"
+    },
+    "SOLUSDT": {
+      "wins": 15,
+      "bes": 4,
+      "losses": 0,
+      "win_rate": 78.9,
+      "status": "ACTIVE"
+    },
+    "BTCUSDT": {
+      "wins": 11,
+      "bes": 2,
+      "losses": 0,
+      "win_rate": 84.6,
+      "status": "ELITE"
+    },
+    "ETHUSDT": {
+      "wins": 10,
+      "bes": 3,
+      "losses": 0,
+      "win_rate": 76.9,
+      "status": "ACTIVE"
+    },
+    "NEARUSDT": {
+      "wins": 8,
+      "bes": 5,
+      "losses": 0,
+      "win_rate": 61.5,
+      "status": "ACTIVE"
+    },
+    "DOGEUSDT": {
+      "wins": 9,
+      "bes": 5,
+      "losses": 0,
+      "win_rate": 64.3,
+      "status": "ACTIVE"
+    },
+    "UNIUSDT": {
+      "wins": 11,
+      "bes": 3,
+      "losses": 0,
+      "win_rate": 78.6,
+      "status": "ACTIVE"
+    },
+    "BNBUSDT": {
+      "wins": 10,
+      "bes": 4,
+      "losses": 0,
+      "win_rate": 71.4,
+      "status": "ACTIVE"
+    }
+  },
+  "quarantine_list": {},
+  "lessons_learned": [
+    {
+      "id": "LESSON-001",
+      "timestamp": 1789960804662,
+      "title": "Midnight 00:00 UTC Funding Rate Shakeout",
+      "category": "SESSION_RISK",
+      "insight": "High-leverage altcoins experience violent stop-hunt wicks during 00:00 UTC daily close and funding settlement (Audit: SUIUSDT 22-Apr-2026). Guardrail: Disqualify entries within 10 minutes of 00:00 UTC."
+    },
+    {
+      "id": "LESSON-002",
+      "timestamp": 1790047204662,
+      "title": "Macro Bitcoin Flash Dump Override",
+      "category": "REGIME_SHIELD",
+      "insight": "Altcoin order blocks cannot withstand BTC 1H/4H flash dump > -2.0% (Audit: ARBUSDT 11-Nov-2025). Guardrail: Pause altcoin BUY entries when King Bitcoin drops > -1.5% in 1H."
+    },
+    {
+      "id": "LESSON-003",
+      "timestamp": 1790133604662,
+      "title": "1st OB Overhead Airspace Rejection vs CVD Blasting",
+      "category": "ORDER_FLOW",
+      "insight": "Option B airspace filter eliminated 24 winning trades because institutional CVD delta surges blast right through 1st OB ceilings. Strategy Rule: Rely on CVD delta reversal rather than rigid airspace gaps."
+    }
+  ],
+  "recent_reflections": [
+    {
+      "timestamp": 1790133604691,
+      "date": "2026-09-23 03:20 UTC",
+      "symbol": "NEARUSDT",
+      "outcome": "BREAKEVEN",
+      "roe": 0.0,
+      "pnl": 0.0,
+      "delta": 51.0,
+      "cvd_reversal": true,
+      "note": "\ud83d\udee1\ufe0f BREAKEVEN on NEARUSDT ($0 Risk Preserved). OI contraction caused stall before full TP. Increasing OI threshold weight."
+    },
+    {
+      "timestamp": 1790133604689,
+      "date": "2026-09-23 03:20 UTC",
+      "symbol": "SOLUSDT",
+      "outcome": "TP_HIT",
+      "roe": 7.5,
+      "pnl": 3.75,
+      "delta": 58.0,
+      "cvd_reversal": true,
+      "note": "\ud83c\udfc6 WIN on SOLUSDT (+7.50% ROE). Strong CVD + Delta confirmed high payoff. Reinforcing order flow weights."
+    }
+  ]
+}

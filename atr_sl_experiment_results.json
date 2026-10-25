@@ -1,0 +1,86 @@
+[
+  {
+    "model": "Baseline Model 2A (Fixed 1.50% Soft SL / 3.0% TP)",
+    "metrics": {
+      "trades_count": 453,
+      "tp": 150,
+      "sl": 129,
+      "be": 174,
+      "win_rate": 53.76,
+      "absorbed_wicks": 113,
+      "final_balance": 872.41,
+      "max_dd": 88.54,
+      "profit_factor": 1.19
+    }
+  },
+  {
+    "model": "ATR SL Variant 1: 0.75x ATR Soft SL (TP fixed 3.0%)",
+    "metrics": {
+      "trades_count": 505,
+      "tp": 153,
+      "sl": 153,
+      "be": 199,
+      "win_rate": 50.0,
+      "absorbed_wicks": 117,
+      "final_balance": 522.35,
+      "max_dd": 85.85,
+      "profit_factor": 1.11
+    }
+  },
+  {
+    "model": "ATR SL Variant 2: 1.00x ATR Soft SL (TP fixed 3.0%)",
+    "metrics": {
+      "trades_count": 441,
+      "tp": 171,
+      "sl": 142,
+      "be": 128,
+      "win_rate": 54.63,
+      "absorbed_wicks": 121,
+      "final_balance": 485.43,
+      "max_dd": 93.52,
+      "profit_factor": 1.14
+    }
+  },
+  {
+    "model": "ATR SL Variant 3: 1.25x ATR Soft SL (TP fixed 3.0%)",
+    "metrics": {
+      "trades_count": 393,
+      "tp": 175,
+      "sl": 133,
+      "be": 85,
+      "win_rate": 56.82,
+      "absorbed_wicks": 131,
+      "final_balance": 69.89,
+      "max_dd": 98.11,
+      "profit_factor": 1.02
+    }
+  },
+  {
+    "model": "ATR SL Variant 4: Clamped Dynamic ATR (1.2% - 2.2% SL)",
+    "metrics": {
+      "trades_count": 435,
+      "tp": 156,
+      "sl": 133,
+      "be": 146,
+      "win_rate": 53.98,
+      "absorbed_wicks": 120,
+      "final_balance": 1192.22,
+      "max_dd": 85.09,
+      "profit_factor": 1.19
+    }
+  },
+  {
+    "model": "ATR SL Variant 5: Pure Dynamic 1:2 R:R (1.0x ATR SL / 2.0x ATR TP)",
+    "metrics": {
+      "trades_count": 411,
+      "tp": 117,
+      "sl": 139,
+      "be": 155,
+      "win_rate": 45.7,
+      "absorbed_wicks": 111,
+      "final_balance": 6.91,
+      "max_dd": 95.3,
+      "profit_factor": 0.86
+    }
+  }
+]

@@ -1,0 +1,435 @@
+{
+  "experiment_meta": {
+    "strategy": "HERMES 3.5 SINGLE TIER",
+    "tested_timeframes": [
+      "45m",
+      "1.5H (90m)",
+      "3H (180m)",
+      "1H (60m)",
+      "4H (240m)"
+    ],
+    "timestamp": "2026-10-04T04:50:32.361822"
+  },
+  "dataset_6month_15m": {
+    "45m": {
+      "strict_5pct": {
+        "setups": 407,
+        "raw_signals": {
+          "total_signals": 407,
+          "wins": 302,
+          "losses": 105,
+          "win_rate": 74.2,
+          "profit_factor": 1.69,
+          "avg_duration_h": 5.9,
+          "avg_net_return_pct": 2.35
+        },
+        "compounding_5slots": {
+          "executed_trades": 362,
+          "wins": 269,
+          "losses": 93,
+          "win_rate": 74.31,
+          "profit_factor": 2.65,
+          "final_bal": 3702.11,
+          "final_vault": 1157.96,
+          "total_equity": 4860.07,
+          "max_drawdown_pct": 69.57,
+          "avg_duration_h": 5.7,
+          "m1k_trade": 314,
+          "m2k_trade": 336
+        }
+      },
+      "calibrated": {
+        "disp_threshold": 0.038,
+        "tp_pct": 0.022,
+        "setups": 692,
+        "raw_signals": {
+          "total_signals": 692,
+          "wins": 467,
+          "losses": 225,
+          "win_rate": 67.49,
+          "profit_factor": 1.2,
+          "avg_duration_h": 6.3,
+          "avg_net_return_pct": 0.81
+        },
+        "compounding_5slots": {
+          "executed_trades": 557,
+          "wins": 378,
+          "losses": 179,
+          "win_rate": 67.86,
+          "profit_factor": 2.32,
+          "final_bal": 1745.35,
+          "final_vault": 593.0,
+          "total_equity": 2338.35,
+          "max_drawdown_pct": 56.2,
+          "avg_duration_h": 6.0,
+          "m1k_trade": 533,
+          "m2k_trade": 553
+        }
+      }
+    },
+    "1.5H (90m)": {
+      "strict_5pct": {
+        "setups": 430,
+        "raw_signals": {
+          "total_signals": 430,
+          "wins": 331,
+          "losses": 99,
+          "win_rate": 76.98,
+          "profit_factor": 1.78,
+          "avg_duration_h": 9.3,
+          "avg_net_return_pct": 2.66
+        },
+        "compounding_5slots": {
+          "executed_trades": 361,
+          "wins": 282,
+          "losses": 79,
+          "win_rate": 78.12,
+          "profit_factor": 1.32,
+          "final_bal": 19757.86,
+          "final_vault": 32085.28,
+          "total_equity": 51843.15,
+          "max_drawdown_pct": 55.74,
+          "avg_duration_h": 7.8,
+          "m1k_trade": 100,
+          "m2k_trade": 140
+        }
+      },
+      "calibrated": {
+        "disp_threshold": 0.044,
+        "tp_pct": 0.025,
+        "setups": 518,
+        "raw_signals": {
+          "total_signals": 518,
+          "wins": 389,
+          "losses": 129,
+          "win_rate": 75.1,
+          "profit_factor": 1.61,
+          "avg_duration_h": 9.5,
+          "avg_net_return_pct": 2.19
+        },
+        "compounding_5slots": {
+          "executed_trades": 427,
+          "wins": 325,
+          "losses": 102,
+          "win_rate": 76.11,
+          "profit_factor": 1.33,
+          "final_bal": 6615.58,
+          "final_vault": 10111.61,
+          "total_equity": 16727.18,
+          "max_drawdown_pct": 54.26,
+          "avg_duration_h": 8.4,
+          "m1k_trade": 158,
+          "m2k_trade": 209
+        }
+      }
+    },
+    "3H (180m)": {
+      "strict_5pct": {
+        "setups": 293,
+        "raw_signals": {
+          "total_signals": 293,
+          "wins": 263,
+          "losses": 30,
+          "win_rate": 89.76,
+          "profit_factor": 2.54,
+          "avg_duration_h": 9.8,
+          "avg_net_return_pct": 4.04
+        },
+        "compounding_5slots": {
+          "executed_trades": 272,
+          "wins": 243,
+          "losses": 29,
+          "win_rate": 89.34,
+          "profit_factor": 1.78,
+          "final_bal": 77814.87,
+          "final_vault": 40395.82,
+          "total_equity": 118210.69,
+          "max_drawdown_pct": 54.03,
+          "avg_duration_h": 9.5,
+          "m1k_trade": 41,
+          "m2k_trade": 52
+        }
+      },
+      "calibrated": {
+        "disp_threshold": 0.048,
+        "tp_pct": 0.028,
+        "setups": 309,
+        "raw_signals": {
+          "total_signals": 309,
+          "wins": 276,
+          "losses": 33,
+          "win_rate": 89.32,
+          "profit_factor": 2.48,
+          "avg_duration_h": 10.5,
+          "avg_net_return_pct": 3.95
+        },
+        "compounding_5slots": {
+          "executed_trades": 285,
+          "wins": 256,
+          "losses": 29,
+          "win_rate": 89.82,
+          "profit_factor": 1.74,
+          "final_bal": 130292.69,
+          "final_vault": 71087.15,
+          "total_equity": 201379.84,
+          "max_drawdown_pct": 56.16,
+          "avg_duration_h": 10.3,
+          "m1k_trade": 41,
+          "m2k_trade": 53
+        }
+      }
+    },
+    "1H (60m)": {
+      "strict_5pct": {
+        "setups": 449,
+        "raw_signals": {
+          "total_signals": 449,
+          "wins": 371,
+          "losses": 78,
+          "win_rate": 82.63,
+          "profit_factor": 2.12,
+          "avg_duration_h": 7.5,
+          "avg_net_return_pct": 3.03
+        },
+        "compounding_5slots": {
+          "executed_trades": 368,
+          "wins": 311,
+          "losses": 57,
+          "win_rate": 84.51,
+          "profit_factor": 2.55,
+          "final_bal": 123409.54,
+          "final_vault": 40456.36,
+          "total_equity": 163865.91,
+          "max_drawdown_pct": 51.88,
+          "avg_duration_h": 5.9,
+          "m1k_trade": 154,
+          "m2k_trade": 162
+        }
+      },
+      "calibrated": {
+        "disp_threshold": 0.05,
+        "tp_pct": 0.022,
+        "setups": 449,
+        "raw_signals": {
+          "total_signals": 449,
+          "wins": 369,
+          "losses": 80,
+          "win_rate": 82.18,
+          "profit_factor": 2.33,
+          "avg_duration_h": 6.8,
+          "avg_net_return_pct": 3.48
+        },
+        "compounding_5slots": {
+          "executed_trades": 374,
+          "wins": 316,
+          "losses": 58,
+          "win_rate": 84.49,
+          "profit_factor": 2.84,
+          "final_bal": 1325814.26,
+          "final_vault": 399851.76,
+          "total_equity": 1725666.03,
+          "max_drawdown_pct": 47.67,
+          "avg_duration_h": 5.6,
+          "m1k_trade": 123,
+          "m2k_trade": 145
+        }
+      }
+    },
+    "4H (240m)": {
+      "strict_5pct": {
+        "setups": 247,
+        "raw_signals": {
+          "total_signals": 247,
+          "wins": 214,
+          "losses": 33,
+          "win_rate": 86.64,
+          "profit_factor": 2.91,
+          "avg_duration_h": 11.6,
+          "avg_net_return_pct": 4.73
+        },
+        "compounding_5slots": {
+          "executed_trades": 238,
+          "wins": 207,
+          "losses": 31,
+          "win_rate": 86.97,
+          "profit_factor": 2.54,
+          "final_bal": 157361.99,
+          "final_vault": 51678.54,
+          "total_equity": 209040.52,
+          "max_drawdown_pct": 44.39,
+          "avg_duration_h": 11.4,
+          "m1k_trade": 42,
+          "m2k_trade": 77
+        }
+      },
+      "calibrated": {
+        "disp_threshold": 0.05,
+        "tp_pct": 0.028,
+        "setups": 247,
+        "raw_signals": {
+          "total_signals": 247,
+          "wins": 214,
+          "losses": 33,
+          "win_rate": 86.64,
+          "profit_factor": 2.91,
+          "avg_duration_h": 11.6,
+          "avg_net_return_pct": 4.73
+        },
+        "compounding_5slots": {
+          "executed_trades": 238,
+          "wins": 207,
+          "losses": 31,
+          "win_rate": 86.97,
+          "profit_factor": 2.54,
+          "final_bal": 157361.99,
+          "final_vault": 51678.54,
+          "total_equity": 209040.52,
+          "max_drawdown_pct": 44.39,
+          "avg_duration_h": 11.4,
+          "m1k_trade": 42,
+          "m2k_trade": 77
+        }
+      }
+    }
+  },
+  "dataset_2year_longterm": {
+    "3H (180m)": {
+      "full_2year": {
+        "total_setups": 1904,
+        "raw_signals": {
+          "total_signals": 1904,
+          "wins": 1759,
+          "losses": 145,
+          "win_rate": 92.38,
+          "profit_factor": 4.96,
+          "avg_duration_h": 5.1,
+          "avg_net_return_pct": 6.79
+        },
+        "compounding_5slots": {
+          "executed_trades": 1692,
+          "wins": 1562,
+          "losses": 130,
+          "win_rate": 92.32,
+          "profit_factor": 1.98,
+          "final_bal": 2.2146152368881368e+39,
+          "final_vault": 9.621333618380297e+38,
+          "total_equity": 3.176748598726167e+39,
+          "max_drawdown_pct": 59.43,
+          "avg_duration_h": 4.8,
+          "m1k_trade": 42,
+          "m2k_trade": 48
+        }
+      },
+      "in_sample_year1": {
+        "total_signals": 1076,
+        "wins": 996,
+        "losses": 80,
+        "win_rate": 92.57,
+        "profit_factor": 6.29,
+        "avg_duration_h": 4.7,
+        "avg_net_return_pct": 7.42
+      },
+      "out_of_sample_year2": {
+        "total_signals": 828,
+        "wins": 763,
+        "losses": 65,
+        "win_rate": 92.15,
+        "profit_factor": 3.82,
+        "avg_duration_h": 5.6,
+        "avg_net_return_pct": 5.98
+      }
+    },
+    "4H (240m)": {
+      "full_2year": {
+        "total_setups": 1644,
+        "raw_signals": {
+          "total_signals": 1644,
+          "wins": 1485,
+          "losses": 159,
+          "win_rate": 90.33,
+          "profit_factor": 4.63,
+          "avg_duration_h": 5.5,
+          "avg_net_return_pct": 6.88
+        },
+        "compounding_5slots": {
+          "executed_trades": 1448,
+          "wins": 1330,
+          "losses": 118,
+          "win_rate": 91.85,
+          "profit_factor": 8.12,
+          "final_bal": 2.385744157673758e+37,
+          "final_vault": 4.923115924312985e+36,
+          "total_equity": 2.878055750105057e+37,
+          "max_drawdown_pct": 59.45,
+          "avg_duration_h": 5.1,
+          "m1k_trade": 39,
+          "m2k_trade": 49
+        }
+      },
+      "in_sample_year1": {
+        "total_signals": 929,
+        "wins": 838,
+        "losses": 91,
+        "win_rate": 90.2,
+        "profit_factor": 4.53,
+        "avg_duration_h": 5.0,
+        "avg_net_return_pct": 6.89
+      },
+      "out_of_sample_year2": {
+        "total_signals": 715,
+        "wins": 647,
+        "losses": 68,
+        "win_rate": 90.49,
+        "profit_factor": 4.78,
+        "avg_duration_h": 6.2,
+        "avg_net_return_pct": 6.88
+      }
+    },
+    "1H (60m)": {
+      "full_2year": {
+        "total_setups": 3455,
+        "raw_signals": {
+          "total_signals": 3455,
+          "wins": 2896,
+          "losses": 559,
+          "win_rate": 83.82,
+          "profit_factor": 2.5,
+          "avg_duration_h": 4.0,
+          "avg_net_return_pct": 3.92
+        },
+        "compounding_5slots": {
+          "executed_trades": 2790,
+          "wins": 2360,
+          "losses": 430,
+          "win_rate": 84.59,
+          "profit_factor": 2.37,
+          "final_bal": 1.8058379561441126e+35,
+          "final_vault": 6.3173797136719895e+34,
+          "total_equity": 2.4375759275113115e+35,
+          "max_drawdown_pct": 66.82,
+          "avg_duration_h": 3.5,
+          "m1k_trade": 147,
+          "m2k_trade": 160
+        }
+      },
+      "in_sample_year1": {
+        "total_signals": 1942,
+        "wins": 1604,
+        "losses": 338,
+        "win_rate": 82.6,
+        "profit_factor": 2.18,
+        "avg_duration_h": 3.8,
+        "avg_net_return_pct": 3.43
+      },
+      "out_of_sample_year2": {
+        "total_signals": 1513,
+        "wins": 1292,
+        "losses": 221,
+        "win_rate": 85.39,
+        "profit_factor": 3.04,
+        "avg_duration_h": 4.3,
+        "avg_net_return_pct": 4.54
+      }
+    }
+  }
+}

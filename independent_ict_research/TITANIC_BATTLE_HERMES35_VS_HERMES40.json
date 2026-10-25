@@ -1,0 +1,36 @@
+{
+  "timestamp": 1791527192817,
+  "dataset_candles": 339512,
+  "assets_count": 22,
+  "hermes_35": {
+    "strat": "HERMES_3.5_SINGLE_TIER",
+    "total_setups": 2482,
+    "executed_trades": 595,
+    "wins": 523,
+    "losses": 72,
+    "win_rate": 87.9,
+    "profit_factor": 3.97,
+    "final_balance": 79997154328449.3,
+    "final_vault": 20056596119262.17,
+    "final_equity": 100053750447711.47,
+    "max_drawdown": 38.15,
+    "milestone_1k": 67,
+    "milestone_2k": 75
+  },
+  "hermes_40": {
+    "strat": "HERMES_4.0_QUANTUM",
+    "total_setups": 96,
+    "executed_trades": 81,
+    "wins": 69,
+    "losses": 12,
+    "win_rate": 85.19,
+    "profit_factor": 4.12,
+    "final_balance": 1733.54,
+    "final_vault": 415.71,
+    "final_equity": 2149.26,
+    "max_drawdown": 21.31,
+    "milestone_1k": 55,
+    "milestone_2k": 81
+  },
+  "sl_reduction_pct": 83.33
+}

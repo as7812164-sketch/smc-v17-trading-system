@@ -1,0 +1,206 @@
+{
+  "test1_deca_compounding": {
+    "start": 500.0,
+    "end": 634.93,
+    "profit": 134.92999999999995,
+    "roi_pct": 26.99,
+    "trades": 285,
+    "wins": 152,
+    "losses": 112,
+    "win_rate": 53.33,
+    "sections": [
+      {
+        "id": 1,
+        "name": "Section 1 (4H Macro)",
+        "balance": 107.98,
+        "trades": 33,
+        "wins": 20,
+        "losses": 10,
+        "max_dd_pct": 28.45
+      },
+      {
+        "id": 2,
+        "name": "Section 2 (4H Macro)",
+        "balance": 51.82,
+        "trades": 32,
+        "wins": 16,
+        "losses": 13,
+        "max_dd_pct": 34.25
+      },
+      {
+        "id": 3,
+        "name": "Section 3 (4H Macro)",
+        "balance": 41.48,
+        "trades": 32,
+        "wins": 17,
+        "losses": 13,
+        "max_dd_pct": 41.2
+      },
+      {
+        "id": 4,
+        "name": "Section 4 (4H Macro)",
+        "balance": 41.07,
+        "trades": 32,
+        "wins": 15,
+        "losses": 14,
+        "max_dd_pct": 49.22
+      },
+      {
+        "id": 5,
+        "name": "Section 5 (4H Macro)",
+        "balance": 106.57,
+        "trades": 32,
+        "wins": 20,
+        "losses": 11,
+        "max_dd_pct": 32.86
+      },
+      {
+        "id": 6,
+        "name": "Section 6 (1H Intraday)",
+        "balance": 32.14,
+        "trades": 25,
+        "wins": 10,
+        "losses": 13,
+        "max_dd_pct": 53.8
+      },
+      {
+        "id": 7,
+        "name": "Section 7 (1H Intraday)",
+        "balance": 22.91,
+        "trades": 25,
+        "wins": 9,
+        "losses": 15,
+        "max_dd_pct": 55.31
+      },
+      {
+        "id": 8,
+        "name": "Section 8 (1H Intraday)",
+        "balance": 100.7,
+        "trades": 25,
+        "wins": 18,
+        "losses": 6,
+        "max_dd_pct": 19.54
+      },
+      {
+        "id": 9,
+        "name": "Section 9 (1H Intraday)",
+        "balance": 45.5,
+        "trades": 25,
+        "wins": 13,
+        "losses": 10,
+        "max_dd_pct": 31.8
+      },
+      {
+        "id": 10,
+        "name": "Section 10 (1H Intraday)",
+        "balance": 84.76,
+        "trades": 24,
+        "wins": 14,
+        "losses": 7,
+        "max_dd_pct": 28.03
+      }
+    ]
+  },
+  "test2_fixed_fractional_5pct": {
+    "start": 1000.0,
+    "end": 1122.36,
+    "profit": 122.36,
+    "roi_pct": 12.24,
+    "trades": 286,
+    "wins": 152,
+    "losses": 113,
+    "win_rate": 53.15,
+    "profit_factor": 1.2,
+    "max_dd_pct": 4.75,
+    "tf_4h": {
+      "trades": 161,
+      "wins": 88,
+      "win_rate": 54.66
+    },
+    "tf_1h": {
+      "trades": 125,
+      "wins": 64,
+      "win_rate": 51.2
+    },
+    "monthly": {
+      "2025-10": {
+        "trades": 8,
+        "wins": 6,
+        "losses": 1,
+        "pnl": 15.3531316242886
+      },
+      "2025-11": {
+        "trades": 32,
+        "wins": 18,
+        "losses": 11,
+        "pnl": 24.005802988663163
+      },
+      "2025-12": {
+        "trades": 28,
+        "wins": 17,
+        "losses": 10,
+        "pnl": 18.44945913577467
+      },
+      "2026-01": {
+        "trades": 22,
+        "wins": 10,
+        "losses": 12,
+        "pnl": -5.871257631461213
+      },
+      "2026-02": {
+        "trades": 19,
+        "wins": 13,
+        "losses": 5,
+        "pnl": 33.21876071854371
+      },
+      "2026-03": {
+        "trades": 26,
+        "wins": 8,
+        "losses": 11,
+        "pnl": -15.813938333969867
+      },
+      "2026-04": {
+        "trades": 23,
+        "wins": 12,
+        "losses": 10,
+        "pnl": -1.3374363433602348
+      },
+      "2026-05": {
+        "trades": 26,
+        "wins": 15,
+        "losses": 11,
+        "pnl": 9.388528230584061
+      },
+      "2026-06": {
+        "trades": 26,
+        "wins": 15,
+        "losses": 8,
+        "pnl": 25.94732162717715
+      },
+      "2026-07": {
+        "trades": 23,
+        "wins": 8,
+        "losses": 14,
+        "pnl": -41.91940921061044
+      },
+      "2026-08": {
+        "trades": 18,
+        "wins": 11,
+        "losses": 6,
+        "pnl": 39.45837678117562
+      },
+      "2026-09": {
+        "trades": 29,
+        "wins": 15,
+        "losses": 12,
+        "pnl": 3.678895997939896
+      },
+      "2026-10": {
+        "trades": 6,
+        "wins": 4,
+        "losses": 2,
+        "pnl": 17.799758910522492
+      }
+    }
+  }
+}

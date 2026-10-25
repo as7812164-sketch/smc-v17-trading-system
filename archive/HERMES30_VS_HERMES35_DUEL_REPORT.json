@@ -1,0 +1,44 @@
+{
+  "hermes30": {
+    "total_trades": 7782,
+    "wins": 6926,
+    "losses": 856,
+    "total_wr": 89.0,
+    "is_trades": 4587,
+    "is_wr": 91.32,
+    "oos_trades": 3195,
+    "oos_wr": 85.67,
+    "short_trades": 4118,
+    "short_losses": 404,
+    "short_wr": 90.19,
+    "long_trades": 3664,
+    "long_wr": 87.66,
+    "net_roe": 53139.4
+  },
+  "hermes35": {
+    "total_trades": 3141,
+    "wins": 2818,
+    "losses": 323,
+    "total_wr": 89.72,
+    "is_trades": 1734,
+    "is_wr": 89.79,
+    "oos_trades": 1407,
+    "oos_wr": 89.62,
+    "short_trades": 1560,
+    "short_losses": 141,
+    "short_wr": 90.96,
+    "long_trades": 1581,
+    "long_wr": 88.49,
+    "net_roe": 21849.6
+  },
+  "m2k_h30": {
+    "trade_num": 87,
+    "date": "2024-10-07",
+    "equity": 2056.75
+  },
+  "m2k_h35": {
+    "trade_num": 68,
+    "date": "2024-10-16",
+    "equity": 2000.48
+  }
+}

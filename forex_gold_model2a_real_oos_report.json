@@ -1,0 +1,37 @@
+{
+  "gold_xauusd": {
+    "total_trades": 91,
+    "tp_wins": 70,
+    "be_saves": 4,
+    "sl_hits": 17,
+    "wicks_absorbed": 1,
+    "pure_win_rate": 80.46,
+    "capital_preservation_rate": 81.32,
+    "start_balance": 100.0,
+    "final_balance": 13902.46,
+    "max_drawdown_pct": 27.1,
+    "milestone_1000": [
+      33,
+      1098.6,
+      "2026-03-27 15:30"
+    ]
+  },
+  "full_forex_portfolio": {
+    "total_trades": 252,
+    "tp_wins": 120,
+    "be_saves": 84,
+    "sl_hits": 48,
+    "wicks_absorbed": 49,
+    "pure_win_rate": 71.43,
+    "capital_preservation_rate": 80.95,
+    "start_balance": 100.0,
+    "final_balance": 541361.79,
+    "max_drawdown_pct": 20.97,
+    "milestone_1000": [
+      59,
+      1007.07,
+      "2025-12-24 14:30",
+      "GBPJPY"
+    ]
+  }
+}

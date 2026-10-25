@@ -1,0 +1,2208 @@
+{
+  "baseline": {
+    "mode": "BASELINE",
+    "total_trades": 109,
+    "wins": 34,
+    "be_saves": 0,
+    "losses": 75,
+    "effective_wr": 31.19266055045872,
+    "pure_tp_wr": 31.19266055045872,
+    "final_bal": 1525.4979319943268,
+    "growth_pct": 1425.4979319943268,
+    "max_dd": 27.964224356689442,
+    "trades": [
+      {
+        "symbol": "ETHUSDT",
+        "side": "SHORT",
+        "entry_p": 1591.715,
+        "exit_p": 1591.715,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 100.0
+      },
+      {
+        "symbol": "ALGOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.08515,
+        "exit_p": 0.08642725,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 92.5
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 4.684,
+        "exit_p": 4.684,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 92.5
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.36765,
+        "exit_p": 0.36765,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 92.5
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 86.03,
+        "exit_p": 86.03,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 92.5
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.3949,
+        "exit_p": 0.38897649999999995,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 85.5625
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 1.947,
+        "exit_p": 1.947,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 85.5625
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "SHORT",
+        "entry_p": 0.7576,
+        "exit_p": 0.7348720000000001,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 98.396875
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 4.841,
+        "exit_p": 4.69577,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 113.15640624999999
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.3718,
+        "exit_p": 0.382954,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 130.1298671875
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_p": 0.6335,
+        "exit_p": 0.6430024999999999,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 120.37012714843749
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.37805,
+        "exit_p": 0.3893915,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 138.4256462207031
+      },
+      {
+        "symbol": "ADAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.17915,
+        "exit_p": 0.1737755,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 159.18949315380857
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.3935,
+        "exit_p": 0.381695,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 183.06791712687985
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.048465,
+        "exit_p": 0.048465,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 183.06791712687985
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.3149,
+        "exit_p": 0.30545300000000003,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 210.52810469591182
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 6.702,
+        "exit_p": 6.60147,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 194.73849684371842
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "LONG",
+        "entry_p": 0.10225,
+        "exit_p": 0.10071625,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 180.13310958043954
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 100.555,
+        "exit_p": 97.53835000000001,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 207.15307601750547
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "LONG",
+        "entry_p": 0.0927,
+        "exit_p": 0.0927,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 207.15307601750547
+      },
+      {
+        "symbol": "ETHUSDT",
+        "side": "SHORT",
+        "entry_p": 1782.285,
+        "exit_p": 1782.285,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 207.15307601750547
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 4.7915,
+        "exit_p": 4.8633725,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 191.61659531619256
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 4.934,
+        "exit_p": 5.08202,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 220.35908461362143
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 98.13,
+        "exit_p": 98.13,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 220.35908461362143
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.795,
+        "exit_p": 0.77115,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 253.41294730566466
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 5.0205,
+        "exit_p": 5.0205,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 253.41294730566466
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 6.4825,
+        "exit_p": 6.3852625,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 234.4069762577398
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 5.0675,
+        "exit_p": 5.0675,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 234.4069762577398
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_p": 0.09,
+        "exit_p": 0.09,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 234.4069762577398
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_p": 573.6,
+        "exit_p": 573.6,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 234.4069762577398
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.5975,
+        "exit_p": 0.5975,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 234.4069762577398
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.602,
+        "exit_p": 0.602,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 234.4069762577398
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_p": 0.1549,
+        "exit_p": 0.1525765,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 216.82645303840934
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "LONG",
+        "entry_p": 75.43,
+        "exit_p": 74.29855,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 200.56446906052864
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.603,
+        "exit_p": 0.603,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 200.56446906052864
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "LONG",
+        "entry_p": 0.37935,
+        "exit_p": 0.37365975,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 185.522133880989
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 5.3225,
+        "exit_p": 5.162825,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 213.35045396313734
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_p": 0.15735,
+        "exit_p": 0.15971025,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 197.34916991590205
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "LONG",
+        "entry_p": 8.5795,
+        "exit_p": 8.4508075,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 182.5479821722094
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 96.965,
+        "exit_p": 96.965,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 182.5479821722094
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 6.4295,
+        "exit_p": 6.4295,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 182.5479821722094
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 99.515,
+        "exit_p": 99.515,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 182.5479821722094
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 100.46,
+        "exit_p": 97.44619999999999,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 209.93017949804081
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_p": 0.13545,
+        "exit_p": 0.13951349999999998,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 241.41970642274694
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.32545,
+        "exit_p": 0.32545,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 241.41970642274694
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "SHORT",
+        "entry_p": 75.17,
+        "exit_p": 72.9149,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 277.632662386159
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 4.918,
+        "exit_p": 4.918,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 277.632662386159
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 4.9495,
+        "exit_p": 4.9495,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 277.632662386159
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "SHORT",
+        "entry_p": 0.042045,
+        "exit_p": 0.042675674999999996,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 256.8102127071971
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.04183,
+        "exit_p": 0.04183,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 256.8102127071971
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 89.755,
+        "exit_p": 89.755,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 256.8102127071971
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_p": 0.6734,
+        "exit_p": 0.693602,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 295.33174461327667
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.5995,
+        "exit_p": 0.5905075000000001,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 273.1818637672809
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.70355,
+        "exit_p": 0.70355,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 273.1818637672809
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 1.6035,
+        "exit_p": 1.5794475,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 252.69322398473483
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "LONG",
+        "entry_p": 74.665,
+        "exit_p": 76.90495000000001,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 290.59720758244504
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 1.6415,
+        "exit_p": 1.6415,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 290.59720758244504
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.30265,
+        "exit_p": 0.3117295,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 334.1867887198118
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 6.263,
+        "exit_p": 6.45089,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 384.31480702778356
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1322,
+        "exit_p": 0.1322,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 384.31480702778356
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 1.782,
+        "exit_p": 1.83546,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 441.9620280819511
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_p": 0.6375,
+        "exit_p": 0.6375,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 441.9620280819511
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "LONG",
+        "entry_p": 0.7527,
+        "exit_p": 0.7752810000000001,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 508.25633229424375
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 7.4265,
+        "exit_p": 7.4265,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 508.25633229424375
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.38225,
+        "exit_p": 0.37078249999999996,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 584.4947821383803
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.04247,
+        "exit_p": 0.04183295,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 540.6576734780018
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 5.655,
+        "exit_p": 5.655,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 540.6576734780018
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "LONG",
+        "entry_p": 0.35355,
+        "exit_p": 0.3641565,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 621.756324499702
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_p": 7.4985,
+        "exit_p": 7.4985,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 621.756324499702
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 124.505,
+        "exit_p": 128.24015,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 715.0197731746573
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 1.874,
+        "exit_p": 1.9021100000000002,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 661.393290186558
+      },
+      {
+        "symbol": "ETHUSDT",
+        "side": "LONG",
+        "entry_p": 2456.1,
+        "exit_p": 2419.2585,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 611.7887934225662
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "LONG",
+        "entry_p": 0.3567,
+        "exit_p": 0.3567,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 611.7887934225662
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1166,
+        "exit_p": 0.1166,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 611.7887934225662
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_p": 0.09915,
+        "exit_p": 0.09915,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 611.7887934225662
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.80495,
+        "exit_p": 0.7808015,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 703.5571124359511
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 4.7915,
+        "exit_p": 4.7915,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 703.5571124359511
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_p": 0.10005,
+        "exit_p": 0.0970485,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 809.0906793013438
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "LONG",
+        "entry_p": 100.37,
+        "exit_p": 103.3811,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 930.4542811965454
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 2.261,
+        "exit_p": 2.19317,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 1070.0224233760273
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.79835,
+        "exit_p": 0.79835,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1070.0224233760273
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.4048,
+        "exit_p": 0.410872,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 989.7707416228252
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 132.265,
+        "exit_p": 136.23295,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 1138.236352866249
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_p": 757.805,
+        "exit_p": 757.805,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1138.236352866249
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.4006,
+        "exit_p": 0.394591,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 1052.8686264012804
+      },
+      {
+        "symbol": "ALGOUSDT",
+        "side": "LONG",
+        "entry_p": 0.0983,
+        "exit_p": 0.0983,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1052.8686264012804
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 2.5135,
+        "exit_p": 2.5135,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1052.8686264012804
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_p": 0.72355,
+        "exit_p": 0.71269675,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 973.9034794211843
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 6.069,
+        "exit_p": 6.160035,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 900.8607184645955
+      },
+      {
+        "symbol": "ALGOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.09775,
+        "exit_p": 0.0948175,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 1035.989826234285
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 5.937,
+        "exit_p": 5.937,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1035.989826234285
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_p": 0.6045,
+        "exit_p": 0.586365,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 1191.3883001694276
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 2.5915,
+        "exit_p": 2.5137549999999997,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 1370.0965451948416
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "LONG",
+        "entry_p": 11.3565,
+        "exit_p": 11.1861525,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 1267.3393043052286
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "LONG",
+        "entry_p": 0.0949,
+        "exit_p": 0.097747,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 1457.4401999510128
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1699,
+        "exit_p": 0.16480299999999998,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 1676.0562299436647
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.8733,
+        "exit_p": 0.8733,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1676.0562299436647
+      },
+      {
+        "symbol": "ADAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.2288,
+        "exit_p": 0.2288,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1676.0562299436647
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 3.533,
+        "exit_p": 3.533,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1676.0562299436647
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1781,
+        "exit_p": 0.1781,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1676.0562299436647
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "LONG",
+        "entry_p": 0.125,
+        "exit_p": 0.125,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1676.0562299436647
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_p": 0.776,
+        "exit_p": 0.776,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1676.0562299436647
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "LONG",
+        "entry_p": 0.4248,
+        "exit_p": 0.418428,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 1550.35201269789
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 7.8245,
+        "exit_p": 7.707132499999999,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 1434.0756117455483
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_p": 0.1951,
+        "exit_p": 0.200953,
+        "roi": 15.0,
+        "outcome": "TP_HIT",
+        "bal_after": 1649.1869535073804
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_p": 0.13425,
+        "exit_p": 0.13425,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1649.1869535073804
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "SHORT",
+        "entry_p": 117.72,
+        "exit_p": 117.72,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1649.1869535073804
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.4423,
+        "exit_p": 0.43566550000000004,
+        "roi": -7.5,
+        "outcome": "SL_HIT",
+        "bal_after": 1525.4979319943268
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.4576,
+        "exit_p": 0.4576,
+        "roi": 0.0,
+        "outcome": "BE_SAVE",
+        "bal_after": 1525.4979319943268
+      }
+    ]
+  },
+  "stepped_trailing": {
+    "mode": "STEPPED_TRAILING",
+    "total_trades": 133,
+    "wins": 49,
+    "be_saves": 66,
+    "losses": 18,
+    "effective_wr": 86.46616541353383,
+    "pure_tp_wr": 36.84210526315789,
+    "final_bal": 2673.5632779045436,
+    "growth_pct": 2573.5632779045436,
+    "max_dd": 20.747037631938525,
+    "trades": [
+      {
+        "symbol": "ETHUSDT",
+        "side": "SHORT",
+        "entry_p": 1591.715,
+        "exit_p": 1588.5315699999999,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 101.0
+      },
+      {
+        "symbol": "ALGOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.08515,
+        "exit_p": 0.08642725,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 93.425
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 4.684,
+        "exit_p": 4.730840000000001,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 98.09625
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.36765,
+        "exit_p": 0.3669147,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 99.0772125
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 86.03,
+        "exit_p": 86.8903,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 104.031073125
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.3949,
+        "exit_p": 0.38897649999999995,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 96.228742640625
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 1.947,
+        "exit_p": 1.9664700000000002,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 101.04017977265624
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "SHORT",
+        "entry_p": 0.7576,
+        "exit_p": 0.7560848,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 102.0505815703828
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 2.004,
+        "exit_p": 2.008008,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 103.07108738608663
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 4.841,
+        "exit_p": 4.74418,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 113.3781961246953
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.3718,
+        "exit_p": 0.382954,
+        "roi": 15.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 130.3849255433996
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_p": 0.6335,
+        "exit_p": 0.6430024999999999,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 120.60605612764462
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.37805,
+        "exit_p": 0.3788061,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 121.81211668892107
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 2.0005,
+        "exit_p": 2.0045010000000003,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 123.03023785581027
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.049625,
+        "exit_p": 0.048880625000000004,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 113.8029700166245
+      },
+      {
+        "symbol": "BTCUSDT",
+        "side": "LONG",
+        "entry_p": 62798.99,
+        "exit_p": 63426.9799,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 119.49311851745573
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 2.0725,
+        "exit_p": 2.068355,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 120.68804970263028
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 4.8265,
+        "exit_p": 4.7782350000000005,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 126.72245218776179
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "LONG",
+        "entry_p": 80.365,
+        "exit_p": 79.159525,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 117.21826827367966
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.3935,
+        "exit_p": 0.38563000000000003,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 128.94009510104763
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.048465,
+        "exit_p": 0.04856193,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 130.2294960520581
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.3149,
+        "exit_p": 0.308602,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 143.2524456572639
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 6.702,
+        "exit_p": 6.715404,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 144.68497011383656
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_p": 0.1596,
+        "exit_p": 0.161196,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 151.91921861952838
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_p": 580.31,
+        "exit_p": 579.14938,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 153.43841080572366
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 100.555,
+        "exit_p": 98.54390000000001,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 168.78225188629602
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "LONG",
+        "entry_p": 0.0927,
+        "exit_p": 0.093627,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 177.22136448061082
+      },
+      {
+        "symbol": "ETHUSDT",
+        "side": "SHORT",
+        "entry_p": 1782.285,
+        "exit_p": 1778.72043,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 178.99357812541692
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.31,
+        "exit_p": 0.30938,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 180.7835139066711
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 4.7915,
+        "exit_p": 4.8633725,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 167.22475036367075
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 4.934,
+        "exit_p": 4.98334,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 175.5859878818543
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 98.13,
+        "exit_p": 97.93374,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 177.34184776067283
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.795,
+        "exit_p": 0.7934100000000001,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 179.11526623827956
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 5.0205,
+        "exit_p": 5.030541,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 180.90641890066235
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 6.4825,
+        "exit_p": 6.495465,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 182.71548308966896
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.6005,
+        "exit_p": 0.5914925000000001,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 169.0118218579438
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 5.0675,
+        "exit_p": 5.118175,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 177.46241295084099
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "SHORT",
+        "entry_p": 8.3245,
+        "exit_p": 8.449367500000001,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 164.1527319795279
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_p": 573.6,
+        "exit_p": 572.4528,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 165.7942592993232
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.5975,
+        "exit_p": 0.598695,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 167.45220189231642
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.602,
+        "exit_p": 0.603204,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 169.1267239112396
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_p": 0.1549,
+        "exit_p": 0.1552098,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 170.817991150352
+      },
+      {
+        "symbol": "BTCUSDT",
+        "side": "LONG",
+        "entry_p": 65357.765,
+        "exit_p": 64377.398525,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 158.00664181407558
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.603,
+        "exit_p": 0.604206,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 159.58670823221632
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "LONG",
+        "entry_p": 0.37935,
+        "exit_p": 0.37365975,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 147.6177051148001
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 5.3225,
+        "exit_p": 5.2692749999999995,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 154.9985903705401
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_p": 0.15735,
+        "exit_p": 0.1570353,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 156.54857627424548
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "LONG",
+        "entry_p": 8.5795,
+        "exit_p": 8.4508075,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 144.80743305367707
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 96.965,
+        "exit_p": 97.15893,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 146.25550738421384
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 6.4295,
+        "exit_p": 6.493795,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 153.56828275342454
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 99.515,
+        "exit_p": 98.51985,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 161.24669689109578
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "LONG",
+        "entry_p": 0.0869,
+        "exit_p": 0.0870738,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 162.85916386000673
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 100.46,
+        "exit_p": 98.45079999999999,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 179.1450802460074
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_p": 0.13545,
+        "exit_p": 0.1368045,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 188.1023342583078
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.32545,
+        "exit_p": 0.3221955,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 197.5074509712232
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.72105,
+        "exit_p": 0.7196079,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 199.48252548093544
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "SHORT",
+        "entry_p": 75.17,
+        "exit_p": 74.4183,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 209.4566517549822
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 1.655,
+        "exit_p": 1.67155,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 219.9294843427313
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 4.918,
+        "exit_p": 4.86882,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 230.92595855986787
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "SHORT",
+        "entry_p": 0.04373,
+        "exit_p": 0.0415435,
+        "roi": 25.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 288.65744819983485
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "SHORT",
+        "entry_p": 0.042045,
+        "exit_p": 0.042675674999999996,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 267.00813958484724
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.04183,
+        "exit_p": 0.0422483,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 280.3585465640896
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 89.755,
+        "exit_p": 89.93450999999999,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 283.16213202973046
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_p": 0.6734,
+        "exit_p": 0.6747468,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 285.99375335002776
+      },
+      {
+        "symbol": "ALGOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.08995,
+        "exit_p": 0.08815100000000001,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 314.59312868503054
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_p": 0.5995,
+        "exit_p": 0.5905075000000001,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 290.99864403365325
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.70355,
+        "exit_p": 0.7021429,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 293.9086304739898
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 1.6035,
+        "exit_p": 1.5794475,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 271.8654831884405
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "LONG",
+        "entry_p": 74.665,
+        "exit_p": 74.81433000000001,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 274.58413802032493
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.29175,
+        "exit_p": 0.2911665,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 277.3299794005282
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 1.6415,
+        "exit_p": 1.638217,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 280.10327919453346
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.30265,
+        "exit_p": 0.30325529999999995,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 282.9043119864788
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 6.263,
+        "exit_p": 6.32563,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 297.0495275858027
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 1.5995,
+        "exit_p": 1.6026989999999999,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 300.0200228616607
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.03932,
+        "exit_p": 0.03939864,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 303.02022309027734
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1229,
+        "exit_p": 0.12167099999999999,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 318.1712342447912
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1322,
+        "exit_p": 0.13087800000000002,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 334.0797959570308
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 1.782,
+        "exit_p": 1.9423800000000002,
+        "roi": 45.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 484.41570413769466
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_p": 0.6375,
+        "exit_p": 0.6362249999999999,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 489.2598611790716
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "LONG",
+        "entry_p": 0.7527,
+        "exit_p": 0.767754,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 538.1858472969787
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_p": 7.4265,
+        "exit_p": 7.441353,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 543.5677057699486
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.38225,
+        "exit_p": 0.3814855,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 549.0033828276481
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.04247,
+        "exit_p": 0.04183295,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 507.82812911557454
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 5.655,
+        "exit_p": 5.64369,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 512.9064104067303
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "LONG",
+        "entry_p": 0.35355,
+        "exit_p": 0.3542571,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 518.0354745107976
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_p": 7.4985,
+        "exit_p": 7.483503,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 523.2158292559055
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 124.505,
+        "exit_p": 128.24015,
+        "roi": 15.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 601.6982036442913
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 1.874,
+        "exit_p": 1.870252,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 607.7151856807342
+      },
+      {
+        "symbol": "ETHUSDT",
+        "side": "LONG",
+        "entry_p": 2456.1,
+        "exit_p": 2461.0122,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 613.7923375375415
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.3667,
+        "exit_p": 0.36596660000000003,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 619.9302609129169
+      },
+      {
+        "symbol": "SANDUSDT",
+        "side": "LONG",
+        "entry_p": 0.037905,
+        "exit_p": 0.037980810000000004,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 626.129563522046
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "LONG",
+        "entry_p": 0.3567,
+        "exit_p": 0.3574134,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 632.3908591572665
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1166,
+        "exit_p": 0.11636679999999999,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 638.7147677488392
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_p": 0.09915,
+        "exit_p": 0.0989517,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 645.1019154263277
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.3675,
+        "exit_p": 0.366765,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 651.5529345805909
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.80495,
+        "exit_p": 0.8033401,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 658.0684639263968
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 4.7915,
+        "exit_p": 4.801083,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 664.6491485656608
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_p": 0.10005,
+        "exit_p": 0.096048,
+        "roi": 20.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 797.5789782787929
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "LONG",
+        "entry_p": 100.37,
+        "exit_p": 102.37740000000001,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 877.3368761066722
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 2.261,
+        "exit_p": 2.21578,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 965.0705637173394
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.79835,
+        "exit_p": 0.7967533,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 974.7212693545127
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.4048,
+        "exit_p": 0.410872,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 901.6171741529242
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry_p": 132.265,
+        "exit_p": 134.91029999999998,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 991.7788915682166
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_p": 757.805,
+        "exit_p": 750.22695,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 1041.3678361466275
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.8679,
+        "exit_p": 0.8661642,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 1051.7815145080938
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.4006,
+        "exit_p": 0.394591,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 972.8979009199868
+      },
+      {
+        "symbol": "ALGOUSDT",
+        "side": "LONG",
+        "entry_p": 0.0983,
+        "exit_p": 0.0984966,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 982.6268799291867
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 2.5135,
+        "exit_p": 2.508473,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 992.4531487284785
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_p": 0.72355,
+        "exit_p": 0.7249971000000001,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 1002.3776802157632
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "LONG",
+        "entry_p": 11.4695,
+        "exit_p": 11.492439,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 1012.4014570179208
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "LONG",
+        "entry_p": 0.14065,
+        "exit_p": 0.1409313,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 1022.5254715881
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry_p": 6.069,
+        "exit_p": 6.056862,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 1032.750726303981
+      },
+      {
+        "symbol": "ALGOUSDT",
+        "side": "SHORT",
+        "entry_p": 0.09775,
+        "exit_p": 0.095795,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 1136.0257989343793
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 5.937,
+        "exit_p": 5.996370000000001,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 1192.8270888810982
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_p": 0.6045,
+        "exit_p": 0.59241,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 1312.109797769208
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_p": 2.5915,
+        "exit_p": 2.48784,
+        "roi": 20.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 1574.5317573230495
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "LONG",
+        "entry_p": 11.3565,
+        "exit_p": 11.379213,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 1590.27707489628
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "LONG",
+        "entry_p": 0.0949,
+        "exit_p": 0.096798,
+        "roi": 10.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 1749.304782385908
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1699,
+        "exit_p": 0.16480299999999998,
+        "roi": 15.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 2011.7004997437944
+      },
+      {
+        "symbol": "FILUSDT",
+        "side": "SHORT",
+        "entry_p": 0.8733,
+        "exit_p": 0.864567,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 2112.285524730984
+      },
+      {
+        "symbol": "ADAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.2288,
+        "exit_p": 0.2283424,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 2133.408379978294
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_p": 3.533,
+        "exit_p": 3.540066,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 2154.742463778077
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_p": 0.1781,
+        "exit_p": 0.176319,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 2262.4795869669806
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "LONG",
+        "entry_p": 0.125,
+        "exit_p": 0.12625,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 2375.6035663153298
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "SHORT",
+        "entry_p": 141.965,
+        "exit_p": 141.68107,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 2399.359601978483
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_p": 0.776,
+        "exit_p": 0.76824,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 2519.3275820774074
+      },
+      {
+        "symbol": "LDOUSDT",
+        "side": "LONG",
+        "entry_p": 0.4248,
+        "exit_p": 0.4256496,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 2544.5208578981815
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry_p": 7.8245,
+        "exit_p": 7.840148999999999,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 2569.966066477163
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_p": 0.1951,
+        "exit_p": 0.1954902,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 2595.665727141935
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "SHORT",
+        "entry_p": 1.02325,
+        "exit_p": 1.0130175,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 2725.4490134990315
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "SHORT",
+        "entry_p": 117.72,
+        "exit_p": 117.48456,
+        "roi": 1.0,
+        "outcome": "BE_FEE_SAVE",
+        "bal_after": 2752.7035036340217
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_p": 0.4423,
+        "exit_p": 0.43566550000000004,
+        "roi": -7.5,
+        "outcome": "INITIAL_SL",
+        "bal_after": 2546.25074086147
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "SHORT",
+        "entry_p": 0.4576,
+        "exit_p": 0.453024,
+        "roi": 5.0,
+        "outcome": "TRAILING_WIN",
+        "bal_after": 2673.5632779045436
+      }
+    ]
+  }
+}

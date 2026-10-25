@@ -1,0 +1,200 @@
+{
+  "day7_all": {
+    "Option A (Trend) - Method 1 - Fixed 1:2": {
+      "total": 96,
+      "wins": 20,
+      "saves": 40,
+      "loss": 36,
+      "green_pct": 62.5,
+      "net_r": 2.9883726321005017
+    },
+    "Option A (Trend) - Method 1 - Stepped Trailing": {
+      "total": 96,
+      "wins": 36,
+      "saves": 24,
+      "loss": 36,
+      "green_pct": 62.5,
+      "net_r": 6.641939500731088
+    },
+    "Option A (Trend) - Method 2 - Fixed 1:2": {
+      "total": 61,
+      "wins": 4,
+      "saves": 43,
+      "loss": 14,
+      "green_pct": 77.04918032786885,
+      "net_r": -5.8126351104127165
+    },
+    "Option A (Trend) - Method 2 - Stepped Trailing": {
+      "total": 61,
+      "wins": 25,
+      "saves": 22,
+      "loss": 14,
+      "green_pct": 77.04918032786885,
+      "net_r": 15.387364889587282
+    },
+    "Option B (Both)  - Method 1 - Fixed 1:2": {
+      "total": 761,
+      "wins": 123,
+      "saves": 295,
+      "loss": 343,
+      "green_pct": 54.92772667542707,
+      "net_r": -99.99752637837652
+    },
+    "Option B (Both)  - Method 1 - Stepped Trailing": {
+      "total": 761,
+      "wins": 217,
+      "saves": 201,
+      "loss": 343,
+      "green_pct": 54.92772667542707,
+      "net_r": -74.19195758151194
+    },
+    "Option B (Both)  - Method 2 - Fixed 1:2": {
+      "total": 585,
+      "wins": 30,
+      "saves": 406,
+      "loss": 149,
+      "green_pct": 74.52991452991454,
+      "net_r": -89.0
+    },
+    "Option B (Both)  - Method 2 - Stepped Trailing": {
+      "total": 585,
+      "wins": 215,
+      "saves": 221,
+      "loss": 149,
+      "green_pct": 74.52991452991454,
+      "net_r": 125.16512008510324
+    }
+  },
+  "day7_killzone": {
+    "Option A (Trend) - Method 1 - Fixed 1:2": {
+      "total": 40,
+      "wins": 7,
+      "saves": 16,
+      "loss": 17,
+      "green_pct": 57.49999999999999,
+      "net_r": -2.394686688155165
+    },
+    "Option A (Trend) - Method 1 - Stepped Trailing": {
+      "total": 40,
+      "wins": 15,
+      "saves": 8,
+      "loss": 17,
+      "green_pct": 57.49999999999999,
+      "net_r": -0.7946866881551651
+    },
+    "Option A (Trend) - Method 2 - Fixed 1:2": {
+      "total": 27,
+      "wins": 2,
+      "saves": 20,
+      "loss": 5,
+      "green_pct": 81.48148148148148,
+      "net_r": -0.8126351104127163
+    },
+    "Option A (Trend) - Method 2 - Stepped Trailing": {
+      "total": 27,
+      "wins": 12,
+      "saves": 10,
+      "loss": 5,
+      "green_pct": 81.48148148148148,
+      "net_r": 10.987364889587282
+    },
+    "Option B (Both)  - Method 1 - Fixed 1:2": {
+      "total": 353,
+      "wins": 45,
+      "saves": 163,
+      "loss": 145,
+      "green_pct": 58.92351274787535,
+      "net_r": -54.39468668815516
+    },
+    "Option B (Both)  - Method 1 - Stepped Trailing": {
+      "total": 353,
+      "wins": 104,
+      "saves": 104,
+      "loss": 145,
+      "green_pct": 58.92351274787535,
+      "net_r": -10.594686688155196
+    },
+    "Option B (Both)  - Method 2 - Fixed 1:2": {
+      "total": 276,
+      "wins": 12,
+      "saves": 200,
+      "loss": 64,
+      "green_pct": 76.81159420289855,
+      "net_r": -39.812635110412714
+    },
+    "Option B (Both)  - Method 2 - Stepped Trailing": {
+      "total": 276,
+      "wins": 103,
+      "saves": 109,
+      "loss": 64,
+      "green_pct": 76.81159420289855,
+      "net_r": 78.28736488958741
+    }
+  },
+  "wave7_killzone": {
+    "Option A (Trend) - Method 1 - Fixed 1:2": {
+      "total": 17,
+      "wins": 2,
+      "saves": 9,
+      "loss": 6,
+      "green_pct": 64.70588235294117,
+      "net_r": -1.3154378007678313
+    },
+    "Option A (Trend) - Method 1 - Stepped Trailing": {
+      "total": 17,
+      "wins": 4,
+      "saves": 7,
+      "loss": 6,
+      "green_pct": 64.70588235294117,
+      "net_r": -0.11543780076783156
+    },
+    "Option A (Trend) - Method 2 - Fixed 1:2": {
+      "total": 12,
+      "wins": 3,
+      "saves": 8,
+      "loss": 1,
+      "green_pct": 91.66666666666666,
+      "net_r": 4.269851147243161
+    },
+    "Option A (Trend) - Method 2 - Stepped Trailing": {
+      "total": 12,
+      "wins": 5,
+      "saves": 6,
+      "loss": 1,
+      "green_pct": 91.66666666666666,
+      "net_r": 8.26985114724316
+    },
+    "Option B (Both)  - Method 1 - Fixed 1:2": {
+      "total": 59,
+      "wins": 7,
+      "saves": 34,
+      "loss": 18,
+      "green_pct": 69.49152542372882,
+      "net_r": -3.315437800767832
+    },
+    "Option B (Both)  - Method 1 - Stepped Trailing": {
+      "total": 59,
+      "wins": 21,
+      "saves": 20,
+      "loss": 18,
+      "green_pct": 69.49152542372882,
+      "net_r": 6.484562199232166
+    },
+    "Option B (Both)  - Method 2 - Fixed 1:2": {
+      "total": 46,
+      "wins": 5,
+      "saves": 36,
+      "loss": 5,
+      "green_pct": 89.13043478260869,
+      "net_r": 4.269851147243161
+    },
+    "Option B (Both)  - Method 2 - Stepped Trailing": {
+      "total": 46,
+      "wins": 22,
+      "saves": 19,
+      "loss": 5,
+      "green_pct": 89.13043478260869,
+      "net_r": 30.36985114724315
+    }
+  }
+}

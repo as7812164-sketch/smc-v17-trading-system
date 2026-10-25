@@ -1,0 +1,38 @@
+{
+  "baseline": {
+    "total_trades": 8916,
+    "wins": 6731,
+    "losses": 2185,
+    "win_rate": 75.49,
+    "long_trades": 4527,
+    "long_losses": 1222,
+    "long_wr": 73.01
+  },
+  "mean_threshold_entry": {
+    "total_trades": 8916,
+    "wins": 7864,
+    "losses": 1052,
+    "win_rate": 88.2,
+    "long_trades": 4527,
+    "long_losses": 591,
+    "long_wr": 86.94
+  },
+  "structural_atr_sl": {
+    "total_trades": 8916,
+    "wins": 6488,
+    "losses": 2428,
+    "win_rate": 72.77,
+    "long_trades": 4527,
+    "long_losses": 1381,
+    "long_wr": 69.49
+  },
+  "combo_advanced": {
+    "total_trades": 8916,
+    "wins": 7691,
+    "losses": 1225,
+    "win_rate": 86.26,
+    "long_trades": 4527,
+    "long_losses": 695,
+    "long_wr": 84.65
+  }
+}

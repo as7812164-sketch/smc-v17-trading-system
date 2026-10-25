@@ -1,0 +1,14 @@
+{
+  "total_trades": 595,
+  "wins": 464,
+  "losses": 131,
+  "win_rate": 77.98319327731093,
+  "max_dd": 49.22023526615927,
+  "hit_1k_trade": 72,
+  "final_wealth": 7007247267.628521,
+  "profit_factor": 1.6039191793429772,
+  "avg_real_loss": -2.9814392837006536,
+  "worst_loss": -3.8000000000000123,
+  "parabolic_wr": 100.0,
+  "normal_short_wr": 73.04785894206549
+}

@@ -1,0 +1,58 @@
+[
+  {
+    "model": "HERMES 2.0 APEX (Production Standard)",
+    "total_trades": 524,
+    "wins": 416,
+    "losses": 108,
+    "win_rate": 79.39,
+    "profit_factor": 1.86,
+    "max_drawdown": 41.66,
+    "hit_1k": 58,
+    "hit_2k": 66,
+    "final_capital": 2460928762.88,
+    "final_vault": 1178434862.84,
+    "total_equity": 3639363625.72
+  },
+  {
+    "model": "HERMES 3.0-A (Dynamic Armor)",
+    "total_trades": 724,
+    "wins": 633,
+    "losses": 91,
+    "win_rate": 87.43,
+    "profit_factor": 2.19,
+    "max_drawdown": 49.51,
+    "hit_1k": 90,
+    "hit_2k": 99,
+    "final_capital": 7419297746.17,
+    "final_vault": 2824006890.5,
+    "total_equity": 10243304636.67
+  },
+  {
+    "model": "HERMES 3.0-B (FVG Quality >= 0.5%)",
+    "total_trades": 448,
+    "wins": 351,
+    "losses": 97,
+    "win_rate": 78.35,
+    "profit_factor": 1.39,
+    "max_drawdown": 45.88,
+    "hit_1k": 59,
+    "hit_2k": 67,
+    "final_capital": 38926662.63,
+    "final_vault": 44525850.52,
+    "total_equity": 83452513.15
+  },
+  {
+    "model": "HERMES 3.0-C (Full Quantum Suite)",
+    "total_trades": 630,
+    "wins": 552,
+    "losses": 78,
+    "win_rate": 87.62,
+    "profit_factor": 1.58,
+    "max_drawdown": 51.74,
+    "hit_1k": 62,
+    "hit_2k": 89,
+    "final_capital": 676613805.46,
+    "final_vault": 467466075.02,
+    "total_equity": 1144079880.48
+  }
+]

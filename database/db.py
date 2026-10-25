@@ -149,13 +149,13 @@ def init_db():
         for col_def in [
             ("paper_account", "vault_balance", "REAL DEFAULT 0.0"),
             ("paper_account", "milestone_target", "REAL DEFAULT 2000.0"),
-            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_3.0_MODEL_2A'"),
+            ("paper_account", "mode", "TEXT DEFAULT 'HERMES_3.5_RADAR_HARVEST'"),
             ("paper_account", "timeframe", "TEXT DEFAULT '4h'"),
             ("paper_account", "name", "TEXT DEFAULT 'Binance 4H Macro Compounding'"),
             ("paper_account", "exchange", "TEXT DEFAULT 'BINANCE'"),
             ("paper_account", "channel", "TEXT DEFAULT 'binance_4h'"),
             ("paper_account", "win_streak", "INTEGER DEFAULT 0"),
-            ("paper_trades", "mode", "TEXT DEFAULT 'HERMES_3.0_MODEL_2A'"),
+            ("paper_trades", "mode", "TEXT DEFAULT 'HERMES_3.5_RADAR_HARVEST'"),
             ("paper_trades", "timeframe", "TEXT DEFAULT '4h'"),
             ("paper_trades", "exchange", "TEXT DEFAULT 'BINANCE'"),
             ("paper_trades", "channel", "TEXT DEFAULT 'binance_4h'"),
@@ -211,7 +211,7 @@ def init_db():
                 conn.execute("""
                 INSERT INTO paper_account 
                 (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode)
-                VALUES (?, ?, ?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.0_MODEL_2A');
+                VALUES (?, ?, ?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_RADAR_HARVEST');
                 """, (s_id, s_tf, s_name, s_exch, s_ch))
             else:
                 curr_init = float(s_exists["initial_balance"] or 0.0)
@@ -228,7 +228,7 @@ def init_db():
                         initial_balance = ?,
                         current_balance = ?,
                         milestone_target = 2000.0,
-                        mode = 'HERMES_3.0_MODEL_2A'
+                        mode = 'HERMES_3.5_RADAR_HARVEST'
                     WHERE id = ?
                     """, (s_tf, s_name, s_exch, s_ch, new_init, new_bal, s_id))
                 else:
@@ -239,13 +239,13 @@ def init_db():
                         exchange = ?,
                         channel = ?,
                         milestone_target = 2000.0,
-                        mode = 'HERMES_3.0_MODEL_2A'
+                        mode = 'HERMES_3.5_RADAR_HARVEST'
                     WHERE id = ?
                     """, (s_tf, s_name, s_exch, s_ch, s_id))
 
         # Enforce universal HERMES_3.0_MODEL_2A settings across all 10 sections
-        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_MODEL_2A'")
-        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.0_MODEL_2A')")
+        conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_RADAR_HARVEST'")
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('strategy_version', 'HERMES_3.5_RADAR_HARVEST')")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes_entry_mode', '50% Mean Threshold (MT)')")
         conn.execute("DELETE FROM settings WHERE key = 'hermes35_entry_mode'")
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('hermes_margin_allocation_pct', '0.15')")
@@ -273,11 +273,11 @@ def init_db():
             "network_status": "STABLE",
             "coins_active_count": "50",
             "hermes_status": "ACTIVE_24_7",
-            "hermes_mode": "HERMES_3.0_MODEL_2A"
+            "hermes_mode": "HERMES_3.5_RADAR_HARVEST"
         }
         for k, v in default_metrics.items():
             conn.execute("INSERT OR IGNORE INTO system_metrics (key, value) VALUES (?, ?)", (k, v))
-        conn.execute("UPDATE system_metrics SET value = 'HERMES_3.0_MODEL_2A' WHERE key = 'hermes_mode'")
+        conn.execute("UPDATE system_metrics SET value = 'HERMES_3.5_RADAR_HARVEST' WHERE key = 'hermes_mode'")
         
         # Ensure default Telegram Chat ID is set to Akash's ID
         conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('telegram_chat_id', '752247227')")
@@ -447,7 +447,7 @@ def _sync_journal_to_paper_trades(conn):
                     tp_price, sl_price, hard_sl_price, status, entry_time, exit_time,
                     pnl_usdt, pnl_pct, timeframe, duration_str, roi_pct, mae_pct, mfe_pct,
                     highest_price, lowest_price, exchange, channel, account_id, mode
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'HERMES_3.0_MODEL_2A')
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'HERMES_3.5_RADAR_HARVEST')
                 """, (
                     sym, side, ep, exit_p, pos_size,
                     tp_p, sl_p, hard_sl_p, status, created_t, updated_t,
@@ -588,7 +588,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
             conn.execute("""
             INSERT OR IGNORE INTO paper_account 
             (id, timeframe, name, exchange, channel, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode)
-            VALUES (?, ?, ?, 'BITGET', ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.0_MODEL_2A')
+            VALUES (?, ?, ?, 'BITGET', ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_RADAR_HARVEST')
             """, (acc_id, tf_str, tf_name, ch_str))
             conn.commit()
             row = conn.execute("SELECT * FROM paper_account WHERE id = ?", (acc_id,)).fetchone()
@@ -612,7 +612,7 @@ def get_paper_account(timeframe: Optional[str] = None, account_id: Optional[int]
         acc["milestone_target"] = target
         acc["milestone_progress_pct"] = round(min(100.0, (total_equity / target) * 100.0), 2)
         acc["return_pct"] = round(((total_equity - init_b) / init_b * 100), 2)
-        acc["mode"] = acc.get("mode") or "HERMES_3.0_MODEL_2A"
+        acc["mode"] = acc.get("mode") or "HERMES_3.5_RADAR_HARVEST"
         acc["win_streak"] = int(row["win_streak"] if "win_streak" in row.keys() and row["win_streak"] is not None else (acc.get("win_count", 0) if acc.get("loss_count", 0) == 0 else 0))
         return acc
 
@@ -628,7 +628,7 @@ def ensure_10_sections(reset_balances: bool = False) -> None:
                 conn.execute("""
                 INSERT INTO paper_account 
                 (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode, channel, exchange)
-                VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.0_MODEL_2A', ?, 'BITGET')
+                VALUES (?, ?, ?, 50.0, 50.0, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_RADAR_HARVEST', ?, 'BITGET')
                 """, (i, tf, name, ch))
             elif reset_balances:
                 conn.execute("""
@@ -645,7 +645,7 @@ def ensure_10_sections(reset_balances: bool = False) -> None:
                     loss_count = 0,
                     win_streak = 0,
                     milestone_target = 2000.0,
-                    mode = 'HERMES_3.0_MODEL_2A'
+                    mode = 'HERMES_3.5_RADAR_HARVEST'
                 WHERE id = ?
                 """, (tf, name, ch, i))
         conn.commit()
@@ -823,7 +823,7 @@ def get_compounding_sections() -> Dict[str, Any]:
                 "open_trades_count": 1 if open_trade else 0,
                 "open_trade": open_trade,
                 "active_trade": open_trade,
-                "mode": acc.get("mode") or "HERMES_3.0_MODEL_2A"
+                "mode": acc.get("mode") or "HERMES_3.5_RADAR_HARVEST"
             }
             sections.append(sec_data)
 
@@ -872,7 +872,7 @@ def get_compounding_sections() -> Dict[str, Any]:
         "target_capital": ultimate_target,
         "progress_pct": round(min(100.0, (total_equity / ultimate_target) * 100.0), 2),
         "milestone_progress_pct": round(min(100.0, (total_equity / ultimate_target) * 100.0), 2),
-        "mode": "HERMES_3.0_MODEL_2A"
+        "mode": "HERMES_3.5_RADAR_HARVEST"
     }
 
     return {
@@ -1104,7 +1104,7 @@ def reset_compounding_sections(starting_balance: float = 50.0) -> Dict[str, Any]
             ch = f"sec_{i}"
             conn.execute("""
             INSERT INTO paper_account (id, timeframe, name, initial_balance, current_balance, vault_balance, total_pnl, win_count, loss_count, win_streak, milestone_target, mode, channel, exchange)
-            VALUES (?, ?, ?, ?, ?, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.0_MODEL_2A', ?, 'BITGET')
+            VALUES (?, ?, ?, ?, ?, 0.0, 0.0, 0, 0, 0, 2000.0, 'HERMES_3.5_RADAR_HARVEST', ?, 'BITGET')
             ON CONFLICT(id) DO UPDATE SET
                 timeframe = excluded.timeframe,
                 name = excluded.name,
@@ -1116,7 +1116,7 @@ def reset_compounding_sections(starting_balance: float = 50.0) -> Dict[str, Any]
                 loss_count = 0,
                 win_streak = 0,
                 milestone_target = 2000.0,
-                mode = 'HERMES_3.0_MODEL_2A',
+                mode = 'HERMES_3.5_RADAR_HARVEST',
                 channel = excluded.channel,
                 exchange = excluded.exchange
             """, (i, tf, name, starting_balance, starting_balance, ch))
@@ -1267,7 +1267,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             status, entry_time, mode,
             highest_price, lowest_price, mae_pct, mfe_pct, duration_str, roi_pct,
             be_lock_pct, trail_lock_pct, order_type, trailing_sl_price, locked_roi_pct, trailing_step
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.0_MODEL_2A', ?, ?, 0.0, 0.0, '', 0.0, 0.0150, 0.0180, ?, 0.0, 0.0, 0)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, 'HERMES_3.5_RADAR_HARVEST', ?, ?, 0.0, 0.0, '', 0.0, 0.0150, 0.0180, ?, 0.0, 0.0, 0)
         """, (
             zone.get("id"), zone["symbol"], side, entry_price,
             position_size, tp_price, sl_price, hard_sl_price, tf,
@@ -1287,7 +1287,7 @@ def open_paper_trade(zone: Dict[str, Any]) -> Dict[str, Any]:
             "channel": channel_name,
             "exchange": exchange_name,
             "account_id": allocated_acc_id,
-            "mode": "HERMES_3.0_MODEL_2A",
+            "mode": "HERMES_3.5_RADAR_HARVEST",
             "order_type": order_type,
             "entry_price": entry_price,
             "position_size_usdt": position_size,
@@ -1751,7 +1751,7 @@ def get_paper_trades_history(limit: int = 50, timeframe: Optional[str] = None, m
             params.append(mode)
         else:
             # Default to Hermes 3.5 history (Sections 1-10)
-            query = "SELECT * FROM paper_trades WHERE status != 'OPEN' AND (mode = 'HERMES_3.0_MODEL_2A' OR mode IS NULL OR mode = '') AND (account_id IS NULL OR account_id <= 10)"
+            query = "SELECT * FROM paper_trades WHERE status != 'OPEN' AND (mode = 'HERMES_3.5_RADAR_HARVEST' OR mode = 'HERMES_3.0_MODEL_2A' OR mode IS NULL OR mode = '') AND (account_id IS NULL OR account_id <= 10)"
 
         if timeframe:
             query += " AND LOWER(timeframe) = ?"
@@ -1813,7 +1813,7 @@ def get_open_paper_trades(timeframe: Optional[str] = None, mode: Optional[str] =
         params.append(mode)
     else:
         # Default: Hermes 3.5 positions (Sections 1-10)
-        query = "SELECT * FROM paper_trades WHERE status = 'OPEN' AND (mode = 'HERMES_3.0_MODEL_2A' OR mode IS NULL OR mode = '') AND (account_id IS NULL OR account_id <= 10)"
+        query = "SELECT * FROM paper_trades WHERE status = 'OPEN' AND (mode = 'HERMES_3.5_RADAR_HARVEST' OR mode = 'HERMES_3.0_MODEL_2A' OR mode IS NULL OR mode = '') AND (account_id IS NULL OR account_id <= 10)"
 
     if timeframe:
         query += " AND LOWER(timeframe) = ?"
@@ -1845,7 +1845,7 @@ def reset_paper_account(starting_balance: float = 50.0, timeframe: Optional[str]
                     win_count = 0,
                     loss_count = 0,
                     win_streak = 0,
-                    mode = 'HERMES_3.0_MODEL_2A'
+                    mode = 'HERMES_3.5_RADAR_HARVEST'
                 WHERE id = ?
                 """, (starting_balance, starting_balance, aid))
         else:
@@ -1863,7 +1863,7 @@ def reset_paper_account(starting_balance: float = 50.0, timeframe: Optional[str]
                 win_count = 0,
                 loss_count = 0,
                 win_streak = 0,
-                mode = 'HERMES_3.0_MODEL_2A'
+                mode = 'HERMES_3.5_RADAR_HARVEST'
             WHERE id BETWEEN 1 AND 10
             """, (starting_balance, starting_balance))
         conn.commit()

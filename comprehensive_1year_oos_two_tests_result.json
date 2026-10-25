@@ -1,0 +1,131 @@
+{
+  "timestamp": 1791366597.4731207,
+  "total_coins": 39,
+  "test1_deca": {
+    "starting_capital": 500.0,
+    "final_equity": 662.98,
+    "net_profit": 162.98,
+    "total_return_pct": 32.6,
+    "total_trades": 36,
+    "wins": 29,
+    "losses": 7,
+    "win_rate": 80.56,
+    "profit_factor": 2.66,
+    "avg_section_max_dd_pct": 3.96,
+    "sections": [
+      {
+        "sec_id": 1,
+        "tf": "4h",
+        "balance": 176.65,
+        "trades": 17,
+        "wins": 14,
+        "losses": 3,
+        "win_rate": 82.4,
+        "max_dd_pct": 19.0
+      },
+      {
+        "sec_id": 2,
+        "tf": "4h",
+        "balance": 50.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0,
+        "max_dd_pct": 0.0
+      },
+      {
+        "sec_id": 3,
+        "tf": "4h",
+        "balance": 50.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0,
+        "max_dd_pct": 0.0
+      },
+      {
+        "sec_id": 4,
+        "tf": "4h",
+        "balance": 50.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0,
+        "max_dd_pct": 0.0
+      },
+      {
+        "sec_id": 5,
+        "tf": "4h",
+        "balance": 50.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0,
+        "max_dd_pct": 0.0
+      },
+      {
+        "sec_id": 6,
+        "tf": "1h",
+        "balance": 86.34,
+        "trades": 19,
+        "wins": 15,
+        "losses": 4,
+        "win_rate": 78.9,
+        "max_dd_pct": 20.6
+      },
+      {
+        "sec_id": 7,
+        "tf": "1h",
+        "balance": 50.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0,
+        "max_dd_pct": 0.0
+      },
+      {
+        "sec_id": 8,
+        "tf": "1h",
+        "balance": 50.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0,
+        "max_dd_pct": 0.0
+      },
+      {
+        "sec_id": 9,
+        "tf": "1h",
+        "balance": 50.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0,
+        "max_dd_pct": 0.0
+      },
+      {
+        "sec_id": 10,
+        "tf": "1h",
+        "balance": 50.0,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0,
+        "max_dd_pct": 0.0
+      }
+    ]
+  },
+  "test2_fixed_fractional": {
+    "starting_capital": 1000.0,
+    "deploy_rate_pct": 5.0,
+    "final_equity": 1110.95,
+    "net_profit": 110.95,
+    "total_return_pct": 11.09,
+    "total_trades": 36,
+    "wins": 29,
+    "losses": 7,
+    "win_rate": 80.56,
+    "profit_factor": 2.79,
+    "portfolio_max_dd_pct": 0.95
+  }
+}

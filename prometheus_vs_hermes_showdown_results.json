@@ -1,0 +1,56 @@
+{
+  "dataset_candlesticks": 339512,
+  "assets_count": 22,
+  "hermes_baseline": {
+    "name": "HERMES 20X (User Master)",
+    "trades": 595,
+    "wins": 464,
+    "losses": 131,
+    "win_rate": 77.98319327731093,
+    "max_dd": 49.22023526615927,
+    "hit_1k": 72,
+    "final_wealth": 7007247267.628521,
+    "profit_factor": 1.6039191793429772,
+    "avg_win": 2.1672159568777016,
+    "avg_loss": 3.1414392837006524,
+    "expectancy": 0.9984195929856603
+  },
+  "prometheus_alpha": {
+    "name": "PROMETHEUS-QUANT AI (Alpha Mode)",
+    "trades": 555,
+    "wins": 443,
+    "losses": 112,
+    "win_rate": 79.81981981981981,
+    "max_dd": 42.64704331805832,
+    "hit_1k": 58,
+    "final_wealth": 23330158794.49272,
+    "profit_factor": 1.772042676869446,
+    "avg_win": 2.1688000714442137,
+    "avg_loss": 3.167092731493489,
+    "expectancy": 1.0920072895901185
+  },
+  "prometheus_ultra": {
+    "name": "PROMETHEUS-QUANT AI (Ultra Sniper)",
+    "trades": 504,
+    "wins": 406,
+    "losses": 98,
+    "win_rate": 80.55555555555556,
+    "max_dd": 42.56826049727036,
+    "hit_1k": 58,
+    "final_wealth": 8443942168.49526,
+    "profit_factor": 1.7732796915914653,
+    "avg_win": 2.1748963309446028,
+    "avg_loss": 3.21857127439381,
+    "expectancy": 1.126166518795467
+  },
+  "conquest_summary": {
+    "alpha_beats_hermes_win_rate": true,
+    "alpha_beats_hermes_max_dd": true,
+    "alpha_beats_hermes_milestone_speed": true,
+    "alpha_beats_hermes_wealth": true,
+    "ultra_beats_hermes_win_rate": true,
+    "ultra_beats_hermes_profit_factor": true,
+    "ultra_beats_hermes_max_dd": true,
+    "ultra_beats_hermes_milestone_speed": true
+  }
+}

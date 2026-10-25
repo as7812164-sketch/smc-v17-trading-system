@@ -47,6 +47,13 @@ TRAILING_TIER_1_LOCK_ROI = 1.00
 TRAILING_STEP_ROI = 5.00
 DEFAULT_LEVERAGE = 5.0
 
+# Gautam Kumar Jhaa Institutional Liquidity Mechanics
+TARGET_MODE = "OPPOSITE_DAILY_LIQUIDITY"  # Target PDH for Long (from PDL), PDL for Short (from PDH)
+MIN_RR_RATIO = 2.5                        # Minimum 1:2.5R potential towards opposite liquidity
+ENABLE_KILLZONE_PRIORITY = True           # Prioritize London (2:00 PM IST Trap) & NY Killzones
+PARTIAL_TP_LOCK_PCT = 0.90                # 90% profit lock at Opposite Liquidity, 10% moonbag runner
+TIME_PASS_EXHAUSTION_PCT = 0.85           # Invalidate mid-range setups if day's move already exhausted 85% of PDH-PDL range
+
 # Storage
 SHADOW_LEDGER_FILE = "bb20_shadow_ledger.json"
 

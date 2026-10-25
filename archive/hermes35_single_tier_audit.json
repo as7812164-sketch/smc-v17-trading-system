@@ -1,0 +1,137 @@
+{
+  "4h": {
+    "trades": [
+      {
+        "symbol": "ADAUSDT",
+        "side": "LONG",
+        "entry": 0.21035,
+        "tp": 0.215483,
+        "sl": 0.205302,
+        "entry_time": "10-Sep 01:30",
+        "exit_time": "10-Sep 05:30",
+        "outcome": "BREAKEVEN",
+        "disp": 8.3
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry": 0.14655,
+        "tp": 0.150126,
+        "sl": 0.143033,
+        "entry_time": "31-Aug 01:30",
+        "exit_time": "31-Aug 05:30",
+        "outcome": "WIN",
+        "disp": 10.7
+      }
+    ],
+    "wins": 1,
+    "losses": 0,
+    "breakeven": 1
+  },
+  "1h": {
+    "trades": [
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry": 0.8131,
+        "tp": 0.83294,
+        "sl": 0.793586,
+        "entry_time": "20-Sep 08:30",
+        "exit_time": "20-Sep 13:30",
+        "outcome": "BREAKEVEN",
+        "disp": 9.9
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry": 2.1795,
+        "tp": 2.23268,
+        "sl": 2.127192,
+        "entry_time": "06-Sep 02:30",
+        "exit_time": "06-Sep 06:30",
+        "outcome": "BREAKEVEN",
+        "disp": 5.3
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry": 2.394,
+        "tp": 2.452414,
+        "sl": 2.336544,
+        "entry_time": "15-Sep 14:30",
+        "exit_time": "15-Sep 19:30",
+        "outcome": "LOSS",
+        "disp": 9.2
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry": 0.09865,
+        "tp": 0.096243,
+        "sl": 0.101018,
+        "entry_time": "14-Sep 20:30",
+        "exit_time": "14-Sep 21:30",
+        "outcome": "LOSS",
+        "disp": 5.3
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "LONG",
+        "entry": 0.13105,
+        "tp": 0.134248,
+        "sl": 0.127905,
+        "entry_time": "04-Sep 18:30",
+        "exit_time": "04-Sep 19:30",
+        "outcome": "WIN",
+        "disp": 13.1
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "SHORT",
+        "entry": 6.188000000000001,
+        "tp": 6.037013,
+        "sl": 6.336512,
+        "entry_time": "14-Sep 09:30",
+        "exit_time": "14-Sep 16:30",
+        "outcome": "WIN",
+        "disp": 6.2
+      },
+      {
+        "symbol": "INJUSDT",
+        "side": "LONG",
+        "entry": 7.4245,
+        "tp": 7.605658,
+        "sl": 7.246312,
+        "entry_time": "20-Sep 08:30",
+        "exit_time": "20-Sep 09:30",
+        "outcome": "WIN",
+        "disp": 13.6
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry": 0.17715,
+        "tp": 0.181472,
+        "sl": 0.172898,
+        "entry_time": "20-Sep 22:30",
+        "exit_time": "20-Sep 23:30",
+        "outcome": "LOSS",
+        "disp": 4.9
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "side": "LONG",
+        "entry": 123.805,
+        "tp": 126.825842,
+        "sl": 120.83368,
+        "entry_time": "31-Aug 13:30",
+        "exit_time": "01-Sep 10:30",
+        "outcome": "WIN",
+        "disp": 5.5
+      }
+    ],
+    "wins": 4,
+    "losses": 3,
+    "breakeven": 2
+  }
+}

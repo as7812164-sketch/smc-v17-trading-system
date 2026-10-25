@@ -1,0 +1,1858 @@
+{
+  "september": {
+    "dynamic_10pct": {
+      "mode": "DYNAMIC_10PCT_EQUITY",
+      "start_capital": 500.0,
+      "final_equity": 608.37,
+      "net_pnl": 108.37,
+      "growth_pct": 21.674000000000003,
+      "max_dd_pct": 0.7507559098405725,
+      "total_trades_taken": 66,
+      "trade_results": [
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 500.5
+        },
+        {
+          "symbol": "ETHUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 501.0
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 501.5
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.15,
+          "pnl": 0.5,
+          "equity_after": 502.0
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.2,
+          "pnl": 0.5,
+          "equity_after": 502.5
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.25,
+          "pnl": 5.03,
+          "equity_after": 507.53
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.75,
+          "pnl": 0.51,
+          "equity_after": 508.04
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.8,
+          "pnl": 0.51,
+          "equity_after": 508.55
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.86,
+          "pnl": 0.51,
+          "equity_after": 509.06
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.86,
+          "pnl": 0.51,
+          "equity_after": 509.57
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.96,
+          "pnl": 2.55,
+          "equity_after": 512.12
+        },
+        {
+          "symbol": "SOLUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.96,
+          "pnl": 5.1,
+          "equity_after": 517.22
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 51.21,
+          "pnl": 2.56,
+          "equity_after": 519.78
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 51.21,
+          "pnl": 0.51,
+          "equity_after": 520.29
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 51.21,
+          "pnl": 5.12,
+          "equity_after": 525.41
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 52.54,
+          "pnl": 0.53,
+          "equity_after": 525.94
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 52.59,
+          "pnl": 5.26,
+          "equity_after": 531.2
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 53.12,
+          "pnl": 0.53,
+          "equity_after": 531.73
+        },
+        {
+          "symbol": "BNBUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 53.12,
+          "pnl": 2.66,
+          "equity_after": 534.39
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 53.12,
+          "pnl": 2.66,
+          "equity_after": 537.05
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 53.7,
+          "pnl": 0.54,
+          "equity_after": 537.59
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "LONG",
+          "roi": -7.5,
+          "margin": 53.76,
+          "pnl": -4.03,
+          "equity_after": 533.56
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 53.36,
+          "pnl": 0.53,
+          "equity_after": 534.09
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 53.41,
+          "pnl": 0.53,
+          "equity_after": 534.62
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 53.46,
+          "pnl": 0.53,
+          "equity_after": 535.15
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 53.52,
+          "pnl": 0.54,
+          "equity_after": 535.69
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 53.52,
+          "pnl": 0.54,
+          "equity_after": 536.23
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 53.62,
+          "pnl": 0.54,
+          "equity_after": 536.77
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 53.68,
+          "pnl": 0.54,
+          "equity_after": 537.31
+        },
+        {
+          "symbol": "LINKUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 53.52,
+          "pnl": 0.54,
+          "equity_after": 537.85
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 53.79,
+          "pnl": 0.54,
+          "equity_after": 538.39
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 53.84,
+          "pnl": 5.38,
+          "equity_after": 543.77
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 54.38,
+          "pnl": 2.72,
+          "equity_after": 546.49
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 54.65,
+          "pnl": -4.1,
+          "equity_after": 542.39
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 54.24,
+          "pnl": 0.54,
+          "equity_after": 542.93
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 54.65,
+          "pnl": 5.46,
+          "equity_after": 548.39
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 20.0,
+          "margin": 54.84,
+          "pnl": 10.97,
+          "equity_after": 559.36
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 55.94,
+          "pnl": 2.8,
+          "equity_after": 562.16
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "SHORT",
+          "roi": 15.0,
+          "margin": 56.22,
+          "pnl": 8.43,
+          "equity_after": 570.59
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 57.06,
+          "pnl": 5.71,
+          "equity_after": 576.3
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 57.63,
+          "pnl": 2.88,
+          "equity_after": 579.18
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 57.92,
+          "pnl": 2.9,
+          "equity_after": 582.08
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 58.21,
+          "pnl": -4.37,
+          "equity_after": 577.71
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 57.77,
+          "pnl": 0.58,
+          "equity_after": 578.29
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 57.83,
+          "pnl": 0.58,
+          "equity_after": 578.87
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 57.83,
+          "pnl": 0.58,
+          "equity_after": 579.45
+        },
+        {
+          "symbol": "LINKUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 57.95,
+          "pnl": 0.58,
+          "equity_after": 580.03
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 57.95,
+          "pnl": 2.9,
+          "equity_after": 582.93
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 57.95,
+          "pnl": 0.58,
+          "equity_after": 583.51
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 57.95,
+          "pnl": -4.35,
+          "equity_after": 579.16
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 57.92,
+          "pnl": 2.9,
+          "equity_after": 582.06
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 58.21,
+          "pnl": 0.58,
+          "equity_after": 582.64
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 58.26,
+          "pnl": 5.83,
+          "equity_after": 588.47
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 58.85,
+          "pnl": 2.94,
+          "equity_after": 591.41
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 59.14,
+          "pnl": 5.91,
+          "equity_after": 597.32
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 59.73,
+          "pnl": 0.6,
+          "equity_after": 597.92
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 59.79,
+          "pnl": 0.6,
+          "equity_after": 598.52
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 59.85,
+          "pnl": -4.49,
+          "equity_after": 594.03
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 59.4,
+          "pnl": 2.97,
+          "equity_after": 597.0
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 59.4,
+          "pnl": 2.97,
+          "equity_after": 599.97
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 59.4,
+          "pnl": 0.59,
+          "equity_after": 600.56
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 59.85,
+          "pnl": 2.99,
+          "equity_after": 603.55
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 59.85,
+          "pnl": 0.6,
+          "equity_after": 604.15
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 60.41,
+          "pnl": 0.6,
+          "equity_after": 604.75
+        },
+        {
+          "symbol": "SOLUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 60.41,
+          "pnl": 0.6,
+          "equity_after": 605.35
+        },
+        {
+          "symbol": "BNBUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 60.41,
+          "pnl": 3.02,
+          "equity_after": 608.37
+        }
+      ]
+    },
+    "fixed_50": {
+      "mode": "FIXED_50_MARGIN",
+      "start_capital": 500.0,
+      "final_equity": 598.75,
+      "net_pnl": 98.75,
+      "growth_pct": 19.75,
+      "max_dd_pct": 0.6989748369058714,
+      "total_trades_taken": 66,
+      "trade_results": [
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 500.5
+        },
+        {
+          "symbol": "ETHUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 501.0
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 501.5
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 502.0
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 502.5
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 507.5
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 508.0
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 508.5
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 509.0
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 509.5
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 512.0
+        },
+        {
+          "symbol": "SOLUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 517.0
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 519.5
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 520.0
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 525.0
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 525.5
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 530.5
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 531.0
+        },
+        {
+          "symbol": "BNBUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 533.5
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 536.0
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 536.5
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "LONG",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 532.75
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 533.25
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 533.75
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 534.25
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 534.75
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 535.25
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 535.75
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 536.25
+        },
+        {
+          "symbol": "LINKUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 536.75
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 537.25
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 542.25
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 544.75
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 541.0
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 541.5
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 546.5
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 20.0,
+          "margin": 50.0,
+          "pnl": 10.0,
+          "equity_after": 556.5
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 559.0
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "SHORT",
+          "roi": 15.0,
+          "margin": 50.0,
+          "pnl": 7.5,
+          "equity_after": 566.5
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 571.5
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 574.0
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 576.5
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 572.75
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 573.25
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 573.75
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 574.25
+        },
+        {
+          "symbol": "LINKUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 574.75
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 577.25
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 577.75
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 574.0
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 576.5
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 577.0
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 582.0
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 584.5
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 589.5
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 590.0
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 590.5
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 586.75
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 589.25
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 591.75
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 592.25
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 594.75
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 595.25
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 595.75
+        },
+        {
+          "symbol": "SOLUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 596.25
+        },
+        {
+          "symbol": "BNBUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 598.75
+        }
+      ]
+    }
+  },
+  "august": {
+    "dynamic_10pct": {
+      "mode": "DYNAMIC_10PCT_EQUITY",
+      "start_capital": 500.0,
+      "final_equity": 635.55,
+      "net_pnl": 135.54999999999995,
+      "growth_pct": 27.10999999999999,
+      "max_dd_pct": 1.943760779829843,
+      "total_trades_taken": 47,
+      "trade_results": [
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 500.5
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.05,
+          "pnl": 0.5,
+          "equity_after": 501.0
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.1,
+          "pnl": 2.51,
+          "equity_after": 503.51
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "SHORT",
+          "roi": 25.0,
+          "margin": 50.0,
+          "pnl": 12.5,
+          "equity_after": 516.01
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 51.6,
+          "pnl": -3.87,
+          "equity_after": 512.14
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 51.6,
+          "pnl": -3.87,
+          "equity_after": 508.27
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.83,
+          "pnl": 0.51,
+          "equity_after": 508.78
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.88,
+          "pnl": 0.51,
+          "equity_after": 509.29
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.93,
+          "pnl": 0.51,
+          "equity_after": 509.8
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.98,
+          "pnl": -3.82,
+          "equity_after": 505.98
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.98,
+          "pnl": 0.51,
+          "equity_after": 506.49
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.98,
+          "pnl": 0.51,
+          "equity_after": 507.0
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 50.7,
+          "pnl": 5.07,
+          "equity_after": 512.07
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "roi": 15.0,
+          "margin": 50.7,
+          "pnl": 7.61,
+          "equity_after": 519.68
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "roi": -7.5,
+          "margin": 51.97,
+          "pnl": -3.9,
+          "equity_after": 515.78
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "LONG",
+          "roi": -7.5,
+          "margin": 51.58,
+          "pnl": -3.87,
+          "equity_after": 511.91
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 51.19,
+          "pnl": 5.12,
+          "equity_after": 517.03
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 51.7,
+          "pnl": 2.59,
+          "equity_after": 519.62
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": -7.5,
+          "margin": 51.96,
+          "pnl": -3.9,
+          "equity_after": 515.72
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 51.96,
+          "pnl": 0.52,
+          "equity_after": 516.24
+        },
+        {
+          "symbol": "SOLUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 51.62,
+          "pnl": 0.52,
+          "equity_after": 516.76
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 51.68,
+          "pnl": -3.88,
+          "equity_after": 512.88
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 51.29,
+          "pnl": 0.51,
+          "equity_after": 513.39
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 51.68,
+          "pnl": 0.52,
+          "equity_after": 513.91
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 51.39,
+          "pnl": 2.57,
+          "equity_after": 516.48
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 51.39,
+          "pnl": 5.14,
+          "equity_after": 521.62
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 51.39,
+          "pnl": 0.51,
+          "equity_after": 522.13
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 52.21,
+          "pnl": 0.52,
+          "equity_after": 522.65
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 52.21,
+          "pnl": 2.61,
+          "equity_after": 525.26
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 52.53,
+          "pnl": 0.53,
+          "equity_after": 525.79
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 52.58,
+          "pnl": 0.53,
+          "equity_after": 526.32
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 52.63,
+          "pnl": 2.63,
+          "equity_after": 528.95
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 52.63,
+          "pnl": 2.63,
+          "equity_after": 531.58
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 53.16,
+          "pnl": -3.99,
+          "equity_after": 527.59
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 40.0,
+          "margin": 52.76,
+          "pnl": 21.1,
+          "equity_after": 548.69
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 55.0,
+          "margin": 52.76,
+          "pnl": 29.02,
+          "equity_after": 577.71
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 57.77,
+          "pnl": 5.78,
+          "equity_after": 583.49
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 58.35,
+          "pnl": 0.58,
+          "equity_after": 584.07
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 58.41,
+          "pnl": 0.58,
+          "equity_after": 584.65
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 58.47,
+          "pnl": 0.58,
+          "equity_after": 585.23
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 58.47,
+          "pnl": 0.58,
+          "equity_after": 585.81
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "LONG",
+          "roi": 15.0,
+          "margin": 58.58,
+          "pnl": 8.79,
+          "equity_after": 594.6
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 59.46,
+          "pnl": 0.59,
+          "equity_after": 595.19
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "LONG",
+          "roi": 15.0,
+          "margin": 59.52,
+          "pnl": 8.93,
+          "equity_after": 604.12
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 60.41,
+          "pnl": 0.6,
+          "equity_after": 604.72
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 50.0,
+          "margin": 60.47,
+          "pnl": 30.23,
+          "equity_after": 634.95
+        },
+        {
+          "symbol": "ETHUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 60.47,
+          "pnl": 0.6,
+          "equity_after": 635.55
+        }
+      ]
+    },
+    "fixed_50": {
+      "mode": "FIXED_50_MARGIN",
+      "start_capital": 500.0,
+      "final_equity": 623.5,
+      "net_pnl": 123.5,
+      "growth_pct": 24.7,
+      "max_dd_pct": 1.88953488372093,
+      "total_trades_taken": 47,
+      "trade_results": [
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 500.5
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 501.0
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 503.5
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "SHORT",
+          "roi": 25.0,
+          "margin": 50.0,
+          "pnl": 12.5,
+          "equity_after": 516.0
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 512.25
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 508.5
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 509.0
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 509.5
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 510.0
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 506.25
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 506.75
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 507.25
+        },
+        {
+          "symbol": "ALGOUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 512.25
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "roi": 15.0,
+          "margin": 50.0,
+          "pnl": 7.5,
+          "equity_after": 519.75
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 516.0
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "LONG",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 512.25
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 517.25
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 519.75
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 516.0
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 516.5
+        },
+        {
+          "symbol": "SOLUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 517.0
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 513.25
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 513.75
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 514.25
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 516.75
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "SHORT",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 521.75
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 522.25
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 522.75
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "side": "LONG",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 525.25
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 525.75
+        },
+        {
+          "symbol": "SANDUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 526.25
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 528.75
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "roi": 5.0,
+          "margin": 50.0,
+          "pnl": 2.5,
+          "equity_after": 531.25
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "side": "SHORT",
+          "roi": -7.5,
+          "margin": 50.0,
+          "pnl": -3.75,
+          "equity_after": 527.5
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 40.0,
+          "margin": 50.0,
+          "pnl": 20.0,
+          "equity_after": 547.5
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "roi": 55.0,
+          "margin": 50.0,
+          "pnl": 27.5,
+          "equity_after": 575.0
+        },
+        {
+          "symbol": "FILUSDT",
+          "side": "LONG",
+          "roi": 10.0,
+          "margin": 50.0,
+          "pnl": 5.0,
+          "equity_after": 580.0
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 580.5
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 581.0
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 581.5
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 582.0
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "LONG",
+          "roi": 15.0,
+          "margin": 50.0,
+          "pnl": 7.5,
+          "equity_after": 589.5
+        },
+        {
+          "symbol": "AVAXUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 590.0
+        },
+        {
+          "symbol": "AAVEUSDT",
+          "side": "LONG",
+          "roi": 15.0,
+          "margin": 50.0,
+          "pnl": 7.5,
+          "equity_after": 597.5
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 598.0
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "roi": 50.0,
+          "margin": 50.0,
+          "pnl": 25.0,
+          "equity_after": 623.0
+        },
+        {
+          "symbol": "ETHUSDT",
+          "side": "LONG",
+          "roi": 1.0,
+          "margin": 50.0,
+          "pnl": 0.5,
+          "equity_after": 623.5
+        }
+      ]
+    }
+  }
+}

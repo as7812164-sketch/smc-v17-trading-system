@@ -1,0 +1,176 @@
+{
+  "raw_crypto_4h_5x": {
+    "mode": "raw_crypto",
+    "interval": "4h",
+    "leverage": 5.0,
+    "coins_tested": 11,
+    "total_trades": 15,
+    "wins": 8,
+    "losses": 7,
+    "win_rate": 53.33,
+    "long_trades": 9,
+    "long_wr": 55.56,
+    "short_trades": 6,
+    "short_wr": 50.0,
+    "max_dd": 51.67,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth_usdt": 38.47,
+    "final_wealth_inr": 3231.26,
+    "vault_stash_usdt": 5.28,
+    "profit_factor": 0.75,
+    "mae_stats": {
+      "median_pct": 2.535,
+      "median_winners_pct": 0.916,
+      "median_losers_pct": 3.581
+    },
+    "mfe_stats": {
+      "median_pct": 2.908
+    }
+  },
+  "raw_crypto_1h_5x": {
+    "mode": "raw_crypto",
+    "interval": "1h",
+    "leverage": 5.0,
+    "coins_tested": 11,
+    "total_trades": 10,
+    "wins": 6,
+    "losses": 4,
+    "win_rate": 60.0,
+    "long_trades": 4,
+    "long_wr": 25.0,
+    "short_trades": 6,
+    "short_wr": 83.33,
+    "max_dd": 17.01,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth_usdt": 61.71,
+    "final_wealth_inr": 5184.02,
+    "vault_stash_usdt": 4.5,
+    "profit_factor": 1.64,
+    "mae_stats": {
+      "median_pct": 0.743,
+      "median_winners_pct": 0.498,
+      "median_losers_pct": 2.795
+    },
+    "mfe_stats": {
+      "median_pct": 1.934
+    }
+  },
+  "calibrated_4h_5x": {
+    "mode": "calibrated",
+    "interval": "4h",
+    "leverage": 5.0,
+    "coins_tested": 11,
+    "total_trades": 29,
+    "wins": 18,
+    "losses": 11,
+    "win_rate": 62.07,
+    "long_trades": 16,
+    "long_wr": 56.25,
+    "short_trades": 13,
+    "short_wr": 69.23,
+    "max_dd": 30.39,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth_usdt": 64.69,
+    "final_wealth_inr": 5433.92,
+    "vault_stash_usdt": 12.91,
+    "profit_factor": 1.21,
+    "mae_stats": {
+      "median_pct": 1.368,
+      "median_winners_pct": 0.711,
+      "median_losers_pct": 2.695
+    },
+    "mfe_stats": {
+      "median_pct": 2.128
+    }
+  },
+  "calibrated_1h_5x": {
+    "mode": "calibrated",
+    "interval": "1h",
+    "leverage": 5.0,
+    "coins_tested": 11,
+    "total_trades": 79,
+    "wins": 45,
+    "losses": 34,
+    "win_rate": 56.96,
+    "long_trades": 33,
+    "long_wr": 48.48,
+    "short_trades": 46,
+    "short_wr": 63.04,
+    "max_dd": 35.92,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth_usdt": 47.84,
+    "final_wealth_inr": 4018.17,
+    "vault_stash_usdt": 12.77,
+    "profit_factor": 0.98,
+    "mae_stats": {
+      "median_pct": 0.891,
+      "median_winners_pct": 0.498,
+      "median_losers_pct": 1.473
+    },
+    "mfe_stats": {
+      "median_pct": 0.962
+    }
+  },
+  "calibrated_4h_8x": {
+    "mode": "calibrated",
+    "interval": "4h",
+    "leverage": 8.0,
+    "coins_tested": 11,
+    "total_trades": 29,
+    "wins": 18,
+    "losses": 11,
+    "win_rate": 62.07,
+    "long_trades": 16,
+    "long_wr": 56.25,
+    "short_trades": 13,
+    "short_wr": 69.23,
+    "max_dd": 43.71,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth_usdt": 67.99,
+    "final_wealth_inr": 5711.31,
+    "vault_stash_usdt": 21.01,
+    "profit_factor": 1.15,
+    "mae_stats": {
+      "median_pct": 1.368,
+      "median_winners_pct": 0.711,
+      "median_losers_pct": 2.695
+    },
+    "mfe_stats": {
+      "median_pct": 2.128
+    }
+  },
+  "calibrated_1h_8x": {
+    "mode": "calibrated",
+    "interval": "1h",
+    "leverage": 8.0,
+    "coins_tested": 11,
+    "total_trades": 79,
+    "wins": 45,
+    "losses": 34,
+    "win_rate": 56.96,
+    "long_trades": 33,
+    "long_wr": 48.48,
+    "short_trades": 46,
+    "short_wr": 63.04,
+    "max_dd": 51.94,
+    "hit_2k_trade": null,
+    "hit_2k_days": null,
+    "final_wealth_usdt": 41.32,
+    "final_wealth_inr": 3471.08,
+    "vault_stash_usdt": 16.31,
+    "profit_factor": 0.93,
+    "mae_stats": {
+      "median_pct": 0.891,
+      "median_winners_pct": 0.498,
+      "median_losers_pct": 1.473
+    },
+    "mfe_stats": {
+      "median_pct": 0.962
+    }
+  }
+}

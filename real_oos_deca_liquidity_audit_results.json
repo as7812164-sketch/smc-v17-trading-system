@@ -1,0 +1,129 @@
+{
+  "audit_name": "HERMES REAL OOS ZERO-PHANTOM DECA COMPOUNDING LIQUIDITY AUDIT",
+  "period": "August 2026 (Full Month OOS)",
+  "starting_capital": 500.0,
+  "final_capital": 448.28,
+  "net_growth_pct": -10.34,
+  "total_trades": 168,
+  "missed_trades": 149,
+  "tp_wins": 19,
+  "runner_wins": 0,
+  "be_saves": 95,
+  "sl_losses": 54,
+  "pure_win_rate": 11.31,
+  "effective_win_rate": 67.86,
+  "avg_section_drawdown": 17.38,
+  "max_section_drawdown": 27.56,
+  "sections": {
+    "1": {
+      "id": 1,
+      "balance": 36.22,
+      "peak_balance": 50.0,
+      "max_dd_pct": 27.560000000000002,
+      "busy_until": 1787940900000,
+      "trades": 17,
+      "tp_wins": 0,
+      "be_saves": 10,
+      "sl_losses": 7
+    },
+    "2": {
+      "id": 2,
+      "balance": 37.19,
+      "peak_balance": 50.0,
+      "max_dd_pct": 25.620000000000005,
+      "busy_until": 1787953500000,
+      "trades": 17,
+      "tp_wins": 1,
+      "be_saves": 8,
+      "sl_losses": 8
+    },
+    "3": {
+      "id": 3,
+      "balance": 42.23,
+      "peak_balance": 50.0,
+      "max_dd_pct": 15.540000000000006,
+      "busy_until": 1788100200000,
+      "trades": 17,
+      "tp_wins": 2,
+      "be_saves": 9,
+      "sl_losses": 6
+    },
+    "4": {
+      "id": 4,
+      "balance": 45.11,
+      "peak_balance": 51.8,
+      "max_dd_pct": 12.915057915057911,
+      "busy_until": 1788102000000,
+      "trades": 17,
+      "tp_wins": 2,
+      "be_saves": 10,
+      "sl_losses": 5
+    },
+    "5": {
+      "id": 5,
+      "balance": 37.93,
+      "peak_balance": 50.0,
+      "max_dd_pct": 24.14,
+      "busy_until": 1788108300000,
+      "trades": 17,
+      "tp_wins": 0,
+      "be_saves": 11,
+      "sl_losses": 6
+    },
+    "6": {
+      "id": 6,
+      "balance": 46.81,
+      "peak_balance": 50.0,
+      "max_dd_pct": 8.799999999999997,
+      "busy_until": 1788110100000,
+      "trades": 17,
+      "tp_wins": 1,
+      "be_saves": 13,
+      "sl_losses": 3
+    },
+    "7": {
+      "id": 7,
+      "balance": 43.84,
+      "peak_balance": 52.7,
+      "max_dd_pct": 16.812144212523716,
+      "busy_until": 1788128100000,
+      "trades": 17,
+      "tp_wins": 2,
+      "be_saves": 9,
+      "sl_losses": 6
+    },
+    "8": {
+      "id": 8,
+      "balance": 62.36,
+      "peak_balance": 68.38,
+      "max_dd_pct": 8.803743784732372,
+      "busy_until": 1788212700000,
+      "trades": 17,
+      "tp_wins": 6,
+      "be_saves": 7,
+      "sl_losses": 4
+    },
+    "9": {
+      "id": 9,
+      "balance": 45.33,
+      "peak_balance": 54.5,
+      "max_dd_pct": 16.8256880733945,
+      "busy_until": 1787933700000,
+      "trades": 16,
+      "tp_wins": 2,
+      "be_saves": 9,
+      "sl_losses": 5
+    },
+    "10": {
+      "id": 10,
+      "balance": 51.26,
+      "peak_balance": 61.63,
+      "max_dd_pct": 16.826220996268056,
+      "busy_until": 1787940900000,
+      "trades": 16,
+      "tp_wins": 3,
+      "be_saves": 9,
+      "sl_losses": 4
+    }
+  }
+}

@@ -1,0 +1,10 @@
+Keep this file and signing.keystore in a safe place. You'll need these files if you want to upload future versions of your PWA to the Google Play Store.
+
+Key store file: signing.keystore
+Key store password: KWoMkJ52tspe
+Key alias: hermes
+Key password: KWoMkJ52tspe
+Signer's full name: Hermes Trader
+Signer's organization: Hermes AI
+Signer's organizational unit: Quant
+Signer's country code: IN

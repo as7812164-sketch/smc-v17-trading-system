@@ -32,6 +32,35 @@ if REPO_ROOT not in sys.path:
 
 import bb20_config as cfg
 
+# Institutional Session & Killzone Detection (Gautam Kumar Jhaa Masterclass)
+def get_session_killzone(ts_ms: Optional[int] = None) -> str:
+    """
+    Identifies the institutional session / killzone from timestamp:
+    - London Killzone: 07:00 - 11:00 UTC (12:30 PM - 04:30 PM IST, covers Gautam's 2:00 PM Trap)
+    - NY Killzone: 13:00 - 17:00 UTC (06:30 PM - 10:30 PM IST)
+    - Asian Session: 00:00 - 06:00 UTC
+    """
+    if ts_ms is None:
+        dt = datetime.now(timezone.utc)
+    elif isinstance(ts_ms, (int, float)):
+        sec = ts_ms / 1000.0 if ts_ms > 1e11 else float(ts_ms)
+        dt = datetime.fromtimestamp(sec, tz=timezone.utc)
+    elif isinstance(ts_ms, datetime):
+        dt = ts_ms if ts_ms.tzinfo else ts_ms.replace(tzinfo=timezone.utc)
+    else:
+        dt = datetime.now(timezone.utc)
+
+    m = dt.hour * 60 + dt.minute
+    if 7 * 60 <= m <= 11 * 60:
+        return "London Killzone"
+    elif 13 * 60 <= m <= 17 * 60:
+        return "NY Killzone"
+    elif 0 <= m <= 6 * 60:
+        return "Asian Session"
+    else:
+        return "Off-Hours"
+
+
 # ROI Stepped Trailing SL Calculation Functions (Continuous Ladder)
 def get_roi_trailing_tier(peak_roi_pct: float) -> int:
     """
@@ -330,6 +359,10 @@ class BB20LiveSniper:
             prev_day = daily_candles[-2]
             pdh = prev_day["high"]
             pdl = prev_day["low"]
+            curr_day = daily_candles[-1]
+            pd_range = max(0.0, pdh - pdl)
+            curr_day_range = max(0.0, curr_day["high"] - curr_day["low"])
+            is_exhausted = pd_range > 0 and (curr_day_range / pd_range) >= getattr(cfg, "TIME_PASS_EXHAUSTION_PCT", 0.85)
 
             # 2. Fetch 15m Candles
             candles_15m = fetch_binance_klines(symbol, interval="15m", limit=30)
@@ -390,8 +423,23 @@ class BB20LiveSniper:
                             # Check if invalidated by SL hit
                             sl_hit = any(b["low"] <= sl for b in subsequent_bars) or current_price <= sl
 
+                            # Time-Pass Exhaustion Check: If current day range >= 85% of PDH-PDL distance, skip mid-range entries
+                            is_mid_range = c_base["low"] > pdl or (pd_range > 0 and mt > pdl + 0.25 * pd_range)
+                            if is_exhausted and is_mid_range:
+                                continue
+
                             if risk > 0 and not sl_hit:
-                                self._arm_new_setup(symbol, sec_id, "LONG", mt, sl, risk, pdl, "PDL SUPPORT", candles_15m)
+                                # Target to Opposite Daily Liquidity (PDH) with minimum 2.5R
+                                opp_liq = pdh
+                                target_price = opp_liq
+                                target_rr = (target_price - mt) / risk if risk > 0 else 0.0
+                                min_rr = getattr(cfg, "MIN_RR_RATIO", 2.5)
+                                if target_rr < min_rr:
+                                    target_price = round(mt + (risk * min_rr), 4)
+                                    target_rr = min_rr
+                                kz = get_session_killzone(c_curr.get("time"))
+
+                                self._arm_new_setup(symbol, sec_id, "LONG", mt, sl, risk, pdl, "PDL SUPPORT", target_price, target_rr, kz, opp_liq, candles_15m)
                                 # Immediately check if current bar fills the limit order
                                 self._check_pending_setup_fill(symbol, candles_15m)
                                 break
@@ -416,8 +464,23 @@ class BB20LiveSniper:
                             # Check if invalidated by SL hit
                             sl_hit = any(b["high"] >= sl for b in subsequent_bars) or current_price >= sl
 
+                            # Time-Pass Exhaustion Check: If current day range >= 85% of PDH-PDL distance, skip mid-range entries
+                            is_mid_range = c_base["high"] < pdh or (pd_range > 0 and mt < pdh - 0.25 * pd_range)
+                            if is_exhausted and is_mid_range:
+                                continue
+
                             if risk > 0 and not sl_hit:
-                                self._arm_new_setup(symbol, sec_id, "SHORT", mt, sl, risk, pdh, "PDH RESISTANCE", candles_15m)
+                                # Target to Opposite Daily Liquidity (PDL) with minimum 2.5R
+                                opp_liq = pdl
+                                target_price = opp_liq
+                                target_rr = (mt - target_price) / risk if risk > 0 else 0.0
+                                min_rr = getattr(cfg, "MIN_RR_RATIO", 2.5)
+                                if target_rr < min_rr:
+                                    target_price = round(mt - (risk * min_rr), 4)
+                                    target_rr = min_rr
+                                kz = get_session_killzone(c_curr.get("time"))
+
+                                self._arm_new_setup(symbol, sec_id, "SHORT", mt, sl, risk, pdh, "PDH RESISTANCE", target_price, target_rr, kz, opp_liq, candles_15m)
                                 # Immediately check if current bar fills the limit order
                                 self._check_pending_setup_fill(symbol, candles_15m)
                                 break
@@ -425,7 +488,22 @@ class BB20LiveSniper:
         self.ledger.save()
         self._print_dashboard()
 
-    def _arm_new_setup(self, symbol: str, sec_id: str, side: str, mt: float, sl: float, risk: float, anchor_price: float, anchor_name: str, candles_15m: Optional[List[Dict]] = None):
+    def _arm_new_setup(
+        self,
+        symbol: str,
+        sec_id: str,
+        side: str,
+        mt: float,
+        sl: float,
+        risk: float,
+        anchor_price: float,
+        anchor_name: str,
+        target_price: float,
+        target_rr: float,
+        killzone: str,
+        opposite_liquidity: float,
+        candles_15m: Optional[List[Dict]] = None
+    ):
         sec = self.ledger.data["sections"][sec_id]
         risk_usd = round(sec["balance"] * cfg.SECTION_RISK_FRACTION, 2)
         margin_usd = round(sec["balance"], 2)
@@ -435,7 +513,7 @@ class BB20LiveSniper:
         trigger_t2_price = calculate_trailing_sl_price(mt, side, 9.80, 5.0)
         trigger_t3_price = calculate_trailing_sl_price(mt, side, 14.80, 5.0)
 
-        tp_price = round(mt + (risk * 3.0) if side == "LONG" else mt - (risk * 3.0), 4)
+        tp_price = round(target_price, 4)
 
         setup_data = {
             "symbol": symbol,
@@ -446,6 +524,12 @@ class BB20LiveSniper:
             "sl": round(sl, 4),
             "sl_price": round(sl, 4),
             "tp_price": tp_price,
+            "target_price": tp_price,
+            "target_rr": round(target_rr, 2),
+            "opposite_liquidity": round(opposite_liquidity, 4),
+            "killzone": killzone,
+            "liquidity_source": "-1 Day Liquidity (PDL/PDH Sweep)",
+            "partial_90_taken": False,
             "target_1r": round(mt + risk if side == "LONG" else mt - risk, 4),
             "risk": round(risk, 4),
             "risk_usd": risk_usd,
@@ -462,7 +546,7 @@ class BB20LiveSniper:
         }
 
         self.ledger.data["active_setups"][symbol] = setup_data
-        print(f"🔥 [NEW PENDING SETUP] {symbol} {side} @ 50% MT ${mt:.4f} (Section #{sec_id})")
+        print(f"🔥 [NEW PENDING SETUP] {symbol} {side} @ 50% MT ${mt:.4f} | Target: ${tp_price:.4f} ({target_rr:.1f}R - {killzone}) (Section #{sec_id})")
 
         # Pending setup saved to ledger & UI radar silently (no Telegram alert until filled as per 2-alert rule)
         _sync_to_cloud_terminals("SETUP", setup_data)
@@ -633,6 +717,66 @@ class BB20LiveSniper:
         if curr_mae_roi > pos.get("mae_pct", 0.0):
             pos["mae_pct"] = curr_mae_roi
 
+        # 2b. Opposite Daily Liquidity TP Check & 90% Partial Lock (Gautam Kumar Jhaa Masterclass)
+        opp_liq = float(pos.get("opposite_liquidity") or pos.get("tp_price") or 0.0)
+        partial_taken = pos.get("partial_90_taken", False)
+
+        hit_opp_liq = False
+        if opp_liq > 0 and not partial_taken:
+            if side == "LONG" and high_price >= opp_liq:
+                hit_opp_liq = True
+            elif side == "SHORT" and low_price <= opp_liq:
+                hit_opp_liq = True
+
+        if hit_opp_liq:
+            # Realize 90% of the profit into the section balance
+            spot_diff = (opp_liq - entry) / entry if side == "LONG" else (entry - opp_liq) / entry
+            realized_roi = (spot_diff * leverage * 100.0) - (cfg.FRICTION_R * 5.0)
+            full_dollar_pnl = round((realized_roi / 100.0) * margin, 2)
+            partial_pnl = max(0.01, round(full_dollar_pnl * cfg.PARTIAL_TP_LOCK_PCT, 2))
+
+            sec["balance"] = round(sec["balance"] + partial_pnl, 2)
+            sec["pnl_usd"] = round(sec["pnl_usd"] + partial_pnl, 2)
+            pos["realized_partial_pnl"] = partial_pnl
+            pos["partial_90_taken"] = True
+
+            # Move active_sl to lock +2.0R guaranteed on the 10% moonbag
+            risk = pos.get("risk", abs(entry - active_sl))
+            if side == "LONG":
+                new_sl = round(entry + (2.0 * risk), 4)
+                if new_sl > pos["active_sl"]:
+                    pos["active_sl"] = new_sl
+            else:
+                new_sl = round(entry - (2.0 * risk), 4)
+                if new_sl < pos["active_sl"]:
+                    pos["active_sl"] = new_sl
+
+            self.ledger.save()
+
+            # Send alert: "🎯 OPPOSITE DAILY LIQUIDITY HIT • 90% PROFIT LOCKED (#Operator 400 Pips Done)"
+            alert_msg = (
+                f"🎯 <b>OPPOSITE DAILY LIQUIDITY HIT • 90% PROFIT LOCKED</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🪙 <b>#{symbol}</b> ({side})\n"
+                f"👑 <i>#Operator 400 Pips Done</i>\n\n"
+                f"🎯 <b>Opposite Daily Liquidity</b>: <code>${opp_liq:.4f}</code>\n"
+                f"💰 <b>90% Profit Secured</b>: <b>+${partial_pnl:.2f} USDT</b>\n"
+                f"🛡️ <b>Moonbag Armor</b>: SL moved to lock <b>+2.0R</b> (<code>${pos['active_sl']:.4f}</code>)\n"
+                f"🚀 <b>Remaining 10%</b> running risk-free towards infinity!\n"
+                f"💼 <b>Section #{sec_id} Bal</b>: <b>${sec['balance']:.2f} USDT</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━"
+            )
+            send_telegram_alert(alert_msg, symbol=symbol, setup_or_pos=pos, candles=candles)
+            _sync_to_nexuspro_render("PARTIAL_TP", {
+                "symbol": symbol,
+                "side": side,
+                "tp_price": opp_liq,
+                "partial_pnl": partial_pnl,
+                "new_sl": pos["active_sl"],
+                "section_id": sec_id
+            })
+            print(f"🎯 [OPPOSITE DAILY LIQUIDITY HIT] {symbol} {side} @ ${opp_liq:.4f} | 90% Profit (+${partial_pnl:.2f}) Locked! Moonbag SL: ${pos['active_sl']:.4f}")
+
         # 3. Continuous Stepped Trailing SL Check
         tier_candidate = get_roi_trailing_tier(curr_peak_roi)
         if tier_candidate > current_tier:
@@ -671,7 +815,15 @@ class BB20LiveSniper:
         if exit_price <= 0:
             exit_price = entry
 
-        if tier == 0:
+        if pos.get("partial_90_taken"):
+            # 90% was already locked into section balance at Opposite Liquidity
+            spot_diff = (exit_price - entry) / entry if side == "LONG" else (entry - exit_price) / entry
+            realized_roi = (spot_diff * leverage * 100.0) - (cfg.FRICTION_R * 5.0)
+            moonbag_fraction = 1.0 - cfg.PARTIAL_TP_LOCK_PCT  # 0.10
+            dollar_pnl = round(((realized_roi / 100.0) * margin) * moonbag_fraction, 2)
+            outcome = f"WIN (+{pos.get('target_rr', 2.5):.1f}R 90% LQD + 10% MOONBAG TRAIL)"
+            sec["wins"] += 1
+        elif tier == 0:
             spot_diff = (exit_price - entry) / entry if side == "LONG" else (entry - exit_price) / entry
             realized_roi = (spot_diff * leverage * 100.0) - (cfg.FRICTION_R * 5.0)
             realized_roi = max(-100.0, realized_roi)

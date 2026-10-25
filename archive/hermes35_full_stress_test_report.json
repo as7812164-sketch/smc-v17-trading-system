@@ -1,0 +1,12 @@
+{
+  "total_trades": 2169,
+  "win_rate": 65.01,
+  "net_roe": -197.0,
+  "net_roe_after_friction": -2366.0,
+  "profit_factor": 0.98,
+  "monte_carlo_median_dd": 63.34,
+  "monte_carlo_p95_dd": 75.36,
+  "risk_of_ruin": 0.0,
+  "compounding_final_equity": 29.17,
+  "milestones_hit": {}
+}

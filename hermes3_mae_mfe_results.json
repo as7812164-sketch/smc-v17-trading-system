@@ -1,0 +1,17 @@
+{
+  "total_trades": 5129,
+  "wins": 4567,
+  "losses": 562,
+  "avg_mae_all": 0.94,
+  "avg_mae_wins": 0.66,
+  "avg_mae_losses": 3.21,
+  "avg_mfe_all": 3.07,
+  "avg_mfe_wins": 3.3,
+  "avg_mfe_losses": 1.19,
+  "avg_tp_asset_pct": 1.84,
+  "avg_tp_roe_5x": 9.22,
+  "avg_loss_asset_pct": -2.56,
+  "avg_loss_roe_5x": -12.81,
+  "profit_factor": 5.85,
+  "avg_hold_hours": 5.5
+}

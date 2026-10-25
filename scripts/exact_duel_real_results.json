@@ -1,0 +1,334 @@
+{
+  "model_1_deca": {
+    "model_name": "Model 1: 10-Section 100% Compounding (Deca Matrix)",
+    "starting_capital": 500.0,
+    "final_capital": 115242.89,
+    "total_trades": 619,
+    "wins": 542,
+    "losses": 77,
+    "win_rate_pct": 87.56,
+    "tp_hits": 134,
+    "trailing_sl_hits": 408,
+    "soft_sl_hits": 39,
+    "hard_sl_hits": 38,
+    "timeout_hits": 0,
+    "highest_trailing_roi": 10.0,
+    "avg_trailing_roi": 2.6,
+    "max_drawdown_pct": 26.22,
+    "days_to_1cr": 80.1,
+    "months_to_1cr": 2.6,
+    "years_to_1cr": 0.22,
+    "milestones": [
+      {
+        "milestone": 1000.0,
+        "portfolio": 1000.63,
+        "trades": 295,
+        "days": 47.3,
+        "months": 1.6,
+        "years": 0.13
+      },
+      {
+        "milestone": 2000.0,
+        "portfolio": 2173.78,
+        "trades": 359,
+        "days": 50.8,
+        "months": 1.7,
+        "years": 0.14
+      },
+      {
+        "milestone": 5000.0,
+        "portfolio": 5517.52,
+        "trades": 433,
+        "days": 54.9,
+        "months": 1.8,
+        "years": 0.15
+      },
+      {
+        "milestone": 10000.0,
+        "portfolio": 10043.74,
+        "trades": 471,
+        "days": 59.2,
+        "months": 1.9,
+        "years": 0.16
+      },
+      {
+        "milestone": 25000.0,
+        "portfolio": 25505.47,
+        "trades": 495,
+        "days": 62.3,
+        "months": 2.0,
+        "years": 0.17
+      },
+      {
+        "milestone": 50000.0,
+        "portfolio": 56343.96,
+        "trades": 533,
+        "days": 69.4,
+        "months": 2.3,
+        "years": 0.19
+      },
+      {
+        "milestone": 100000.0,
+        "portfolio": 108470.68,
+        "trades": 610,
+        "days": 79.6,
+        "months": 2.6,
+        "years": 0.22
+      },
+      {
+        "milestone": 115000.0,
+        "portfolio": 115242.89,
+        "trades": 619,
+        "days": 80.1,
+        "months": 2.6,
+        "years": 0.22
+      }
+    ],
+    "sections_breakdown": [
+      {
+        "id": 1,
+        "balance": 112687.65,
+        "trades": 218,
+        "wins": 193
+      },
+      {
+        "id": 2,
+        "balance": 1531.8,
+        "trades": 148,
+        "wins": 128
+      },
+      {
+        "id": 3,
+        "balance": 492.26,
+        "trades": 92,
+        "wins": 82
+      },
+      {
+        "id": 4,
+        "balance": 146.2,
+        "trades": 60,
+        "wins": 53
+      },
+      {
+        "id": 5,
+        "balance": 61.99,
+        "trades": 34,
+        "wins": 28
+      },
+      {
+        "id": 6,
+        "balance": 78.55,
+        "trades": 25,
+        "wins": 22
+      },
+      {
+        "id": 7,
+        "balance": 73.85,
+        "trades": 17,
+        "wins": 15
+      },
+      {
+        "id": 8,
+        "balance": 63.86,
+        "trades": 14,
+        "wins": 12
+      },
+      {
+        "id": 9,
+        "balance": 60.59,
+        "trades": 8,
+        "wins": 7
+      },
+      {
+        "id": 10,
+        "balance": 46.14,
+        "trades": 3,
+        "wins": 2
+      }
+    ]
+  },
+  "model_2_step_double_5slots": {
+    "model_name": "Model 2: Step-Double 10% (Max 5 Concurrent Signals)",
+    "starting_capital": 500.0,
+    "final_capital": 115123.63,
+    "total_trades": 3444,
+    "wins": 2914,
+    "losses": 530,
+    "win_rate_pct": 84.61,
+    "tp_hits": 651,
+    "trailing_sl_hits": 2263,
+    "soft_sl_hits": 310,
+    "hard_sl_hits": 220,
+    "timeout_hits": 0,
+    "highest_trailing_roi": 10.0,
+    "avg_trailing_roi": 2.71,
+    "max_drawdown_pct": 14.98,
+    "days_to_1cr": 531.4,
+    "months_to_1cr": 17.5,
+    "years_to_1cr": 1.45,
+    "milestones": [
+      {
+        "from_cap": 500.0,
+        "to_cap": 1000.0,
+        "capital_reached": 1004.59,
+        "trades": 380,
+        "days": 55.1,
+        "months": 1.8,
+        "years": 0.15,
+        "margin_used": 50.0
+      },
+      {
+        "from_cap": 1000.0,
+        "to_cap": 2000.0,
+        "capital_reached": 2001.38,
+        "trades": 657,
+        "days": 91.1,
+        "months": 3.0,
+        "years": 0.25,
+        "margin_used": 100.0
+      },
+      {
+        "from_cap": 2000.0,
+        "to_cap": 4000.0,
+        "capital_reached": 4007.8,
+        "trades": 1000,
+        "days": 137.5,
+        "months": 4.5,
+        "years": 0.38,
+        "margin_used": 200.0
+      },
+      {
+        "from_cap": 4000.0,
+        "to_cap": 8000.0,
+        "capital_reached": 8015.95,
+        "trades": 1267,
+        "days": 165.8,
+        "months": 5.5,
+        "years": 0.45,
+        "margin_used": 400.0
+      },
+      {
+        "from_cap": 8000.0,
+        "to_cap": 16000.0,
+        "capital_reached": 16028.91,
+        "trades": 1939,
+        "days": 266.2,
+        "months": 8.8,
+        "years": 0.73,
+        "margin_used": 800.0
+      },
+      {
+        "from_cap": 16000.0,
+        "to_cap": 32000.0,
+        "capital_reached": 32131.95,
+        "trades": 2695,
+        "days": 406.2,
+        "months": 13.4,
+        "years": 1.11,
+        "margin_used": 1600.0
+      },
+      {
+        "from_cap": 32000.0,
+        "to_cap": 64000.0,
+        "capital_reached": 64153.39,
+        "trades": 3088,
+        "days": 471.6,
+        "months": 15.5,
+        "years": 1.29,
+        "margin_used": 3200.0
+      }
+    ]
+  },
+  "model_2_step_double_10slots": {
+    "model_name": "Model 2: Step-Double 10% (Max 10 Concurrent Signals)",
+    "starting_capital": 500.0,
+    "final_capital": 115223.64,
+    "total_trades": 3298,
+    "wins": 2804,
+    "losses": 494,
+    "win_rate_pct": 85.02,
+    "tp_hits": 632,
+    "trailing_sl_hits": 2172,
+    "soft_sl_hits": 287,
+    "hard_sl_hits": 207,
+    "timeout_hits": 0,
+    "highest_trailing_roi": 10.0,
+    "avg_trailing_roi": 2.73,
+    "max_drawdown_pct": 14.25,
+    "days_to_1cr": 411.2,
+    "months_to_1cr": 13.5,
+    "years_to_1cr": 1.13,
+    "milestones": [
+      {
+        "from_cap": 500.0,
+        "to_cap": 1000.0,
+        "capital_reached": 1000.63,
+        "trades": 410,
+        "days": 54.2,
+        "months": 1.8,
+        "years": 0.15,
+        "margin_used": 50.0
+      },
+      {
+        "from_cap": 1000.0,
+        "to_cap": 2000.0,
+        "capital_reached": 2011.79,
+        "trades": 670,
+        "days": 83.9,
+        "months": 2.8,
+        "years": 0.23,
+        "margin_used": 100.0
+      },
+      {
+        "from_cap": 2000.0,
+        "to_cap": 4000.0,
+        "capital_reached": 4022.32,
+        "trades": 926,
+        "days": 115.4,
+        "months": 3.8,
+        "years": 0.32,
+        "margin_used": 200.0
+      },
+      {
+        "from_cap": 4000.0,
+        "to_cap": 8000.0,
+        "capital_reached": 8003.64,
+        "trades": 1286,
+        "days": 147.6,
+        "months": 4.9,
+        "years": 0.4,
+        "margin_used": 400.0
+      },
+      {
+        "from_cap": 8000.0,
+        "to_cap": 16000.0,
+        "capital_reached": 16001.24,
+        "trades": 1523,
+        "days": 166.5,
+        "months": 5.5,
+        "years": 0.46,
+        "margin_used": 800.0
+      },
+      {
+        "from_cap": 16000.0,
+        "to_cap": 32000.0,
+        "capital_reached": 32085.08,
+        "trades": 2218,
+        "days": 248.6,
+        "months": 8.2,
+        "years": 0.68,
+        "margin_used": 1600.0
+      },
+      {
+        "from_cap": 32000.0,
+        "to_cap": 64000.0,
+        "capital_reached": 64170.2,
+        "trades": 3126,
+        "days": 389.0,
+        "months": 12.8,
+        "years": 1.06,
+        "margin_used": 3200.0
+      }
+    ]
+  }
+}

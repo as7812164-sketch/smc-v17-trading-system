@@ -1,0 +1,114 @@
+{
+  "1y_results": {
+    "hermes": {
+      "name": "HERMES 2.0 APEX (1Y)",
+      "total_signals": 2039,
+      "executed_trades": 524,
+      "wins": 416,
+      "losses": 108,
+      "win_rate": 79.38931297709924,
+      "profit_factor": 1.863048795457105,
+      "max_drawdown_pct": 41.659628385939044,
+      "start_capital": 50.0,
+      "final_active_cap": 2460928762.8801384,
+      "final_vault": 1178434862.8359892,
+      "final_total_wealth": 3639363625.7161274,
+      "hit_1k": {
+        "trade_num": 58,
+        "date": "2025-10-31 11:00",
+        "total": 1020.8289006520847
+      },
+      "hit_2k": {
+        "trade_num": 66,
+        "date": "2025-11-10 08:00",
+        "total": 2153.4047459662515
+      }
+    },
+    "smc_airspace_native": {
+      "name": "SMC V17 3% Airspace Native (1Y)",
+      "total_signals": 5013,
+      "executed_trades": 652,
+      "wins": 372,
+      "losses": 280,
+      "win_rate": 57.05521472392638,
+      "profit_factor": 1.1836023201381427,
+      "max_drawdown_pct": 61.1959113713427,
+      "start_capital": 50.0,
+      "final_active_cap": 67.96146447473976,
+      "final_vault": 526.0473971238163,
+      "final_total_wealth": 594.008861598556,
+      "hit_1k": null,
+      "hit_2k": null
+    },
+    "smc_airspace_calibrated": {
+      "name": "SMC V17 3% Airspace Calibrated (1Y)",
+      "total_signals": 5013,
+      "executed_trades": 919,
+      "wins": 592,
+      "losses": 327,
+      "win_rate": 64.41784548422198,
+      "profit_factor": 1.1863253417309167,
+      "max_drawdown_pct": 57.414004699098385,
+      "start_capital": 50.0,
+      "final_active_cap": 142.63629079093735,
+      "final_vault": 1967.9385488445482,
+      "final_total_wealth": 2110.5748396354857,
+      "hit_1k": {
+        "trade_num": 586,
+        "date": "2026-06-02 13:00",
+        "total": 1013.3339805272545
+      },
+      "hit_2k": {
+        "trade_num": 720,
+        "date": "2026-07-11 16:00",
+        "total": 2001.019654576042
+      }
+    }
+  },
+  "2y_results": {
+    "hermes": {
+      "name": "HERMES 2.0 APEX (2Y)",
+      "total_signals": 4639,
+      "executed_trades": 1326,
+      "wins": 1055,
+      "losses": 271,
+      "win_rate": 79.56259426847662,
+      "profit_factor": 1.9259158547517414,
+      "max_drawdown_pct": 44.53351852708703,
+      "start_capital": 50.0,
+      "final_active_cap": 5.254733189376533e+21,
+      "final_vault": 2.3829799611692514e+21,
+      "final_total_wealth": 7.637713150545784e+21,
+      "hit_1k": {
+        "trade_num": 60,
+        "date": "2024-11-01 23:00",
+        "total": 1065.7970380283946
+      },
+      "hit_2k": {
+        "trade_num": 78,
+        "date": "2024-11-11 16:00",
+        "total": 2033.458022581675
+      }
+    },
+    "smc_airspace_native": {
+      "name": "SMC V17 3% Airspace Native (2Y)",
+      "total_signals": 13329,
+      "executed_trades": 1608,
+      "wins": 859,
+      "losses": 749,
+      "win_rate": 53.420398009950254,
+      "profit_factor": 1.1624663869990202,
+      "max_drawdown_pct": 47.580928380157246,
+      "start_capital": 50.0,
+      "final_active_cap": 0.0,
+      "final_vault": 706.3441719826366,
+      "final_total_wealth": 706.3441719826366,
+      "hit_1k": {
+        "trade_num": 235,
+        "date": "2024-12-05 03:00",
+        "total": 1031.3363081634866
+      },
+      "hit_2k": null
+    }
+  }
+}

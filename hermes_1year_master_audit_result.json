@@ -1,0 +1,140 @@
+{
+  "system1_zen_with_be": {
+    "trades": 5120,
+    "wins": 3261,
+    "losses": 1859,
+    "win_rate": 63.69140625000001,
+    "net_roe": 171.89999999998912
+  },
+  "system2_zen_no_be": {
+    "trades": 4796,
+    "wins": 2511,
+    "losses": 2285,
+    "win_rate": 52.356130108423685,
+    "net_roe": 3214.1999999999407
+  },
+  "system3_hybrid_35": {
+    "trades": 2983,
+    "wins": 1681,
+    "losses": 1302,
+    "win_rate": 56.35266510224606,
+    "net_roe": 17.000000000016083,
+    "profit_factor": 1.0010880696364748,
+    "ending_balance": 42.6024173385505,
+    "max_drawdown": 64.84792588047277,
+    "symbol_stats": {
+      "BTCUSDT": {
+        "total": 150,
+        "wins": 79,
+        "losses": 71,
+        "win_rate": 52.666666666666664,
+        "net_roe": -96.99999999999997
+      },
+      "ETHUSDT": {
+        "total": 157,
+        "wins": 83,
+        "losses": 74,
+        "win_rate": 52.86624203821656,
+        "net_roe": -91.39999999999996
+      },
+      "SOLUSDT": {
+        "total": 184,
+        "wins": 89,
+        "losses": 95,
+        "win_rate": 48.369565217391305,
+        "net_roe": -335.00000000000006
+      },
+      "AVAXUSDT": {
+        "total": 180,
+        "wins": 97,
+        "losses": 83,
+        "win_rate": 53.888888888888886,
+        "net_roe": -129.40000000000052
+      },
+      "LINKUSDT": {
+        "total": 167,
+        "wins": 94,
+        "losses": 73,
+        "win_rate": 56.287425149700596,
+        "net_roe": -60.40000000000002
+      },
+      "NEARUSDT": {
+        "total": 195,
+        "wins": 118,
+        "losses": 77,
+        "win_rate": 60.51282051282051,
+        "net_roe": 227.59999999999965
+      },
+      "SUIUSDT": {
+        "total": 195,
+        "wins": 112,
+        "losses": 83,
+        "win_rate": 57.43589743589743,
+        "net_roe": 24.800000000000058
+      },
+      "APTUSDT": {
+        "total": 192,
+        "wins": 103,
+        "losses": 89,
+        "win_rate": 53.645833333333336,
+        "net_roe": -113.80000000000011
+      },
+      "TIAUSDT": {
+        "total": 179,
+        "wins": 98,
+        "losses": 81,
+        "win_rate": 54.7486033519553,
+        "net_roe": -57.19999999999999
+      },
+      "ARBUSDT": {
+        "total": 196,
+        "wins": 123,
+        "losses": 73,
+        "win_rate": 62.755102040816325,
+        "net_roe": 293.3999999999995
+      },
+      "OPUSDT": {
+        "total": 201,
+        "wins": 109,
+        "losses": 92,
+        "win_rate": 54.22885572139303,
+        "net_roe": -119.8
+      },
+      "FILUSDT": {
+        "total": 180,
+        "wins": 88,
+        "losses": 92,
+        "win_rate": 48.888888888888886,
+        "net_roe": -354.40000000000015
+      },
+      "AXSUSDT": {
+        "total": 185,
+        "wins": 110,
+        "losses": 75,
+        "win_rate": 59.45945945945946,
+        "net_roe": 153.99999999999991
+      },
+      "FETUSDT": {
+        "total": 212,
+        "wins": 128,
+        "losses": 84,
+        "win_rate": 60.37735849056604,
+        "net_roe": 215.1999999999999
+      },
+      "LDOUSDT": {
+        "total": 200,
+        "wins": 126,
+        "losses": 74,
+        "win_rate": 63.0,
+        "net_roe": 281.9999999999997
+      },
+      "INJUSDT": {
+        "total": 210,
+        "wins": 124,
+        "losses": 86,
+        "win_rate": 59.04761904761905,
+        "net_roe": 178.39999999999972
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "is": {
+    "total": 167,
+    "wins": 72,
+    "saves": 23,
+    "losses": 72,
+    "pure_wr": 50.0,
+    "green_rate": 56.9,
+    "net_r": 46.2,
+    "final_bal": 962.4,
+    "gain_pct": 92.5,
+    "max_dd": 11.7
+  },
+  "oos": {
+    "total": 115,
+    "wins": 47,
+    "saves": 10,
+    "losses": 58,
+    "pure_wr": 44.8,
+    "green_rate": 49.6,
+    "net_r": 21.9,
+    "final_bal": 718.7,
+    "gain_pct": 43.7,
+    "max_dd": 19.2
+  },
+  "aug": {
+    "total": 39,
+    "wins": 13,
+    "saves": 4,
+    "losses": 22,
+    "pure_wr": 37.1,
+    "green_rate": 43.6,
+    "net_r": -7.3,
+    "final_bal": 426.8,
+    "gain_pct": -14.6,
+    "max_dd": 19.2
+  },
+  "sep": {
+    "total": 76,
+    "wins": 34,
+    "saves": 6,
+    "losses": 36,
+    "pure_wr": 48.6,
+    "green_rate": 52.6,
+    "net_r": 29.2,
+    "final_bal": 791.9,
+    "gain_pct": 58.4,
+    "max_dd": 11.4
+  },
+  "all": {
+    "total": 282,
+    "wins": 119,
+    "saves": 33,
+    "losses": 130,
+    "pure_wr": 47.8,
+    "green_rate": 53.9,
+    "net_r": 68.1,
+    "final_bal": 1181.1,
+    "gain_pct": 136.2,
+    "max_dd": 12.6
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "strategy": "USER V-SHAPE RECOVERY LINE-CLOSE 1:3 R:R",
+  "total_trades": 1035,
+  "tp_wins": 247,
+  "sl_losses": 788,
+  "win_rate_pct": 23.86,
+  "long_win_rate": 28.42,
+  "short_win_rate": 20.0,
+  "profit_factor": 0.94,
+  "net_r_units": -47.0,
+  "expectancy_r": -0.045,
+  "final_balance_100": 24.61,
+  "growth_100_pct": -75.39,
+  "max_dd_100_pct": 97.59,
+  "final_deca_500": 204.92,
+  "growth_deca_pct": -59.02
+}

@@ -19,6 +19,35 @@ Standalone module — strictly isolated from live hermes30_apex_live.py engine.
 import sys
 import math
 from typing import List, Dict, Optional, Tuple
+from datetime import datetime, timezone
+
+def get_session_killzone(ts_ms: Optional[int] = None) -> str:
+    """
+    Identifies the institutional session / killzone from timestamp:
+    - London Killzone: 07:00 - 11:00 UTC (12:30 PM - 04:30 PM IST, covers Gautam's 2:00 PM Trap)
+    - NY Killzone: 13:00 - 17:00 UTC (06:30 PM - 10:30 PM IST)
+    - Asian Session: 00:00 - 06:00 UTC
+    """
+    if ts_ms is None:
+        dt = datetime.now(timezone.utc)
+    elif isinstance(ts_ms, (int, float)):
+        sec = ts_ms / 1000.0 if ts_ms > 1e11 else float(ts_ms)
+        dt = datetime.fromtimestamp(sec, tz=timezone.utc)
+    elif isinstance(ts_ms, datetime):
+        dt = ts_ms if ts_ms.tzinfo else ts_ms.replace(tzinfo=timezone.utc)
+    else:
+        dt = datetime.now(timezone.utc)
+
+    m = dt.hour * 60 + dt.minute
+    if 7 * 60 <= m <= 11 * 60:
+        return "London Killzone"
+    elif 13 * 60 <= m <= 17 * 60:
+        return "NY Killzone"
+    elif 0 <= m <= 6 * 60:
+        return "Asian Session"
+    else:
+        return "Off-Hours"
+
 
 class BBModel3Engine:
     def __init__(
@@ -83,6 +112,14 @@ class BBModel3Engine:
                     risk = mt - sl
 
                     if risk > 0:
+                        opp_liq = pdh
+                        target_price = opp_liq
+                        target_rr = (target_price - mt) / risk if risk > 0 else 0.0
+                        if target_rr < 2.5:
+                            target_price = round(mt + (risk * 2.5), 6)
+                            target_rr = 2.5
+                        kz = get_session_killzone(c.get("time"))
+
                         obs.append({
                             "side": "LONG",
                             "index": i,
@@ -93,6 +130,11 @@ class BBModel3Engine:
                             "sl": sl,
                             "risk": risk,
                             "anchor": "PDL_BOTTOM",
+                            "opposite_liquidity": opp_liq,
+                            "target_price": target_price,
+                            "target_rr": round(target_rr, 2),
+                            "killzone": kz,
+                            "liquidity_source": "-1 Day Liquidity (PDL/PDH Sweep)",
                             "status": "ARMED"
                         })
 
@@ -114,6 +156,14 @@ class BBModel3Engine:
                     risk = sl - mt
 
                     if risk > 0:
+                        opp_liq = pdl
+                        target_price = opp_liq
+                        target_rr = (mt - target_price) / risk if risk > 0 else 0.0
+                        if target_rr < 2.5:
+                            target_price = round(mt - (risk * 2.5), 6)
+                            target_rr = 2.5
+                        kz = get_session_killzone(c.get("time"))
+
                         obs.append({
                             "side": "SHORT",
                             "index": i,
@@ -124,6 +174,11 @@ class BBModel3Engine:
                             "sl": sl,
                             "risk": risk,
                             "anchor": "PDH_TOP",
+                            "opposite_liquidity": opp_liq,
+                            "target_price": target_price,
+                            "target_rr": round(target_rr, 2),
+                            "killzone": kz,
+                            "liquidity_source": "-1 Day Liquidity (PDL/PDH Sweep)",
                             "status": "ARMED"
                         })
 
@@ -176,21 +231,37 @@ class BBModel3Engine:
         # If filled, evaluate live or historical progress using Model 3 Stepped Trailing
         active_sl = initial_sl
         current_tier = 0
+        partial_90_taken = False
+        target_price = setup.get("target_price") or setup.get("opposite_liquidity")
+        target_rr = setup.get("target_rr", 2.5)
 
         for idx in range(fill_idx + 1, min(fill_idx + 1 + self.max_trade_hold_bars, n)):
             b = candles_15m[idx]
             b_h, b_l = b["high"], b["low"]
 
             if side == "LONG":
+                # Check Opposite Daily Liquidity Hit (90% Partial Lock + Move SL to +2.0R guaranteed)
+                if target_price and b_h >= target_price and not partial_90_taken:
+                    partial_90_taken = True
+                    active_sl = max(active_sl, entry_price + (2.0 * risk))
+
                 # Check SL hit
                 if b_l <= active_sl:
-                    pnl_r = -1.0 if current_tier == 0 else (0.2 if current_tier == 1 else (current_tier - 1) * 0.5)
+                    if partial_90_taken:
+                        pnl_r = (target_rr * 0.90) + (2.0 * 0.10)
+                        outcome = "OPPOSITE_LIQUIDITY_90PCT_LOCK"
+                    else:
+                        pnl_r = -1.0 if current_tier == 0 else (0.2 if current_tier == 1 else (current_tier - 1) * 0.5)
+                        outcome = "SL_HIT" if current_tier == 0 else "TRAILING_PROFIT_LOCKED"
                     return {
                         "state": "CLOSED",
                         "tier": current_tier,
                         "exit_price": active_sl,
                         "pnl_r": pnl_r - self.fee_friction_r,
-                        "outcome": "SL_HIT" if current_tier == 0 else "TRAILING_PROFIT_LOCKED"
+                        "outcome": outcome,
+                        "partial_90_taken": partial_90_taken,
+                        "opposite_liquidity": target_price,
+                        "killzone": setup.get("killzone")
                     }
                 # Check Trailing Milestones
                 max_fav_r = (b_h - entry_price) / risk
@@ -199,17 +270,32 @@ class BBModel3Engine:
                     if tier_candidate > current_tier:
                         current_tier = tier_candidate
                         locked_r = 0.2 if current_tier == 1 else (current_tier - 1) * 0.5
-                        active_sl = entry_price + (locked_r * risk)
+                        candidate_sl = entry_price + (locked_r * risk)
+                        if candidate_sl > active_sl:
+                            active_sl = candidate_sl
 
             else: # SHORT
+                # Check Opposite Daily Liquidity Hit (90% Partial Lock + Move SL to +2.0R guaranteed)
+                if target_price and b_l <= target_price and not partial_90_taken:
+                    partial_90_taken = True
+                    active_sl = min(active_sl, entry_price - (2.0 * risk))
+
                 if b_h >= active_sl:
-                    pnl_r = -1.0 if current_tier == 0 else (0.2 if current_tier == 1 else (current_tier - 1) * 0.5)
+                    if partial_90_taken:
+                        pnl_r = (target_rr * 0.90) + (2.0 * 0.10)
+                        outcome = "OPPOSITE_LIQUIDITY_90PCT_LOCK"
+                    else:
+                        pnl_r = -1.0 if current_tier == 0 else (0.2 if current_tier == 1 else (current_tier - 1) * 0.5)
+                        outcome = "SL_HIT" if current_tier == 0 else "TRAILING_PROFIT_LOCKED"
                     return {
                         "state": "CLOSED",
                         "tier": current_tier,
                         "exit_price": active_sl,
                         "pnl_r": pnl_r - self.fee_friction_r,
-                        "outcome": "SL_HIT" if current_tier == 0 else "TRAILING_PROFIT_LOCKED"
+                        "outcome": outcome,
+                        "partial_90_taken": partial_90_taken,
+                        "opposite_liquidity": target_price,
+                        "killzone": setup.get("killzone")
                     }
                 max_fav_r = (entry_price - b_l) / risk
                 if max_fav_r >= 1.0:
@@ -217,7 +303,9 @@ class BBModel3Engine:
                     if tier_candidate > current_tier:
                         current_tier = tier_candidate
                         locked_r = 0.2 if current_tier == 1 else (current_tier - 1) * 0.5
-                        active_sl = entry_price - (locked_r * risk)
+                        candidate_sl = entry_price - (locked_r * risk)
+                        if candidate_sl < active_sl:
+                            active_sl = candidate_sl
 
         # Still open and active
         return {
@@ -225,5 +313,8 @@ class BBModel3Engine:
             "entry_price": entry_price,
             "active_sl": active_sl,
             "current_tier": current_tier,
-            "trailing_locked_r": 0.0 if current_tier == 0 else (0.2 if current_tier == 1 else (current_tier - 1) * 0.5)
+            "trailing_locked_r": 0.0 if current_tier == 0 else (0.2 if current_tier == 1 else (current_tier - 1) * 0.5),
+            "partial_90_taken": partial_90_taken,
+            "opposite_liquidity": target_price,
+            "killzone": setup.get("killzone")
         }

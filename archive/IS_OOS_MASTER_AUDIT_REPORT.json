@@ -1,0 +1,20 @@
+{
+  "in_sample_year1": {
+    "trades": 2904,
+    "wins": 2624,
+    "losses": 280,
+    "win_rate": 90.36,
+    "net_roe": 20644.45,
+    "pf": 5.36
+  },
+  "out_of_sample_year2": {
+    "trades": 2225,
+    "wins": 1943,
+    "losses": 282,
+    "win_rate": 87.33,
+    "net_roe": 14283.02,
+    "pf": 4.46
+  },
+  "variance_pct": 3.03,
+  "stability_score": "GOOD"
+}

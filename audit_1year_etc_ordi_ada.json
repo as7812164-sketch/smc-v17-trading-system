@@ -1,0 +1,335 @@
+{
+  "ETCUSDT": {
+    "symbol": "ETCUSDT",
+    "total_trades": 61,
+    "wins": 40,
+    "losses": 19,
+    "be_exits": 17,
+    "overall_win_rate": 67.8,
+    "net_pnl": 31.75,
+    "profit_factor": 1.25,
+    "max_drawdown_pct": 52.1,
+    "max_drawdown_dollars": 46.0,
+    "avg_mfe": 9.9,
+    "avg_mae": 8.1,
+    "max_win_streak": 7,
+    "max_loss_streak": 3,
+    "longs": {
+      "total": 35,
+      "wins": 20,
+      "losses": 14,
+      "be_exits": 7,
+      "win_rate": 58.8,
+      "pnl": -2.75
+    },
+    "shorts": {
+      "total": 26,
+      "wins": 20,
+      "losses": 5,
+      "be_exits": 10,
+      "win_rate": 80.0,
+      "pnl": 34.5
+    },
+    "timeframes": {
+      "1h": {
+        "total": 37,
+        "win_rate": 74.3,
+        "pnl": 36.75
+      },
+      "4h": {
+        "total": 24,
+        "win_rate": 58.3,
+        "pnl": -5.0
+      }
+    },
+    "sample_trades": [
+      {
+        "symbol": "ETCUSDT",
+        "side": "LONG",
+        "tf": "4h",
+        "entry_time": 1782604800000,
+        "entry": 7.12,
+        "exit": 6.92064,
+        "outcome": "SL_HIT",
+        "pnl": -7.0,
+        "mfe": 2.81,
+        "mae": 15.45,
+        "is_win": false
+      },
+      {
+        "symbol": "ETCUSDT",
+        "side": "LONG",
+        "tf": "4h",
+        "entry_time": 1783224000000,
+        "entry": 7.09,
+        "exit": 7.17508,
+        "outcome": "BE_EXIT",
+        "pnl": 3.0,
+        "mfe": 13.4,
+        "mae": 4.23,
+        "is_win": true
+      },
+      {
+        "symbol": "ETCUSDT",
+        "side": "SHORT",
+        "tf": "1h",
+        "entry_time": 1787702400000,
+        "entry": 7.77,
+        "exit": 7.59906,
+        "outcome": "TP_HIT",
+        "pnl": 5.5,
+        "mfe": 12.23,
+        "mae": 9.01,
+        "is_win": true
+      },
+      {
+        "symbol": "ETCUSDT",
+        "side": "SHORT",
+        "tf": "1h",
+        "entry_time": 1789196400000,
+        "entry": 7.73,
+        "exit": 7.55994,
+        "outcome": "TP_HIT",
+        "pnl": 5.5,
+        "mfe": 11.64,
+        "mae": 5.82,
+        "is_win": true
+      },
+      {
+        "symbol": "ETCUSDT",
+        "side": "SHORT",
+        "tf": "1h",
+        "entry_time": 1789927200000,
+        "entry": 8.51,
+        "exit": 8.32278,
+        "outcome": "TP_HIT",
+        "pnl": 5.5,
+        "mfe": 11.75,
+        "mae": 2.35,
+        "is_win": true
+      }
+    ]
+  },
+  "ORDIUSDT": {
+    "symbol": "ORDIUSDT",
+    "total_trades": 114,
+    "wins": 84,
+    "losses": 30,
+    "be_exits": 37,
+    "overall_win_rate": 73.7,
+    "net_pnl": 129.0,
+    "profit_factor": 1.68,
+    "max_drawdown_pct": 14.8,
+    "max_drawdown_dollars": 26.5,
+    "avg_mfe": 11.2,
+    "avg_mae": 7.0,
+    "max_win_streak": 7,
+    "max_loss_streak": 3,
+    "longs": {
+      "total": 54,
+      "wins": 38,
+      "losses": 16,
+      "be_exits": 21,
+      "win_rate": 70.4,
+      "pnl": 22.25
+    },
+    "shorts": {
+      "total": 60,
+      "wins": 46,
+      "losses": 14,
+      "be_exits": 16,
+      "win_rate": 76.7,
+      "pnl": 106.75
+    },
+    "timeframes": {
+      "1h": {
+        "total": 82,
+        "win_rate": 68.3,
+        "pnl": 25.5
+      },
+      "4h": {
+        "total": 32,
+        "win_rate": 87.5,
+        "pnl": 103.5
+      }
+    },
+    "sample_trades": [
+      {
+        "symbol": "ORDIUSDT",
+        "side": "LONG",
+        "tf": "1h",
+        "entry_time": 1789390800000,
+        "entry": 4.101,
+        "exit": 4.191222,
+        "outcome": "TP_HIT",
+        "pnl": 5.5,
+        "mfe": 11.34,
+        "mae": 0.0,
+        "is_win": true
+      },
+      {
+        "symbol": "ORDIUSDT",
+        "side": "SHORT",
+        "tf": "4h",
+        "entry_time": 1789920000000,
+        "entry": 4.603,
+        "exit": 4.593794,
+        "outcome": "BE_EXIT",
+        "pnl": 0.5,
+        "mfe": 9.88,
+        "mae": 0.33,
+        "is_win": true
+      },
+      {
+        "symbol": "ORDIUSDT",
+        "side": "SHORT",
+        "tf": "1h",
+        "entry_time": 1789952400000,
+        "entry": 4.604,
+        "exit": 4.594792,
+        "outcome": "BE_EXIT",
+        "pnl": 0.5,
+        "mfe": 8.36,
+        "mae": 1.74,
+        "is_win": true
+      },
+      {
+        "symbol": "ORDIUSDT",
+        "side": "LONG",
+        "tf": "1h",
+        "entry_time": 1790128800000,
+        "entry": 4.895,
+        "exit": 4.904789999999999,
+        "outcome": "BE_EXIT",
+        "pnl": 0.5,
+        "mfe": 8.17,
+        "mae": 0.51,
+        "is_win": true
+      },
+      {
+        "symbol": "ORDIUSDT",
+        "side": "SHORT",
+        "tf": "4h",
+        "entry_time": 1790380800000,
+        "entry": 4.85,
+        "exit": 4.7142,
+        "outcome": "TP_HIT",
+        "pnl": 7.0,
+        "mfe": 14.12,
+        "mae": 0.0,
+        "is_win": true
+      }
+    ]
+  },
+  "ADAUSDT": {
+    "symbol": "ADAUSDT",
+    "total_trades": 77,
+    "wins": 50,
+    "losses": 24,
+    "be_exits": 22,
+    "overall_win_rate": 67.6,
+    "net_pnl": 27.75,
+    "profit_factor": 1.18,
+    "max_drawdown_pct": 50.8,
+    "max_drawdown_dollars": 39.75,
+    "avg_mfe": 10.6,
+    "avg_mae": 7.8,
+    "max_win_streak": 7,
+    "max_loss_streak": 3,
+    "longs": {
+      "total": 44,
+      "wins": 26,
+      "losses": 16,
+      "be_exits": 9,
+      "win_rate": 61.9,
+      "pnl": 8.25
+    },
+    "shorts": {
+      "total": 33,
+      "wins": 24,
+      "losses": 8,
+      "be_exits": 13,
+      "win_rate": 75.0,
+      "pnl": 19.5
+    },
+    "timeframes": {
+      "1h": {
+        "total": 52,
+        "win_rate": 65.3,
+        "pnl": 14.75
+      },
+      "4h": {
+        "total": 25,
+        "win_rate": 72.0,
+        "pnl": 13.0
+      }
+    },
+    "sample_trades": [
+      {
+        "symbol": "ADAUSDT",
+        "side": "LONG",
+        "tf": "1h",
+        "entry_time": 1789156800000,
+        "entry": 0.2091,
+        "exit": 0.2038725,
+        "outcome": "SL_HIT",
+        "pnl": -6.25,
+        "mfe": 1.43,
+        "mae": 13.39,
+        "is_win": false
+      },
+      {
+        "symbol": "ADAUSDT",
+        "side": "SHORT",
+        "tf": "1h",
+        "entry_time": 1789819200000,
+        "entry": 0.2259,
+        "exit": 0.2209302,
+        "outcome": "TP_HIT",
+        "pnl": 5.5,
+        "mfe": 15.49,
+        "mae": 12.17,
+        "is_win": true
+      },
+      {
+        "symbol": "ADAUSDT",
+        "side": "LONG",
+        "tf": "1h",
+        "entry_time": 1789938000000,
+        "entry": 0.2246,
+        "exit": 0.2295412,
+        "outcome": "TP_HIT",
+        "pnl": 5.5,
+        "mfe": 17.36,
+        "mae": 0.0,
+        "is_win": true
+      },
+      {
+        "symbol": "ADAUSDT",
+        "side": "SHORT",
+        "tf": "1h",
+        "entry_time": 1790258400000,
+        "entry": 0.2486,
+        "exit": 0.24810279999999998,
+        "outcome": "BE_EXIT",
+        "pnl": 0.5,
+        "mfe": 8.25,
+        "mae": 5.83,
+        "is_win": true
+      },
+      {
+        "symbol": "ADAUSDT",
+        "side": "SHORT",
+        "tf": "4h",
+        "entry_time": 1790265600000,
+        "entry": 0.2509,
+        "exit": 0.2503982,
+        "outcome": "BE_EXIT",
+        "pnl": 0.5,
+        "mfe": 9.57,
+        "mae": 4.78,
+        "is_win": true
+      }
+    ]
+  }
+}

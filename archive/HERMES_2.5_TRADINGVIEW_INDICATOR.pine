@@ -1,0 +1,267 @@
+//@version=5
+indicator(title="HERMES 2.5 APEX QUANTUM [Buy Green Dot / Sell Red Dot]", shorttitle="Hermes 2.5 [Dots]", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// =============================================================================
+// 👑 HERMES 2.5 APEX QUANTUM HYBRID TRADINGVIEW INDICATOR
+// Designed for: Binance & Bitget Futures (Top-22 Champions & Crypto Pairs)
+// Strategy: Institutional SMC + 4 Sentries + Dynamic Profit Armor
+// Features: 
+//   - 🟢 GREEN DOT Below Candle = Institutional BUY / LONG Signal
+//   - 🔴 RED DOT Above Candle   = Institutional SELL / SHORT Signal
+//   - Translucent Order Block & FVG Zone Boxes
+//   - Real-Time Sentry Diagnostic HUD Table
+// =============================================================================
+
+// =============================================================================
+// 1. INPUTS & CONFIGURATION
+// =============================================================================
+grp_core      = "⚡ Hermes 2.5 Core Rules"
+i_min_disp    = input.float(5.0, "Min Displacement Impulse (%)", minval=1.0, maxval=15.0, step=0.5, group=grp_core)
+i_min_wick    = input.float(18.0, "Min Rejection Wick Ratio (%)", minval=5.0, maxval=60.0, step=1.0, group=grp_core)
+i_max_tap_win = input.int(28, "Freshness Guard: Max Tap Window (Bars)", minval=5, maxval=60, group=grp_core)
+i_fib_min     = input.float(0.30, "Min Fibonacci Retracement", minval=0.10, maxval=0.50, step=0.05, group=grp_core)
+i_fib_max     = input.float(0.70, "Max Fibonacci Retracement", minval=0.50, maxval=0.85, step=0.05, group=grp_core)
+
+grp_targets   = "🎯 Compounding Targets & Risk Engine"
+i_tp_pct      = input.float(2.80, "Take Profit Target (%)", minval=0.5, step=0.1, group=grp_targets)
+i_soft_sl_pct = input.float(2.80, "Soft Stop-Loss (%)", minval=0.5, step=0.1, group=grp_targets)
+i_be_trig_pct = input.float(1.60, "Dynamic Armor: BE Lock Trigger (%)", minval=0.5, step=0.1, group=grp_targets)
+
+grp_sentry1   = "🛡️ Sentry 1: King BTC Causal Brake"
+i_enable_btc  = input.bool(true, "Enable BTC Macro Gate", group=grp_sentry1)
+i_btc_sym     = input.symbol("BINANCE:BTCUSDT", "Benchmark BTC Ticker", group=grp_sentry1)
+i_btc_dump_th = input.float(2.0, "BTC Max 4H Dump Veto (%)", minval=0.5, step=0.2, group=grp_sentry1)
+i_btc_pump_th = input.float(2.0, "BTC Max 4H Pump Veto (%)", minval=0.5, step=0.2, group=grp_sentry1)
+
+grp_visuals   = "🎨 Visuals & HUD Table"
+i_show_dots   = input.bool(true, "Show Green/Red Signal Dots", group=grp_visuals)
+i_show_labels = input.bool(true, "Show Signal Telemetry Labels", group=grp_visuals)
+i_show_boxes  = input.bool(true, "Draw Active Order Block Boxes", group=grp_visuals)
+i_show_tp_sl  = input.bool(true, "Draw Projected TP / SL / BE Lines", group=grp_visuals)
+i_show_hud    = input.bool(true, "Show Sentry Diagnostic HUD Table", group=grp_visuals)
+
+// =============================================================================
+// 2. SENTRY 1 & CANDLE METRICS
+// =============================================================================
+btc_o = request.security(i_btc_sym, "240", open, gaps=barmerge.gaps_off)
+btc_c = request.security(i_btc_sym, "240", close, gaps=barmerge.gaps_off)
+btc_dump = (btc_o > 0) ? (btc_o - btc_c) / btc_o * 100.0 : 0.0
+btc_pump = (btc_o > 0) ? (btc_c - btc_o) / btc_o * 100.0 : 0.0
+btc_safe_for_buy  = not i_enable_btc or (btc_dump < i_btc_dump_th)
+btc_safe_for_sell = not i_enable_btc or (btc_pump < i_btc_pump_th)
+
+c_range   = high - low
+l_wick    = math.min(open, close) - low
+u_wick    = high - math.max(open, close)
+l_wick_rt = c_range > 0 ? (l_wick / c_range * 100.0) : 0.0
+u_wick_rt = c_range > 0 ? (u_wick / c_range * 100.0) : 0.0
+
+// =============================================================================
+// 3. BULLISH HERMES 2.5 DETECTION (BUY SETUP)
+// =============================================================================
+var float bull_ob_top      = 0.0
+var float bull_ob_bot      = 0.0
+var float bull_ob_mt       = 0.0
+var float bull_idm_low     = 0.0
+var int   bull_high_idx    = -1
+var bool  bull_zone_active = false
+var box   bull_box         = na
+
+bull_pivot = ta.pivotlow(low, 7, 7)
+if not na(bull_pivot)
+    int origin_bar = bar_index - 7
+    float origin_low = bull_pivot
+    
+    float peak_high = origin_low
+    int peak_idx = origin_bar
+    for j = 0 to 6
+        if high[j] > peak_high
+            peak_high := high[j]
+            peak_idx := bar_index - j
+            
+    float leg_gain = (peak_high - origin_low) / origin_low * 100.0
+    
+    if leg_gain >= i_min_disp and peak_idx > origin_bar + 2
+        float best_bg = 0.0
+        int best_mid = -1
+        for m = origin_bar + 1 to peak_idx - 1
+            int shift = math.max(0, bar_index - m)
+            float bg = (high[shift] - low[shift]) / low[shift]
+            float fib = (low[shift] - origin_low) / (peak_high - origin_low)
+            if fib >= i_fib_min and fib <= i_fib_max and bg > best_bg
+                best_bg := bg
+                best_mid := m
+                
+        if best_mid != -1
+            int dec_shift = math.max(0, bar_index - (best_mid - 1))
+            int fvg_shift1 = math.max(0, bar_index - (best_mid + 1))
+            int fvg_shift2 = math.max(0, bar_index - (best_mid - 1))
+            
+            bool fvg_ok = low[fvg_shift1] > high[fvg_shift2]
+            if fvg_ok
+                bull_ob_top := math.max(open[dec_shift], close[dec_shift])
+                bull_ob_bot := low[dec_shift]
+                bull_ob_mt  := (bull_ob_top + bull_ob_bot) / 2.0
+                int idm_shift = math.max(0, bar_index - (peak_idx - 1))
+                bull_idm_low := low[idm_shift]
+                bull_high_idx := peak_idx
+                bull_zone_active := true
+                
+                if i_show_boxes
+                    bull_box := box.new(left=bar_index, top=bull_ob_top, right=bar_index + i_max_tap_win, bottom=bull_ob_bot, border_color=color.new(color.lime, 40), bgcolor=color.new(color.teal, 88), border_style=line.style_solid, border_width=1)
+
+bool buy_signal = false
+if bull_zone_active and (bar_index - bull_high_idx <= i_max_tap_win)
+    if low <= bull_ob_top * 1.0005
+        bool idm_swept = (low < bull_idm_low) or (low[1] < bull_idm_low)
+        bool wick_ok   = (l_wick_rt >= i_min_wick)
+        bool mt_ok     = (close >= bull_ob_mt)
+        
+        if idm_swept and wick_ok and mt_ok and btc_safe_for_buy
+            buy_signal := true
+            bull_zone_active := false
+            if not na(bull_box)
+                box.set_right(bull_box, bar_index)
+                box.set_border_color(bull_box, color.lime)
+else if bull_zone_active and (bar_index - bull_high_idx > i_max_tap_win)
+    bull_zone_active := false
+
+// =============================================================================
+// 4. BEARISH HERMES 2.5 DETECTION (SELL SETUP)
+// =============================================================================
+var float bear_ob_top      = 0.0
+var float bear_ob_bot      = 0.0
+var float bear_ob_mt       = 0.0
+var float bear_idm_high    = 0.0
+var int   bear_low_idx     = -1
+var bool  bear_zone_active = false
+var box   bear_box         = na
+
+bear_pivot = ta.pivothigh(high, 7, 7)
+if not na(bear_pivot)
+    int origin_bar = bar_index - 7
+    float origin_high = bear_pivot
+    
+    float trough_low = origin_high
+    int trough_idx = origin_bar
+    for j = 0 to 6
+        if low[j] < trough_low
+            trough_low := low[j]
+            trough_idx := bar_index - j
+            
+    float leg_drop = (origin_high - trough_low) / origin_high * 100.0
+    
+    if leg_drop >= i_min_disp and trough_idx > origin_bar + 2
+        float best_bg = 0.0
+        int best_mid = -1
+        for m = origin_bar + 1 to trough_idx - 1
+            int shift = math.max(0, bar_index - m)
+            float bg = (high[shift] - low[shift]) / low[shift]
+            float fib = (origin_high - high[shift]) / (origin_high - trough_low)
+            if fib >= i_fib_min and fib <= i_fib_max and bg > best_bg
+                best_bg := bg
+                best_mid := m
+                
+        if best_mid != -1
+            int dec_shift = math.max(0, bar_index - (best_mid - 1))
+            int fvg_shift1 = math.max(0, bar_index - (best_mid + 1))
+            int fvg_shift2 = math.max(0, bar_index - (best_mid - 1))
+            
+            bool bear_fvg_ok = high[fvg_shift1] < low[fvg_shift2]
+            if bear_fvg_ok
+                bear_ob_top := high[dec_shift]
+                bear_ob_bot := math.min(open[dec_shift], close[dec_shift])
+                bear_ob_mt  := (bear_ob_top + bear_ob_bot) / 2.0
+                int idm_shift = math.max(0, bar_index - (trough_idx - 1))
+                bear_idm_high := high[idm_shift]
+                bear_low_idx := trough_idx
+                bear_zone_active := true
+                
+                if i_show_boxes
+                    bear_box := box.new(left=bar_index, top=bear_ob_top, right=bar_index + i_max_tap_win, bottom=bear_ob_bot, border_color=color.new(color.red, 40), bgcolor=color.new(color.maroon, 88), border_style=line.style_solid, border_width=1)
+
+bool sell_signal = false
+if bear_zone_active and (bar_index - bear_low_idx <= i_max_tap_win)
+    if high >= bear_ob_bot * 0.9995
+        bool idm_swept = (high > bear_idm_high) or (high[1] > bear_idm_high)
+        bool wick_ok   = (u_wick_rt >= i_min_wick)
+        bool mt_ok     = (close <= bear_ob_mt)
+        
+        if idm_swept and wick_ok and mt_ok and btc_safe_for_sell
+            sell_signal := true
+            bear_zone_active := false
+            if not na(bear_box)
+                box.set_right(bear_box, bar_index)
+                box.set_border_color(bear_box, color.red)
+else if bear_zone_active and (bar_index - bear_low_idx > i_max_tap_win)
+    bear_zone_active := false
+
+// =============================================================================
+// 5. SIGNAL PLOTTING: 🟢 GREEN DOT (BUY) & 🔴 RED DOT (SELL)
+// =============================================================================
+// Exact User Request: Green Dot below bar on BUY, Red Dot above bar on SELL
+plotshape(i_show_dots and buy_signal,  title="🟢 HERMES 2.5 BUY DOT",  style=shape.circle, location=location.belowbar, color=color.lime, size=size.normal, offset=0)
+plotshape(i_show_dots and sell_signal, title="🔴 HERMES 2.5 SELL DOT", style=shape.circle, location=location.abovebar, color=color.red,  size=size.normal, offset=0)
+
+// Secondary Accent Halo Rings
+plotshape(i_show_dots and buy_signal,  title="🟢 Buy Halo",  style=shape.triangleup,   location=location.belowbar, color=color.new(color.lime, 40), size=size.tiny, offset=0)
+plotshape(i_show_dots and sell_signal, title="🔴 Sell Halo", style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 40),  size=size.tiny, offset=0)
+
+// Telemetry Labels
+if i_show_labels and buy_signal
+    float entry_p = bull_ob_top
+    float tp_p    = entry_p * (1.0 + (i_tp_pct / 100.0))
+    float sl_p    = entry_p * (1.0 - (i_soft_sl_pct / 100.0))
+    float be_p    = entry_p * (1.0 + (i_be_trig_pct / 100.0))
+    string txt = "🟢 HERMES 2.5 BUY\n• Entry: " + str.tostring(entry_p, "#.####") + "\n• TP (+ " + str.tostring(i_tp_pct, "#.#") + "%): " + str.tostring(tp_p, "#.####") + "\n• BE: " + str.tostring(be_p, "#.####") + "\n• SL (- " + str.tostring(i_soft_sl_pct, "#.#") + "%): " + str.tostring(sl_p, "#.####")
+    label.new(bar_index, low - (c_range * 0.5), txt, color=color.new(color.green, 20), textcolor=color.white, style=label.style_label_up, size=size.small)
+    if i_show_tp_sl
+        line.new(bar_index, entry_p, bar_index + 15, entry_p, color=color.yellow, width=1, style=line.style_dashed)
+        line.new(bar_index, tp_p, bar_index + 15, tp_p, color=color.lime, width=2)
+        line.new(bar_index, sl_p, bar_index + 15, sl_p, color=color.red, width=2)
+
+if i_show_labels and sell_signal
+    float entry_p = bear_ob_bot
+    float tp_p    = entry_p * (1.0 - (i_tp_pct / 100.0))
+    float sl_p    = entry_p * (1.0 + (i_soft_sl_pct / 100.0))
+    float be_p    = entry_p * (1.0 - (i_be_trig_pct / 100.0))
+    string txt = "🔴 HERMES 2.5 SELL\n• Entry: " + str.tostring(entry_p, "#.####") + "\n• TP (- " + str.tostring(i_tp_pct, "#.#") + "%): " + str.tostring(tp_p, "#.####") + "\n• BE: " + str.tostring(be_p, "#.####") + "\n• SL (+ " + str.tostring(i_soft_sl_pct, "#.#") + "%): " + str.tostring(sl_p, "#.####")
+    label.new(bar_index, high + (c_range * 0.5), txt, color=color.new(color.maroon, 20), textcolor=color.white, style=label.style_label_down, size=size.small)
+    if i_show_tp_sl
+        line.new(bar_index, entry_p, bar_index + 15, entry_p, color=color.yellow, width=1, style=line.style_dashed)
+        line.new(bar_index, tp_p, bar_index + 15, tp_p, color=color.lime, width=2)
+        line.new(bar_index, sl_p, bar_index + 15, sl_p, color=color.red, width=2)
+
+// =============================================================================
+// 6. REAL-TIME SENTRY TELEMETRY HUD TABLE
+// =============================================================================
+var table hud = table.new(position.top_right, 2, 6, bgcolor=color.new(#0b0e14, 20), border_color=color.new(#1f293d, 40), border_width=1)
+
+if barstate.islast and i_show_hud
+    table.cell(hud, 0, 0, "👑 HERMES 2.5 APEX", bgcolor=color.new(#161b26, 0), text_color=color.yellow, text_size=size.small)
+    table.cell(hud, 1, 0, "DIAGNOSTICS", bgcolor=color.new(#161b26, 0), text_color=color.white, text_size=size.small)
+    
+    string s1_status = btc_dump >= i_btc_dump_th ? "🛑 DUMP VETO" : btc_pump >= i_btc_pump_th ? "🚀 PUMP VETO" : "✅ CLEAR"
+    color s1_col = (btc_dump >= i_btc_dump_th or btc_pump >= i_btc_pump_th) ? color.red : color.lime
+    table.cell(hud, 0, 1, "Sentry 1 (BTC 4H)", text_color=color.gray, text_size=size.tiny)
+    table.cell(hud, 1, 1, s1_status, text_color=s1_col, text_size=size.tiny)
+    
+    table.cell(hud, 0, 2, "Sentry 2 (Floor)", text_color=color.gray, text_size=size.tiny)
+    table.cell(hud, 1, 2, "Displacement >= " + str.tostring(i_min_disp, "#.#") + "%", text_color=color.aqua, text_size=size.tiny)
+    
+    table.cell(hud, 0, 3, "Sentry 3 (Sweep)", text_color=color.gray, text_size=size.tiny)
+    table.cell(hud, 1, 3, "Wick >= " + str.tostring(i_min_wick, "#") + "% + 50% MT", text_color=color.white, text_size=size.tiny)
+    
+    table.cell(hud, 0, 4, "Sentry 4 (Freshness)", text_color=color.gray, text_size=size.tiny)
+    table.cell(hud, 1, 4, "<= " + str.tostring(i_max_tap_win) + " Bars Window", text_color=color.white, text_size=size.tiny)
+    
+    string sig_status = buy_signal ? "🟢 ACTIVE BUY" : sell_signal ? "🔴 ACTIVE SELL" : "WAITING TAP..."
+    color sig_col = buy_signal ? color.lime : sell_signal ? color.red : color.gray
+    table.cell(hud, 0, 5, "Live Signal Dot", text_color=color.yellow, text_size=size.tiny)
+    table.cell(hud, 1, 5, sig_status, text_color=sig_col, text_size=size.tiny)
+
+// =============================================================================
+// 7. TRADINGVIEW REAL-TIME ALERTS
+// =============================================================================
+alertcondition(buy_signal,  title="🟢 Hermes 2.5 BUY (Green Dot)",  message="🟢 HERMES 2.5 BUY Signal on {{ticker}}! Price: {{close}} | TP: +2.80% | Sentry 1-4 Validated!")
+alertcondition(sell_signal, title="🔴 Hermes 2.5 SELL (Red Dot)", message="🔴 HERMES 2.5 SELL Signal on {{ticker}}! Price: {{close}} | TP: -2.80% | Sentry 1-4 Validated!")

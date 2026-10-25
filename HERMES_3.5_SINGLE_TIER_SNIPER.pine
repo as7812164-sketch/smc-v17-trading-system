@@ -1,0 +1,312 @@
+//@version=5
+indicator("HERMES 3.5 - Single Tier Pure Sniper (Extend Until Mitigated)", "HERMES 3.5 SINGLE TIER", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ============================================================================
+// 1. HERMES 3.5 SINGLE-TIER INPUT PARAMETERS (PURE TIER 1 ONLY)
+// ============================================================================
+grp_h35 = "🏛️ Hermes 3.5 Institutional Core Pillars"
+ob_scope              = input.string("All Institutional OBs (FVG + Displacement)", "OB Detection Scope", options=["All Institutional OBs (FVG + Displacement)", "Extreme + Decisional (Local Base)", "Extreme Only (Macro Swings)"], group=grp_h35, tooltip="All Institutional: detects every clean base that creates an FVG and explosive displacement (captures JASMY & AXS).")
+min_disp_pct          = input.float(4.0, "Min Displacement Pump %", minval=1.5, maxval=20.0, step=0.5, group=grp_h35, tooltip="Displacement requirement away from OB (Default 4.0% for 1H)")
+swing_len             = input.int(10, "Swing Pivot Lookback", minval=3, maxval=50, group=grp_h35, tooltip="Bars to verify Swing High / Swing Low origin")
+require_red_candle    = input.bool(false, "Require Strict Red Candle (Bull) / Green (Bear)", group=grp_h35, tooltip="If false, also allows consolidation base/doji candles before displacement pump")
+require_judas_sweep   = input.bool(false, "Require Liquidity Judas Sweep", group=grp_h35, tooltip="If false, allows clean continuation order block bases without needing prior low sweep")
+extend_until_mitigated= input.bool(true, "Extend OB Zone Until Mitigated (Infinite Box)", group=grp_h35, tooltip="Keeps extending the Order Block box forward indefinitely until price actually taps it, so setups days later are never missed!")
+entry_mode            = input.string("50% Mean Threshold", "Entry Trigger Mode", options=["50% Mean Threshold", "OB Boundary (Edge Touch)"], group=grp_h35, tooltip="50% MT = ICT Gold Standard; OB Boundary = Enter immediately when price touches the edge of the OB")
+max_tap_window        = input.int(250, "Max Lookback Window (Bars)", minval=20, maxval=500, group=grp_h35, tooltip="Maximum bars allowed for unmitigated OB before hard cleanup (Default 250 bars = ~10 days on 1H)")
+enable_15m_gate       = input.bool(false, "Enable 15M Micro Rejection Gate", group=grp_h35, tooltip="Optional 15m micro-filter (keep false for pure chart view)")
+enable_btc_filter     = input.bool(false, "Enable King BTC Trend Shield", group=grp_h35, tooltip="Vetos Altcoin Longs when BTC is dumping (turn off for raw asset setups)")
+
+grp_targets = "🎯 Target & Profit Armor (Pure Tier 1 Compounding)"
+leverage       = input.float(5.0, "Leverage Multiplier (x)", minval=1.0, maxval=50.0, step=1.0, group=grp_targets)
+tp_roe_pct     = input.float(12.20, "Take Profit (TP) ROE %", minval=1.0, maxval=100.0, step=0.1, group=grp_targets, tooltip="+12.20% ROE at 5x = +2.44% raw spot price move")
+sl_roe_pct     = input.float(12.00, "Hard Stop Loss (SL) ROE %", minval=1.0, maxval=100.0, step=0.1, group=grp_targets, tooltip="-12.00% ROE at 5x = -2.40% raw spot price move")
+be_armor_pct   = input.float(1.50, "Stage 1 BE Armor Trigger % (Spot Move)", minval=0.5, maxval=5.0, step=0.1, group=grp_targets, tooltip="+1.5% spot move (+7.5% ROE) locks SL at entry +0.1%")
+
+grp_visuals = "🎨 Visual Styling & Colors"
+col_bull_ob    = input.color(color.new(#2563eb, 75), "Bullish Extreme OB Box (User Blue Zone)", group=grp_visuals)
+col_bear_ob    = input.color(color.new(#8b5cf6, 78), "Bearish Extreme OB Box", group=grp_visuals)
+col_mt_line    = input.color(#00e5ff, "50% Mean Threshold Line", group=grp_visuals)
+col_tp_line    = input.color(#00e676, "Target TP Line (+12.20% ROE)", group=grp_visuals)
+col_sl_line    = input.color(#ff1744, "Hard Stop Loss Line", group=grp_visuals)
+col_be_line    = input.color(#38bdf8, "Breakeven Armor Line", group=grp_visuals)
+
+// Mathematical Conversions
+tp_price_pct   = (tp_roe_pct / 100.0) / leverage   // +2.44% spot move
+sl_price_pct   = (sl_roe_pct / 100.0) / leverage   // -2.40% spot move
+be_spot_pct    = be_armor_pct / 100.0              // +1.50% spot move
+
+// ============================================================================
+// 2. KING BTC CAUSAL BRAKE & 15M MICRO-GATE FILTERS
+// ============================================================================
+
+// King BTC Trend Alignment
+btc_close = request.security("BINANCE:BTCUSDT.P", "240", close)
+btc_ema50 = request.security("BINANCE:BTCUSDT.P", "240", ta.ema(close, 50))
+btc_is_bullish = enable_btc_filter ? (btc_close >= btc_ema50) : true
+btc_is_bearish = enable_btc_filter ? (btc_close <= btc_ema50) : true
+
+// 15M Micro Rejection Gate
+m15_high  = request.security(syminfo.tickerid, "15", high)
+m15_low   = request.security(syminfo.tickerid, "15", low)
+m15_open  = request.security(syminfo.tickerid, "15", open)
+m15_close = request.security(syminfo.tickerid, "15", close)
+
+m15_range = m15_high - m15_low
+m15_lower_wick = math.min(m15_open, m15_close) - m15_low
+m15_upper_wick = m15_high - math.max(m15_open, m15_close)
+
+m15_bull_rejection = m15_range > 0 ? ((m15_lower_wick / m15_range) >= 0.18 or m15_close > m15_open) : true
+m15_bear_rejection = m15_range > 0 ? ((m15_upper_wick / m15_range) >= 0.18 or m15_close < m15_open) : true
+
+// ============================================================================
+// 3. EXTREME ORDER BLOCK QUALIFICATION LOGIC
+// ============================================================================
+
+// Pillar 1: Swing Pivot Anchor (Extreme vs Decisional Base)
+is_swing_low       = low[3] == ta.lowest(low, swing_len + 3)
+is_swing_high      = high[3] == ta.highest(high, swing_len + 3)
+is_local_base_low  = (low[3] <= low[4] and low[3] <= low[2])
+is_local_base_high = (high[3] >= high[4] and high[3] >= high[2])
+
+// Base / Pivot Selection
+valid_pivot_bull = (ob_scope == "Extreme Only (Macro Swings)") ? is_swing_low : (ob_scope == "Extreme + Decisional (Local Base)" ? (is_swing_low or is_local_base_low) : true)
+valid_pivot_bear = (ob_scope == "Extreme Only (Macro Swings)") ? is_swing_high : (ob_scope == "Extreme + Decisional (Local Base)" ? (is_swing_high or is_local_base_high) : true)
+
+// Pillar 2: Candle Filter Rule
+// If strict red candle is required: close < open. Otherwise allow flat consolidation doji base before pump
+valid_candle_bull = require_red_candle ? (close[3] < open[3]) : (close[3] <= open[3] * 1.002)
+valid_candle_bear = require_red_candle ? (close[3] > open[3]) : (close[3] >= open[3] * 0.998)
+
+// Pillar 3: Liquidity Judas Sweep
+prev_lows  = ta.lowest(low[4], 5)
+prev_highs = ta.highest(high[4], 5)
+valid_sweep_bull = require_judas_sweep ? (low[3] <= prev_lows) : true
+valid_sweep_bear = require_judas_sweep ? (high[3] >= prev_highs) : true
+
+// Pillar 4: Fair Value Gap (FVG) + Impulse Displacement
+has_bull_fvg  = low[1] > high[3]
+has_bear_fvg  = high[1] < low[3]
+
+// Measure full impulse displacement (checks highest high across the expansion candles)
+impulse_high = math.max(high[1], high[2])
+impulse_low  = math.min(low[1], low[2])
+
+disp_gain = (impulse_high - low[3]) / low[3]
+disp_drop = (high[3] - impulse_low) / high[3]
+has_disp_bull = disp_gain >= (min_disp_pct / 100.0)
+has_disp_bear = disp_drop >= (min_disp_pct / 100.0)
+
+// Tier-1 Institutional OB Qualification
+valid_bull_ob = valid_pivot_bull and valid_candle_bull and valid_sweep_bull and has_bull_fvg and has_disp_bull and btc_is_bullish
+valid_bear_ob = valid_pivot_bear and valid_candle_bear and valid_sweep_bear and has_bear_fvg and has_disp_bear and btc_is_bearish
+
+// ============================================================================
+// 4. DATA STRUCTURE FOR TIER-1 SNIPER EXECUTION
+// ============================================================================
+type Tier1Trade
+    bool is_bull
+    int start_bar
+    float ob_high
+    float ob_low
+    float mt_50
+    float entry_price
+    float tp_price
+    float sl_price
+    bool tapped
+    int tap_bar
+    bool be_armed
+    bool completed
+    box ob_box
+    line mt_line
+    line tp_line
+    line sl_line
+
+var Tier1Trade[] active_trades = array.new<Tier1Trade>()
+
+// ============================================================================
+// 5. DRAWING NEW TIER-1 ORDER BLOCKS
+// ============================================================================
+if valid_bull_ob
+    float o_high = high[3]
+    float o_low  = low[3]
+    float mt     = (o_high + o_low) / 2.0
+    float def_entry = (entry_mode == "OB Boundary (Edge Touch)") ? o_high : mt
+    float tp     = def_entry * (1.0 + tp_price_pct)
+    float sl     = def_entry * (1.0 - sl_price_pct)
+    int s_bar    = bar_index - 3
+
+    box b = box.new(s_bar, o_high, bar_index + 10, o_low, border_color=color.new(#2563eb, 10), border_width=1, bgcolor=col_bull_ob)
+    line l_mt = line.new(s_bar, mt, bar_index + 10, mt, color=col_mt_line, width=1, style=line.style_dashed)
+    
+    Tier1Trade new_trade = Tier1Trade.new(true, s_bar, o_high, o_low, mt, def_entry, tp, sl, false, 0, false, false, b, l_mt, na, na)
+    array.push(active_trades, new_trade)
+
+if valid_bear_ob
+    float o_high = high[3]
+    float o_low  = low[3]
+    float mt     = (o_high + o_low) / 2.0
+    float def_entry = (entry_mode == "OB Boundary (Edge Touch)") ? o_low : mt
+    float tp     = def_entry * (1.0 - tp_price_pct)
+    float sl     = def_entry * (1.0 + sl_price_pct)
+    int s_bar    = bar_index - 3
+
+    box b = box.new(s_bar, o_high, bar_index + 10, o_low, border_color=color.new(#8b5cf6, 10), border_width=1, bgcolor=col_bear_ob)
+    line l_mt = line.new(s_bar, mt, bar_index + 10, mt, color=col_mt_line, width=1, style=line.style_dashed)
+    
+    Tier1Trade new_trade = Tier1Trade.new(false, s_bar, o_high, o_low, mt, def_entry, tp, sl, false, 0, false, false, b, l_mt, na, na)
+    array.push(active_trades, new_trade)
+
+// ============================================================================
+// 6. CONTINUOUS EXTENSION + 1st TAP AT 50% MT / BOUNDARY
+// ============================================================================
+if array.size(active_trades) > 0
+    for i = array.size(active_trades) - 1 to 0
+        Tier1Trade tr = array.get(active_trades, i)
+        
+        if not tr.completed
+            // Always extend unmitigated box & MT line dynamically to the current bar!
+            box.set_right(tr.ob_box, bar_index + 2)
+            line.set_x2(tr.mt_line, bar_index + 2)
+            
+            // Check 1st Tap if still unmitigated
+            if not tr.tapped
+                int bars_alive = bar_index - tr.start_bar
+                
+                // Hard cleanup only after massive 250 bars lookback (if enabled)
+                if not extend_until_mitigated and bars_alive > max_tap_window
+                    tr.completed := true
+                else
+                    // Bullish 1st Tap: Taps 50% MT or OB High, and holds above 50% MT
+                    if tr.is_bull
+                        // Check if candle invalidated/broke below OB Low with a body close
+                        bool invalidated = close < tr.ob_low
+                        if invalidated
+                            tr.completed := true
+                            box.set_right(tr.ob_box, bar_index)
+                            line.set_x2(tr.mt_line, bar_index)
+                        else
+                            float target_entry = (entry_mode == "OB Boundary (Edge Touch)") ? tr.ob_high : tr.mt_50
+                            bool tapped_entry  = low <= target_entry and low > tr.sl_price
+                            bool body_holds    = (entry_mode == "OB Boundary (Edge Touch)") ? (close >= tr.ob_low) : (close >= tr.mt_50)
+                            bool gate_pass     = enable_15m_gate ? m15_bull_rejection : true
+                            
+                            if tapped_entry and body_holds and gate_pass
+                                tr.tapped  := true
+                                tr.tap_bar := bar_index
+                                tr.entry_price := target_entry
+                                
+                                // Recalculate TP/SL based on chosen entry mode
+                                tr.tp_price := target_entry * (1.0 + tp_price_pct)
+                                tr.sl_price := target_entry * (1.0 - sl_price_pct)
+                                
+                                // Lock the box right edge at tap bar
+                                box.set_right(tr.ob_box, bar_index)
+                                line.set_x2(tr.mt_line, bar_index)
+                                
+                                tr.tp_line := line.new(bar_index, tr.tp_price, bar_index + 25, tr.tp_price, color=col_tp_line, width=2, style=line.style_solid)
+                                tr.sl_line := line.new(bar_index, tr.sl_price, bar_index + 25, tr.sl_price, color=col_sl_line, width=1, style=line.style_dashed)
+                                
+                                string lbl_txt = "🎯 HERMES 3.5 TIER-1 BUY\nEntry: " + str.tostring(target_entry, "#.#####") + "\nMode: " + entry_mode + "\nVirgin OB Tapped!"
+                                label.new(bar_index, low, lbl_txt, color=color.new(#00e676, 15), textcolor=color.white, style=label.style_label_up, size=size.small)
+                                alert("HERMES 3.5 TIER-1 BUY Triggered: " + str.tostring(target_entry), alert.freq_once_per_bar_close)
+
+                    // Bearish 1st Tap: Taps 50% MT or OB Low
+                    else
+                        bool invalidated = close > tr.ob_high
+                        if invalidated
+                            tr.completed := true
+                            box.set_right(tr.ob_box, bar_index)
+                            line.set_x2(tr.mt_line, bar_index)
+                        else
+                            float target_entry = (entry_mode == "OB Boundary (Edge Touch)") ? tr.ob_low : tr.mt_50
+                            bool tapped_entry  = high >= target_entry and high < tr.sl_price
+                            bool body_holds    = (entry_mode == "OB Boundary (Edge Touch)") ? (close <= tr.ob_high) : (close <= tr.mt_50)
+                            bool gate_pass     = enable_15m_gate ? m15_bear_rejection : true
+                            
+                            if tapped_entry and body_holds and gate_pass
+                                tr.tapped  := true
+                                tr.tap_bar := bar_index
+                                tr.entry_price := target_entry
+                                
+                                // Recalculate TP/SL based on chosen entry mode
+                                tr.tp_price := target_entry * (1.0 - tp_price_pct)
+                                tr.sl_price := target_entry * (1.0 + sl_price_pct)
+                                
+                                box.set_right(tr.ob_box, bar_index)
+                                line.set_x2(tr.mt_line, bar_index)
+                                
+                                tr.tp_line := line.new(bar_index, tr.tp_price, bar_index + 25, tr.tp_price, color=col_tp_line, width=2, style=line.style_solid)
+                                tr.sl_line := line.new(bar_index, tr.sl_price, bar_index + 25, tr.sl_price, color=col_sl_line, width=1, style=line.style_dashed)
+                                
+                                string lbl_txt = "🎯 HERMES 3.5 TIER-1 SELL\nEntry: " + str.tostring(target_entry, "#.#####") + "\nMode: " + entry_mode + "\nVirgin OB Tapped!"
+                                label.new(bar_index, high, lbl_txt, color=color.new(#ff1744, 15), textcolor=color.white, style=label.style_label_down, size=size.small)
+                                alert("HERMES 3.5 TIER-1 SELL Triggered: " + str.tostring(target_entry), alert.freq_once_per_bar_close)
+
+            // Monitor Active Trade: Breakeven Armor & TP/SL Outcomes
+            else
+                if not na(tr.tp_line)
+                    line.set_x2(tr.tp_line, bar_index)
+                if not na(tr.sl_line)
+                    line.set_x2(tr.sl_line, bar_index)
+                    
+                // Long Trade Monitor
+                if tr.is_bull
+                    float favorable_move = (high - tr.entry_price) / tr.entry_price
+                    
+                    // Stage 1 Breakeven Armor Lock (+1.5% Move)
+                    if not tr.be_armed and favorable_move >= be_spot_pct
+                        tr.be_armed := true
+                        float be_price = tr.entry_price * 1.001  // Entry + 0.1% fee buffer
+                        tr.sl_price := be_price
+                        line.set_y1(tr.sl_line, be_price)
+                        line.set_y2(tr.sl_line, be_price)
+                        line.set_color(tr.sl_line, col_be_line)
+                        label.new(bar_index, low, "🛡️ STAGE 1 BE ARMOR\nSL Locked at +0.1%\nRisk-Free Trade!", 
+                                  color=color.new(#38bdf8, 20), textcolor=color.white, style=label.style_label_up, size=size.tiny)
+                        alert("HERMES 3.5 Profit Armor: Breakeven Locked at +0.1%!", alert.freq_once_per_bar_close)
+                        
+                    // Outcome Check
+                    if high >= tr.tp_price
+                        label.new(bar_index, high, "🏆 TP HIT!\n+" + str.tostring(tp_roe_pct, "#.#") + "% ROE\n100% Compounded!", 
+                                  color=#00e676, textcolor=color.black, style=label.style_label_down, size=size.small)
+                        tr.completed := true
+                        alert("HERMES 3.5 TIER-1 TP HIT! +" + str.tostring(tp_roe_pct) + "% ROE", alert.freq_once_per_bar_close)
+                    else if low <= tr.sl_price
+                        if tr.be_armed
+                            label.new(bar_index, low, "🛡️ BREAKEVEN EXIT\n$0.00 Loss (Capital Preserved)", 
+                                      color=color.new(#38bdf8, 20), textcolor=color.white, style=label.style_label_up, size=size.tiny)
+                        else
+                            label.new(bar_index, low, "❌ SL HIT\n-" + str.tostring(sl_roe_pct, "#.#") + "% ROE", 
+                                      color=#ff1744, textcolor=color.white, style=label.style_label_up, size=size.small)
+                        tr.completed := true
+
+                // Short Trade Monitor
+                else
+                    float favorable_move = (tr.entry_price - low) / tr.entry_price
+                    
+                    // Stage 1 Breakeven Armor Lock (+1.5% Move)
+                    if not tr.be_armed and favorable_move >= be_spot_pct
+                        tr.be_armed := true
+                        float be_price = tr.entry_price * 0.999  // Entry - 0.1% fee buffer
+                        tr.sl_price := be_price
+                        line.set_y1(tr.sl_line, be_price)
+                        line.set_y2(tr.sl_line, be_price)
+                        line.set_color(tr.sl_line, col_be_line)
+                        label.new(bar_index, high, "🛡️ STAGE 1 BE ARMOR\nSL Locked at +0.1%\nRisk-Free Trade!", 
+                                  color=color.new(#38bdf8, 20), textcolor=color.white, style=label.style_label_down, size=size.tiny)
+                        alert("HERMES 3.5 Profit Armor: Breakeven Locked at +0.1%!", alert.freq_once_per_bar_close)
+                        
+                    // Outcome Check
+                    if low <= tr.tp_price
+                        label.new(bar_index, low, "🏆 TP HIT!\n+" + str.tostring(tp_roe_pct, "#.#") + "% ROE\n100% Compounded!", 
+                                  color=#00e676, textcolor=color.black, style=label.style_label_up, size=size.small)
+                        tr.completed := true
+                        alert("HERMES 3.5 TIER-1 TP HIT! +" + str.tostring(tp_roe_pct) + "% ROE", alert.freq_once_per_bar_close)
+                    else if high >= tr.sl_price
+                        if tr.be_armed
+                            label.new(bar_index, high, "🛡️ BREAKEVEN EXIT\n$0.00 Loss (Capital Preserved)", 
+                                      color=color.new(#38bdf8, 20), textcolor=color.white, style=label.style_label_down, size=size.tiny)
+                        else
+                            label.new(bar_index, high, "❌ SL HIT\n-" + str.tostring(sl_roe_pct, "#.#") + "% ROE", 
+                                      color=#ff1744, textcolor=color.white, style=label.style_label_down, size=size.small)
+                        tr.completed := true

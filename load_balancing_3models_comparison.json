@@ -1,0 +1,32 @@
+{
+  "waterfall": {
+    "final_balances": {
+      "4h_1": 27664.99,
+      "4h_2": 63.0,
+      "1h_1": 10091.5,
+      "1h_2": 88.0
+    },
+    "total_trades": 447,
+    "net_profit": 37707.490000000005
+  },
+  "round_robin": {
+    "final_balances": {
+      "4h_1": 2812.16,
+      "4h_2": 619.82,
+      "1h_1": 968.46,
+      "1h_2": 917.64
+    },
+    "total_trades": 447,
+    "net_profit": 5118.080000000001
+  },
+  "coin_buckets": {
+    "final_balances": {
+      "4h_1": 213.75,
+      "4h_2": 602.78,
+      "1h_1": 304.41,
+      "1h_2": 44.33
+    },
+    "total_trades": 186,
+    "net_profit": 965.27
+  }
+}

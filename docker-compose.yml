@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  smc_v17_terminal:
+    build: .
+    container_name: smc_v17_scanner
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./database:/app/database
+    env_file:
+      - .env

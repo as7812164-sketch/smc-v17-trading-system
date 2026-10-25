@@ -1,0 +1,1002 @@
+{
+  "boundary": {
+    "1h": {
+      "trades": [
+        {
+          "symbol": "LINKUSDT",
+          "side": "LONG",
+          "entry_price": 12.393,
+          "tp_price": 12.695389,
+          "sl_price": 12.095568,
+          "entry_time": "08-Sep 18:30",
+          "exit_time": "08-Sep 20:30",
+          "outcome": "WIN",
+          "pump_pct": 12.58
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "LONG",
+          "entry_price": 0.7264,
+          "tp_price": 0.744124,
+          "sl_price": 0.708966,
+          "entry_time": "11-Sep 23:30",
+          "exit_time": "",
+          "outcome": "PENDING",
+          "pump_pct": 8.09
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "LONG",
+          "entry_price": 0.8192,
+          "tp_price": 0.839188,
+          "sl_price": 0.799539,
+          "entry_time": "20-Sep 07:30",
+          "exit_time": "20-Sep 08:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 9.94
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 2.598,
+          "tp_price": 2.534609,
+          "sl_price": 2.660352,
+          "entry_time": "11-Sep 22:30",
+          "exit_time": "11-Sep 23:30",
+          "outcome": "WIN",
+          "pump_pct": 9.85
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "entry_price": 2.428,
+          "tp_price": 2.487243,
+          "sl_price": 2.369728,
+          "entry_time": "12-Sep 03:30",
+          "exit_time": "12-Sep 04:30",
+          "outcome": "LOSS",
+          "pump_pct": 14.48
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "entry_price": 2.409,
+          "tp_price": 2.46778,
+          "sl_price": 2.351184,
+          "entry_time": "15-Sep 11:30",
+          "exit_time": "15-Sep 12:30",
+          "outcome": "LOSS",
+          "pump_pct": 9.16
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 3.724,
+          "tp_price": 3.633134,
+          "sl_price": 3.813376,
+          "entry_time": "20-Sep 17:30",
+          "exit_time": "20-Sep 18:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 8.83
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 4.239,
+          "tp_price": 4.135568,
+          "sl_price": 4.340736,
+          "entry_time": "22-Sep 03:30",
+          "exit_time": "22-Sep 04:30",
+          "outcome": "LOSS",
+          "pump_pct": 11.16
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 4.344,
+          "tp_price": 4.238006,
+          "sl_price": 4.448256,
+          "entry_time": "22-Sep 04:30",
+          "exit_time": "22-Sep 05:30",
+          "outcome": "WIN",
+          "pump_pct": 12.08
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 4.47,
+          "tp_price": 4.360932,
+          "sl_price": 4.57728,
+          "entry_time": "23-Sep 10:30",
+          "exit_time": "23-Sep 12:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 8.74
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 4.559,
+          "tp_price": 4.44776,
+          "sl_price": 4.668416,
+          "entry_time": "23-Sep 13:30",
+          "exit_time": "23-Sep 15:30",
+          "outcome": "LOSS",
+          "pump_pct": 9.35
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "entry_price": 4.357,
+          "tp_price": 4.463311,
+          "sl_price": 4.252432,
+          "entry_time": "23-Sep 23:30",
+          "exit_time": "24-Sep 00:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 12.3
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "entry_price": 0.1248,
+          "tp_price": 0.127845,
+          "sl_price": 0.121805,
+          "entry_time": "23-Sep 19:30",
+          "exit_time": "23-Sep 20:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 13.19
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.1131,
+          "tp_price": 0.11586,
+          "sl_price": 0.110386,
+          "entry_time": "02-Sep 08:30",
+          "exit_time": "02-Sep 09:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 10.55
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "entry_price": 0.1119,
+          "tp_price": 0.10917,
+          "sl_price": 0.114586,
+          "entry_time": "02-Sep 07:30",
+          "exit_time": "02-Sep 09:30",
+          "outcome": "LOSS",
+          "pump_pct": 10.15
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.1343,
+          "tp_price": 0.137577,
+          "sl_price": 0.131077,
+          "entry_time": "04-Sep 09:30",
+          "exit_time": "04-Sep 11:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 12.66
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.1323,
+          "tp_price": 0.135528,
+          "sl_price": 0.129125,
+          "entry_time": "04-Sep 19:30",
+          "exit_time": "04-Sep 20:30",
+          "outcome": "WIN",
+          "pump_pct": 13.1
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "entry_price": 0.1407,
+          "tp_price": 0.137267,
+          "sl_price": 0.144077,
+          "entry_time": "05-Sep 23:30",
+          "exit_time": "06-Sep 00:30",
+          "outcome": "LOSS",
+          "pump_pct": 12.37
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.1427,
+          "tp_price": 0.146182,
+          "sl_price": 0.139275,
+          "entry_time": "11-Sep 23:30",
+          "exit_time": "12-Sep 01:30",
+          "outcome": "LOSS",
+          "pump_pct": 8.73
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.1404,
+          "tp_price": 0.143826,
+          "sl_price": 0.13703,
+          "entry_time": "11-Sep 23:30",
+          "exit_time": "12-Sep 01:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 9.99
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "entry_price": 0.1638,
+          "tp_price": 0.159803,
+          "sl_price": 0.167731,
+          "entry_time": "17-Sep 00:30",
+          "exit_time": "17-Sep 01:30",
+          "outcome": "WIN",
+          "pump_pct": 9.61
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "SHORT",
+          "entry_price": 0.66,
+          "tp_price": 0.643896,
+          "sl_price": 0.67584,
+          "entry_time": "11-Sep 07:30",
+          "exit_time": "11-Sep 10:30",
+          "outcome": "WIN",
+          "pump_pct": 10.07
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "LONG",
+          "entry_price": 0.626,
+          "tp_price": 0.641274,
+          "sl_price": 0.610976,
+          "entry_time": "11-Sep 13:30",
+          "exit_time": "11-Sep 15:30",
+          "outcome": "LOSS",
+          "pump_pct": 9.24
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "LONG",
+          "entry_price": 0.719,
+          "tp_price": 0.736544,
+          "sl_price": 0.701744,
+          "entry_time": "20-Sep 02:30",
+          "exit_time": "20-Sep 03:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 8.05
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "LONG",
+          "entry_price": 0.761,
+          "tp_price": 0.779568,
+          "sl_price": 0.742736,
+          "entry_time": "23-Sep 20:30",
+          "exit_time": "23-Sep 21:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 12.83
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "SHORT",
+          "entry_price": 0.833,
+          "tp_price": 0.812675,
+          "sl_price": 0.852992,
+          "entry_time": "24-Sep 19:30",
+          "exit_time": "24-Sep 20:30",
+          "outcome": "WIN",
+          "pump_pct": 13.73
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "SHORT",
+          "entry_price": 0.8444,
+          "tp_price": 0.823797,
+          "sl_price": 0.864666,
+          "entry_time": "24-Sep 19:30",
+          "exit_time": "24-Sep 20:30",
+          "outcome": "WIN",
+          "pump_pct": 14.38
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "entry_price": 7.501,
+          "tp_price": 7.684024,
+          "sl_price": 7.320976,
+          "entry_time": "20-Sep 08:30",
+          "exit_time": "20-Sep 10:30",
+          "outcome": "WIN",
+          "pump_pct": 13.62
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "entry_price": 8.127,
+          "tp_price": 8.325299,
+          "sl_price": 7.931952,
+          "entry_time": "24-Sep 08:30",
+          "exit_time": "24-Sep 09:30",
+          "outcome": "LOSS",
+          "pump_pct": 9.84
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "entry_price": 7.903,
+          "tp_price": 8.095833,
+          "sl_price": 7.713328,
+          "entry_time": "25-Sep 06:30",
+          "exit_time": "25-Sep 10:30",
+          "outcome": "WIN",
+          "pump_pct": 14.3
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "SHORT",
+          "entry_price": 0.1569,
+          "tp_price": 0.153072,
+          "sl_price": 0.160666,
+          "entry_time": "01-Sep 05:30",
+          "exit_time": "01-Sep 08:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 9.39
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "entry_price": 0.3673,
+          "tp_price": 0.358338,
+          "sl_price": 0.376115,
+          "entry_time": "01-Sep 06:30",
+          "exit_time": "01-Sep 13:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 9.2
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "entry_price": 0.3668,
+          "tp_price": 0.37575,
+          "sl_price": 0.357997,
+          "entry_time": "12-Sep 03:30",
+          "exit_time": "12-Sep 09:30",
+          "outcome": "WIN",
+          "pump_pct": 8.47
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "entry_price": 0.3945,
+          "tp_price": 0.404126,
+          "sl_price": 0.385032,
+          "entry_time": "20-Sep 19:30",
+          "exit_time": "20-Sep 20:30",
+          "outcome": "WIN",
+          "pump_pct": 8.17
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "entry_price": 0.4174,
+          "tp_price": 0.427585,
+          "sl_price": 0.407382,
+          "entry_time": "23-Sep 18:30",
+          "exit_time": "23-Sep 19:30",
+          "outcome": "LOSS",
+          "pump_pct": 10.46
+        }
+      ],
+      "wins": 12,
+      "losses": 10,
+      "breakeven": 12
+    },
+    "4h": {
+      "trades": [
+        {
+          "symbol": "SOLUSDT",
+          "side": "SHORT",
+          "entry_price": 105.08,
+          "tp_price": 102.516048,
+          "sl_price": 107.60192,
+          "entry_time": "03-Sep 17:30",
+          "exit_time": "04-Sep 17:30",
+          "outcome": "WIN",
+          "pump_pct": 8.51
+        },
+        {
+          "symbol": "XRPUSDT",
+          "side": "SHORT",
+          "entry_price": 1.4015,
+          "tp_price": 1.367303,
+          "sl_price": 1.435136,
+          "entry_time": "18-Sep 17:30",
+          "exit_time": "18-Sep 21:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 15.79
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "side": "SHORT",
+          "entry_price": 0.0839,
+          "tp_price": 0.081853,
+          "sl_price": 0.085914,
+          "entry_time": "18-Sep 05:30",
+          "exit_time": "18-Sep 13:30",
+          "outcome": "LOSS",
+          "pump_pct": 8.24
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "LONG",
+          "entry_price": 0.2116,
+          "tp_price": 0.216763,
+          "sl_price": 0.206522,
+          "entry_time": "10-Sep 01:30",
+          "exit_time": "10-Sep 13:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 8.27
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "SHORT",
+          "entry_price": 0.7234,
+          "tp_price": 0.705749,
+          "sl_price": 0.740762,
+          "entry_time": "17-Sep 05:30",
+          "exit_time": "18-Sep 01:30",
+          "outcome": "LOSS",
+          "pump_pct": 9.68
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "SHORT",
+          "entry_price": 0.8378,
+          "tp_price": 0.817358,
+          "sl_price": 0.857907,
+          "entry_time": "20-Sep 17:30",
+          "exit_time": "20-Sep 21:30",
+          "outcome": "LOSS",
+          "pump_pct": 8.84
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 1.951,
+          "tp_price": 1.903396,
+          "sl_price": 1.997824,
+          "entry_time": "03-Sep 17:30",
+          "exit_time": "03-Sep 21:30",
+          "outcome": "LOSS",
+          "pump_pct": 10.75
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 2.422,
+          "tp_price": 2.362903,
+          "sl_price": 2.480128,
+          "entry_time": "12-Sep 17:30",
+          "exit_time": "12-Sep 21:30",
+          "outcome": "WIN",
+          "pump_pct": 9.92
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 2.397,
+          "tp_price": 2.338513,
+          "sl_price": 2.454528,
+          "entry_time": "14-Sep 13:30",
+          "exit_time": "14-Sep 21:30",
+          "outcome": "LOSS",
+          "pump_pct": 16.97
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "entry_price": 0.0963,
+          "tp_price": 0.09865,
+          "sl_price": 0.093989,
+          "entry_time": "15-Sep 21:30",
+          "exit_time": "16-Sep 01:30",
+          "outcome": "LOSS",
+          "pump_pct": 11.65
+        },
+        {
+          "symbol": "TIAUSDT",
+          "side": "LONG",
+          "entry_price": 0.4765,
+          "tp_price": 0.488127,
+          "sl_price": 0.465064,
+          "entry_time": "28-Sep 05:30",
+          "exit_time": "28-Sep 09:30",
+          "outcome": "LOSS",
+          "pump_pct": 14.14
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "entry_price": 0.1496,
+          "tp_price": 0.15325,
+          "sl_price": 0.14601,
+          "entry_time": "31-Aug 05:30",
+          "exit_time": "31-Aug 09:30",
+          "outcome": "WIN",
+          "pump_pct": 9.69
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "entry_price": 0.1478,
+          "tp_price": 0.151406,
+          "sl_price": 0.144253,
+          "entry_time": "31-Aug 01:30",
+          "exit_time": "31-Aug 05:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 10.67
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "entry_price": 0.3607,
+          "tp_price": 0.351899,
+          "sl_price": 0.369357,
+          "entry_time": "31-Aug 21:30",
+          "exit_time": "01-Sep 05:30",
+          "outcome": "LOSS",
+          "pump_pct": 8.3
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "LONG",
+          "entry_price": 0.3552,
+          "tp_price": 0.363867,
+          "sl_price": 0.346675,
+          "entry_time": "02-Sep 13:30",
+          "exit_time": "02-Sep 17:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 8.96
+        }
+      ],
+      "wins": 3,
+      "losses": 8,
+      "breakeven": 4
+    }
+  },
+  "mean_threshold": {
+    "1h": {
+      "trades": [
+        {
+          "symbol": "AVAXUSDT",
+          "side": "SHORT",
+          "entry_price": 10.4555,
+          "tp_price": 10.200386,
+          "sl_price": 10.706432,
+          "entry_time": "20-Sep 17:30",
+          "exit_time": "20-Sep 18:30",
+          "outcome": "LOSS",
+          "pump_pct": 12.83
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "LONG",
+          "entry_price": 0.71755,
+          "tp_price": 0.735058,
+          "sl_price": 0.700329,
+          "entry_time": "12-Sep 03:30",
+          "exit_time": "13-Sep 11:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 8.09
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "LONG",
+          "entry_price": 0.8131,
+          "tp_price": 0.83294,
+          "sl_price": 0.793586,
+          "entry_time": "20-Sep 08:30",
+          "exit_time": "20-Sep 13:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 9.94
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 2.6245,
+          "tp_price": 2.560462,
+          "sl_price": 2.687488,
+          "entry_time": "11-Sep 21:30",
+          "exit_time": "11-Sep 23:30",
+          "outcome": "WIN",
+          "pump_pct": 9.85
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "entry_price": 2.4055,
+          "tp_price": 2.464194,
+          "sl_price": 2.347768,
+          "entry_time": "12-Sep 03:30",
+          "exit_time": "12-Sep 05:30",
+          "outcome": "LOSS",
+          "pump_pct": 14.48
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "entry_price": 2.394,
+          "tp_price": 2.452414,
+          "sl_price": 2.336544,
+          "entry_time": "15-Sep 14:30",
+          "exit_time": "15-Sep 19:30",
+          "outcome": "LOSS",
+          "pump_pct": 9.16
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 4.3235,
+          "tp_price": 4.218007,
+          "sl_price": 4.427264,
+          "entry_time": "22-Sep 04:30",
+          "exit_time": "22-Sep 05:30",
+          "outcome": "WIN",
+          "pump_pct": 11.16
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 4.399,
+          "tp_price": 4.291664,
+          "sl_price": 4.504576,
+          "entry_time": "22-Sep 06:30",
+          "exit_time": "22-Sep 07:30",
+          "outcome": "LOSS",
+          "pump_pct": 12.08
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 4.551,
+          "tp_price": 4.439956,
+          "sl_price": 4.660224,
+          "entry_time": "23-Sep 10:30",
+          "exit_time": "23-Sep 11:30",
+          "outcome": "WIN",
+          "pump_pct": 8.74
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 4.611000000000001,
+          "tp_price": 4.498492,
+          "sl_price": 4.721664,
+          "entry_time": "23-Sep 14:30",
+          "exit_time": "23-Sep 15:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 9.35
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "LONG",
+          "entry_price": 4.292,
+          "tp_price": 4.396725,
+          "sl_price": 4.188992,
+          "entry_time": "23-Sep 22:30",
+          "exit_time": "23-Sep 23:30",
+          "outcome": "WIN",
+          "pump_pct": 12.3
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "entry_price": 0.12345,
+          "tp_price": 0.126462,
+          "sl_price": 0.120487,
+          "entry_time": "23-Sep 21:30",
+          "exit_time": "23-Sep 22:30",
+          "outcome": "WIN",
+          "pump_pct": 13.19
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.10915,
+          "tp_price": 0.111813,
+          "sl_price": 0.10653,
+          "entry_time": "01-Sep 17:30",
+          "exit_time": "01-Sep 18:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 10.55
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "entry_price": 0.11410000000000001,
+          "tp_price": 0.111316,
+          "sl_price": 0.116838,
+          "entry_time": "02-Sep 09:30",
+          "exit_time": "02-Sep 10:30",
+          "outcome": "WIN",
+          "pump_pct": 10.15
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "entry_price": 0.11699999999999999,
+          "tp_price": 0.114145,
+          "sl_price": 0.119808,
+          "entry_time": "02-Sep 19:30",
+          "exit_time": "02-Sep 20:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 11.45
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.1323,
+          "tp_price": 0.135528,
+          "sl_price": 0.129125,
+          "entry_time": "04-Sep 20:30",
+          "exit_time": "04-Sep 21:30",
+          "outcome": "WIN",
+          "pump_pct": 12.66
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.13105,
+          "tp_price": 0.134248,
+          "sl_price": 0.127905,
+          "entry_time": "04-Sep 18:30",
+          "exit_time": "04-Sep 19:30",
+          "outcome": "WIN",
+          "pump_pct": 13.1
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "entry_price": 0.14350000000000002,
+          "tp_price": 0.139999,
+          "sl_price": 0.146944,
+          "entry_time": "05-Sep 23:30",
+          "exit_time": "06-Sep 00:30",
+          "outcome": "LOSS",
+          "pump_pct": 12.37
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.1412,
+          "tp_price": 0.144645,
+          "sl_price": 0.137811,
+          "entry_time": "12-Sep 00:30",
+          "exit_time": "12-Sep 02:30",
+          "outcome": "LOSS",
+          "pump_pct": 8.73
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "LONG",
+          "entry_price": 0.13924999999999998,
+          "tp_price": 0.142648,
+          "sl_price": 0.135908,
+          "entry_time": "12-Sep 01:30",
+          "exit_time": "12-Sep 02:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 9.99
+        },
+        {
+          "symbol": "ARBUSDT",
+          "side": "SHORT",
+          "entry_price": 0.16720000000000002,
+          "tp_price": 0.16312,
+          "sl_price": 0.171213,
+          "entry_time": "17-Sep 05:30",
+          "exit_time": "17-Sep 06:30",
+          "outcome": "WIN",
+          "pump_pct": 9.61
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "LONG",
+          "entry_price": 0.616,
+          "tp_price": 0.63103,
+          "sl_price": 0.601216,
+          "entry_time": "11-Sep 14:30",
+          "exit_time": "11-Sep 16:30",
+          "outcome": "LOSS",
+          "pump_pct": 9.24
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "LONG",
+          "entry_price": 0.7075,
+          "tp_price": 0.724763,
+          "sl_price": 0.69052,
+          "entry_time": "20-Sep 07:30",
+          "exit_time": "20-Sep 08:30",
+          "outcome": "WIN",
+          "pump_pct": 8.05
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "LONG",
+          "entry_price": 0.7545,
+          "tp_price": 0.77291,
+          "sl_price": 0.736392,
+          "entry_time": "23-Sep 21:30",
+          "exit_time": "23-Sep 22:30",
+          "outcome": "WIN",
+          "pump_pct": 12.83
+        },
+        {
+          "symbol": "APTUSDT",
+          "side": "SHORT",
+          "entry_price": 0.8425,
+          "tp_price": 0.821943,
+          "sl_price": 0.86272,
+          "entry_time": "24-Sep 19:30",
+          "exit_time": "24-Sep 20:30",
+          "outcome": "WIN",
+          "pump_pct": 13.73
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "entry_price": 7.4245,
+          "tp_price": 7.605658,
+          "sl_price": 7.246312,
+          "entry_time": "20-Sep 08:30",
+          "exit_time": "20-Sep 09:30",
+          "outcome": "WIN",
+          "pump_pct": 13.62
+        },
+        {
+          "symbol": "INJUSDT",
+          "side": "LONG",
+          "entry_price": 7.8455,
+          "tp_price": 8.03693,
+          "sl_price": 7.657208,
+          "entry_time": "23-Sep 19:30",
+          "exit_time": "23-Sep 20:30",
+          "outcome": "WIN",
+          "pump_pct": 9.84
+        }
+      ],
+      "wins": 14,
+      "losses": 7,
+      "breakeven": 6
+    },
+    "4h": {
+      "trades": [
+        {
+          "symbol": "SOLUSDT",
+          "side": "SHORT",
+          "entry_price": 106.28,
+          "tp_price": 103.686768,
+          "sl_price": 108.83072,
+          "entry_time": "06-Sep 05:30",
+          "exit_time": "07-Sep 17:30",
+          "outcome": "WIN",
+          "pump_pct": 8.51
+        },
+        {
+          "symbol": "XRPUSDT",
+          "side": "SHORT",
+          "entry_price": 1.4409999999999998,
+          "tp_price": 1.40584,
+          "sl_price": 1.475584,
+          "entry_time": "19-Sep 17:30",
+          "exit_time": "20-Sep 01:30",
+          "outcome": "WIN",
+          "pump_pct": 15.79
+        },
+        {
+          "symbol": "DOGEUSDT",
+          "side": "SHORT",
+          "entry_price": 0.08462,
+          "tp_price": 0.082555,
+          "sl_price": 0.086651,
+          "entry_time": "18-Sep 09:30",
+          "exit_time": "18-Sep 13:30",
+          "outcome": "LOSS",
+          "pump_pct": 8.24
+        },
+        {
+          "symbol": "ADAUSDT",
+          "side": "LONG",
+          "entry_price": 0.21035,
+          "tp_price": 0.215483,
+          "sl_price": 0.205302,
+          "entry_time": "10-Sep 01:30",
+          "exit_time": "10-Sep 05:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 8.27
+        },
+        {
+          "symbol": "SUIUSDT",
+          "side": "SHORT",
+          "entry_price": 0.7342500000000001,
+          "tp_price": 0.716334,
+          "sl_price": 0.751872,
+          "entry_time": "17-Sep 17:30",
+          "exit_time": "18-Sep 05:30",
+          "outcome": "LOSS",
+          "pump_pct": 9.68
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 1.999,
+          "tp_price": 1.950224,
+          "sl_price": 2.046976,
+          "entry_time": "03-Sep 21:30",
+          "exit_time": "04-Sep 01:30",
+          "outcome": "WIN",
+          "pump_pct": 10.75
+        },
+        {
+          "symbol": "NEARUSDT",
+          "side": "SHORT",
+          "entry_price": 2.5625,
+          "tp_price": 2.499975,
+          "sl_price": 2.624,
+          "entry_time": "14-Sep 21:30",
+          "exit_time": "15-Sep 01:30",
+          "outcome": "WIN",
+          "pump_pct": 16.97
+        },
+        {
+          "symbol": "OPUSDT",
+          "side": "LONG",
+          "entry_price": 0.09534999999999999,
+          "tp_price": 0.097677,
+          "sl_price": 0.093062,
+          "entry_time": "15-Sep 21:30",
+          "exit_time": "16-Sep 01:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 11.65
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "entry_price": 0.1481,
+          "tp_price": 0.151714,
+          "sl_price": 0.144546,
+          "entry_time": "31-Aug 01:30",
+          "exit_time": "31-Aug 05:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 9.69
+        },
+        {
+          "symbol": "FETUSDT",
+          "side": "LONG",
+          "entry_price": 0.14655,
+          "tp_price": 0.150126,
+          "sl_price": 0.143033,
+          "entry_time": "31-Aug 01:30",
+          "exit_time": "31-Aug 05:30",
+          "outcome": "WIN",
+          "pump_pct": 10.67
+        },
+        {
+          "symbol": "LDOUSDT",
+          "side": "SHORT",
+          "entry_price": 0.3683,
+          "tp_price": 0.359313,
+          "sl_price": 0.377139,
+          "entry_time": "01-Sep 17:30",
+          "exit_time": "01-Sep 21:30",
+          "outcome": "BREAKEVEN",
+          "pump_pct": 8.3
+        }
+      ],
+      "wins": 5,
+      "losses": 2,
+      "breakeven": 4
+    }
+  }
+}

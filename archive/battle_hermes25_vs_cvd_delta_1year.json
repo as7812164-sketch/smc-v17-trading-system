@@ -1,0 +1,258 @@
+{
+  "hermes25_baseline": {
+    "executed_trades_count": 785,
+    "wins": 702,
+    "losses": 83,
+    "win_rate": 89.43,
+    "long_trades": 377,
+    "long_wins": 333,
+    "long_wr": 88.33,
+    "short_trades": 408,
+    "short_wins": 369,
+    "short_wr": 90.44,
+    "t4h_count": 286,
+    "t4h_wins": 261,
+    "t4h_wr": 91.26,
+    "t1h_count": 499,
+    "t1h_wins": 441,
+    "t1h_wr": 88.38,
+    "profit_factor": 1.76,
+    "max_drawdown": 57.62,
+    "hit_100": {
+      "trade_num": 34,
+      "equity": 101.39,
+      "date": "2025-10-13"
+    },
+    "hit_250": {
+      "trade_num": 49,
+      "equity": 266.41,
+      "date": "2025-10-15"
+    },
+    "hit_500": {
+      "trade_num": 59,
+      "equity": 535.0,
+      "date": "2025-10-20"
+    },
+    "hit_1k": {
+      "trade_num": 85,
+      "equity": 1014.29,
+      "date": "2025-11-08"
+    },
+    "hit_2k": {
+      "trade_num": 111,
+      "equity": 2116.06,
+      "date": "2025-11-12"
+    },
+    "final_capital": 10320146516268.01,
+    "final_vault": 5520627105995.96,
+    "total_equity": 15840773622263.96,
+    "monthly_stats": {
+      "2025-09": {
+        "wins": 0,
+        "losses": 2,
+        "pnl": -14.014876902153116,
+        "trades": 2
+      },
+      "2025-10": {
+        "wins": 64,
+        "losses": 8,
+        "pnl": 520.4581262492007,
+        "trades": 72
+      },
+      "2025-11": {
+        "wins": 92,
+        "losses": 7,
+        "pnl": 23940.32291880922,
+        "trades": 99
+      },
+      "2025-12": {
+        "wins": 66,
+        "losses": 4,
+        "pnl": 554907.9805459155,
+        "trades": 70
+      },
+      "2026-01": {
+        "wins": 59,
+        "losses": 5,
+        "pnl": 7847508.748088106,
+        "trades": 64
+      },
+      "2026-02": {
+        "wins": 50,
+        "losses": 7,
+        "pnl": 43783368.276459806,
+        "trades": 57
+      },
+      "2026-03": {
+        "wins": 83,
+        "losses": 2,
+        "pnl": 7064506251.024098,
+        "trades": 85
+      },
+      "2026-04": {
+        "wins": 47,
+        "losses": 4,
+        "pnl": 11440796185.423628,
+        "trades": 51
+      },
+      "2026-05": {
+        "wins": 44,
+        "losses": 8,
+        "pnl": 57988721973.78916,
+        "trades": 52
+      },
+      "2026-06": {
+        "wins": 56,
+        "losses": 8,
+        "pnl": 763378755131.5138,
+        "trades": 64
+      },
+      "2026-07": {
+        "wins": 44,
+        "losses": 10,
+        "pnl": 688910885588.8594,
+        "trades": 54
+      },
+      "2026-08": {
+        "wins": 26,
+        "losses": 7,
+        "pnl": 792609267220.1235,
+        "trades": 33
+      },
+      "2026-09": {
+        "wins": 71,
+        "losses": 11,
+        "pnl": 13519328479631.459,
+        "trades": 82
+      }
+    }
+  },
+  "hermes25_cvd_delta": {
+    "executed_trades_count": 235,
+    "wins": 219,
+    "losses": 16,
+    "win_rate": 93.19,
+    "long_trades": 110,
+    "long_wins": 102,
+    "long_wr": 92.73,
+    "short_trades": 125,
+    "short_wins": 117,
+    "short_wr": 93.6,
+    "t4h_count": 85,
+    "t4h_wins": 82,
+    "t4h_wr": 96.47,
+    "t1h_count": 150,
+    "t1h_wins": 137,
+    "t1h_wr": 91.33,
+    "profit_factor": 12.85,
+    "max_drawdown": 31.29,
+    "hit_100": {
+      "trade_num": 14,
+      "equity": 105.55,
+      "date": "2025-10-15"
+    },
+    "hit_250": {
+      "trade_num": 25,
+      "equity": 266.48,
+      "date": "2025-10-23"
+    },
+    "hit_500": {
+      "trade_num": 32,
+      "equity": 518.19,
+      "date": "2025-10-29"
+    },
+    "hit_1k": {
+      "trade_num": 51,
+      "equity": 1010.28,
+      "date": "2025-11-17"
+    },
+    "hit_2k": {
+      "trade_num": 62,
+      "equity": 2111.65,
+      "date": "2025-11-21"
+    },
+    "final_capital": 8096476.42,
+    "final_vault": 1572715.93,
+    "total_equity": 9669192.35,
+    "monthly_stats": {
+      "2025-09": {
+        "wins": 2,
+        "losses": 0,
+        "pnl": -1.199730658681713,
+        "trades": 2
+      },
+      "2025-10": {
+        "wins": 32,
+        "losses": 1,
+        "pnl": 600.4429296584883,
+        "trades": 33
+      },
+      "2025-11": {
+        "wins": 30,
+        "losses": 2,
+        "pnl": 2353.372440283786,
+        "trades": 32
+      },
+      "2025-12": {
+        "wins": 16,
+        "losses": 1,
+        "pnl": 5120.72160171667,
+        "trades": 17
+      },
+      "2026-01": {
+        "wins": 14,
+        "losses": 3,
+        "pnl": 9817.856021158826,
+        "trades": 17
+      },
+      "2026-02": {
+        "wins": 21,
+        "losses": 0,
+        "pnl": 37840.4771691082,
+        "trades": 21
+      },
+      "2026-03": {
+        "wins": 21,
+        "losses": 1,
+        "pnl": 106813.38196715584,
+        "trades": 22
+      },
+      "2026-04": {
+        "wins": 14,
+        "losses": 1,
+        "pnl": 108716.08762001185,
+        "trades": 15
+      },
+      "2026-05": {
+        "wins": 12,
+        "losses": 2,
+        "pnl": 106850.9152133691,
+        "trades": 14
+      },
+      "2026-06": {
+        "wins": 20,
+        "losses": 3,
+        "pnl": 757964.7023585923,
+        "trades": 23
+      },
+      "2026-07": {
+        "wins": 11,
+        "losses": 2,
+        "pnl": 470269.43970364565,
+        "trades": 13
+      },
+      "2026-08": {
+        "wins": 14,
+        "losses": 0,
+        "pnl": 2887802.8676867653,
+        "trades": 14
+      },
+      "2026-09": {
+        "wins": 12,
+        "losses": 0,
+        "pnl": 5174993.281596152,
+        "trades": 12
+      }
+    }
+  }
+}

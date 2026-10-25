@@ -1,0 +1,74 @@
+[
+  {
+    "trades": 579,
+    "wins": 455,
+    "losses": 124,
+    "win_rate": 78.58376511226253,
+    "max_dd": 43.57306251658118,
+    "hit_1k": 65,
+    "final_cap": 1200284522113.9617,
+    "profit_factor": 2.1630980373101316,
+    "name": "HERMES 20X (Our Master System)",
+    "category": "\ud83c\udf1f MASTER CHAMPION"
+  },
+  {
+    "trades": 520,
+    "wins": 250,
+    "losses": 199,
+    "win_rate": 48.07692307692308,
+    "max_dd": 37.508715956982755,
+    "hit_1k": null,
+    "final_cap": 106.65500089528219,
+    "profit_factor": 1.0912658792333818,
+    "name": "Freqtrade NFI (iterativv - #1 GitHub)",
+    "category": "GitHub Freqtrade #1"
+  },
+  {
+    "trades": 572,
+    "wins": 173,
+    "losses": 146,
+    "win_rate": 30.244755244755243,
+    "max_dd": 43.79836153394547,
+    "hit_1k": null,
+    "final_cap": 68.96961169284062,
+    "profit_factor": 1.0476812985774764,
+    "name": "Lorentzian Classification (jdehorty)",
+    "category": "TradingView ML #1 (85k Boosts)"
+  },
+  {
+    "trades": 699,
+    "wins": 71,
+    "losses": 72,
+    "win_rate": 10.157367668097281,
+    "max_dd": 69.28802495669095,
+    "hit_1k": null,
+    "final_cap": 17.31375359645015,
+    "profit_factor": 0.7901658901912211,
+    "name": "UT Bot Alerts (QuantNomad)",
+    "category": "TradingView Top Bot (60k Boosts)"
+  },
+  {
+    "trades": 469,
+    "wins": 168,
+    "losses": 148,
+    "win_rate": 35.82089552238806,
+    "max_dd": 64.64319731442811,
+    "hit_1k": null,
+    "final_cap": 54.00392414808723,
+    "profit_factor": 1.0184423408743086,
+    "name": "Nadaraya-Watson Envelope (LuxAlgo)",
+    "category": "Kernel Regression (55k Boosts)"
+  },
+  {
+    "trades": 89,
+    "wins": 46,
+    "losses": 43,
+    "win_rate": 51.68539325842697,
+    "max_dd": 74.1058818807117,
+    "hit_1k": null,
+    "final_cap": 38.20605584436687,
+    "profit_factor": 0.8984457787871117,
+    "name": "QuantConnect Crypto Alpha (AQR/Dual Mom)",
+    "category": "QuantConnect Institutional"
+  }
+]

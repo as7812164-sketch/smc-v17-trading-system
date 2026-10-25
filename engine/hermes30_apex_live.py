@@ -1,5 +1,5 @@
 """
-HERMES 3.0 MODEL 2A: 24/7 Autonomous Live Execution & Scanning Engine
+HERMES 3.5 RADAR HARVEST: 24/7 Autonomous Live Execution & Scanning Engine
 =====================================================================
 Official Production Strategy Engine implementing:
 1. Setup Architecture:
@@ -112,7 +112,7 @@ class Hermes30Model2ALiveEngine:
                 pass
 
     def _ensure_db_schema(self):
-        """Ensures database tables reflect HERMES 3.0 MODEL 2A."""
+        """Ensures database tables reflect HERMES 3.5 RADAR HARVEST."""
         with get_connection() as conn:
             cols = [r[1] for r in conn.execute("PRAGMA table_info(paper_account)").fetchall()]
             if "vault_balance" not in cols:
@@ -120,7 +120,7 @@ class Hermes30Model2ALiveEngine:
             if "milestone_target" not in cols:
                 conn.execute("ALTER TABLE paper_account ADD COLUMN milestone_target REAL DEFAULT 2000.0")
             if "mode" not in cols:
-                conn.execute("ALTER TABLE paper_account ADD COLUMN mode TEXT DEFAULT 'HERMES_3.0_MODEL_2A'")
+                conn.execute("ALTER TABLE paper_account ADD COLUMN mode TEXT DEFAULT 'HERMES_3.5_RADAR_HARVEST'")
 
             trade_cols = [r[1] for r in conn.execute("PRAGMA table_info(paper_trades)").fetchall()]
             if "timeframe" not in trade_cols:
@@ -142,8 +142,8 @@ class Hermes30Model2ALiveEngine:
             if "order_type" not in trade_cols:
                 conn.execute("ALTER TABLE paper_trades ADD COLUMN order_type TEXT DEFAULT 'LIMIT'")
 
-            # Update account mode to HERMES_3.0_MODEL_2A
-            conn.execute("UPDATE paper_account SET mode = 'HERMES_3.0_MODEL_2A' WHERE id <= 10")
+            # Update account mode to HERMES_3.5_RADAR_HARVEST
+            conn.execute("UPDATE paper_account SET mode = 'HERMES_3.5_RADAR_HARVEST' WHERE id <= 10")
             conn.commit()
 
     def get_hermes_account(self, account_id: Optional[int] = None) -> Dict[str, Any]:
@@ -199,7 +199,7 @@ class Hermes30Model2ALiveEngine:
         btc_sentry: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """
-        Pure algorithmic implementation of HERMES 3.0 MODEL 2A:
+        Pure algorithmic implementation of HERMES 3.5 RADAR HARVEST:
         - Decisional Order Block (Fib 0.30 - 0.70 of wave)
         - Displacement >= 5.0% with Fair Value Gap (FVG)
         - Inducement (IDM) swept
@@ -504,10 +504,12 @@ class Hermes30Model2ALiveEngine:
                     elif be_locked:
                         status = "STAGE1_ARMOR"
 
+                    is_fresh = within_radar or (cur_price >= ent_p and cur_price <= rad_p) or (tapped and not be_locked)
                     active_zones.append({
                         "symbol": symbol,
                         "side": "BUY",
                         "timeframe": tf.upper(),
+                        "interval": tf,
                         "ob_high": o_high,
                         "ob_low": o_low,
                         "origin_time": c3["time"],
@@ -518,7 +520,10 @@ class Hermes30Model2ALiveEngine:
                         "armor_stage2_price": step_trig_p,
                         "harvest_lock_price": step_lock_p,
                         "sl_price": sl_p,
+                        "soft_sl_price": sl_p,
                         "hard_sl_price": sl_p,
+                        "is_fresh_trigger": is_fresh,
+                        "tap_bar_age": 1 if tapped else 0,
                         "status": status,
                         "displacement_pct": round(bull_disp, 2),
                         "wick_ratio_pct": 20.0,
@@ -598,10 +603,12 @@ class Hermes30Model2ALiveEngine:
                     elif be_locked:
                         status = "STAGE1_ARMOR"
 
+                    is_fresh_bear = within_radar or (cur_price <= ent_p and cur_price >= rad_p) or (tapped and not be_locked)
                     active_zones.append({
                         "symbol": symbol,
                         "side": "SELL",
                         "timeframe": tf.upper(),
+                        "interval": tf,
                         "ob_high": o_high,
                         "ob_low": o_low,
                         "origin_time": c3["time"],
@@ -612,7 +619,10 @@ class Hermes30Model2ALiveEngine:
                         "armor_stage2_price": step_trig_p,
                         "harvest_lock_price": step_lock_p,
                         "sl_price": sl_p,
+                        "soft_sl_price": sl_p,
                         "hard_sl_price": sl_p,
+                        "is_fresh_trigger": is_fresh_bear,
+                        "tap_bar_age": 1 if tapped else 0,
                         "status": status,
                         "displacement_pct": round(bear_disp, 2),
                         "wick_ratio_pct": 20.0,
@@ -637,7 +647,7 @@ class Hermes30Model2ALiveEngine:
                 try:
                     candles = await binance_feed.fetch_klines(symbol, interval=interval, limit=120)
                     if candles and len(candles) >= 40:
-                        detected = self.detect_apex_setups_on_candles(symbol, candles, interval, btc_sentry)
+                        detected = self.detect_hermes35_single_tier_zones(symbol, candles, interval)
                         all_setups.extend(detected)
                 except Exception as e:
                     logger.debug(f"Scan error for {symbol} {interval}: {e}")
@@ -710,14 +720,14 @@ class Hermes30Model2ALiveEngine:
         """Dispatches official Telegram Alert ONLY when the limit order is actually FILLED into a live position on exchange."""
         try:
             alert_text = (
-                f"⚡ <b>HERMES 3.0 • LIMIT ORDER FILLED & POSITION LIVE</b>\n"
+                f"⚡ <b>HERMES 3.5 RADAR HARVEST • ENTRY FILLED & POSITION LIVE</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"📦 <b>Compounding Slot</b>: <b>Section {sec_id} ({sec_type_str})</b>\n"
                 f"🪙 <b>Pair</b>: #{symbol} ({timeframe.upper()})\n"
                 f"📈 <b>Action</b>: {'🟢 LONG BUY (FILLED)' if side == 'LONG' else '🔴 SHORT SELL (FILLED)'}\n"
-                f"🎯 <b>Fill Price</b>: {ep:.6f} (50% Mean Threshold Tap Confirmed)\n"
-                f"🎯 <b>Take Profit</b>: {tp:.6f} (+15.0% ROE Target)\n"
-                f"🛑 <b>Initial Hard SL</b>: {hard_sl:.6f} (-3.00% Disaster Shield)\n"
+                f"🎯 <b>Fill Price</b>: {ep:.6f} (5% Boundary Penetration Confirmed)\n"
+                f"🎯 <b>Take Profit</b>: {tp:.6f} (+14.0% ROE Target)\n"
+                f"🛑 <b>Initial Hard SL</b>: {hard_sl:.6f} (-14.0% ROE Shield)\n"
                 f"🛡️ <b>Soft Stop Loss</b>: {soft_sl:.6f} (Candle Body Close Defense)\n"
                 f"🛡️ <b>Trailing Plan</b>: Stepped Trailing Active (Silent Background Protection)\n"
                 f"🕯️ <b>Rejection Wick</b>: {setup.get('wick_ratio_pct', 24.5):.1f}% (Confirmed ≥ 18.0% Absorption)\n"
@@ -1026,46 +1036,28 @@ class Hermes30Model2ALiveEngine:
                 be_locked = bool(trade.get("be_locked", 0))
 
                 # -------------------------------------------------------------
-                # STEPPED TRAILING SL LADDER EVALUATION (USER-DEFINED 9.5% CADENCE)
+                # HERMES 3.5 RADAR HARVEST: EXACT PINE SCRIPT V5 STEPPED TRAILING
+                # Stage 1: +8.0% ROE (+1.60% move) -> BE Armor (+0.10% lock)
+                # Stage 2: +9.0% ROE (+1.80% move) -> Stepped Profit Harvest (+4.50% ROE / +0.90% lock)
+                # Stage 3+: Extended Trend Runner (14.0% -> +10.0% lock)
                 # -------------------------------------------------------------
                 target_locked_roi = current_locked_roi
                 target_step = current_step
 
-                # Tier 1: 5.00% ROI -> SL shifts to +1.00% (Fee Shield / BE Lock)
-                if peak_roi >= 5.00 and target_locked_roi < 1.0:
-                    target_locked_roi = 1.0
+                # Stage 1: +8.0% ROE Break-Even Armor Lock (+0.10% Fee Shield)
+                if peak_roi >= 8.00 and target_locked_roi < 0.10:
+                    target_locked_roi = 0.10
                     target_step = 1
-                # Tier 2: 9.50% ROI -> SL shifts to +5.00%
-                if peak_roi >= 9.50 and target_locked_roi < 5.0:
-                    target_locked_roi = 5.0
+
+                # Stage 2: +9.0% ROE -> Stepped Profit Harvest (+4.50% ROE locked)
+                if peak_roi >= 9.00 and target_locked_roi < 4.50:
+                    target_locked_roi = 4.50
                     target_step = 2
-                # Tier 3: 14.50% ROI -> SL shifts to +10.00%
-                if peak_roi >= 14.50 and target_locked_roi < 10.0:
-                    target_locked_roi = 10.0
+
+                # Stage 3: +14.0% ROE Runner Lock (+10.0% ROE locked)
+                if peak_roi >= 14.00 and target_locked_roi < 10.00:
+                    target_locked_roi = 10.00
                     target_step = 3
-                # Tier 4: 19.50% ROI -> SL shifts to +15.00%
-                if peak_roi >= 19.50 and target_locked_roi < 15.0:
-                    target_locked_roi = 15.0
-                    target_step = 4
-                # Tier 5: 24.50% ROI -> SL shifts to +20.00%
-                if peak_roi >= 24.50 and target_locked_roi < 20.0:
-                    target_locked_roi = 20.0
-                    target_step = 5
-                # Tier 6: 29.50% ROI -> SL shifts to +25.00%
-                if peak_roi >= 29.50 and target_locked_roi < 25.0:
-                    target_locked_roi = 25.0
-                    target_step = 6
-                # Tier 7: 34.50% ROI -> SL shifts to +30.00%
-                if peak_roi >= 34.50 and target_locked_roi < 30.0:
-                    target_locked_roi = 30.0
-                    target_step = 7
-                # Tier 8+: Infinite Trend Runner continuation beyond 34.50%
-                if peak_roi >= 39.50:
-                    extra_steps = int((peak_roi - 34.50) // 5.0)
-                    extended_target = 30.0 + (extra_steps * 5.0)
-                    if extended_target > target_locked_roi:
-                        target_locked_roi = extended_target
-                        target_step = 7 + extra_steps
 
                 # Upgrade Trailing SL if a new step is reached!
                 if target_locked_roi > current_locked_roi:
@@ -1126,13 +1118,13 @@ class Hermes30Model2ALiveEngine:
                     if tp_price > 0 and cur_price >= tp_price:
                         exit_triggered = "TP_HIT"
                         exit_price = tp_price
-                        logger.info(f"🎯 HERMES 3.0 TAKE PROFIT: {sym} LONG hit TP @ {tp_price}")
+                        logger.info(f"🎯 HERMES 3.5 RADAR HARVEST TAKE PROFIT: {sym} LONG hit TP @ {tp_price}")
 
                     # 2. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
                     elif be_locked and current_locked_roi >= 1.0 and cur_price <= active_sl_price:
                         exit_triggered = "TRAILING_SL_HIT"
                         exit_price = active_sl_price
-                        logger.info(f"💎 HERMES 3.0 TRAILING SL EXIT: {sym} LONG hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
+                        logger.info(f"💎 HERMES 3.5 STEPPED HARVEST EXIT: {sym} LONG hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
 
                     # 3. Emergency Hard Circuit Breaker Touch (-3.00%)
                     elif cur_price <= hard_sl_price:
@@ -1174,13 +1166,13 @@ class Hermes30Model2ALiveEngine:
                     if tp_price > 0 and cur_price <= tp_price:
                         exit_triggered = "TP_HIT"
                         exit_price = tp_price
-                        logger.info(f"🎯 HERMES 3.0 TAKE PROFIT: {sym} SHORT hit TP @ {tp_price}")
+                        logger.info(f"🎯 HERMES 3.5 RADAR HARVEST TAKE PROFIT: {sym} SHORT hit TP @ {tp_price}")
 
                     # 2. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
                     elif be_locked and current_locked_roi >= 1.0 and cur_price >= active_sl_price:
                         exit_triggered = "TRAILING_SL_HIT"
                         exit_price = active_sl_price
-                        logger.info(f"💎 HERMES 3.0 TRAILING SL EXIT: {sym} SHORT hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
+                        logger.info(f"💎 HERMES 3.5 STEPPED HARVEST EXIT: {sym} SHORT hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
 
                     # 3. Emergency Hard Circuit Breaker Touch (-3.00%)
                     elif cur_price >= hard_sl_price:
@@ -1285,7 +1277,7 @@ class Hermes30Model2ALiveEngine:
     async def start(self):
         """Starts the 24/7 autonomous live loop for Model 2A with infinite resilience."""
         self.is_running = True
-        logger.info("👑 HERMES 3.0 MODEL 2A LIVE ENGINE ACTIVATED (24/7 AUTONOMOUS & LOCKED)")
+        logger.info("👑 HERMES 3.5 RADAR HARVEST LIVE ENGINE ACTIVATED (24/7 AUTONOMOUS & LOCKED)")
         
         # Immediate initial scan on startup so no setups are missed
         try:

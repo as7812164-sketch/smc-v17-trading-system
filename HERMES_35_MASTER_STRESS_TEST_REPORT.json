@@ -1,0 +1,16 @@
+{
+  "total_trades": 4796,
+  "win_rate": 52.36,
+  "net_roe": 3214.2,
+  "net_roe_after_friction": -143.0,
+  "profit_factor": 1.12,
+  "profit_factor_after_friction": 1.0,
+  "monthly_consistency_pct": 78.57,
+  "monte_carlo_median_dd": 67.85,
+  "monte_carlo_p95_dd": 80.42,
+  "monte_carlo_worst_dd": 89.7,
+  "risk_of_ruin": 0.0,
+  "max_losing_streak": 21,
+  "compounding_final_equity": 34.18,
+  "milestones": {}
+}

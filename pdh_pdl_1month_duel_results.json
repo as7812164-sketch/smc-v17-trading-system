@@ -1,0 +1,1252 @@
+{
+  "period": "August 2026 (1 Full Month)",
+  "starting_capital": 100.0,
+  "method_1": {
+    "name": "Method 1: Direct 15m Candle Close",
+    "total_trades": 78,
+    "tp_wins": 11,
+    "be_saves": 21,
+    "sl_losses": 46,
+    "pure_win_rate": 14.1,
+    "effective_win_rate": 41.03,
+    "final_balance": 29.4,
+    "net_growth_pct": -70.6,
+    "max_drawdown_pct": 73.04,
+    "trades": [
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1785542400000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.5,
+        "bal": 99.5
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_time": 1785619800000,
+        "outcome": "SL_HIT",
+        "pnl": -0.4975,
+        "bal": 99.0025
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "SHORT",
+        "entry_time": 1785629700000,
+        "outcome": "SL_HIT",
+        "pnl": -7.920199999999973,
+        "bal": 91.08230000000003
+      },
+      {
+        "symbol": "ETHUSDT",
+        "side": "SHORT",
+        "entry_time": 1785636000000,
+        "outcome": "SL_HIT",
+        "pnl": -0.4554115000000002,
+        "bal": 90.62688850000004
+      },
+      {
+        "symbol": "BTCUSDT",
+        "side": "LONG",
+        "entry_time": 1785733200000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.45313444250000023,
+        "bal": 90.17375405750003
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1785801600000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.4508687702875002,
+        "bal": 89.72288528721253
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "LONG",
+        "entry_time": 1785891600000,
+        "outcome": "SL_HIT",
+        "pnl": -0.4486144264360627,
+        "bal": 89.27427086077647
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1785977100000,
+        "outcome": "SL_HIT",
+        "pnl": -7.1419416688621435,
+        "bal": 82.13232919191432
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_time": 1785981600000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.4106616459595716,
+        "bal": 81.72166754595474
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_time": 1786008600000,
+        "outcome": "SL_HIT",
+        "pnl": -6.537733403676377,
+        "bal": 75.18393414227836
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "SHORT",
+        "entry_time": 1786041900000,
+        "outcome": "SL_HIT",
+        "pnl": -0.3759196707113918,
+        "bal": 74.80801447156696
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1786068000000,
+        "outcome": "SL_HIT",
+        "pnl": -5.984641157725381,
+        "bal": 68.82337331384159
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "LONG",
+        "entry_time": 1786093200000,
+        "outcome": "SL_HIT",
+        "pnl": -5.5058698651073446,
+        "bal": 63.31750344873424
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1786123800000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.3165875172436712,
+        "bal": 63.000915931490574
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_time": 1786147200000,
+        "outcome": "SL_HIT",
+        "pnl": -5.040073274519227,
+        "bal": 57.960842656971344
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1786168800000,
+        "outcome": "SL_HIT",
+        "pnl": -0.2898042132848567,
+        "bal": 57.671038443686484
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "LONG",
+        "entry_time": 1786239000000,
+        "outcome": "SL_HIT",
+        "pnl": -4.613683075494912,
+        "bal": 53.05735536819157
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "side": "LONG",
+        "entry_time": 1786320000000,
+        "outcome": "SL_HIT",
+        "pnl": -0.2652867768409579,
+        "bal": 52.79206859135061
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1786409100000,
+        "outcome": "TP_HIT",
+        "pnl": 7.6548499457458385,
+        "bal": 60.44691853709645
+      },
+      {
+        "symbol": "LTCUSDT",
+        "side": "LONG",
+        "entry_time": 1786459500000,
+        "outcome": "SL_HIT",
+        "pnl": -0.30223459268548225,
+        "bal": 60.14468394441097
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "SHORT",
+        "entry_time": 1786499100000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.30072341972205485,
+        "bal": 59.84396052468892
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "LONG",
+        "entry_time": 1786590000000,
+        "outcome": "TP_HIT",
+        "pnl": 8.677374276079894,
+        "bal": 68.52133480076881
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "LONG",
+        "entry_time": 1786635000000,
+        "outcome": "SL_HIT",
+        "pnl": -0.3426066740038441,
+        "bal": 68.17872812676497
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_time": 1786665600000,
+        "outcome": "TP_HIT",
+        "pnl": 9.885915578380919,
+        "bal": 78.06464370514588
+      },
+      {
+        "symbol": "BTCUSDT",
+        "side": "LONG",
+        "entry_time": 1786696200000,
+        "outcome": "SL_HIT",
+        "pnl": -0.39032321852572943,
+        "bal": 77.67432048662016
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1786752000000,
+        "outcome": "SL_HIT",
+        "pnl": -6.213945638929551,
+        "bal": 71.46037484769062
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "SHORT",
+        "entry_time": 1786767300000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.3573018742384531,
+        "bal": 71.10307297345216
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "LONG",
+        "entry_time": 1786838400000,
+        "outcome": "TP_HIT",
+        "pnl": 10.309945581150563,
+        "bal": 81.41301855460271
+      },
+      {
+        "symbol": "UNIUSDT",
+        "side": "SHORT",
+        "entry_time": 1786894200000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.4070650927730136,
+        "bal": 81.0059534618297
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1786924800000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.4050297673091485,
+        "bal": 80.60092369452056
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "side": "SHORT",
+        "entry_time": 1786955400000,
+        "outcome": "SL_HIT",
+        "pnl": -0.4030046184726028,
+        "bal": 80.19791907604795
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1787014800000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.40098959538023976,
+        "bal": 79.79692948066771
+      },
+      {
+        "symbol": "ETHUSDT",
+        "side": "SHORT",
+        "entry_time": 1787063400000,
+        "outcome": "SL_HIT",
+        "pnl": -0.39898464740333855,
+        "bal": 79.39794483326438
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_time": 1787104800000,
+        "outcome": "TP_HIT",
+        "pnl": 11.512702000823335,
+        "bal": 90.91064683408771
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1787151600000,
+        "outcome": "SL_HIT",
+        "pnl": -7.272851746726942,
+        "bal": 83.63779508736077
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "SHORT",
+        "entry_time": 1787186700000,
+        "outcome": "SL_HIT",
+        "pnl": -6.691023606988835,
+        "bal": 76.94677148037194
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_time": 1787213700000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.38473385740185967,
+        "bal": 76.56203762297008
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_time": 1787236200000,
+        "outcome": "SL_HIT",
+        "pnl": -6.124963009837571,
+        "bal": 70.43707461313251
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1787245200000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.35218537306566255,
+        "bal": 70.08488924006684
+      },
+      {
+        "symbol": "RENDERUSDT",
+        "side": "SHORT",
+        "entry_time": 1787263200000,
+        "outcome": "SL_HIT",
+        "pnl": -0.35042444620033425,
+        "bal": 69.73446479386651
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_time": 1787270400000,
+        "outcome": "SL_HIT",
+        "pnl": -5.578757183509279,
+        "bal": 64.15570761035723
+      },
+      {
+        "symbol": "XRPUSDT",
+        "side": "SHORT",
+        "entry_time": 1787358600000,
+        "outcome": "SL_HIT",
+        "pnl": -8.543081698069539,
+        "bal": 55.61262591228768
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1787363100000,
+        "outcome": "SL_HIT",
+        "pnl": -4.449010072982978,
+        "bal": 51.163615839304704
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "SHORT",
+        "entry_time": 1787369400000,
+        "outcome": "SL_HIT",
+        "pnl": -4.093089267144348,
+        "bal": 47.070526572160354
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "LONG",
+        "entry_time": 1787374800000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.23535263286080177,
+        "bal": 46.83517393929955
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_time": 1787376600000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.23417586969649776,
+        "bal": 46.60099806960305
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_time": 1787396400000,
+        "outcome": "SL_HIT",
+        "pnl": -0.23300499034801528,
+        "bal": 46.36799307925504
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_time": 1787460300000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.2318399653962752,
+        "bal": 46.13615311385876
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_time": 1787464800000,
+        "outcome": "TP_HIT",
+        "pnl": 6.68974220150952,
+        "bal": 52.82589531536828
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_time": 1787531400000,
+        "outcome": "SL_HIT",
+        "pnl": -5.203195013037262,
+        "bal": 47.62270030233102
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_time": 1787545800000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.2381135015116551,
+        "bal": 47.38458680081936
+      },
+      {
+        "symbol": "LTCUSDT",
+        "side": "SHORT",
+        "entry_time": 1787563800000,
+        "outcome": "SL_HIT",
+        "pnl": -3.7907669440655276,
+        "bal": 43.59381985675384
+      },
+      {
+        "symbol": "ETHUSDT",
+        "side": "SHORT",
+        "entry_time": 1787565600000,
+        "outcome": "SL_HIT",
+        "pnl": -3.4875055885402824,
+        "bal": 40.10631426821356
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "SHORT",
+        "entry_time": 1787575500000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.2005315713410678,
+        "bal": 39.90578269687249
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_time": 1787582700000,
+        "outcome": "SL_HIT",
+        "pnl": -0.19952891348436247,
+        "bal": 39.70625378338813
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "SHORT",
+        "entry_time": 1787625000000,
+        "outcome": "SL_HIT",
+        "pnl": -3.176500302671047,
+        "bal": 36.52975348071708
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1787628600000,
+        "outcome": "TP_HIT",
+        "pnl": 5.296814254703977,
+        "bal": 41.82656773542106
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_time": 1787665500000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.2091328386771053,
+        "bal": 41.61743489674395
+      },
+      {
+        "symbol": "ETHUSDT",
+        "side": "LONG",
+        "entry_time": 1787691600000,
+        "outcome": "SL_HIT",
+        "pnl": -0.20808717448371977,
+        "bal": 41.40934772226023
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "LONG",
+        "entry_time": 1787737500000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.20704673861130116,
+        "bal": 41.202300983648925
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "LONG",
+        "entry_time": 1787751900000,
+        "outcome": "SL_HIT",
+        "pnl": -3.2961840786919248,
+        "bal": 37.906116904957
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "side": "LONG",
+        "entry_time": 1787754600000,
+        "outcome": "TP_HIT",
+        "pnl": 5.496386951218764,
+        "bal": 43.40250385617577
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "SHORT",
+        "entry_time": 1787795100000,
+        "outcome": "SL_HIT",
+        "pnl": -3.47220030849405,
+        "bal": 39.93030354768172
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1787819400000,
+        "outcome": "SL_HIT",
+        "pnl": -3.1944242838145276,
+        "bal": 36.73587926386719
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1787836500000,
+        "outcome": "SL_HIT",
+        "pnl": -3.208946443129232,
+        "bal": 33.526932820737954
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "SHORT",
+        "entry_time": 1787854500000,
+        "outcome": "SL_HIT",
+        "pnl": -2.682154625659016,
+        "bal": 30.844778195078938
+      },
+      {
+        "symbol": "XRPUSDT",
+        "side": "SHORT",
+        "entry_time": 1787859000000,
+        "outcome": "SL_HIT",
+        "pnl": -0.15422389097539468,
+        "bal": 30.690554304103543
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "SHORT",
+        "entry_time": 1787879700000,
+        "outcome": "TP_HIT",
+        "pnl": 4.450130374095014,
+        "bal": 35.140684678198554
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "LONG",
+        "entry_time": 1787907600000,
+        "outcome": "SL_HIT",
+        "pnl": -2.811254774255893,
+        "bal": 32.32942990394266
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "LONG",
+        "entry_time": 1787925600000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.16164714951971332,
+        "bal": 32.167782754422944
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_time": 1787932800000,
+        "outcome": "SL_HIT",
+        "pnl": -2.573422620353848,
+        "bal": 29.594360134069095
+      },
+      {
+        "symbol": "LTCUSDT",
+        "side": "LONG",
+        "entry_time": 1787948100000,
+        "outcome": "SL_HIT",
+        "pnl": -0.1479718006703455,
+        "bal": 29.44638833339875
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1787961600000,
+        "outcome": "SL_HIT",
+        "pnl": -2.355711066671914,
+        "bal": 27.090677266726836
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "LONG",
+        "entry_time": 1787984100000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.13545338633363418,
+        "bal": 26.955223880393202
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_time": 1788053400000,
+        "outcome": "TP_HIT",
+        "pnl": 3.908507462657014,
+        "bal": 30.863731343050215
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "side": "SHORT",
+        "entry_time": 1788118200000,
+        "outcome": "TP_HIT",
+        "pnl": 4.4752410447422815,
+        "bal": 35.338972387792495
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1788197400000,
+        "outcome": "SL_HIT",
+        "pnl": -2.8271177910233876,
+        "bal": 32.511854596769105
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_time": 1788209100000,
+        "outcome": "SL_HIT",
+        "pnl": -3.109160559916324,
+        "bal": 29.40269403685278
+      }
+    ]
+  },
+  "method_2": {
+    "name": "Method 2: 5m / FVG Retest Sniper",
+    "total_setups": 696,
+    "filled_orders": 74,
+    "missed_orders": 46,
+    "miss_rate_pct": 38.33,
+    "total_trades": 74,
+    "tp_wins": 13,
+    "be_saves": 18,
+    "sl_losses": 43,
+    "pure_win_rate": 17.57,
+    "effective_win_rate": 41.89,
+    "final_balance": 51.61,
+    "net_growth_pct": -48.39,
+    "max_drawdown_pct": 56.15,
+    "trades": [
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1785542400000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.5,
+        "bal": 99.5
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_time": 1785620700000,
+        "outcome": "SL_HIT",
+        "pnl": -0.4975,
+        "bal": 99.0025
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "SHORT",
+        "entry_time": 1785629700000,
+        "outcome": "SL_HIT",
+        "pnl": -7.920199999999927,
+        "bal": 91.08230000000007
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "SHORT",
+        "entry_time": 1785636900000,
+        "outcome": "SL_HIT",
+        "pnl": -7.286583999999968,
+        "bal": 83.79571600000011
+      },
+      {
+        "symbol": "BTCUSDT",
+        "side": "LONG",
+        "entry_time": 1785733200000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.41897858000000054,
+        "bal": 83.37673742000011
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_time": 1785801600000,
+        "outcome": "SL_HIT",
+        "pnl": -0.41688368710000057,
+        "bal": 82.95985373290011
+      },
+      {
+        "symbol": "RENDERUSDT",
+        "side": "LONG",
+        "entry_time": 1785892500000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.41479926866450056,
+        "bal": 82.54505446423562
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "LONG",
+        "entry_time": 1785937500000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.41272527232117806,
+        "bal": 82.13232919191444
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1785977100000,
+        "outcome": "SL_HIT",
+        "pnl": -6.570586335353188,
+        "bal": 75.56174285656125
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_time": 1785981600000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.37780871428280627,
+        "bal": 75.18393414227845
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "LONG",
+        "entry_time": 1786009500000,
+        "outcome": "SL_HIT",
+        "pnl": -0.3759196707113922,
+        "bal": 74.80801447156705
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1786068000000,
+        "outcome": "SL_HIT",
+        "pnl": -5.9846411577253535,
+        "bal": 68.8233733138417
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "LONG",
+        "entry_time": 1786093200000,
+        "outcome": "SL_HIT",
+        "pnl": -5.50586986510733,
+        "bal": 63.31750344873437
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1786123800000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.3165875172436719,
+        "bal": 63.0009159314907
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_time": 1786147200000,
+        "outcome": "SL_HIT",
+        "pnl": -0.31500457965745354,
+        "bal": 62.68591135183325
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "LONG",
+        "entry_time": 1786257900000,
+        "outcome": "SL_HIT",
+        "pnl": -5.014872908146676,
+        "bal": 57.67103844368657
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "side": "LONG",
+        "entry_time": 1786320000000,
+        "outcome": "SL_HIT",
+        "pnl": -0.28835519221843287,
+        "bal": 57.38268325146814
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1786409100000,
+        "outcome": "TP_HIT",
+        "pnl": 8.320489071462882,
+        "bal": 65.70317232293102
+      },
+      {
+        "symbol": "LTCUSDT",
+        "side": "LONG",
+        "entry_time": 1786459500000,
+        "outcome": "SL_HIT",
+        "pnl": -0.3285158616146551,
+        "bal": 65.37465646131636
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "SHORT",
+        "entry_time": 1786502700000,
+        "outcome": "TP_HIT",
+        "pnl": 9.479325186890872,
+        "bal": 74.85398164820724
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "LONG",
+        "entry_time": 1786635000000,
+        "outcome": "SL_HIT",
+        "pnl": -0.37426990824103623,
+        "bal": 74.4797117399662
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_time": 1786665600000,
+        "outcome": "TP_HIT",
+        "pnl": 10.799558202295099,
+        "bal": 85.27926994226131
+      },
+      {
+        "symbol": "BTCUSDT",
+        "side": "LONG",
+        "entry_time": 1786696200000,
+        "outcome": "SL_HIT",
+        "pnl": -0.4263963497113065,
+        "bal": 84.85287359255
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1786752000000,
+        "outcome": "SL_HIT",
+        "pnl": -6.788229887403972,
+        "bal": 78.06464370514603
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_time": 1786773600000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.3903232185257301,
+        "bal": 77.67432048662029
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_time": 1786843800000,
+        "outcome": "SL_HIT",
+        "pnl": -6.213945638929616,
+        "bal": 71.46037484769067
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_time": 1786872600000,
+        "outcome": "SL_HIT",
+        "pnl": -0.3573018742384534,
+        "bal": 71.10307297345221
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1786924800000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.35551536486726104,
+        "bal": 70.74755760858496
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "side": "SHORT",
+        "entry_time": 1786936500000,
+        "outcome": "SL_HIT",
+        "pnl": -0.3537377880429248,
+        "bal": 70.39381982054203
+      },
+      {
+        "symbol": "UNIUSDT",
+        "side": "LONG",
+        "entry_time": 1787019300000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.3519690991027102,
+        "bal": 70.04185072143933
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_time": 1787104800000,
+        "outcome": "TP_HIT",
+        "pnl": 10.156068354608703,
+        "bal": 80.19791907604804
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1787151600000,
+        "outcome": "SL_HIT",
+        "pnl": -6.415833526083788,
+        "bal": 73.78208554996425
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "SHORT",
+        "entry_time": 1787186700000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.36891042774982125,
+        "bal": 73.41317512221443
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_time": 1787213700000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.3670658756110721,
+        "bal": 73.04610924660335
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_time": 1787236200000,
+        "outcome": "SL_HIT",
+        "pnl": -5.843688739728222,
+        "bal": 67.20242050687513
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "SHORT",
+        "entry_time": 1787253300000,
+        "outcome": "SL_HIT",
+        "pnl": -0.33601210253437563,
+        "bal": 66.86640840434076
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1787271300000,
+        "outcome": "SL_HIT",
+        "pnl": -5.349312672347218,
+        "bal": 61.51709573199354
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "side": "SHORT",
+        "entry_time": 1787292900000,
+        "outcome": "SL_HIT",
+        "pnl": -4.921367658559465,
+        "bal": 56.595728073434074
+      },
+      {
+        "symbol": "XRPUSDT",
+        "side": "SHORT",
+        "entry_time": 1787358600000,
+        "outcome": "SL_HIT",
+        "pnl": -4.5276582458747106,
+        "bal": 52.06806982755936
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1787363100000,
+        "outcome": "SL_HIT",
+        "pnl": -4.1654455862047195,
+        "bal": 47.902624241354644
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "SHORT",
+        "entry_time": 1787369400000,
+        "outcome": "SL_HIT",
+        "pnl": -3.832209939308334,
+        "bal": 44.07041430204631
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "SHORT",
+        "entry_time": 1787376600000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.22035207151023156,
+        "bal": 43.850062230536075
+      },
+      {
+        "symbol": "SOLUSDT",
+        "side": "SHORT",
+        "entry_time": 1787380200000,
+        "outcome": "TP_HIT",
+        "pnl": 6.358259023427731,
+        "bal": 50.2083212539638
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_time": 1787396400000,
+        "outcome": "SL_HIT",
+        "pnl": -0.25104160626981903,
+        "bal": 49.95727964769399
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_time": 1787460300000,
+        "outcome": "TP_HIT",
+        "pnl": 7.243805548915628,
+        "bal": 57.20108519660961
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_time": 1787531400000,
+        "outcome": "TP_HIT",
+        "pnl": 8.294157353508394,
+        "bal": 65.49524255011801
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "SHORT",
+        "entry_time": 1787545800000,
+        "outcome": "TP_HIT",
+        "pnl": 9.49681016976711,
+        "bal": 74.99205271988512
+      },
+      {
+        "symbol": "LTCUSDT",
+        "side": "SHORT",
+        "entry_time": 1787563800000,
+        "outcome": "SL_HIT",
+        "pnl": -5.999364217590766,
+        "bal": 68.99268850229436
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "SHORT",
+        "entry_time": 1787574600000,
+        "outcome": "SL_HIT",
+        "pnl": -5.519415080183517,
+        "bal": 63.473273422110836
+      },
+      {
+        "symbol": "BNBUSDT",
+        "side": "SHORT",
+        "entry_time": 1787582700000,
+        "outcome": "SL_HIT",
+        "pnl": -0.31736636711055416,
+        "bal": 63.155907055000284
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "SHORT",
+        "entry_time": 1787625000000,
+        "outcome": "SL_HIT",
+        "pnl": -5.052472564399987,
+        "bal": 58.1034344906003
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1787628600000,
+        "outcome": "TP_HIT",
+        "pnl": 8.424998001137043,
+        "bal": 66.52843249173735
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_time": 1787666400000,
+        "outcome": "SL_HIT",
+        "pnl": -5.322274599338976,
+        "bal": 61.20615789239837
+      },
+      {
+        "symbol": "UNIUSDT",
+        "side": "LONG",
+        "entry_time": 1787692500000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.30603078946199186,
+        "bal": 60.90012710293638
+      },
+      {
+        "symbol": "DOTUSDT",
+        "side": "LONG",
+        "entry_time": 1787737500000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.3045006355146819,
+        "bal": 60.595626467421695
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "LONG",
+        "entry_time": 1787751900000,
+        "outcome": "SL_HIT",
+        "pnl": -4.847650117393739,
+        "bal": 55.747976350027955
+      },
+      {
+        "symbol": "BTCUSDT",
+        "side": "LONG",
+        "entry_time": 1787756400000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.2787398817501398,
+        "bal": 55.46923646827781
+      },
+      {
+        "symbol": "RENDERUSDT",
+        "side": "SHORT",
+        "entry_time": 1787795100000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.2773461823413891,
+        "bal": 55.191890285936424
+      },
+      {
+        "symbol": "AVAXUSDT",
+        "side": "SHORT",
+        "entry_time": 1787819400000,
+        "outcome": "SL_HIT",
+        "pnl": -4.41535122287488,
+        "bal": 50.77653906306154
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "SHORT",
+        "entry_time": 1787854500000,
+        "outcome": "SL_HIT",
+        "pnl": -0.2538826953153077,
+        "bal": 50.52265636774624
+      },
+      {
+        "symbol": "LINKUSDT",
+        "side": "SHORT",
+        "entry_time": 1787879700000,
+        "outcome": "TP_HIT",
+        "pnl": 7.325785173323204,
+        "bal": 57.84844154106944
+      },
+      {
+        "symbol": "APTUSDT",
+        "side": "LONG",
+        "entry_time": 1787889600000,
+        "outcome": "SL_HIT",
+        "pnl": -4.627875323285577,
+        "bal": 53.22056621778386
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_time": 1787926500000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.2661028310889193,
+        "bal": 52.95446338669494
+      },
+      {
+        "symbol": "SUIUSDT",
+        "side": "LONG",
+        "entry_time": 1787932800000,
+        "outcome": "BE_SAVE",
+        "pnl": -0.2647723169334747,
+        "bal": 52.689691069761466
+      },
+      {
+        "symbol": "LTCUSDT",
+        "side": "LONG",
+        "entry_time": 1787948100000,
+        "outcome": "SL_HIT",
+        "pnl": -0.26344845534880734,
+        "bal": 52.42624261441266
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1787961600000,
+        "outcome": "SL_HIT",
+        "pnl": -4.194099409153005,
+        "bal": 48.23214320525965
+      },
+      {
+        "symbol": "NEARUSDT",
+        "side": "LONG",
+        "entry_time": 1787985000000,
+        "outcome": "TP_HIT",
+        "pnl": 6.99366076476265,
+        "bal": 55.225803970022305
+      },
+      {
+        "symbol": "FETUSDT",
+        "side": "LONG",
+        "entry_time": 1788025500000,
+        "outcome": "SL_HIT",
+        "pnl": -0.27612901985011157,
+        "bal": 54.949674950172195
+      },
+      {
+        "symbol": "TIAUSDT",
+        "side": "LONG",
+        "entry_time": 1788053400000,
+        "outcome": "TP_HIT",
+        "pnl": 7.967702867774968,
+        "bal": 62.91737781794716
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1788095700000,
+        "outcome": "SL_HIT",
+        "pnl": -5.03339022543573,
+        "bal": 57.88398759251143
+      },
+      {
+        "symbol": "DOGEUSDT",
+        "side": "SHORT",
+        "entry_time": 1788118200000,
+        "outcome": "TP_HIT",
+        "pnl": 8.393178200914155,
+        "bal": 66.27716579342558
+      },
+      {
+        "symbol": "1000PEPEUSDT",
+        "side": "LONG",
+        "entry_time": 1788129000000,
+        "outcome": "SL_HIT",
+        "pnl": -5.302173263474034,
+        "bal": 60.97499252995155
+      },
+      {
+        "symbol": "ARBUSDT",
+        "side": "SHORT",
+        "entry_time": 1788197400000,
+        "outcome": "SL_HIT",
+        "pnl": -4.877999402396076,
+        "bal": 56.09699312755547
+      },
+      {
+        "symbol": "OPUSDT",
+        "side": "SHORT",
+        "entry_time": 1788209100000,
+        "outcome": "SL_HIT",
+        "pnl": -4.487759450204417,
+        "bal": 51.60923367735106
+      }
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "timestamp_utc": "2026-10-08 17:51:44",
+  "single_tier": {
+    "strategy": "HERMES_3.5_SINGLE_TIER",
+    "total_setups_generated": 2397,
+    "sequential_trades_executed": 600,
+    "wins": 469,
+    "losses": 131,
+    "win_rate_pct": 78.17,
+    "profit_factor": 1.66,
+    "max_drawdown_pct": 49.22,
+    "hit_1k_trade": 72,
+    "total_wealth_usdt": 10391712057.48
+  },
+  "next_gen": {
+    "strategy": "HERMES_3.5_NEXT_GEN",
+    "total_setups_generated": 96,
+    "sequential_trades_executed": 61,
+    "wins": 47,
+    "losses": 14,
+    "win_rate_pct": 77.05,
+    "profit_factor": 1.56,
+    "max_drawdown_pct": 27.03,
+    "hit_1k_trade": null,
+    "total_wealth_usdt": 179.6
+  },
+  "sl_monitoring": {
+    "total_single_tier_losses": 131,
+    "filtered_out_count": 126,
+    "turned_into_win_count": 2,
+    "still_loss_count": 3,
+    "loss_reduction_pct": 97.71,
+    "sample_audited_losses": [
+      {
+        "sym": "RENDERUSDT",
+        "tf": "1h",
+        "side": "LONG",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "APTUSDT",
+        "tf": "1h",
+        "side": "SHORT",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "ICPUSDT",
+        "tf": "1h",
+        "side": "LONG",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "GALAUSDT",
+        "tf": "1h",
+        "side": "LONG",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "APTUSDT",
+        "tf": "1h",
+        "side": "SHORT",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "DOGEUSDT",
+        "tf": "1h",
+        "side": "LONG",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "AVAXUSDT",
+        "tf": "1h",
+        "side": "SHORT",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "ALGOUSDT",
+        "tf": "1h",
+        "side": "LONG",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "LDOUSDT",
+        "tf": "1h",
+        "side": "LONG",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      },
+      {
+        "sym": "NEARUSDT",
+        "tf": "1h",
+        "side": "LONG",
+        "single_tier_res": "LOSS (-2.8%)",
+        "next_gen_action": "FILTERED_OUT (Zero Loss)"
+      }
+    ]
+  }
+}

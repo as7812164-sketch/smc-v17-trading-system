@@ -1,0 +1,32 @@
+{
+  "strategy": "PREVIOUS_DAY_SUPPORT_RESISTANCE_SWEEP_1TO2",
+  "total_trades": 7758,
+  "uptrend": {
+    "total": 1760,
+    "tp": 572,
+    "sl": 1183,
+    "win_rate": 32.592592592592595,
+    "net_r": -39.0
+  },
+  "downtrend": {
+    "total": 1895,
+    "tp": 635,
+    "sl": 1244,
+    "win_rate": 33.79457158062799,
+    "net_r": 26.0
+  },
+  "sideways": {
+    "total": 4103,
+    "tp": 1373,
+    "sl": 2675,
+    "win_rate": 33.91798418972332,
+    "net_r": 71.0
+  },
+  "overall": {
+    "total": 7758,
+    "tp": 2580,
+    "sl": 5102,
+    "win_rate": 33.585003905233016,
+    "net_r": 58.0
+  }
+}

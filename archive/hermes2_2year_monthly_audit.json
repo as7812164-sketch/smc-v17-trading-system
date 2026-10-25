@@ -1,0 +1,238 @@
+{
+  "total_trades": 1326,
+  "total_wins": 1055,
+  "total_losses": 271,
+  "hit_1k": 60,
+  "hit_2k": 78,
+  "final_capital": 5.254733189376533e+21,
+  "final_vault": 2.3829799611692514e+21,
+  "total_equity": 7.637713150545784e+21,
+  "max_drawdown": 44.53351852708703,
+  "months": [
+    {
+      "month": "2024-09",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "win_rate": 66.67,
+      "profit_factor": 1.36,
+      "end_equity": 52.64
+    },
+    {
+      "month": "2024-10",
+      "trades": 48,
+      "wins": 39,
+      "losses": 9,
+      "win_rate": 81.25,
+      "profit_factor": 2.28,
+      "end_equity": 447.46
+    },
+    {
+      "month": "2024-11",
+      "trades": 111,
+      "wins": 100,
+      "losses": 11,
+      "win_rate": 90.09,
+      "profit_factor": 4.71,
+      "end_equity": 325963.27
+    },
+    {
+      "month": "2024-12",
+      "trades": 103,
+      "wins": 80,
+      "losses": 23,
+      "win_rate": 77.67,
+      "profit_factor": 2.51,
+      "end_equity": 8136320.47
+    },
+    {
+      "month": "2025-01",
+      "trades": 96,
+      "wins": 82,
+      "losses": 14,
+      "win_rate": 85.42,
+      "profit_factor": 2.65,
+      "end_equity": 2039277409.02
+    },
+    {
+      "month": "2025-02",
+      "trades": 83,
+      "wins": 68,
+      "losses": 15,
+      "win_rate": 81.93,
+      "profit_factor": 2.04,
+      "end_equity": 43301472458.15
+    },
+    {
+      "month": "2025-03",
+      "trades": 70,
+      "wins": 54,
+      "losses": 16,
+      "win_rate": 77.14,
+      "profit_factor": 1.46,
+      "end_equity": 369976975496.37
+    },
+    {
+      "month": "2025-04",
+      "trades": 46,
+      "wins": 33,
+      "losses": 13,
+      "win_rate": 71.74,
+      "profit_factor": 1.36,
+      "end_equity": 700168409463.0
+    },
+    {
+      "month": "2025-05",
+      "trades": 57,
+      "wins": 37,
+      "losses": 20,
+      "win_rate": 64.91,
+      "profit_factor": 1.09,
+      "end_equity": 769544909861.44
+    },
+    {
+      "month": "2025-06",
+      "trades": 67,
+      "wins": 59,
+      "losses": 8,
+      "win_rate": 88.06,
+      "profit_factor": 3.06,
+      "end_equity": 20669587558845.97
+    },
+    {
+      "month": "2025-07",
+      "trades": 46,
+      "wins": 34,
+      "losses": 12,
+      "win_rate": 73.91,
+      "profit_factor": 1.51,
+      "end_equity": 66946799327693.61
+    },
+    {
+      "month": "2025-08",
+      "trades": 42,
+      "wins": 28,
+      "losses": 14,
+      "win_rate": 66.67,
+      "profit_factor": 1.2,
+      "end_equity": 86340561309150.83
+    },
+    {
+      "month": "2025-09",
+      "trades": 32,
+      "wins": 23,
+      "losses": 9,
+      "win_rate": 71.88,
+      "profit_factor": 1.75,
+      "end_equity": 157696671011544.75
+    },
+    {
+      "month": "2025-10",
+      "trades": 55,
+      "wins": 47,
+      "losses": 8,
+      "win_rate": 85.45,
+      "profit_factor": 6.82,
+      "end_equity": 2026841538389216.5
+    },
+    {
+      "month": "2025-11",
+      "trades": 78,
+      "wins": 71,
+      "losses": 7,
+      "win_rate": 91.03,
+      "profit_factor": 4.17,
+      "end_equity": 2.1209502341700288e+17
+    },
+    {
+      "month": "2025-12",
+      "trades": 37,
+      "wins": 32,
+      "losses": 5,
+      "win_rate": 86.49,
+      "profit_factor": 4.62,
+      "end_equity": 1.1326528529011602e+18
+    },
+    {
+      "month": "2026-01",
+      "trades": 45,
+      "wins": 36,
+      "losses": 9,
+      "win_rate": 80.0,
+      "profit_factor": 1.99,
+      "end_equity": 6.535982188791303e+18
+    },
+    {
+      "month": "2026-02",
+      "trades": 31,
+      "wins": 19,
+      "losses": 12,
+      "win_rate": 61.29,
+      "profit_factor": 1.01,
+      "end_equity": 6.641067593380088e+18
+    },
+    {
+      "month": "2026-03",
+      "trades": 50,
+      "wins": 38,
+      "losses": 12,
+      "win_rate": 76.0,
+      "profit_factor": 1.55,
+      "end_equity": 1.7868274007399277e+19
+    },
+    {
+      "month": "2026-04",
+      "trades": 23,
+      "wins": 17,
+      "losses": 6,
+      "win_rate": 73.91,
+      "profit_factor": 1.59,
+      "end_equity": 2.4568550891438973e+19
+    },
+    {
+      "month": "2026-05",
+      "trades": 45,
+      "wins": 35,
+      "losses": 10,
+      "win_rate": 77.78,
+      "profit_factor": 2.6,
+      "end_equity": 8.660549344118007e+19
+    },
+    {
+      "month": "2026-06",
+      "trades": 48,
+      "wins": 37,
+      "losses": 11,
+      "win_rate": 77.08,
+      "profit_factor": 1.81,
+      "end_equity": 3.351006152749666e+20
+    },
+    {
+      "month": "2026-07",
+      "trades": 33,
+      "wins": 24,
+      "losses": 9,
+      "win_rate": 72.73,
+      "profit_factor": 1.77,
+      "end_equity": 7.659443125722152e+20
+    },
+    {
+      "month": "2026-08",
+      "trades": 23,
+      "wins": 19,
+      "losses": 4,
+      "win_rate": 82.61,
+      "profit_factor": 2.4,
+      "end_equity": 1.8438393194593303e+21
+    },
+    {
+      "month": "2026-09",
+      "trades": 54,
+      "wins": 41,
+      "losses": 13,
+      "win_rate": 75.93,
+      "profit_factor": 1.89,
+      "end_equity": 7.637713150545784e+21
+    }
+  ]
+}

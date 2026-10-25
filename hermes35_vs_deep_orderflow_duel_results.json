@@ -1,0 +1,46 @@
+{
+  "test_meta": {
+    "title": "HERMES 3.5 PURE vs HERMES 3.5 + DEEP ORDER FLOW ADVANCED",
+    "horizon": "1-Year Out-of-Sample (Sep 2025 - Sep 2026)",
+    "starting_capital": 50.0,
+    "leverage": "5x Isolated",
+    "compounding": "100% Pure Compounding (Zero Split)",
+    "timestamp": "2026-10-04T08:14:45.740602"
+  },
+  "model_a_hermes35_pure": {
+    "total_setups": 715,
+    "executed_trades": 665,
+    "wins": 604,
+    "losses": 61,
+    "win_rate": 90.83,
+    "profit_factor": 10.35,
+    "max_win_streak": 115,
+    "max_loss_streak": 6,
+    "tp_hits": 416,
+    "armor_be_hits": 188,
+    "sl_hits": 61,
+    "max_drawdown_pct": 64.75,
+    "avg_duration_h": 6.0,
+    "m1k_trade": 51,
+    "m2k_trade": 58,
+    "final_equity": 7.206115113578487e+19
+  },
+  "model_b_hermes35_plus_orderflow": {
+    "total_setups": 503,
+    "executed_trades": 457,
+    "wins": 408,
+    "losses": 49,
+    "win_rate": 89.28,
+    "profit_factor": 4.62,
+    "max_win_streak": 69,
+    "max_loss_streak": 6,
+    "tp_hits": 257,
+    "armor_be_hits": 151,
+    "sl_hits": 49,
+    "max_drawdown_pct": 62.68,
+    "avg_duration_h": 7.7,
+    "m1k_trade": 46,
+    "m2k_trade": 55,
+    "final_equity": 1819371107758.68
+  }
+}

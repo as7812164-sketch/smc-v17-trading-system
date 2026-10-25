@@ -1,8 +1,8 @@
 /**
- * HERMES 3.0 MODEL 2A INTERACTIVE BAR REPLAY & STRATEGY BACKTESTER SUITE
+ * HERMES 3.5 RADAR HARVEST INTERACTIVE BAR REPLAY & STRATEGY BACKTESTER SUITE
  * =====================================================================
  * Pure Candlesticks (EMA lines & Volume removed as requested by user).
- * Full Hermes 3.0 Model 2A Strategy Detection, Entry/TP/SL Markers & Lines.
+ * Full Hermes 3.5 Radar Harvest Strategy Detection, Entry/TP/SL Markers & Lines.
  * Live Open Position Synchronization & Historical Replay Forensics.
  * Force-Landscape Fullscreen Mode with Mobile Optimization.
  */
@@ -161,7 +161,7 @@
             mFullCandles = data.candles;
             mCandleSeries.setData(mFullCandles);
 
-            // Scan all Hermes 3.0 Model 2A setups on historical candles
+            // Scan all Hermes 3.5 Radar Harvest setups on historical candles
             mDetectedSetups = scanAllHermes30Setups(mFullCandles);
 
             // Update markers on chart
@@ -232,7 +232,7 @@
     }
 
     // -------------------------------------------------------------
-    // HERMES 3.0 MODEL 2A COMPREHENSIVE SETUPS SCANNER & MARKERS
+    // HERMES 3.5 RADAR HARVEST COMPREHENSIVE SETUPS SCANNER & MARKERS
     // -------------------------------------------------------------
 
     function scanAllHermes30Setups(candles) {
@@ -418,7 +418,7 @@
                     position: isLong ? 'belowBar' : 'aboveBar',
                     color: isLong ? '#00C087' : '#FF4B55',
                     shape: isLong ? 'arrowUp' : 'arrowDown',
-                    text: `Hermes 3.0 ${s.type} @ $${ep.toFixed(ep < 1 ? 4 : 2)}`,
+                    text: `Hermes 3.5 ${s.type} @ $${ep.toFixed(ep < 1 ? 4 : 2)}`,
                     size: 1.5
                 });
             }
@@ -787,8 +787,8 @@
         if (badge) {
             badge.className = `rsc-badge ${isLong ? 'rsc-badge-long' : 'rsc-badge-short'}`;
             badge.innerHTML = isLong 
-                ? '<i class="fa-solid fa-arrow-trend-up"></i> HERMES 3.0 MODEL 2A • LONG BUY' 
-                : '<i class="fa-solid fa-arrow-trend-down"></i> HERMES 3.0 MODEL 2A • SHORT SELL';
+                ? '<i class="fa-solid fa-arrow-trend-up"></i> HERMES 3.5 RADAR HARVEST • LONG BUY' 
+                : '<i class="fa-solid fa-arrow-trend-down"></i> HERMES 3.5 RADAR HARVEST • SHORT SELL';
         }
 
         const ep = document.getElementById("mRscEntry");
@@ -1165,7 +1165,7 @@
         if (!tbody) return;
 
         if (mSimJournal.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No simulated trades yet. Run Bar Replay to trigger Hermes 3.0 setups!</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No simulated trades yet. Run Bar Replay to trigger Hermes 3.5 setups!</td></tr>';
             return;
         }
 

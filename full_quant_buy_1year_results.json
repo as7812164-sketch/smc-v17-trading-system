@@ -1,0 +1,54 @@
+{
+  "baseline_4h": {
+    "total_trades": 109,
+    "wins": 82,
+    "losses": 27,
+    "win_rate": 75.23,
+    "profit_factor": 1.57,
+    "max_drawdown": 27.89,
+    "hit_1k": 71,
+    "hit_2k": 108,
+    "final_capital": 1128.41,
+    "final_vault": 755.65,
+    "total_equity": 1884.06
+  },
+  "full_quant_4h": {
+    "total_trades": 19,
+    "wins": 18,
+    "losses": 1,
+    "win_rate": 94.74,
+    "profit_factor": 12.76,
+    "max_drawdown": 25.77,
+    "hit_1k": null,
+    "hit_2k": null,
+    "final_capital": 174.23,
+    "final_vault": 24.15,
+    "total_equity": 198.37
+  },
+  "baseline_all": {
+    "total_trades": 307,
+    "wins": 225,
+    "losses": 82,
+    "win_rate": 73.29,
+    "profit_factor": 1.41,
+    "max_drawdown": 47.03,
+    "hit_1k": 57,
+    "hit_2k": 85,
+    "final_capital": 8934.61,
+    "final_vault": 9560.42,
+    "total_equity": 18495.03
+  },
+  "full_quant_all": {
+    "total_trades": 77,
+    "wins": 72,
+    "losses": 5,
+    "win_rate": 93.51,
+    "profit_factor": 25.67,
+    "max_drawdown": 29.39,
+    "hit_1k": 67,
+    "hit_2k": 75,
+    "final_capital": 1925.36,
+    "final_vault": 346.84,
+    "total_equity": 2272.2
+  }
+}

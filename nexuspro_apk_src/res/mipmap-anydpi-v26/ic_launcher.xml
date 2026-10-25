@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt">
+    <background>
+        <layer-list>
+            <item android:drawable="@android:color/white" />
+            <item android:drawable="@mipmap/ic_maskable" android:left="8.5dip" android:top="8.5dip" android:right="8.5dip" android:bottom="8.5dip" />
+        </layer-list>
+    </background>
+    <foreground android:drawable="@android:color/transparent" />
+</adaptive-icon>

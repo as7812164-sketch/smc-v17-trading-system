@@ -1,0 +1,42 @@
+{
+  "HERMES_2.5_APEX_HYBRID": {
+    "total_trades": 4228,
+    "wins": 3336,
+    "losses": 892,
+    "win_rate": 78.9,
+    "long_trades": 2034,
+    "long_losses": 452,
+    "long_wr": 77.78,
+    "short_trades": 2194,
+    "short_losses": 440,
+    "short_wr": 79.95,
+    "milestone_2k": {
+      "trade_num": 351,
+      "date": "2024-11-22",
+      "equity": 2017.87
+    },
+    "final_balance": 56196444833080.41,
+    "final_vault": 1124342350364577.6,
+    "total_equity": 1180538795197658.0
+  },
+  "HERMES_3.0_QUANTUM": {
+    "total_trades": 5129,
+    "wins": 4567,
+    "losses": 562,
+    "win_rate": 89.04,
+    "long_trades": 2473,
+    "long_losses": 292,
+    "long_wr": 88.19,
+    "short_trades": 2656,
+    "short_losses": 270,
+    "short_wr": 89.83,
+    "milestone_2k": {
+      "trade_num": 101,
+      "date": "2024-10-16",
+      "equity": 2053.8
+    },
+    "final_balance": 1.5712969893501917e+99,
+    "final_vault": 2.8725354930175826e+98,
+    "total_equity": 1.8585505386519498e+99
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "trial_1": {
+    "win_rate": 71.50259067357513,
+    "max_dd": 47.04015753502925,
+    "hit_1k": 81,
+    "pf": 1.7140318808330854
+  },
+  "trial_2": {
+    "missed_wins": 106,
+    "win_rate": 73.78435517970402,
+    "max_dd": 48.74503709429227,
+    "hit_1k": 66,
+    "pf": 1.7183165625786347
+  },
+  "trial_3": [
+    {
+      "leverage": 3.0,
+      "hit_1k": 85,
+      "max_dd": 29.14807709024916,
+      "final_cap": 194472099.5981411,
+      "liquidated": false
+    },
+    {
+      "leverage": 5.0,
+      "hit_1k": 65,
+      "max_dd": 43.57306251658118,
+      "final_cap": 1200284522113.9617,
+      "liquidated": false
+    },
+    {
+      "leverage": 7.5,
+      "hit_1k": 56,
+      "max_dd": 57.336667187101,
+      "final_cap": 1.6830981789496816e+16,
+      "liquidated": false
+    },
+    {
+      "leverage": 10.0,
+      "hit_1k": 42,
+      "max_dd": 67.38576789428336,
+      "final_cap": 4.964790071280437e+19,
+      "liquidated": false
+    },
+    {
+      "leverage": 15.0,
+      "hit_1k": 37,
+      "max_dd": 79.55773398864883,
+      "final_cap": 2.6264082266169135e+24,
+      "liquidated": false
+    },
+    {
+      "leverage": 20.0,
+      "hit_1k": null,
+      "max_dd": 80.20764490780813,
+      "final_cap": 5.732578551862185,
+      "liquidated": true
+    }
+  ]
+}
