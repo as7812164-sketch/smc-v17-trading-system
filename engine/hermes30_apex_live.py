@@ -452,59 +452,133 @@ class Hermes30Model2ALiveEngine:
 
                 ent_p = round(o_high - (o_rng * 0.05), 8)
                 rad_p = round(ent_p * 1.0020, 8)
-                tp_p = round(ent_p * (1.0 + 0.0280), 8)
-                be_armor_p = round(ent_p * (1.0 + 0.0160), 8)
-                step_trig_p = round(ent_p * (1.0 + 0.0180), 8)
-                step_lock_p = round(ent_p * (1.0 + 0.0090), 8)
-                sl_p = round(ent_p * (1.0 - 0.0280), 8)
+                tp_p = round(ent_p * (1.0 + 0.0580), 8)  # +29.0% ROI Harvest Target
+                be_armor_p = round(ent_p * (1.0 + 0.0098), 8)  # Step 1: +4.90% Trigger
+                step_trig_p = round(ent_p * (1.0 + 0.0196), 8)  # Step 2: +9.80% Trigger
+                step_lock_p = round(ent_p * (1.0 + 0.0102), 8)  # Step 2: +5.10% Lock
+                sl_p = round(ent_p * (1.0 - 0.0150), 8)  # -7.50% Initial Hard SL
 
-                peak_high = max(float(candles[k]["high"]) for k in range(i + 1, min(i + 30, n)))
-                runway_pct = ((peak_high - o_high) / o_high * 100.0) if o_high > 0 else 0.0
+                c3_lower_wick = min(float(c3["open"]), float(c3["close"])) - o_low
+                w_ratio = round((c3_lower_wick / o_rng) * 100.0, 1) if o_rng > 0 else 20.0
 
-                bars_alive = (n - 1) - i
-                if bars_alive > effective_max_bars:
-                    continue
-
+                peak_runway = impulse_h
                 invalidated = False
                 tapped = False
                 be_locked = False
                 profit_stepped = False
                 completed = False
+                fill_time = None
+                armor_time = None
+                harvest_time = None
+                tp_time = None
+                sl_time = None
+                end_time = candles[-1]["time"]
+                exit_time = None
+                exit_price = None
+                exit_reason = None
+                bars_alive_at_tap = 0
+                gap_at_tap = 0.0
+                cur_sl = sl_p
 
                 for k in range(i + 3, n):
                     bar = candles[k]
                     b_high = float(bar["high"])
                     b_low = float(bar["low"])
                     b_close = float(bar["close"])
+                    b_time = bar["time"]
+                    bars_alive = k - i
 
-                    if not tapped and b_close < o_low:
-                        invalidated = True
-                        break
+                    if not tapped and not completed:
+                        peak_runway = max(peak_runway, b_high)
+                        airspace_runway_pct = ((peak_runway - o_high) / o_high) * 100.0 if o_high > 0 else 0.0
 
-                    if not tapped and b_low <= ent_p and b_low >= sl_p:
-                        tapped = True
+                        if bars_alive > effective_max_bars:
+                            completed = True
+                            end_time = b_time
+                            break
+                        elif b_close < o_low:
+                            invalidated = True
+                            completed = True
+                            end_time = b_time
+                            break
+                        elif b_low <= ent_p and b_low >= sl_p:
+                            if airspace_runway_pct >= 5.0 and bars_alive >= effective_min_bars:
+                                tapped = True
+                                fill_time = b_time
+                                bars_alive_at_tap = bars_alive
+                                gap_at_tap = airspace_runway_pct
+                                continue
+                            else:
+                                completed = True
+                                end_time = b_time
+                                break
 
-                    if tapped:
-                        if b_high >= be_armor_p:
+                    elif tapped and not completed:
+                        peak_runway = max(peak_runway, b_high)
+                        gain_roi = ((b_high - ent_p) / ent_p) * 100.0 * 5.0
+
+                        if gain_roi >= 4.90 and cur_sl < round(ent_p * (1.0 + (0.50 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 + (0.50 / 500.0)), 8)
                             be_locked = True
-                        if b_high >= step_trig_p:
+                            armor_time = b_time
+                        if gain_roi >= 9.80 and cur_sl < round(ent_p * (1.0 + (5.10 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 + (5.10 / 500.0)), 8)
                             profit_stepped = True
+                            harvest_time = b_time
+                        if gain_roi >= 14.80 and cur_sl < round(ent_p * (1.0 + (10.10 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 + (10.10 / 500.0)), 8)
+                        if gain_roi >= 19.80 and cur_sl < round(ent_p * (1.0 + (15.10 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 + (15.10 / 500.0)), 8)
+                        if gain_roi >= 24.00 and cur_sl < round(ent_p * (1.0 + (20.10 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 + (20.10 / 500.0)), 8)
                         if b_high >= tp_p:
                             completed = True
+                            tp_time = b_time
+                            exit_time = b_time
+                            exit_price = tp_p
+                            end_time = b_time
+                            exit_reason = "TP_HIT (+29.0% ROE)"
                             break
-                        if b_low <= (step_lock_p if profit_stepped else (ent_p * 1.0010 if be_locked else sl_p)):
+                        elif b_low <= cur_sl:
                             completed = True
+                            sl_time = b_time
+                            exit_time = b_time
+                            exit_price = cur_sl
+                            end_time = b_time
+                            exit_reason = "TRAILING_EXIT" if be_locked else "SL_HIT"
                             break
 
-                if not invalidated and not completed:
-                    within_radar = (cur_price <= rad_p) and (cur_price >= ent_p)
-                    status = "RADAR_PRE_ARMED" if within_radar else ("ACTIVE_TAPPED" if tapped else "ACTIVE_UNMITIGATED")
+                # Determine final status
+                if completed:
+                    if tp_time:
+                        status = "COMPLETED_TP"
+                    elif sl_time:
+                        status = "COMPLETED_HARVEST" if profit_stepped else "COMPLETED_SL"
+                    elif invalidated:
+                        status = "INVALIDATED"
+                    else:
+                        status = "COMPLETED_SL"
+                elif tapped:
                     if profit_stepped:
                         status = "STAGE2_HARVEST"
                     elif be_locked:
                         status = "STAGE1_ARMOR"
+                    else:
+                        status = "ACTIVE_TAPPED"
+                else:
+                    within_radar = (cur_price <= rad_p) and (cur_price >= ent_p)
+                    status = "RADAR_PRE_ARMED" if within_radar else "ACTIVE_UNMITIGATED"
 
-                    is_fresh = within_radar or (cur_price >= ent_p and cur_price <= rad_p) or (tapped and not be_locked)
+                within_radar = (cur_price <= rad_p) and (cur_price >= ent_p)
+                is_fresh = (within_radar or (tapped and not be_locked)) and not completed
+
+                if not completed:
+                    end_time = candles[-1]["time"]
+
+                active_bars_alive = bars_alive_at_tap if tapped else ((n - 1) - i)
+                active_runway = gap_at_tap if tapped else (((peak_runway - o_high) / o_high * 100.0) if o_high > 0 else 0.0)
+
+                if tapped or (not completed and status != "INVALIDATED"):
                     active_zones.append({
                         "symbol": symbol,
                         "side": "BUY",
@@ -513,27 +587,41 @@ class Hermes30Model2ALiveEngine:
                         "ob_high": o_high,
                         "ob_low": o_low,
                         "origin_time": c3["time"],
+                        "end_time": end_time,
                         "entry_price": ent_p,
                         "radar_price": rad_p,
                         "tp_price": tp_p,
                         "armor_stage1_price": be_armor_p,
                         "armor_stage2_price": step_trig_p,
                         "harvest_lock_price": step_lock_p,
-                        "sl_price": sl_p,
-                        "soft_sl_price": sl_p,
+                        "sl_price": cur_sl,
+                        "soft_sl_price": cur_sl,
                         "hard_sl_price": sl_p,
                         "is_fresh_trigger": is_fresh,
                         "tap_bar_age": 1 if tapped else 0,
                         "status": status,
                         "displacement_pct": round(bull_disp, 2),
-                        "wick_ratio_pct": 20.0,
-                        "runway_void_pct": round(runway_pct, 1),
+                        "wick_ratio_pct": w_ratio,
+                        "runway_pct": round(active_runway, 1),
+                        "runway_void_pct": round(active_runway, 1),
+                        "bars_alive": active_bars_alive,
                         "is_origin": is_origin_bull,
                         "is_in_radar": within_radar,
                         "tier_type": "SINGLE_TIER",
                         "strategy": "HERMES_3.5_SINGLE_TIER",
                         "prob_score": 97.2,
-                        "rank_label": f"🏛️ HERMES 3.5 RADAR HARVEST [5% Boundary Entry: ${ent_p}]"
+                        "rank_label": f"🏛️ HERMES 3.5 RADAR HARVEST [5% Boundary Entry: ${ent_p}]",
+                        "fill_time": fill_time,
+                        "fill_price": ent_p if tapped else None,
+                        "be_armor_time": armor_time,
+                        "profit_harvest_time": harvest_time,
+                        "tp_time": tp_time,
+                        "sl_time": sl_time,
+                        "exit_time": exit_time,
+                        "exit_price": exit_price,
+                        "exit_reason": exit_reason,
+                        "tapped": tapped,
+                        "completed": completed
                     })
 
             # ---------------- BEARISH SETUP (SHORT) ----------------
@@ -551,59 +639,133 @@ class Hermes30Model2ALiveEngine:
 
                 ent_p = round(o_low + (o_rng * 0.05), 8)
                 rad_p = round(ent_p * 0.9980, 8)
-                tp_p = round(ent_p * (1.0 - 0.0280), 8)
-                be_armor_p = round(ent_p * (1.0 - 0.0160), 8)
-                step_trig_p = round(ent_p * (1.0 - 0.0180), 8)
-                step_lock_p = round(ent_p * (1.0 - 0.0090), 8)
-                sl_p = round(ent_p * (1.0 + 0.0280), 8)
+                tp_p = round(ent_p * (1.0 - 0.0580), 8)  # +29.0% ROI Harvest Target
+                be_armor_p = round(ent_p * (1.0 - 0.0098), 8)  # Step 1: +4.90% Trigger
+                step_trig_p = round(ent_p * (1.0 - 0.0196), 8)  # Step 2: +9.80% Trigger
+                step_lock_p = round(ent_p * (1.0 - 0.0102), 8)  # Step 2: +5.10% Lock
+                sl_p = round(ent_p * (1.0 + 0.0150), 8)  # -7.50% Initial Hard SL
 
-                peak_low = min(float(candles[k]["low"]) for k in range(i + 1, min(i + 30, n)))
-                runway_pct = ((o_low - peak_low) / o_low * 100.0) if o_low > 0 else 0.0
+                c3_upper_wick = o_high - max(float(c3["open"]), float(c3["close"]))
+                w_ratio = round((c3_upper_wick / o_rng) * 100.0, 1) if o_rng > 0 else 20.0
 
-                bars_alive = (n - 1) - i
-                if bars_alive > effective_max_bars:
-                    continue
-
+                peak_runway = impulse_l
                 invalidated = False
                 tapped = False
                 be_locked = False
                 profit_stepped = False
                 completed = False
+                fill_time = None
+                armor_time = None
+                harvest_time = None
+                tp_time = None
+                sl_time = None
+                end_time = candles[-1]["time"]
+                exit_time = None
+                exit_price = None
+                exit_reason = None
+                bars_alive_at_tap = 0
+                gap_at_tap = 0.0
+                cur_sl = sl_p
 
                 for k in range(i + 3, n):
                     bar = candles[k]
                     b_high = float(bar["high"])
                     b_low = float(bar["low"])
                     b_close = float(bar["close"])
+                    b_time = bar["time"]
+                    bars_alive = k - i
 
-                    if not tapped and b_close > o_high:
-                        invalidated = True
-                        break
+                    if not tapped and not completed:
+                        peak_runway = min(peak_runway, b_low)
+                        airspace_runway_pct = ((o_low - peak_runway) / o_low) * 100.0 if o_low > 0 else 0.0
 
-                    if not tapped and b_high >= ent_p and b_high <= sl_p:
-                        tapped = True
+                        if bars_alive > effective_max_bars:
+                            completed = True
+                            end_time = b_time
+                            break
+                        elif b_close > o_high:
+                            invalidated = True
+                            completed = True
+                            end_time = b_time
+                            break
+                        elif b_high >= ent_p and b_high <= sl_p:
+                            if airspace_runway_pct >= 5.0 and bars_alive >= effective_min_bars:
+                                tapped = True
+                                fill_time = b_time
+                                bars_alive_at_tap = bars_alive
+                                gap_at_tap = airspace_runway_pct
+                                continue
+                            else:
+                                completed = True
+                                end_time = b_time
+                                break
 
-                    if tapped:
-                        if b_low <= be_armor_p:
+                    elif tapped and not completed:
+                        peak_runway = min(peak_runway, b_low)
+                        gain_roi = ((ent_p - b_low) / ent_p) * 100.0 * 5.0
+
+                        if gain_roi >= 4.90 and cur_sl > round(ent_p * (1.0 - (0.50 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 - (0.50 / 500.0)), 8)
                             be_locked = True
-                        if b_low <= step_trig_p:
+                            armor_time = b_time
+                        if gain_roi >= 9.80 and cur_sl > round(ent_p * (1.0 - (5.10 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 - (5.10 / 500.0)), 8)
                             profit_stepped = True
+                            harvest_time = b_time
+                        if gain_roi >= 14.80 and cur_sl > round(ent_p * (1.0 - (10.10 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 - (10.10 / 500.0)), 8)
+                        if gain_roi >= 19.80 and cur_sl > round(ent_p * (1.0 - (15.10 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 - (15.10 / 500.0)), 8)
+                        if gain_roi >= 24.00 and cur_sl > round(ent_p * (1.0 - (20.10 / 500.0)), 8):
+                            cur_sl = round(ent_p * (1.0 - (20.10 / 500.0)), 8)
                         if b_low <= tp_p:
                             completed = True
+                            tp_time = b_time
+                            exit_time = b_time
+                            exit_price = tp_p
+                            end_time = b_time
+                            exit_reason = "TP_HIT (+29.0% ROE)"
                             break
-                        if b_high >= (step_lock_p if profit_stepped else (ent_p * 0.9990 if be_locked else sl_p)):
+                        elif b_high >= cur_sl:
                             completed = True
+                            sl_time = b_time
+                            exit_time = b_time
+                            exit_price = cur_sl
+                            end_time = b_time
+                            exit_reason = "TRAILING_EXIT" if be_locked else "SL_HIT"
                             break
 
-                if not invalidated and not completed:
-                    within_radar = (cur_price >= rad_p) and (cur_price <= ent_p)
-                    status = "RADAR_PRE_ARMED" if within_radar else ("ACTIVE_TAPPED" if tapped else "ACTIVE_UNMITIGATED")
+                # Determine final status
+                if completed:
+                    if tp_time:
+                        status = "COMPLETED_TP"
+                    elif sl_time:
+                        status = "COMPLETED_HARVEST" if profit_stepped else "COMPLETED_SL"
+                    elif invalidated:
+                        status = "INVALIDATED"
+                    else:
+                        status = "COMPLETED_SL"
+                elif tapped:
                     if profit_stepped:
                         status = "STAGE2_HARVEST"
                     elif be_locked:
                         status = "STAGE1_ARMOR"
+                    else:
+                        status = "ACTIVE_TAPPED"
+                else:
+                    within_radar = (cur_price >= rad_p) and (cur_price <= ent_p)
+                    status = "RADAR_PRE_ARMED" if within_radar else "ACTIVE_UNMITIGATED"
 
-                    is_fresh_bear = within_radar or (cur_price <= ent_p and cur_price >= rad_p) or (tapped and not be_locked)
+                within_radar = (cur_price >= rad_p) and (cur_price <= ent_p)
+                is_fresh_bear = (within_radar or (tapped and not be_locked)) and not completed
+
+                if not completed:
+                    end_time = candles[-1]["time"]
+
+                active_bars_alive = bars_alive_at_tap if tapped else ((n - 1) - i)
+                active_runway = gap_at_tap if tapped else (((o_low - peak_runway) / o_low * 100.0) if o_low > 0 else 0.0)
+
+                if tapped or (not completed and status != "INVALIDATED"):
                     active_zones.append({
                         "symbol": symbol,
                         "side": "SELL",
@@ -612,27 +774,41 @@ class Hermes30Model2ALiveEngine:
                         "ob_high": o_high,
                         "ob_low": o_low,
                         "origin_time": c3["time"],
+                        "end_time": end_time,
                         "entry_price": ent_p,
                         "radar_price": rad_p,
                         "tp_price": tp_p,
                         "armor_stage1_price": be_armor_p,
                         "armor_stage2_price": step_trig_p,
                         "harvest_lock_price": step_lock_p,
-                        "sl_price": sl_p,
-                        "soft_sl_price": sl_p,
+                        "sl_price": cur_sl,
+                        "soft_sl_price": cur_sl,
                         "hard_sl_price": sl_p,
                         "is_fresh_trigger": is_fresh_bear,
                         "tap_bar_age": 1 if tapped else 0,
                         "status": status,
                         "displacement_pct": round(bear_disp, 2),
-                        "wick_ratio_pct": 20.0,
-                        "runway_void_pct": round(runway_pct, 1),
+                        "wick_ratio_pct": w_ratio,
+                        "runway_pct": round(active_runway, 1),
+                        "runway_void_pct": round(active_runway, 1),
+                        "bars_alive": active_bars_alive,
                         "is_origin": is_origin_bear,
                         "is_in_radar": within_radar,
                         "tier_type": "SINGLE_TIER",
                         "strategy": "HERMES_3.5_SINGLE_TIER",
                         "prob_score": 97.2,
-                        "rank_label": f"🏛️ HERMES 3.5 RADAR HARVEST [5% Boundary Entry: ${ent_p}]"
+                        "rank_label": f"🏛️ HERMES 3.5 RADAR HARVEST [5% Boundary Entry: ${ent_p}]",
+                        "fill_time": fill_time,
+                        "fill_price": ent_p if tapped else None,
+                        "be_armor_time": armor_time,
+                        "profit_harvest_time": harvest_time,
+                        "tp_time": tp_time,
+                        "sl_time": sl_time,
+                        "exit_time": exit_time,
+                        "exit_price": exit_price,
+                        "exit_reason": exit_reason,
+                        "tapped": tapped,
+                        "completed": completed
                     })
 
         return active_zones
@@ -726,10 +902,10 @@ class Hermes30Model2ALiveEngine:
                 f"🪙 <b>Pair</b>: #{symbol} ({timeframe.upper()})\n"
                 f"📈 <b>Action</b>: {'🟢 LONG BUY (FILLED)' if side == 'LONG' else '🔴 SHORT SELL (FILLED)'}\n"
                 f"🎯 <b>Fill Price</b>: {ep:.6f} (5% Boundary Penetration Confirmed)\n"
-                f"🎯 <b>Take Profit</b>: {tp:.6f} (+14.0% ROE Target)\n"
+                f"🎯 <b>Take Profit</b>: {tp:.6f} (+29.0% ROE Target Harvest)\n"
                 f"🛑 <b>Initial Hard SL</b>: {hard_sl:.6f} (-14.0% ROE Shield)\n"
                 f"🛡️ <b>Soft Stop Loss</b>: {soft_sl:.6f} (Candle Body Close Defense)\n"
-                f"🛡️ <b>Trailing Plan</b>: Stepped Trailing Active (Silent Background Protection)\n"
+                f"🛡️ <b>Trailing Plan</b>: 6-Tier Stepped Trailing Active (+4.9% ➔ +0.5%, +9.8% ➔ +5.1%, +14.8% ➔ +10.1%, +19.8% ➔ +15.1%, +24% ➔ +20.1%, +29% ➔ +25%)\n"
                 f"🕯️ <b>Rejection Wick</b>: {setup.get('wick_ratio_pct', 24.5):.1f}% (Confirmed ≥ 18.0% Absorption)\n"
                 f"⚡ <b>Leverage</b>: {leverage}x Isolated | Margin: ${margin:.2f} USDT\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -1036,28 +1212,40 @@ class Hermes30Model2ALiveEngine:
                 be_locked = bool(trade.get("be_locked", 0))
 
                 # -------------------------------------------------------------
-                # HERMES 3.5 RADAR HARVEST: EXACT PINE SCRIPT V5 STEPPED TRAILING
-                # Stage 1: +8.0% ROE (+1.60% move) -> BE Armor (+0.10% lock)
-                # Stage 2: +9.0% ROE (+1.80% move) -> Stepped Profit Harvest (+4.50% ROE / +0.90% lock)
-                # Stage 3+: Extended Trend Runner (14.0% -> +10.0% lock)
+                # EXACT 6-TIER STEPPED TRAILING SL LADDER (DEFINED BY USER):
+                # Step 1: +4.90% ROI -> Lock SL @ +0.50% ROI (Fee Shield / Free Trade)
+                # Step 2: +9.80% ROI -> Lock SL @ +5.10% ROI (Confirmed Profit Tier 1)
+                # Step 3: +14.80% ROI -> Lock SL @ +10.10% ROI (Profit Tier 2)
+                # Step 4: +19.80% ROI -> Lock SL @ +15.10% ROI (Super Profit Tier 3)
+                # Step 5: +24.00% ROI -> Lock SL @ +20.10% ROI (Mega Profit Tier 4)
+                # Step 6: +29.00% ROI -> Lock SL @ +25.00% ROI (Target Harvest Tier 5)
                 # -------------------------------------------------------------
                 target_locked_roi = current_locked_roi
                 target_step = current_step
 
-                # Stage 1: +8.0% ROE Break-Even Armor Lock (+0.10% Fee Shield)
-                if peak_roi >= 8.00 and target_locked_roi < 0.10:
-                    target_locked_roi = 0.10
+                if peak_roi >= 4.90 and target_locked_roi < 0.50:
+                    target_locked_roi = 0.50
                     target_step = 1
 
-                # Stage 2: +9.0% ROE -> Stepped Profit Harvest (+4.50% ROE locked)
-                if peak_roi >= 9.00 and target_locked_roi < 4.50:
-                    target_locked_roi = 4.50
+                if peak_roi >= 9.80 and target_locked_roi < 5.10:
+                    target_locked_roi = 5.10
                     target_step = 2
 
-                # Stage 3: +14.0% ROE Runner Lock (+10.0% ROE locked)
-                if peak_roi >= 14.00 and target_locked_roi < 10.00:
-                    target_locked_roi = 10.00
+                if peak_roi >= 14.80 and target_locked_roi < 10.10:
+                    target_locked_roi = 10.10
                     target_step = 3
+
+                if peak_roi >= 19.80 and target_locked_roi < 15.10:
+                    target_locked_roi = 15.10
+                    target_step = 4
+
+                if peak_roi >= 24.00 and target_locked_roi < 20.10:
+                    target_locked_roi = 20.10
+                    target_step = 5
+
+                if peak_roi >= 29.00 and target_locked_roi < 25.00:
+                    target_locked_roi = 25.00
+                    target_step = 6
 
                 # Upgrade Trailing SL if a new step is reached!
                 if target_locked_roi > current_locked_roi:
@@ -1121,7 +1309,7 @@ class Hermes30Model2ALiveEngine:
                         logger.info(f"🎯 HERMES 3.5 RADAR HARVEST TAKE PROFIT: {sym} LONG hit TP @ {tp_price}")
 
                     # 2. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
-                    elif be_locked and current_locked_roi >= 1.0 and cur_price <= active_sl_price:
+                    elif be_locked and current_locked_roi >= 0.4 and cur_price <= active_sl_price:
                         exit_triggered = "TRAILING_SL_HIT"
                         exit_price = active_sl_price
                         logger.info(f"💎 HERMES 3.5 STEPPED HARVEST EXIT: {sym} LONG hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")
@@ -1169,7 +1357,7 @@ class Hermes30Model2ALiveEngine:
                         logger.info(f"🎯 HERMES 3.5 RADAR HARVEST TAKE PROFIT: {sym} SHORT hit TP @ {tp_price}")
 
                     # 2. Trailing SL Hit (Once locked in profit >= +1.0% ROI)
-                    elif be_locked and current_locked_roi >= 1.0 and cur_price >= active_sl_price:
+                    elif be_locked and current_locked_roi >= 0.4 and cur_price >= active_sl_price:
                         exit_triggered = "TRAILING_SL_HIT"
                         exit_price = active_sl_price
                         logger.info(f"💎 HERMES 3.5 STEPPED HARVEST EXIT: {sym} SHORT hit locked SL @ {active_sl_price} (+{current_locked_roi:.1f}% ROI)")

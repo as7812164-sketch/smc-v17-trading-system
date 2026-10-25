@@ -38,6 +38,7 @@ grp_rocket  = "🚀 3. Rocket Airspace & Maturation Engine"
 tf_mode     = input.string("Auto Detect", "Maturation Mode", options=["Auto Detect", "1H (18 Bars / Next-Day)", "4H (8 Bars / Macro)", "Custom"], group=grp_rocket)
 min_bars_in = input.int(18, "Custom Min Maturation Bars (Min Gap)", minval=1, maxval=500, group=grp_rocket, tooltip="Minimum bars price must spend in space before returning (Default: 18 bars = Next-Day on 1H)")
 max_bars_in = input.int(720, "Max Maturation Window (Bars)", minval=50, maxval=2000, group=grp_rocket, tooltip="Maximum age of OB (Default: 720 bars = 1 Month on 1H, 360 bars = 2 Months on 4H)")
+min_runway  = input.float(5.0, "Min Airspace Runway Void (%)", minval=1.0, maxval=20.0, step=0.5, group=grp_rocket, tooltip="Minimum percentage price must expand into airspace before returning to test the boundary (Default: 5.0%)")
 
 grp_core    = "⚙️ 4. Institutional Displacement & Sentry Core"
 min_disp    = input.float(5.0, "Min Displacement Wave (%)", minval=1.5, maxval=20.0, step=0.5, group=grp_core)

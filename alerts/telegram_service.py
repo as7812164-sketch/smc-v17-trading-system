@@ -45,7 +45,7 @@ from ai.gemini_analyst import GeminiAnalyst
 from ai.smart_money_analyzer import evaluate_setup_confluence
 
 TELEGRAM_API_BASE = "https://api.telegram.org/bot"
-TELEGRAM_WEBAPP_URL = "https://smc-ai-agent.onrender.com/?v=350_single_tier"
+TELEGRAM_WEBAPP_URL = "https://the-majority-excessive-protection.trycloudflare.com/static/mobile.html"
 
 gemini_analyst = GeminiAnalyst()
 

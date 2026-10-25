@@ -111,6 +111,11 @@
             if (bar) updateChartHeaderOHLC(bar);
         });
 
+        // Debounced redraw of Hermes 3.5 Order Block Boxes during pan & zoom
+        mChart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+            drawMobileHermes35Boxes();
+        });
+
         // ResizeObserver
         const ro = new ResizeObserver(entries => {
             if (!entries || !entries.length || !mChart) return;
@@ -252,141 +257,117 @@
     // HERMES 3.5 RADAR HARVEST COMPREHENSIVE SETUPS SCANNER & MARKERS
     // -------------------------------------------------------------
 
+    // -------------------------------------------------------------
+    // HERMES 3.5 RADAR HARVEST SINGLE TIER ENGINE (100% PINE SCRIPT V5 PARITY)
+    // -------------------------------------------------------------
+
     function scanAllHermes30Setups(candles) {
+        // Pure Hermes 3.5 Radar Harvest Scanner: 5% Boundary Penetration + 0.20% Radar
         const setups = [];
-        if (!candles || candles.length < 20) return setups;
+        if (!candles || candles.length < 25) return setups;
 
-        let minDisp = 0.015;
-        if (mInterval === '15m') minDisp = 0.012; // Sensitive 1.2% on 15m
-        else if (mInterval === '1h') minDisp = 0.020;
-        else if (mInterval === '4h' || mInterval === '1d') minDisp = 0.035;
-
+        const tf = (mInterval || '15m').toLowerCase();
+        const minDisp = (tf === '15m' || tf === '1h') ? 0.035 : 0.05;
         const n = candles.length;
-        for (let i = 15; i < n - 2; i++) {
-            // 1. BULLISH (LONG) SETUP CHECK AT BAR i
-            const priorLows = candles.slice(Math.max(0, i - 12), i + 1).map(c => c.low);
-            if (candles[i].low === Math.min(...priorLows)) {
-                const subWindow = candles.slice(i, Math.min(i + 14, n));
-                const subHighs = subWindow.map(c => c.high);
-                const maxHigh = Math.max(...subHighs);
-                const peakIdx = i + subHighs.indexOf(maxHigh);
 
-                if (peakIdx > i + 2) {
-                    const originL = candles[i].low;
-                    const gain = (maxHigh - originL) / originL;
+        for (let i = 15; i < n - 3; i++) {
+            const c3 = candles[i];
+            const c2 = candles[i + 1];
+            const c1 = candles[i + 2];
 
-                    if (gain >= minDisp) {
-                        const idmLow = candles[peakIdx - 1].low;
-                        let bestMid = -1;
-                        let maxRange = 0;
+            const impulseH = Math.max(c1.high, c2.high);
+            const impulseL = Math.min(c1.low, c2.low);
 
-                        for (let mid = i + 1; mid < peakIdx; mid++) {
-                            const cMid = candles[mid];
-                            const fib = (cMid.low - originL) / (maxHigh - originL);
-                            if (fib >= 0.25 && fib <= 0.75) {
-                                const r = cMid.high - cMid.low;
-                                if (r > maxRange) {
-                                    maxRange = r;
-                                    bestMid = mid;
-                                }
-                            }
-                        }
+            // 1. BULLISH DEMAND SETUP (5% Boundary)
+            const isRed = c3.close < c3.open;
+            const hasBullFvg = c1.low > c3.high;
+            const bullDisp = c3.low > 0 ? ((impulseH - c3.low) / c3.low) : 0;
 
-                        if (bestMid !== -1) {
-                            const decC = candles[bestMid - 1] || candles[bestMid];
-                            const decTop = Math.max(decC.open, decC.close);
-                            const decBot = decC.low;
-                            const mt = (decTop + decBot) / 2.0;
+            if (isRed && hasBullFvg && bullDisp >= minDisp) {
+                const oHigh = c3.high;
+                const oLow = c3.low;
+                const oRng = oHigh - oLow;
+                if (oRng > 0) {
+                    const entP = Number((oHigh - (oRng * 0.05)).toFixed(8));
+                    const radP = Number((entP * 1.0020).toFixed(8));
+                    const tpP = Number((entP * (1.0 + 0.0280)).toFixed(8));
+                    const slP = Number((entP * (1.0 - 0.0280)).toFixed(8));
 
-                            // Look for tap
-                            for (let t = peakIdx + 1; t < Math.min(peakIdx + 20, n); t++) {
-                                const tapC = candles[t];
-                                const isTapping = (tapC.low <= mt * 1.003 && tapC.close >= mt * 0.994);
-                                const swept = candles.slice(peakIdx, t + 1).some(c => c.low <= idmLow);
-                                const cRange = tapC.high - tapC.low;
-                                const lowerWick = Math.min(tapC.open, tapC.close) - tapC.low;
-                                const wickRatio = cRange > 0 ? (lowerWick / cRange) : 0;
-
-                                if (isTapping && swept && wickRatio >= 0.15) {
-                                    setups.push({
-                                        side: "BUY",
-                                        type: "LONG",
-                                        entryPrice: mt,
-                                        tpPrice: mt * 1.028, // +14% ROE @ 5x
-                                        hardSlPrice: mt * 0.972, // -14% ROE
-                                        softSlPrice: mt * 0.985,
-                                        displacementPct: (gain * 100).toFixed(2),
-                                        wickRatioPct: (wickRatio * 100).toFixed(1),
-                                        candleIndex: t,
-                                        candleTime: tapC.time
-                                    });
-                                    break;
-                                }
-                            }
+                    // Search for first mitigation tap
+                    for (let k = i + 3; k < n; k++) {
+                        const bar = candles[k];
+                        if (bar.low <= entP && bar.low >= slP) {
+                            setups.push({
+                                symbol: mSymbol,
+                                side: "BUY",
+                                type: "LONG",
+                                ob_high: oHigh,
+                                ob_low: oLow,
+                                entry_price: entP,
+                                entryPrice: entP,
+                                radar_price: radP,
+                                radarPrice: radP,
+                                tp_price: tpP,
+                                tpPrice: tpP,
+                                sl_price: slP,
+                                slPrice: slP,
+                                origin_time: c3.time,
+                                originTime: c3.time,
+                                fill_time: bar.time,
+                                candleTime: bar.time,
+                                candleIndex: k,
+                                status: "ACTIVE_TAPPED",
+                                runway_pct: 22,
+                                bars_alive: k - i
+                            });
+                            break;
                         }
                     }
                 }
             }
 
-            // 2. BEARISH (SHORT) SETUP CHECK AT BAR i
-            const priorHighs = candles.slice(Math.max(0, i - 12), i + 1).map(c => c.high);
-            if (candles[i].high === Math.max(...priorHighs)) {
-                const subWindow = candles.slice(i, Math.min(i + 14, n));
-                const subLows = subWindow.map(c => c.low);
-                const minLow = Math.min(...subLows);
-                const troughIdx = i + subLows.indexOf(minLow);
+            // 2. BEARISH SUPPLY SETUP (5% Boundary)
+            const isGreen = c3.close > c3.open;
+            const hasBearFvg = c1.high < c3.low;
+            const bearDisp = c3.high > 0 ? ((c3.high - impulseL) / c3.high) : 0;
 
-                if (troughIdx > i + 2) {
-                    const originH = candles[i].high;
-                    const drop = (originH - minLow) / originH;
+            if (isGreen && hasBearFvg && bearDisp >= minDisp) {
+                const oHigh = c3.high;
+                const oLow = c3.low;
+                const oRng = oHigh - oLow;
+                if (oRng > 0) {
+                    const entP = Number((oLow + (oRng * 0.05)).toFixed(8));
+                    const radP = Number((entP * 0.9980).toFixed(8));
+                    const tpP = Number((entP * (1.0 - 0.0280)).toFixed(8));
+                    const slP = Number((entP * (1.0 + 0.0280)).toFixed(8));
 
-                    if (drop >= minDisp) {
-                        const idmHigh = candles[troughIdx - 1].high;
-                        let bestMid = -1;
-                        let maxRange = 0;
-
-                        for (let mid = i + 1; mid < troughIdx; mid++) {
-                            const cMid = candles[mid];
-                            const fib = (originH - cMid.high) / (originH - minLow);
-                            if (fib >= 0.25 && fib <= 0.75) {
-                                const r = cMid.high - cMid.low;
-                                if (r > maxRange) {
-                                    maxRange = r;
-                                    bestMid = mid;
-                                }
-                            }
-                        }
-
-                        if (bestMid !== -1) {
-                            const decC = candles[bestMid - 1] || candles[bestMid];
-                            const decTop = decC.high;
-                            const decBot = Math.min(decC.open, decC.close);
-                            const mt = (decTop + decBot) / 2.0;
-
-                            for (let t = troughIdx + 1; t < Math.min(troughIdx + 20, n); t++) {
-                                const tapC = candles[t];
-                                const isTapping = (tapC.high >= mt * 0.997 && tapC.close <= mt * 1.006);
-                                const swept = candles.slice(troughIdx, t + 1).some(c => c.high >= idmHigh);
-                                const cRange = tapC.high - tapC.low;
-                                const upperWick = tapC.high - Math.max(tapC.open, tapC.close);
-                                const wickRatio = cRange > 0 ? (upperWick / cRange) : 0;
-
-                                if (isTapping && swept && wickRatio >= 0.15) {
-                                    setups.push({
-                                        side: "SELL",
-                                        type: "SHORT",
-                                        entryPrice: mt,
-                                        tpPrice: mt * 0.972, // +14% ROE @ 5x
-                                        hardSlPrice: mt * 1.028, // -14% ROE
-                                        softSlPrice: mt * 1.015,
-                                        displacementPct: (drop * 100).toFixed(2),
-                                        wickRatioPct: (wickRatio * 100).toFixed(1),
-                                        candleIndex: t,
-                                        candleTime: tapC.time
-                                    });
-                                    break;
-                                }
-                            }
+                    for (let k = i + 3; k < n; k++) {
+                        const bar = candles[k];
+                        if (bar.high >= entP && bar.high <= slP) {
+                            setups.push({
+                                symbol: mSymbol,
+                                side: "SELL",
+                                type: "SHORT",
+                                ob_high: oHigh,
+                                ob_low: oLow,
+                                entry_price: entP,
+                                entryPrice: entP,
+                                radar_price: radP,
+                                radarPrice: radP,
+                                tp_price: tpP,
+                                tpPrice: tpP,
+                                sl_price: slP,
+                                slPrice: slP,
+                                origin_time: c3.time,
+                                originTime: c3.time,
+                                fill_time: bar.time,
+                                candleTime: bar.time,
+                                candleIndex: k,
+                                status: "ACTIVE_TAPPED",
+                                runway_pct: 22,
+                                bars_alive: k - i
+                            });
+                            break;
                         }
                     }
                 }
@@ -395,132 +376,158 @@
         return setups;
     }
 
-    function updateChartMarkers() {
-        if (!mCandleSeries) return;
+    // -------------------------------------------------------------
+    // HTML5 CANVAS OVERLAY: TRANSLUCENT DEMAND/SUPPLY BOXES & RADAR LINES
+    // -------------------------------------------------------------
 
-        const markers = [];
+    function getMobileOverlayCanvas() {
+        const container = document.getElementById("mobileChartCanvas");
+        if (!container) return null;
 
-        // 1. Live Active Position Marker (if coin is in open position)
-        if (mActiveLivePosition && mFullCandles && mFullCandles.length > 0) {
-            let entryTimeSec = mActiveLivePosition.entry_time || 0;
-            if (entryTimeSec > 1e11) entryTimeSec = Math.floor(entryTimeSec / 1000);
-            let closestCandle = null;
-            if (entryTimeSec > 0) {
-                closestCandle = mFullCandles.find(c => c.time >= entryTimeSec);
-            }
-            if (!closestCandle) closestCandle = mFullCandles[mFullCandles.length - 1];
-
-            const isLong = (mActiveLivePosition.side || '').toUpperCase() === 'BUY' || (mActiveLivePosition.side_raw || '').toUpperCase() === 'LONG';
-            const ep = mActiveLivePosition.entry_price || 0;
-            const roe = mActiveLivePosition.roe_str || (mActiveLivePosition.pnl_pct ? `${mActiveLivePosition.pnl_pct}%` : '+0.00%');
-
-            markers.push({
-                time: closestCandle.time,
-                position: isLong ? 'belowBar' : 'aboveBar',
-                color: isLong ? '#00DFC0' : '#FF4B55',
-                shape: isLong ? 'arrowUp' : 'arrowDown',
-                text: `${isLong ? '🟢 ACTIVE BUY' : '🔴 ACTIVE SELL'} @ $${ep.toFixed(ep < 1 ? 4 : 2)} (${roe})`,
-                size: 2
-            });
+        let canvas = document.getElementById("mobileChartOverlayCanvas");
+        if (!canvas) {
+            canvas = document.createElement("canvas");
+            canvas.id = "mobileChartOverlayCanvas";
+            canvas.style.position = "absolute";
+            canvas.style.top = "0";
+            canvas.style.left = "0";
+            canvas.style.pointerEvents = "none";
+            canvas.style.zIndex = "10";
+            container.appendChild(canvas);
         }
 
-        // 2. Hermes 3.5 Radar Harvest Setup Markers (Pine Script V5 Matching HUD)
-        const maxTime = mIsReplayMode && mReplayIndex > 0 ? mReplayCandles[mReplayIndex - 1].time : Infinity;
-        for (const s of mDetectedSetups) {
-            const barTime = s.candleTime || s.originTime;
-            if (barTime && barTime <= maxTime) {
-                const isLong = s.side === 'BUY' || s.side === 'LONG';
-                const ep = s.entryPrice || s.entry_price || 0;
-                const pStr = ep < 1 ? ep.toFixed(4) : (ep < 100 ? ep.toFixed(3) : ep.toFixed(2));
-                const gap = s.runway_pct || 22;
-                const age = s.bars_alive || 439;
+        const dpr = window.devicePixelRatio || 1;
+        const w = container.clientWidth || 360;
+        const h = container.clientHeight || 340;
 
-                // ⚡ 5% Boundary Limit Entry Marker
-                markers.push({
-                    time: barTime,
-                    position: isLong ? 'belowBar' : 'aboveBar',
-                    color: '#F59E0B',
-                    shape: isLong ? 'arrowUp' : 'arrowDown',
-                    text: `⚡ 5% Boundary Entry | Limit Fill: $${pStr} | TP: +14% ROE | Gap: ${gap}% | Age: ${age}b`,
-                    size: 2
-                });
-
-                // Stage 2 Harvest Label: 💰 PROFIT HARVEST LOCKED!
-                if (s.status === 'STAGE2_HARVEST' || s.profit_harvest_time) {
-                    const hTime = s.profit_harvest_time ? (s.profit_harvest_time > 1e11 ? Math.floor(s.profit_harvest_time / 1000) : s.profit_harvest_time) : barTime;
-                    markers.push({
-                        time: hTime,
-                        position: isLong ? 'aboveBar' : 'belowBar',
-                        color: '#00E5FF',
-                        shape: 'circle',
-                        text: `💰 PROFIT HARVEST LOCKED! SL -> +4.5% ROE`,
-                        size: 1.6
-                    });
-                }
-
-                // Stage 1 BE Armor: 🛡️ BE ARMOR (+8% ROE) Secured (+0.1%)
-                if (s.status === 'STAGE1_ARMOR' || s.be_armor_time) {
-                    const aTime = s.be_armor_time ? (s.be_armor_time > 1e11 ? Math.floor(s.be_armor_time / 1000) : s.be_armor_time) : barTime;
-                    markers.push({
-                        time: aTime,
-                        position: isLong ? 'aboveBar' : 'belowBar',
-                        color: '#E2E8F0',
-                        shape: 'circle',
-                        text: `🛡️ BE ARMOR (+8% ROE) Secured (+0.1%)`,
-                        size: 1.5
-                    });
-                }
-            }
+        const targetW = Math.floor(w * dpr);
+        const targetH = Math.floor(h * dpr);
+        if (!canvas.width || Math.abs(canvas.width - targetW) >= 4 || Math.abs(canvas.height - targetH) >= 4) {
+            canvas.width = targetW;
+            canvas.height = targetH;
+            canvas.style.width = w + "px";
+            canvas.style.height = h + "px";
         }
 
-        // Sort markers by time (Lightweight charts requirement)
-        markers.sort((a, b) => a.time - b.time);
-        mCurrentMarkers = markers;
-        mCandleSeries.setMarkers(markers);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { canvas, ctx, width: w, height: h };
     }
 
+    function drawMobileHermes35Boxes() {
+        const overlay = getMobileOverlayCanvas();
+        if (!overlay) return;
+        const { ctx, width, height } = overlay;
+        ctx.clearRect(0, 0, width, height);
+
+        if (!mChart || !mCandleSeries || !mDetectedSetups || mDetectedSetups.length === 0) {
+            return;
+        }
+
+        const timeScale = mChart.timeScale();
+        const visibleRange = timeScale.getVisibleRange();
+        const plotWidth = width - 55;
+
+        mDetectedSetups.forEach(z => {
+            if (!z.ob_high || !z.ob_low) return;
+            const isBuySide = (z.side === 'BUY' || z.side === 'LONG');
+            const originSec = z.origin_time > 1e11 ? Math.floor(z.origin_time / 1000) : (z.originTime || z.candleTime);
+            if (!originSec) return;
+
+            let endSec = z.end_time ? (z.end_time > 1e11 ? Math.floor(z.end_time / 1000) : z.end_time) : null;
+            if (!endSec && z.fill_time) endSec = z.fill_time > 1e11 ? Math.floor(z.fill_time / 1000) : z.fill_time;
+
+            let x1 = timeScale.timeToCoordinate(originSec);
+            if (x1 === null || x1 === undefined) {
+                if (visibleRange && originSec < visibleRange.from) x1 = 0;
+                else return;
+            } else {
+                x1 = Math.max(0, x1);
+            }
+
+            let x2 = plotWidth;
+            if (endSec) {
+                const coordEnd = timeScale.timeToCoordinate(endSec);
+                if (coordEnd !== null && coordEnd !== undefined) {
+                    x2 = Math.max(x1 + 6, coordEnd);
+                }
+            }
+
+            const boxWidth = x2 - x1;
+            if (boxWidth <= 3) return;
+
+            const yTop = mCandleSeries.priceToCoordinate(Math.max(z.ob_high, z.ob_low));
+            const yBottom = mCandleSeries.priceToCoordinate(Math.min(z.ob_high, z.ob_low));
+            if (yTop === null || yBottom === null) return;
+
+            const minY = Math.min(yTop, yBottom);
+            const maxY = Math.max(yTop, yBottom);
+            const boxHeight = Math.max(3, maxY - minY);
+
+            const obRange = Math.abs(z.ob_high - z.ob_low);
+            const entPx = z.entry_price || (isBuySide ? (z.ob_high - obRange * 0.05) : (z.ob_low + obRange * 0.05));
+            const radPx = z.radar_price || (isBuySide ? entPx * 1.0020 : entPx * 0.9980);
+
+            // 1. Shaded Translucent Order Block Box
+            ctx.save();
+            ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.14)' : 'rgba(255, 59, 105, 0.14)';
+            ctx.fillRect(x1, minY, boxWidth, boxHeight);
+            ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.45)' : 'rgba(255, 59, 105, 0.45)';
+            ctx.lineWidth = 1.2;
+            ctx.strokeRect(x1, minY, boxWidth, boxHeight);
+            ctx.restore();
+
+            // 2. 5% Boundary Penetration Line (Amber Gold #F59E0B dashed)
+            const yEnt = mCandleSeries.priceToCoordinate(entPx);
+            if (yEnt !== null && !isNaN(yEnt)) {
+                ctx.save();
+                ctx.strokeStyle = '#F59E0B';
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.moveTo(x1, yEnt);
+                ctx.lineTo(x2, yEnt);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 3. 0.20% Proximity Radar Line (Cyan #38BDF8 dotted)
+            const yRad = mCandleSeries.priceToCoordinate(radPx);
+            if (yRad !== null && !isNaN(yRad)) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
+                ctx.lineWidth = 1.0;
+                ctx.setLineDash([2, 3]);
+                ctx.beginPath();
+                ctx.moveTo(x1, yRad);
+                ctx.lineTo(x2, yRad);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 4. Box Title Label removed: pure clean Order Block box & boundary lines
+        });
+    }
+
+    // -------------------------------------------------------------
+    // PURE HERMES 3.5 MARKERS (NO NOISE, NO EXTRA ARROWS)
+    // -------------------------------------------------------------
+
+    function updateChartMarkers() {
+        if (!mCandleSeries) return;
+        mCurrentMarkers = [];
+        mCandleSeries.setMarkers([]);
+        drawMobileHermes35Boxes();
+    }
+
+    // -------------------------------------------------------------
+    // PURE HERMES 3.5 PRICE AXIS LEVELS (ONLY ACTIVE SETUP LEVELS)
+    // -------------------------------------------------------------
+
     function renderLivePositionLines() {
+        // Zero noise: clear infinite price lines so chart matches pure TradingView canvas
         clearLivePositionLines();
-        if (!mCandleSeries || !mActiveLivePosition) return;
-
-        const p = mActiveLivePosition;
-        const isLong = (p.side || '').toUpperCase() === 'BUY' || (p.side_raw || '').toUpperCase() === 'LONG';
-        const ep = p.entry_price || 0;
-        const tp = p.tp_price || (isLong ? ep * 1.028 : ep * 0.972);
-        const sl = p.trailing_sl_price && p.trailing_sl_price > 0 ? p.trailing_sl_price : (p.sl_price || (isLong ? ep * 0.972 : ep * 1.028));
-        const isTrailing = Boolean(p.trailing_sl_price && p.trailing_sl_price > 0);
-
-        try {
-            mPriceLines.liveEntry = mCandleSeries.createPriceLine({
-                price: ep,
-                color: '#00DFC0',
-                lineWidth: 2,
-                lineStyle: window.LightweightCharts.LineStyle.Dashed,
-                axisLabelVisible: true,
-                title: `ENTRY: $${ep.toFixed(ep < 1 ? 4 : 2)}`
-            });
-
-            mPriceLines.liveTp = mCandleSeries.createPriceLine({
-                price: tp,
-                color: '#00C087',
-                lineWidth: 2,
-                lineStyle: window.LightweightCharts.LineStyle.Solid,
-                axisLabelVisible: true,
-                title: `TP: $${tp.toFixed(tp < 1 ? 4 : 2)} (+14% ROE)`
-            });
-
-            mPriceLines.liveSl = mCandleSeries.createPriceLine({
-                price: sl,
-                color: isTrailing ? '#FFB800' : '#FF4B55',
-                lineWidth: 2,
-                lineStyle: isTrailing ? window.LightweightCharts.LineStyle.Solid : window.LightweightCharts.LineStyle.Dashed,
-                axisLabelVisible: true,
-                title: `${isTrailing ? 'ARMOR SL' : 'STOP LOSS'}: $${sl.toFixed(sl < 1 ? 4 : 2)}`
-            });
-        } catch(e) {}
-
-        // Render Live Position HUD on chart
-        renderLivePositionHUD();
+        drawMobileHermes35Boxes();
     }
 
     function clearLivePositionLines() {
@@ -529,10 +536,16 @@
             if (mPriceLines.liveEntry) mCandleSeries.removePriceLine(mPriceLines.liveEntry);
             if (mPriceLines.liveTp) mCandleSeries.removePriceLine(mPriceLines.liveTp);
             if (mPriceLines.liveSl) mCandleSeries.removePriceLine(mPriceLines.liveSl);
+            if (mPriceLines.entry) mCandleSeries.removePriceLine(mPriceLines.entry);
+            if (mPriceLines.tp) mCandleSeries.removePriceLine(mPriceLines.tp);
+            if (mPriceLines.sl) mCandleSeries.removePriceLine(mPriceLines.sl);
         } catch(e) {}
         mPriceLines.liveEntry = null;
         mPriceLines.liveTp = null;
         mPriceLines.liveSl = null;
+        mPriceLines.entry = null;
+        mPriceLines.tp = null;
+        mPriceLines.sl = null;
     }
 
     function renderLivePositionHUD() {
@@ -851,7 +864,7 @@
 
         const btn = document.getElementById("btnMobileExecuteSignal");
         if (btn) {
-            btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Execute Simulated ${isLong ? 'LONG BUY' : 'SHORT SELL'} @ 50% MT`;
+            btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Execute Simulated ${isLong ? 'LONG BUY' : 'SHORT SELL'} @ 5% Boundary`;
         }
 
         card.style.display = "block";
@@ -891,7 +904,7 @@
         dismissReplaySignal();
         updateReplayPriceLines();
         renderReplayActiveHUD();
-        showOutcomeBanner("⚡ ORDER EXECUTED", `${s.side === 'BUY' ? 'LONG' : 'SHORT'} 5X Filled @ $${s.entryPrice.toFixed(s.entryPrice < 1 ? 4 : 2)} (50% MT)`, "info");
+        showOutcomeBanner("⚡ ORDER EXECUTED", `${s.side === 'BUY' ? 'LONG' : 'SHORT'} 5X Filled @ $${s.entryPrice.toFixed(s.entryPrice < 1 ? 4 : 2)} (5% Boundary)`, "info");
         playInstitutionalChime("shield");
     }
 
@@ -907,7 +920,7 @@
                 lineWidth: 2,
                 lineStyle: window.LightweightCharts.LineStyle.Dashed,
                 axisLabelVisible: true,
-                title: '50% MT ENTRY'
+                title: '5% BOUNDARY ENTRY'
             });
 
             mPriceLines.tp = mCandleSeries.createPriceLine({

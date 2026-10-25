@@ -201,10 +201,10 @@ function renderIndicators(candles) {
     // 1. Pure Candlesticks
     if (candleSeries) candleSeries.setData(candles);
 
-    // 2. Automated SMC Levels (PDH, PDL, 15m Extreme OB, 50% MT)
+    // 2. Automated SMC Levels (PDH, PDL, 15m Extreme OB, 5% Boundary)
     updateSmcLevels(candles);
 
-    // 3. Hermes 3.0 Strategy Markers & Live Open Position Markers
+    // 3. Hermes 3.5 Strategy Markers & Live Open Position Markers
     renderNexusStrategyMarkers(candles);
 }
 
@@ -373,7 +373,7 @@ function renderNexusStrategyMarkers(candles) {
         });
     }
 
-    // 2. Hermes 3.0 Model 2A Strategy Setup Markers
+    // 2. Hermes 3.5 Hermes 3.5 Single Tier Strategy Setup Markers
     const setups = scanAllHermes30Setups(candles);
     const maxTime = (isReplayMode && replayIndex > 0 && replayCandles[replayIndex - 1]) ? replayCandles[replayIndex - 1].time : Infinity;
     for (const s of setups) {
@@ -385,15 +385,15 @@ function renderNexusStrategyMarkers(candles) {
                 position: isLong ? 'belowBar' : 'aboveBar',
                 color: isLong ? '#00C087' : '#FF4B55',
                 shape: isLong ? 'arrowUp' : 'arrowDown',
-                text: `Hermes 3.0 ${s.type} @ $${ep.toFixed(ep < 1 ? 4 : 2)}`,
+                text: `Hermes 3.5 ${s.type} @ $${ep.toFixed(ep < 1 ? 4 : 2)}`,
                 size: 1.5
             });
         }
     }
 
-    markers.sort((a, b) => a.time - b.time);
+    // Markers text removed for clean zero-noise TradingView chart view
     try {
-        candleSeries.setMarkers(markers);
+        candleSeries.setMarkers([]);
     } catch(e) {}
 }
 
@@ -439,7 +439,7 @@ function updateSmcLevels(candles) {
         currentSmcPriceLines.push(pdlLine);
     }
 
-    // B. 15m Extreme Order Block & 50% Mean Threshold
+    // B. 15m Extreme Order Block & 5% Boundary Penetration
     let bestDisp = 0;
     let obCandle = null;
     let obType = 'DEMAND';
@@ -464,7 +464,7 @@ function updateSmcLevels(candles) {
             lineWidth: 2,
             lineStyle: 1, // Dotted
             axisLabelVisible: true,
-            title: `50% MT Sniper Entry [${obType}]: $${mt50.toFixed(4)}`
+            title: `5% Boundary Sniper Entry [${obType}]: $${mt50.toFixed(4)}`
         });
         currentSmcPriceLines.push(mtLine);
     }
@@ -642,7 +642,7 @@ function stepReplayForward() {
         
         const visible = replayCandles.slice(0, replayIndex);
         
-        // Hermes 3.0 Model 2A Check
+        // Hermes 3.5 Hermes 3.5 Single Tier Check
         if (isHermesReplayStratActive) {
             checkHermes30SetupOnReplay(visible);
         }
@@ -967,7 +967,7 @@ function showReplaySignalCard(setup) {
     
     const btn = document.getElementById("btnExecuteReplayTrade");
     if (btn) {
-        btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Execute Simulated ${isLong ? 'LONG BUY' : 'SHORT SELL'} @ 50% MT`;
+        btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Execute Simulated ${isLong ? 'LONG BUY' : 'SHORT SELL'} @ 5% Boundary`;
     }
     
     card.style.display = "block";
@@ -1005,7 +1005,7 @@ function executeCurrentReplaySignal() {
     dismissReplaySignal();
     updateReplayChartPriceLines();
     renderReplayActiveTradeHUD();
-    showOutcomeBanner("⚡ ORDER EXECUTED", `${setup.side === 'BUY' ? 'LONG' : 'SHORT'} 5X Filled @ $${setup.entryPrice.toFixed(4)} (50% MT)`, "info");
+    showOutcomeBanner("⚡ ORDER EXECUTED", `${setup.side === 'BUY' ? 'LONG' : 'SHORT'} 5X Filled @ $${setup.entryPrice.toFixed(4)} (5% Boundary)`, "info");
     playInstitutionalChime("shield");
 }
 
@@ -1021,7 +1021,7 @@ function updateReplayChartPriceLines() {
             lineWidth: 2,
             lineStyle: LightweightCharts.LineStyle.Dashed,
             axisLabelVisible: true,
-            title: '50% MT ENTRY'
+            title: '5% Boundary ENTRY'
         });
         
         replayPriceLines.tp = candleSeries.createPriceLine({
@@ -1348,7 +1348,7 @@ function renderReplayJournalTable() {
     if (!tbody) return;
     
     if (replaySimJournal.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No trades simulated yet. Run Bar Replay to trigger Hermes 3.0 setups!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No trades simulated yet. Run Bar Replay to trigger Hermes 3.5 setups!</td></tr>';
         return;
     }
     
@@ -2012,7 +2012,7 @@ function drawStrategyOnChart(item, fitChart = false) {
             lineWidth: 1,
             lineStyle: 2, // Dashed
             axisLabelVisible: true,
-            title: `⚡ 50% MT: $${mt.toFixed(4)}`
+            title: `⚡ 5% Boundary: $${mt.toFixed(4)}`
         });
         currentChartPriceLines.push(mtLine);
     }
@@ -2348,7 +2348,7 @@ async function pollPositions() {
 
         if (tbody) {
             if (!data.positions || data.positions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:30px;">No Open Positions • BB 3.0 Autonomous Scanner Standing By</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:30px;">No Open Positions • Hermes 3.5 Autonomous Scanner Standing By</td></tr>`;
             } else {
                 tbody.innerHTML = data.positions.map(p => {
                     const isLong = (p.side_raw || p.side || '').toUpperCase() === 'LONG' || (p.side_raw || p.side || '').toUpperCase() === 'BUY';

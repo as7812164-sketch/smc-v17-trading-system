@@ -5,72 +5,105 @@ from typing import List, Dict, Any, Optional
 from PIL import Image, ImageDraw, ImageFont
 from config import get_ist_now
 
+
+def get_font(size: int = 12, bold: bool = False) -> ImageFont.ImageFont:
+    """Helper to load standard fonts across Windows and Linux, fallback to default."""
+    candidates = [
+        "C:/Windows/Fonts/segoeuib.ttf" if bold else "C:/Windows/Fonts/segoeui.ttf",
+        "C:/Windows/Fonts/arialbd.ttf" if bold else "C:/Windows/Fonts/arial.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if bold else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "arial.ttf"
+    ]
+    for c in candidates:
+        try:
+            return ImageFont.truetype(c, size)
+        except Exception:
+            pass
+    return ImageFont.load_default()
+
+
 def render_smc_chart_image(
     symbol: str,
     candles: List[Dict[str, Any]],
     zone: Dict[str, Any],
     zones: Optional[List[Dict[str, Any]]] = None,
-    timeframe: str = "4H"
+    timeframe: str = "1H"
 ) -> bytes:
     """
-    Renders a high-resolution, dark-themed TradingView style candlestick chart
-    with Order Block zone(s), Entry, TP (+4%), SL (-3%) lines and price badges.
+    Renders a high-resolution, professional LIGHT-THEMED TradingView candlestick chart
+    specifically for Hermes 3.5 Radar Harvest with Order Block 5% boundary penetration,
+    0.20% proximity radar, Take Profit (+29% Target), 6-Tier Trailing SL, and Entry badge.
     Returns in-memory PNG bytes.
     """
-    width = 920
-    height = 540
-    img = Image.new("RGBA", (width, height), color=(14, 17, 24, 255))
+    width = 1000
+    height = 580
+
+    # 1. Canvas Background: Pure Clean White (Light Mode)
+    bg_color = (255, 255, 255, 255)
+    img = Image.new("RGBA", (width, height), color=bg_color)
     draw = ImageDraw.Draw(img)
 
-    # Use default bitmap font (guaranteed to work in any headless Linux/Windows environment)
-    font = ImageFont.load_default()
+    # Fonts
+    font_title = get_font(15, bold=True)
+    font_bold = get_font(12, bold=True)
+    font_regular = get_font(11, bold=False)
+    font_small = get_font(10, bold=False)
 
-    # Select last 45 candles for clean viewing
-    display_candles = candles[-45:] if len(candles) > 45 else candles
+    # Display last 48 candles for clean candlestick spacing
+    display_candles = candles[-48:] if len(candles) > 48 else candles
     if not display_candles:
-        # Fallback empty image
-        draw.text((width // 2 - 50, height // 2), f"{symbol} No Data", fill=(255, 255, 255, 255), font=font)
+        draw.text((width // 2 - 60, height // 2), f"{symbol} No Market Data", fill=(100, 116, 139, 255), font=font_bold)
         buf = io.BytesIO()
         img.convert("RGB").save(buf, format="PNG")
         return buf.getvalue()
 
-    # Dimensions
-    pad_left = 30
-    pad_right = 110
-    pad_top = 65
-    pad_bottom = 45
+    # Layout Paddings
+    pad_left = 35
+    pad_right = 140
+    pad_top = 70
+    pad_bottom = 40
     plot_w = width - pad_left - pad_right
     plot_h = height - pad_top - pad_bottom
 
-    # Extract price bounds
-    lows = [c["low"] for c in display_candles]
-    highs = [c["high"] for c in display_candles]
+    # Bounds
+    lows = [float(c["low"]) for c in display_candles]
+    highs = [float(c["high"]) for c in display_candles]
 
     side = str(zone.get("side") or "BUY").upper()
+    is_long = side in ("BUY", "LONG")
+
     ob_h_val = zone.get("ob_high")
     ob_l_val = zone.get("ob_low")
     ob_high = float(ob_h_val) if ob_h_val is not None else float(highs[-1])
     ob_low = float(ob_l_val) if ob_l_val is not None else float(lows[-1])
+    ob_rng = abs(ob_high - ob_low)
 
-    # 50% Mean Threshold (MT) is the institutional entry
-    mt_calc = (ob_high + ob_low) / 2.0
-    entry_val = zone.get("mean_threshold") or zone.get("entry_price")
-    entry_p = float(entry_val) if entry_val is not None else mt_calc
+    # Hermes 3.5: 5% Boundary Penetration Entry
+    if is_long:
+        calc_entry = ob_high - (ob_rng * 0.05)
+        calc_radar = calc_entry * 1.0020
+    else:
+        calc_entry = ob_low + (ob_rng * 0.05)
+        calc_radar = calc_entry * 0.9980
 
-    # Target TP: +15.0% ROE at 5x = +3.00% price move (Hermes 3.0 Model 2A)
+    entry_p = float(zone.get("entry_price") or calc_entry)
+    radar_p = float(zone.get("radar_price") or calc_radar)
+
+    # TP: +29.0% Harvest Target (5.80% move at 5x)
     tp_val = zone.get("tp_price")
-    tp_p = float(tp_val) if tp_val is not None else (entry_p * 1.0300 if side in ("BUY", "LONG") else entry_p * 0.9700)
+    tp_p = float(tp_val) if tp_val is not None else (entry_p * 1.0580 if is_long else entry_p * 0.9420)
 
-    # Soft SL: -7.5% ROE at 5x = -1.50% price move (Candle Body Close)
-    sl_val = zone.get("soft_sl_price") or zone.get("sl_price")
-    sl_p = float(sl_val) if sl_val is not None else (entry_p * 0.9850 if side in ("BUY", "LONG") else entry_p * 1.0150)
+    # Step 1 Trailing SL: +4.90% trigger -> +0.50% lock
+    step1_lock_p = round(entry_p * (1.0 + 0.0010), 8) if is_long else round(entry_p * (1.0 - 0.0010), 8)
 
-    # Break-Even Armor: +1.50% price move (+7.5% ROE)
-    armor_p = float(zone.get("be_armor_price") or zone.get("armor_stage1_price") or (entry_p * 1.0150 if side in ("BUY", "LONG") else entry_p * 0.9850))
+    # Initial SL (-7.5% ROI at 5x / -1.50% move)
+    sl_val = zone.get("hard_sl_price") or zone.get("sl_price")
+    sl_p = float(sl_val) if sl_val is not None else (entry_p * 0.9850 if is_long else entry_p * 1.0150)
 
-    # Gather all prices for scale (including up to 3 OB zones)
+    # Price scaling
     zones_list = zones[:3] if zones else ([zone] if zone else [])
-    all_prices = lows + highs + [entry_p, tp_p, sl_p]
+    all_prices = lows + highs + [entry_p, tp_p, sl_p, radar_p]
     for z in zones_list:
         if z.get("ob_high") is not None:
             all_prices.append(float(z["ob_high"]))
@@ -83,9 +116,8 @@ def render_smc_chart_image(
     if price_range <= 0:
         price_range = max_price * 0.05 or 1.0
 
-    # Add 4% margin top & bottom
-    min_price -= price_range * 0.04
-    max_price += price_range * 0.04
+    min_price -= price_range * 0.05
+    max_price += price_range * 0.05
     total_range = max_price - min_price
 
     def to_y(p: float) -> int:
@@ -93,234 +125,199 @@ def render_smc_chart_image(
         return int(pad_top + plot_h - (ratio * plot_h))
 
     def format_px(p: float) -> str:
-        if p >= 100:
+        if p >= 1000:
             return f"{p:,.2f}"
+        elif p >= 10:
+            return f"{p:.3f}"
         elif p >= 1:
             return f"{p:.4f}"
         else:
             return f"{p:.6f}"
 
-    # Draw Background Grid Lines (Horizontal)
-    grid_steps = 5
+    # 2. Draw Subtle Horizontal Grid Lines
+    grid_steps = 6
     for i in range(grid_steps + 1):
         gp = min_price + (total_range * (i / grid_steps))
         gy = to_y(gp)
-        draw.line([(pad_left, gy), (pad_left + plot_w, gy)], fill=(30, 34, 45, 255), width=1)
-        # Price label on right axis
-        draw.text((pad_left + plot_w + 8, gy - 6), format_px(gp), fill=(120, 130, 145, 255), font=font)
+        # Very light dashed gray grid
+        draw.line([(pad_left, gy), (pad_left + plot_w, gy)], fill=(241, 245, 249, 255), width=1)
+        # Price on right axis
+        draw.text((pad_left + plot_w + 10, gy - 7), format_px(gp), fill=(148, 163, 184, 255), font=font_small)
 
-    # Right Axis separator
-    draw.line([(pad_left + plot_w, pad_top), (pad_left + plot_w, pad_top + plot_h)], fill=(42, 46, 57, 255), width=1)
+    # Right Axis separator line
+    draw.line([(pad_left + plot_w, pad_top), (pad_left + plot_w, pad_top + plot_h)], fill=(226, 232, 240, 255), width=1)
 
     n_candles = len(display_candles)
     step_x = plot_w / max(1, n_candles)
-    candle_w = max(3, int(step_x * 0.65))
+    candle_w = max(4, int(step_x * 0.68))
 
-    # Pre-calculate x coords
     candle_x_coords = []
     for i in range(n_candles):
         cx = int(pad_left + (i * step_x) + (step_x / 2))
         candle_x_coords.append(cx)
 
-    # Semi-transparent background overlay layer for Order Blocks
+    # 3. Translucent Overlay for Order Block Shading
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     overlay_draw = ImageDraw.Draw(overlay)
 
-    # Draw up to 3 Order Blocks as soft, non-intrusive background highlights
     for idx, z in enumerate(zones_list):
         z_side = str(z.get("side") or "BUY").upper()
+        z_is_buy = z_side in ("BUY", "LONG")
         z_h = float(z["ob_high"]) if z.get("ob_high") is not None else highs[-1]
         z_l = float(z["ob_low"]) if z.get("ob_low") is not None else lows[-1]
-        z_mt = (z_h + z_l) / 2.0
+        z_rng = abs(z_h - z_l)
 
-        z_y1 = to_y(z_h)
-        z_y2 = to_y(z_l)
-        z_ymt = to_y(z_mt)
+        z_ent = float(z.get("entry_price") or (z_h - z_rng * 0.05 if z_is_buy else z_l + z_rng * 0.05))
+        z_rad = float(z.get("radar_price") or (z_ent * 1.0020 if z_is_buy else z_ent * 0.9980))
 
-        if z_y1 > z_y2:
-            z_y1, z_y2 = z_y2, z_y1
-        if z_y2 - z_y1 < 2:
-            z_y2 = z_y1 + 2
+        z_y1 = to_y(max(z_h, z_l))
+        z_y2 = to_y(min(z_h, z_l))
 
-        # Start from origin candle position if available in display window, else last 18 candles
-        origin_ci = max(0, n_candles - 18)
+        origin_ci = max(0, n_candles - 16)
         z_time = z.get("origin_time")
         if z_time:
             for ci, c in enumerate(display_candles):
                 if c.get("time") == z_time:
                     origin_ci = ci
                     break
-        
+
         z_start_x = candle_x_coords[origin_ci]
+        zone_end_x = pad_left + plot_w
 
-        # Check if zone is mitigated / tapped at 50% Mean Threshold strictly AFTER origin
-        is_mitigated = z.get("status") in ("MITIGATED", "TAPPED", "FILLED")
-        mitigation_ci = None
-        for ci in range(origin_ci + 1, n_candles):
-            c = display_candles[ci]
-            if z_side == "BUY" and c["low"] <= z_mt:
-                is_mitigated = True
-                mitigation_ci = ci
-                break
-            elif z_side != "BUY" and c["high"] >= z_mt:
-                is_mitigated = True
-                mitigation_ci = ci
-                break
-
-        if is_mitigated and mitigation_ci is not None:
-            zone_end_x = candle_x_coords[mitigation_ci]
-            status_desc = "🛡️ 50% MT MITIGATED"
-            box_border_alpha = 70
-        else:
-            zone_end_x = pad_left + plot_w
-            status_desc = "⚡ LIVE UNMITIGATED (+5 Bars Projection)"
-            box_border_alpha = 140
-
-        # GUARANTEE x0 <= x1 and y0 <= y1 to eliminate Pillow "x1 must be >= x0" ValueError
         box_x0 = min(z_start_x, zone_end_x)
         box_x1 = max(z_start_x, zone_end_x)
-        if box_x1 - box_x0 < 4:
-            box_x1 = box_x0 + 4
-
         box_y0 = min(z_y1, z_y2)
         box_y1 = max(z_y1, z_y2)
-        if box_y1 - box_y0 < 2:
-            box_y1 = box_y0 + 2
+        if box_y1 - box_y0 < 3:
+            box_y1 = box_y0 + 3
 
-        # Ultra-light background tint (alpha 24 ~ 9% opacity for crisp visibility)
-        if z_side == "BUY":
-            box_fill = (0, 230, 118, 22)      # Emerald Green Tint
-            box_border = (0, 230, 118, box_border_alpha)
-            lbl_color = (0, 230, 118, 220)
-            mt_color = (0, 210, 255, 180)     # Cyan MT Line
+        # Light Theme Translucent Fills (Crisp Emerald Green for Demand, Soft Rose Red for Supply)
+        if z_is_buy:
+            ob_fill = (16, 185, 129, 32)      # Soft Emerald
+            ob_border = (16, 185, 129, 150)
+            tag_color = (5, 150, 105, 255)
         else:
-            box_fill = (255, 23, 68, 22)      # Crimson Red Tint
-            box_border = (255, 23, 68, box_border_alpha)
-            lbl_color = (255, 23, 68, 220)
-            mt_color = (255, 145, 0, 180)     # Orange MT Line
+            ob_fill = (239, 68, 68, 32)       # Soft Crimson
+            ob_border = (239, 68, 68, 150)
+            tag_color = (220, 38, 38, 255)
 
-        overlay_draw.rectangle([box_x0, box_y0, box_x1, box_y1], fill=box_fill, outline=box_border, width=1)
-        
-        # 50% Mean Threshold (MT) Dashed Line inside OB
-        mt_x = box_x0
-        while mt_x < box_x1:
-            overlay_draw.line([(mt_x, z_ymt), (min(mt_x + 6, box_x1), z_ymt)], fill=mt_color, width=1)
-            mt_x += 10
+        overlay_draw.rectangle([box_x0, box_y0, box_x1, box_y1], fill=ob_fill, outline=ob_border, width=1)
 
-        # Indicator Order Block Badge
-        ob_lbl = f"🏛️ HERMES 3.0 {z_side} OB [50% MT: ${format_px(z_mt)}] • {status_desc}"
-        overlay_draw.text((box_x0 + 6, box_y0 + 3), ob_lbl, fill=lbl_color, font=font)
+        # 5% Boundary Penetration Line (Dashed Amber Gold #F59E0B)
+        y_ent = to_y(z_ent)
+        cur_x = box_x0
+        while cur_x < box_x1:
+            overlay_draw.line([(cur_x, y_ent), (min(cur_x + 6, box_x1), y_ent)], fill=(245, 158, 11, 240), width=2)
+            cur_x += 10
 
-    # CRITICAL: Composite OB overlay BEFORE drawing candlesticks
-    # This ensures all candle wicks and bodies stay 100% crisp and unobstructed!
+        # 0.20% Proximity Radar Line (Dotted Cyan #0284C7)
+        y_rad = to_y(z_rad)
+        cur_x = box_x0
+        while cur_x < box_x1:
+            overlay_draw.line([(cur_x, y_rad), (min(cur_x + 3, box_x1), y_rad)], fill=(2, 132, 199, 200), width=1)
+            cur_x += 6
+
     img = Image.alpha_composite(img, overlay)
     draw = ImageDraw.Draw(img)
 
-    # Draw Candlesticks ON TOP of the soft background
-    up_color = (8, 153, 129, 255)    # Emerald Green
-    down_color = (242, 54, 69, 255)  # Coral Red
+    # 4. Draw Candlesticks ON TOP (High contrast for Light Mode)
+    up_candle_color = (16, 185, 129, 255)    # TradingView Green #10B981
+    down_candle_color = (239, 68, 68, 255)   # TradingView Red #EF4444
 
     for i, c in enumerate(display_candles):
         cx = candle_x_coords[i]
-        c_open = to_y(c["open"])
-        c_close = to_y(c["close"])
-        c_high = to_y(c["high"])
-        c_low = to_y(c["low"])
+        c_open = to_y(float(c["open"]))
+        c_close = to_y(float(c["close"]))
+        c_high = to_y(float(c["high"]))
+        c_low = to_y(float(c["low"]))
 
-        is_up = c["close"] >= c["open"]
-        color = up_color if is_up else down_color
+        is_up = float(c["close"]) >= float(c["open"])
+        c_color = up_candle_color if is_up else down_candle_color
 
-        # High-Low Wick
-        draw.line([(cx, c_high), (cx, c_low)], fill=color, width=1)
+        # Candle Wick
+        draw.line([(cx, c_high), (cx, c_low)], fill=c_color, width=1)
 
-        # Body
+        # Candle Body
         top_y = min(c_open, c_close)
         bot_y = max(c_open, c_close)
         if bot_y - top_y < 1:
-            bot_y = top_y + 1  # Doji minimum height
+            bot_y = top_y + 1
 
         half_w = candle_w // 2
-        draw.rectangle([cx - half_w, top_y, cx + half_w, bot_y], fill=color, outline=color)
+        draw.rectangle([cx - half_w, top_y, cx + half_w, bot_y], fill=c_color, outline=c_color)
 
-    # Draw Indicator Trigger Signal Tag on the Tap/Entry Candle
-    if candle_x_coords:
-        trigger_cx = candle_x_coords[-1]
-        action_str = "LONG" if side in ("BUY", "LONG") else "SHORT"
-        if action_str == "LONG":
-            tag_y = to_y(display_candles[-1]["low"]) + 18
-            draw.polygon([(trigger_cx, tag_y - 6), (trigger_cx - 5, tag_y), (trigger_cx + 5, tag_y)], fill=(0, 230, 118, 255))
-            draw.text((trigger_cx - 38, tag_y + 2), "⚡ H3.0 BUY", fill=(0, 230, 118, 255), font=font)
-        else:
-            tag_y = to_y(display_candles[-1]["high"]) - 22
-            draw.polygon([(trigger_cx, tag_y + 6), (trigger_cx - 5, tag_y), (trigger_cx + 5, tag_y)], fill=(255, 23, 68, 255))
-            draw.text((trigger_cx - 40, tag_y - 12), "⚡ H3.0 SELL", fill=(255, 23, 68, 255), font=font)
-
-    # Draw Target Lines with Badges: Entry, TP, SL
-    def draw_level_line(price: float, line_color: tuple, badge_color: tuple, label: str):
+    # 5. Draw Helper Level Lines Across Chart
+    def draw_light_level(price: float, line_color: tuple, badge_bg: tuple, badge_text: str):
         ly = to_y(price)
-        # Dashed line across chart
-        dash_len = 8
-        space_len = 4
         cur_x = pad_left
         while cur_x < pad_left + plot_w:
-            draw.line([(cur_x, ly), (min(cur_x + dash_len, pad_left + plot_w), ly)], fill=line_color, width=1)
-            cur_x += dash_len + space_len
+            draw.line([(cur_x, ly), (min(cur_x + 6, pad_left + plot_w), ly)], fill=line_color, width=1)
+            cur_x += 10
 
-        # Right Axis Badge
-        badge_text = f"{label} {format_px(price)}"
-        badge_w = 125
-        badge_h = 16
-        draw.rectangle(
-            [pad_left + plot_w + 2, ly - (badge_h // 2), pad_left + plot_w + 2 + badge_w, ly + (badge_h // 2)],
-            fill=badge_color
-        )
-        draw.text((pad_left + plot_w + 5, ly - 5), badge_text, fill=(255, 255, 255, 255), font=font)
+        # Right Axis Badge (Light theme with solid pill)
+        badge_w = 135
+        badge_h = 18
+        bx0 = pad_left + plot_w + 3
+        by0 = ly - (badge_h // 2)
+        bx1 = bx0 + badge_w
+        by1 = by0 + badge_h
 
-    # Dynamic calculation of TP / SL move percentages
-    tp_move_pct = (abs(tp_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 3.0
-    sl_move_pct = (abs(sl_p - entry_p) / entry_p * 100.0) if entry_p > 0 else 1.5
+        draw.rectangle([bx0, by0, bx1, by1], fill=badge_bg)
+        draw.text((bx0 + 6, by0 + 3), badge_text, fill=(255, 255, 255, 255), font=font_small)
 
-    # TP Line (+15.0% ROE / +3.00% price move)
-    draw_level_line(tp_p, (0, 230, 118, 220), (0, 180, 80, 255), f"TP (+15% ROE):")
-    # Break-Even Armor Trigger Line (+7.5% ROE -> BE Lock at Entry)
-    draw_level_line(armor_p, (0, 229, 255, 220), (0, 140, 200, 255), f"BE ARMOR (+7.5%):")
-    # 50% Mean Threshold Entry Line
-    draw_level_line(entry_p, (245, 158, 11, 240), (200, 130, 10, 255), "50% MT ENTRY:")
-    # Soft SL Line (-7.5% ROE / -1.50% Candle Body Close)
-    draw_level_line(sl_p, (255, 82, 82, 220), (220, 40, 40, 255), f"SOFT SL (-7.5%):")
+    # Draw Levels:
+    # TP Target (+29.0% Harvest Target)
+    draw_light_level(tp_p, (16, 185, 129, 220), (16, 185, 129, 255), f"🎯 TP (+29%): {format_px(tp_p)}")
+    # 5% Boundary Entry Line
+    draw_light_level(entry_p, (245, 158, 11, 240), (217, 119, 6, 255), f"⚡ ENTRY (5%): {format_px(entry_p)}")
+    # Initial SL
+    draw_light_level(sl_p, (239, 68, 68, 220), (220, 38, 38, 255), f"🛑 INITIAL SL: {format_px(sl_p)}")
 
-    # Header Banner (Top bar)
-    draw.rectangle([0, 0, width, 52], fill=(18, 22, 32, 255))
-    draw.line([(0, 52), (width, 52)], fill=(42, 46, 57, 255), width=1)
+    # 6. Entry Execution Tag on Trigger Candle
+    if candle_x_coords:
+        trigger_cx = candle_x_coords[-1]
+        action_text = "🟢 BUY ENTRY" if is_long else "🔴 SELL ENTRY"
+        if is_long:
+            tag_y = to_y(float(display_candles[-1]["low"])) + 22
+            draw.polygon([(trigger_cx, tag_y - 6), (trigger_cx - 5, tag_y), (trigger_cx + 5, tag_y)], fill=(16, 185, 129, 255))
+            draw.rectangle([trigger_cx - 48, tag_y, trigger_cx + 48, tag_y + 16], fill=(16, 185, 129, 255))
+            draw.text((trigger_cx - 44, tag_y + 2), action_text, fill=(255, 255, 255, 255), font=font_small)
+        else:
+            tag_y = to_y(float(display_candles[-1]["high"])) - 24
+            draw.polygon([(trigger_cx, tag_y + 6), (trigger_cx - 5, tag_y), (trigger_cx + 5, tag_y)], fill=(239, 68, 68, 255))
+            draw.rectangle([trigger_cx - 48, tag_y - 16, trigger_cx + 48, tag_y], fill=(239, 68, 68, 255))
+            draw.text((trigger_cx - 44, tag_y - 14), action_text, fill=(255, 255, 255, 255), font=font_small)
+
+    # 7. Header Top Banner (Clean Crisp Light Slate)
+    draw.rectangle([0, 0, width, 56], fill=(248, 250, 252, 255))
+    draw.line([(0, 56), (width, 56)], fill=(226, 232, 240, 255), width=1)
 
     # Symbol & Timeframe
-    draw.text((24, 18), f"{symbol}  {timeframe.upper()}", fill=(255, 255, 255, 255), font=font)
+    draw.text((25, 16), f"#{symbol.upper()} • {timeframe.upper()}", fill=(15, 23, 42, 255), font=font_title)
 
-    # Signal Direction Badge: HERMES 3.0 MODEL 2A
-    action_str = "LONG" if side in ("BUY", "LONG") else "SHORT"
-    side_badge_text = f"HERMES 3.0 MODEL 2A {action_str}"
-    badge_x = 160
-    badge_w = 230
-    badge_bg = (8, 153, 129, 255) if action_str == "LONG" else (242, 54, 69, 255)
-    draw.rectangle([badge_x, 14, badge_x + badge_w, 38], fill=badge_bg)
-    draw.text((badge_x + 8, 21), side_badge_text, fill=(255, 255, 255, 255), font=font)
+    # Action Badge
+    action_str = "LONG BUY" if is_long else "SHORT SELL"
+    badge_bg = (16, 185, 129, 255) if is_long else (239, 68, 68, 255)
+    badge_x = 210
+    badge_w = 120
+    draw.rectangle([badge_x, 14, badge_x + badge_w, 40], fill=badge_bg)
+    draw.text((badge_x + 12, 19), f"⚡ {action_str}", fill=(255, 255, 255, 255), font=font_bold)
 
-    # Current / Trigger Price
-    cur_px_text = f"50% MT: ${format_px(entry_p)} | TP: ${format_px(tp_p)} (+15%) | Soft SL: ${format_px(sl_p)} (-7.5%)"
-    draw.text((badge_x + badge_w + 15, 21), cur_px_text, fill=(200, 210, 225, 255), font=font)
+    # Strategy Title
+    draw.text((badge_x + badge_w + 16, 14), "HERMES 3.5 RADAR HARVEST • 5% BOUNDARY", fill=(15, 23, 42, 255), font=font_bold)
+    draw.text((badge_x + badge_w + 16, 32), f"Fill: ${format_px(entry_p)} | 6-Tier Trailing SL Active | TP: +29% ROE Target", fill=(71, 85, 105, 255), font=font_small)
 
-    # Sentries HUD Overlay Box in upper right corner of plot
-    hud_x = pad_left + plot_w - 290
+    # 8. Strategy HUD Card (Light Theme Box in upper right of chart)
+    hud_x = pad_left + plot_w - 360
     hud_y = pad_top + 10
-    draw.rectangle([hud_x, hud_y, hud_x + 280, hud_y + 36], fill=(15, 20, 30, 220), outline=(55, 65, 81, 255))
-    draw.text((hud_x + 8, hud_y + 4), "🛡️ HERMES 3.0 MODEL 2A ARMED", fill=(56, 189, 248, 255), font=font)
-    draw.text((hud_x + 8, hud_y + 19), "S1: BTC OK | S2: Disp>=5% | S3: 50% MT | S4: Fresh<=28b", fill=(148, 163, 184, 255), font=font)
+    draw.rectangle([hud_x, hud_y, hud_x + 350, hud_y + 38], fill=(255, 255, 255, 240), outline=(203, 213, 225, 255))
+    draw.text((hud_x + 10, hud_y + 4), "🛡️ 6-TIER STEPPED TRAILING SL LADDER ACTIVE", fill=(2, 132, 199, 255), font=font_bold)
+    draw.text((hud_x + 10, hud_y + 20), "+4.9%➔+0.5% | +9.8%➔+5.1% | +14.8%➔+10.1% | +19.8%➔+15.1% | +24%➔+20.1% | +29%➔+25%", fill=(100, 116, 139, 255), font=font_small)
 
-    # Watermark Footer
-    now_str = get_ist_now().strftime("%d %b %Y %I:%M %p IST")
-    watermark = f"HERMES 3.0 MODEL 2A QUANT ENGINE | DUAL-THRESHOLD INSTITUTIONAL | {timeframe.upper()} BINANCE FUTURES | {now_str}"
-    draw.text((pad_left, height - 25), watermark, fill=(100, 115, 135, 255), font=font)
-
+    # 9. Watermark Footer (Light Theme)
+    now_str = get_ist_now().strftime("%d %b %Y • %I:%M %p IST")
+    footer_text = f"HERMES 3.5 RADAR HARVEST QUANT TERMINAL | LIGHT THEME OFFICIAL ALERT | {timeframe.upper()} BINANCE FEED | {now_str}"
+    draw.text((pad_left, height - 25), footer_text, fill=(148, 163, 184, 255), font=font_small)
 
     buf = io.BytesIO()
     img.convert("RGB").save(buf, format="PNG", quality=95)

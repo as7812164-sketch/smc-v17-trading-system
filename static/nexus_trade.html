@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NexusPro • Institutional Futures & BB 3.0 Deca Terminal</title>
+    <title>NexusPro • Institutional Futures & Hermes 3.5 Deca Terminal</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -119,7 +119,7 @@
                 <div><span style="color:var(--text-muted)">24h High: </span><span id="displayHigh24">--</span></div>
                 <div><span style="color:var(--text-muted)">24h Low: </span><span id="displayLow24">--</span></div>
                 <div><span style="color:var(--text-muted)">24h Vol: </span><span id="displayVol24">--</span></div>
-                <div><span style="color:var(--text-muted)">Strategy: </span><span style="color:var(--brand-teal); font-weight:700;">BB 3.0 (Continuous ROI Trailing)</span></div>
+                <div><span style="color:var(--text-muted)">Strategy: </span><span style="color:var(--brand-teal); font-weight:700;">Hermes 3.5 (Continuous ROI Trailing)</span></div>
             </div>
         </div>
 
@@ -140,8 +140,8 @@
                     <span style="color:var(--border-subtle); margin:0 2px;">|</span>
                     
                     <!-- Strategy Mode & Levels -->
-                    <button id="btnToggleSmc" class="chart-tool-btn active" onclick="toggleSmcLevels()" title="Toggle Auto 50% MT Levels & Strategy Markers">
-                        <i class="fa-solid fa-crosshairs" style="color:var(--gold);"></i> Hermes 3.0 Levels
+                    <button id="btnToggleSmc" class="chart-tool-btn active" onclick="toggleSmcLevels()" title="Toggle Auto 5% Boundary Levels & Strategy Markers">
+                        <i class="fa-solid fa-crosshairs" style="color:var(--gold);"></i> Hermes 3.5 Levels
                     </button>
                     
                     <span style="color:var(--border-subtle); margin:0 2px;">|</span>
@@ -202,8 +202,8 @@
                     <button class="replay-speed-pill" onclick="setReplaySpeed(5, this)">5x</button>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
-                    <button id="btnReplayHermesStrat" class="replay-ctrl-btn active-strat" onclick="toggleReplayHermesStrategy()" title="Hermes 3.0 Model 2A Auto-Detector & Backtester"><i class="fa-solid fa-brain" style="color:var(--brand-teal);"></i> <span id="replayStratText">Hermes 2A: ON</span></button>
-                    <button id="btnReplayAutoTrade" class="replay-ctrl-btn" onclick="toggleReplayAutoTrade()" title="Auto-Execute 50% MT Orders on Signals"><i class="fa-solid fa-bolt" style="color:#F59E0B;"></i> <span id="replayAutoText">Auto: OFF</span></button>
+                    <button id="btnReplayHermesStrat" class="replay-ctrl-btn active-strat" onclick="toggleReplayHermesStrategy()" title="Hermes 3.5 Hermes 3.5 Single Tier Auto-Detector & Backtester"><i class="fa-solid fa-brain" style="color:var(--brand-teal);"></i> <span id="replayStratText">Hermes 2A: ON</span></button>
+                    <button id="btnReplayAutoTrade" class="replay-ctrl-btn" onclick="toggleReplayAutoTrade()" title="Auto-Execute 5% Boundary Orders on Signals"><i class="fa-solid fa-bolt" style="color:#F59E0B;"></i> <span id="replayAutoText">Auto: OFF</span></button>
                     <button id="btnReplayJournal" class="replay-ctrl-btn replay-journal-pill" onclick="openReplayJournalModal()" title="View Replay Backtest Journal"><i class="fa-solid fa-book-bookmark"></i> Journal (<span id="replayJournalBadgeCount">0</span>)</button>
                     <button class="replay-ctrl-btn" onclick="exitReplayMode()" style="background:rgba(255,75,85,0.2); color:var(--sell-red); border-color:rgba(255,75,85,0.4);" title="Exit Replay"><i class="fa-solid fa-xmark"></i></button>
                 </div>
@@ -215,7 +215,7 @@
                     <div style="display:flex; align-items:center; gap:6px;">
                         <span id="hudSideBadge" class="hud-pill pill-long">LONG 5X</span>
                         <span id="hudSectionBadge" class="hud-pill pill-sec">Section #1</span>
-                        <span id="hudStrategyBadge" class="hud-pill pill-strat">BB 3.0 TRAILING</span>
+                        <span id="hudStrategyBadge" class="hud-pill pill-strat">Hermes 3.5 TRAILING</span>
                     </div>
                     <button onclick="toggleChartStrategyHUD(event)" class="hud-close-btn" title="Close Overlay">&times;</button>
                 </div>
@@ -263,7 +263,7 @@
                     <div class="rsc-body">
                         <div class="rsc-metrics-grid">
                             <div class="rsc-metric">
-                                <span class="rsc-label">50% MT LIMIT ENTRY</span>
+                                <span class="rsc-label">5% Boundary LIMIT ENTRY</span>
                                 <span class="rsc-val val-cyan" id="rscEntryPrice">$0.0000</span>
                             </div>
                             <div class="rsc-metric">
@@ -281,7 +281,7 @@
                         </div>
                         <div class="rsc-actions">
                             <button id="btnExecuteReplayTrade" onclick="executeCurrentReplaySignal()" class="rsc-btn rsc-btn-execute">
-                                <i class="fa-solid fa-bolt"></i> Execute Simulated Trade @ 50% MT
+                                <i class="fa-solid fa-bolt"></i> Execute Simulated Trade @ 5% Boundary
                             </button>
                             <button onclick="dismissReplaySignal()" class="rsc-btn rsc-btn-skip">
                                 Skip
@@ -435,7 +435,7 @@
                     <i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-teal);"></i> Trade History (<span id="historyCountBadge">0</span>)
                 </button>
                 <button class="dock-tab" id="tabBtnRadar" onclick="switchDockTab('radar')">
-                    <i class="fa-solid fa-satellite-dish" style="color:var(--brand-teal);"></i> BB 3.0 Setups Radar (<span id="radarCountBadge">10</span>)
+                    <i class="fa-solid fa-satellite-dish" style="color:var(--brand-teal);"></i> Hermes 3.5 Setups Radar (<span id="radarCountBadge">10</span>)
                 </button>
                 <button class="dock-tab" id="tabBtnSentries" onclick="switchDockTab('sentries')">
                     <i class="fa-solid fa-shield-halved" style="color:#60A5FA;"></i> Hermes 4-Sentries Matrix
@@ -499,7 +499,7 @@
                 </table>
             </div>
 
-            <!-- TAB 2: BB 3.0 SETUPS RADAR -->
+            <!-- TAB 2: Hermes 3.5 SETUPS RADAR -->
             <div class="dock-content" id="dockPaneRadar" style="display:none;">
                 <table class="terminal-table">
                     <thead>
@@ -507,7 +507,7 @@
                             <th>Pair</th>
                             <th>Direction</th>
                             <th>Section Slot</th>
-                            <th>50% MT Limit Entry</th>
+                            <th>5% Boundary Limit Entry</th>
                             <th>Anti-Hunt SL</th>
                             <th>Take Profit (+3R)</th>
                             <th>Proximity to Entry</th>
@@ -549,7 +549,7 @@
                             <span style="font-size:9px; background:rgba(0,192,135,0.2); color:var(--buy-green); font-weight:800; padding:2px 6px; border-radius:4px;">ACTIVE</span>
                         </div>
                         <div style="font-weight:800; font-size:13px; color:#fff;">IDM & Wick Defense</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Rejection Wick ≥ 18% + 50% MT Tap</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Rejection Wick ≥ 18% + 5% Boundary Tap</div>
                     </div>
                     <div style="background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:12px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -574,8 +574,8 @@
                     🤖 <i>Hermes AI Quant Consultant ready. Click any quick chip or ask a custom question in Hinglish or English:</i>
                     <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
                         <button onclick="quickAskDock('Analyze BTC 4H causal sentry status')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">BTC Status</button>
-                        <button onclick="quickAskDock('Scan top 20 champions for BB 3.0 entry')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Scan Champions</button>
-                        <button onclick="quickAskDock('Explain 50% Mean Threshold Stepped Trailing rule')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Trailing Rule</button>
+                        <button onclick="quickAskDock('Scan top 20 champions for Hermes 3.5 entry')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Scan Champions</button>
+                        <button onclick="quickAskDock('Explain 5% Boundary Penetration Stepped Trailing rule')" style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; cursor:pointer;">Trailing Rule</button>
                     </div>
                 </div>
             </div>
@@ -651,7 +651,7 @@
                 <i class="fa-solid fa-layer-group" style="width:18px;"></i> Markets & 20 Champions
             </a>
             <a href="/nexus/deca" style="display:flex; align-items:center; justify-content:space-between; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
-                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-trophy" style="color:var(--gold); width:18px;"></i> BB 3.0 Deca Hub</span>
+                <span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-trophy" style="color:var(--gold); width:18px;"></i> Hermes 3.5 Deca Hub</span>
                 <span style="font-size:9px; color:var(--gold); font-weight:800;">$47K GOAL</span>
             </a>
             <a href="/nexus/assets" style="display:flex; align-items:center; gap:10px; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
@@ -663,9 +663,9 @@
             </a>
         </nav>
 
-        <!-- SECTION 2: BB 3.0 INSTITUTIONAL MATRIX -->
+        <!-- SECTION 2: Hermes 3.5 INSTITUTIONAL MATRIX -->
         <div style="font-size:10px; font-weight:800; color:#60A5FA; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-            <i class="fa-solid fa-shield-halved"></i> BB 3.0 Institutional Matrix
+            <i class="fa-solid fa-shield-halved"></i> Hermes 3.5 Institutional Matrix
         </div>
         <nav style="display:flex; flex-direction:column; gap:6px; margin-bottom:20px;">
             <a href="/hermes-ai" style="display:flex; align-items:center; justify-content:space-between; color:var(--text-secondary); text-decoration:none; font-weight:600; font-size:13px; padding:10px 12px; border-radius:8px;">
@@ -700,8 +700,8 @@
 
         <div style="padding-top:16px; border-top:1px solid var(--border-subtle); font-size:11px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px; margin-top:auto;">
             <div style="display:flex; justify-content:space-between;"><span>Total Portfolio:</span> <b style="color:#fff;" id="drawerTotalEquity">$575.06 USDT</b></div>
-            <div style="display:flex; justify-content:space-between;"><span>BB 3.0 Deca Capital:</span> <b style="color:var(--brand-teal);">$500.00 USDT</b></div>
-            <div style="display:flex; justify-content:space-between;"><span>Strategy:</span> <b style="color:var(--buy-green);" id="drawerActiveMode">BB 3.0 (STEPPED TRAILING SL)</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>Hermes 3.5 Deca Capital:</span> <b style="color:var(--brand-teal);">$500.00 USDT</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>Strategy:</span> <b style="color:var(--buy-green);" id="drawerActiveMode">Hermes 3.5 (STEPPED TRAILING SL)</b></div>
         </div>
     </div>
 
@@ -736,7 +736,7 @@
             <div class="rjm-header">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <i class="fa-solid fa-brain" style="color:var(--brand-teal); font-size:18px;"></i>
-                    <span style="font-size:15px; font-weight:800; color:#fff;">Hermes 3.0 Model 2A Replay Backtest Journal</span>
+                    <span style="font-size:15px; font-weight:800; color:#fff;">Hermes 3.5 Hermes 3.5 Single Tier Replay Backtest Journal</span>
                 </div>
                 <button onclick="closeReplayJournalModal()" class="rjm-close-btn">&times;</button>
             </div>
@@ -764,7 +764,7 @@
                         <tr>
                             <th>#</th>
                             <th>Side</th>
-                            <th>Entry (50% MT)</th>
+                            <th>Entry (5% Boundary)</th>
                             <th>Exit Price</th>
                             <th>Outcome</th>
                             <th>ROE %</th>
@@ -773,7 +773,7 @@
                         </tr>
                     </thead>
                     <tbody id="rjmTableBody">
-                        <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No trades simulated yet. Run Bar Replay to trigger Hermes 3.0 setups!</td></tr>
+                        <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No trades simulated yet. Run Bar Replay to trigger Hermes 3.5 setups!</td></tr>
                     </tbody>
                 </table>
             </div>

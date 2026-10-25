@@ -26,3 +26,6 @@ test_*.png
 *backtest*.json
 *compounding*.json
 *scan*.json
+ 
+*.tar.gz
+hermes35_live_release.tar.gz

@@ -60,7 +60,43 @@ class BinanceFeed:
 
         session = await self.get_session()
 
-        # Provider 0: MEXC Global Futures Klines (Up to 2,000 candles, 1-year history, ZERO GEOBLOCKING on Render)
+        # Provider 0: Binance Futures Direct (Real 100% USDT-M Futures API matching TradingView)
+        try:
+            fapi_url = f"{BINANCE_FAPI_BASE}/fapi/v1/klines"
+            async with session.get(fapi_url, params={"symbol": symbol.upper(), "interval": interval, "limit": limit}, timeout=aiohttp.ClientTimeout(total=5.0)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    candles = []
+                    running_cvd = 0.0
+                    for k in data:
+                        vol = float(k[5])
+                        taker_buy = float(k[9]) if len(k) > 9 else vol * 0.5
+                        taker_sell = max(0.0, vol - taker_buy)
+                        delta = taker_buy - taker_sell
+                        running_cvd += delta
+                        candles.append({
+                            "time": int(k[0]),
+                            "open": float(k[1]),
+                            "high": float(k[2]),
+                            "low": float(k[3]),
+                            "close": float(k[4]),
+                            "volume": vol,
+                            "taker_buy": taker_buy,
+                            "taker_sell": taker_sell,
+                            "delta": delta,
+                            "cvd": running_cvd
+                        })
+                    if candles:
+                        self.last_heartbeat = time.time()
+                        self.last_data_time = time.time()
+                        self.is_connected = True
+                        set_metric("binance_status", "CONNECTED")
+                        self.klines_cache[cache_key] = (time.time(), candles)
+                        return candles
+        except Exception:
+            pass
+
+        # Provider 1: MEXC Global Futures Klines (Up to 2,000 candles, 1-year history, ZERO GEOBLOCKING on Render)
         try:
             mexc_map = {
                 "1m": "Min1", "5m": "Min5", "15m": "Min15", "1h": "Min60", "4h": "Hour4",

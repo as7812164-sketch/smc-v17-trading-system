@@ -2248,7 +2248,7 @@
                 <button onclick="closeTelegramModal()" style="background:none; border:none; color:#94A3B8; font-size:18px; cursor:pointer;">&times;</button>
             </div>
             <p style="font-size:13.5px; color:#94A3B8; line-height:1.5; margin-bottom:14px;">
-                Live Telegram broadcast sentinel is connected. Real-time 50% Mean Threshold taps, IDM sweeps, and order block mitigations are dispatched directly to your channel.
+                Live Telegram broadcast sentinel is connected. Real-time 5% Boundary Penetration taps, IDM sweeps, and order block mitigations are dispatched directly to your channel.
             </p>
             <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:10px; margin-bottom:14px; font-family:var(--font-mono); font-size:13px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
@@ -2287,7 +2287,7 @@
                     <span style="color:#00F59B;">[SYS]</span> Deca Compounding Desk Initialized &bull; $500.00 Ready
                 </div>
                 <div style="background:rgba(255,255,255,0.04); padding:6px 8px; border-radius:6px;">
-                    <span style="color:#38BDF8;">[RADAR]</span> 49 Order Blocks Armed &bull; 50% Mean Threshold Sentry
+                    <span style="color:#38BDF8;">[RADAR]</span> 49 Order Blocks Armed &bull; 5% Boundary Penetration Sentry
                 </div>
             </div>
         </div>
@@ -2440,7 +2440,7 @@
             </button>
         </div>
         <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">
-            Approaching Order Blocks &bull; Distance % away from 50% Mean Threshold
+            Approaching Order Blocks &bull; Distance % away from 5% Boundary Penetration
         </div>
         <div class="dashboard-signals-list" id="signalsListContainer">
             <!-- Populated dynamically by loadRecentSignals() -->
@@ -2518,7 +2518,7 @@
             <button class="coin-pill-btn" onclick="selectMobileCoin('DOGEUSDT')">DOGE</button>
         </div>
 
-        <!-- SUPERCHARGED HERMES 3.0 CHART & REPLAY BACKTESTER SUITE -->
+        <!-- HERMES 3.5 RADAR HARVEST CHART & REPLAY BACKTESTER SUITE -->
         <div id="mobileChartSectionWrapper" class="chart-container" style="position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom:12px; background:#0B0E14;">
             
             <!-- Controls Toolbar -->
@@ -2611,7 +2611,7 @@
                     <div class="rsc-body">
                         <div class="rsc-metrics-grid">
                             <div class="rsc-metric">
-                                <span class="rsc-label">50% MT LIMIT ENTRY</span>
+                                <span class="rsc-label">5% Boundary LIMIT ENTRY</span>
                                 <span class="rsc-val val-cyan" id="mRscEntry">$0.0000</span>
                             </div>
                             <div class="rsc-metric">
@@ -2629,7 +2629,7 @@
                         </div>
                         <div class="rsc-actions">
                             <button id="btnMobileExecuteSignal" onclick="HermesMobileChart.executeSignal()" class="rsc-btn rsc-btn-execute">
-                                <i class="fa-solid fa-bolt"></i> Execute Simulated Trade @ 50% MT
+                                <i class="fa-solid fa-bolt"></i> Execute Simulated Trade @ 5% Boundary
                             </button>
                             <button onclick="HermesMobileChart.dismissSignal()" class="rsc-btn rsc-btn-skip">Skip</button>
                         </div>
@@ -3124,7 +3124,7 @@
                         <div style="padding:24px 12px; text-align:center; color:var(--text-muted); font-size:13px;">
                             <i class="fa-solid fa-satellite-dish" style="font-size:22px; color:#38BDF8; margin-bottom:10px; display:block;"></i>
                             <strong style="color:#F8FAFC; display:block; margin-bottom:4px;">Scanning 24/7 Order Blocks...</strong>
-                            Hermes 3.5 Radar Harvest 50% Mean Threshold setups & taps will appear here in real-time.
+                            Hermes 3.5 Radar Harvest 5% Boundary Penetration setups & taps will appear here in real-time.
                         </div>
                     `;
                     return;
@@ -3218,7 +3218,7 @@
                                 </div>
                                 <div class="drc-metrics">
                                     <div class="drc-metric-item">
-                                        <span class="drc-lbl">50% Mean Threshold (MT)</span>
+                                        <span class="drc-lbl">5% Boundary Limit Entry</span>
                                         <span class="drc-val entry-val">$${formatPrice(s.entry_price)}</span>
                                     </div>
                                     <div class="drc-metric-item">
@@ -3804,7 +3804,7 @@
                         <div class="empty-radar" style="border:1px dashed rgba(245,158,11,0.25); background:rgba(245,158,11,0.03); padding:24px 16px; text-align:center; border-radius:12px; margin-top:8px;">
                             <i class="fa-solid fa-clock" style="font-size:32px; color:#F59E0B; margin-bottom:10px;"></i>
                             <h4 style="color:#FFF; font-size:15px; margin-bottom:4px;">No Pending Limit Orders</h4>
-                            <p style="color:#94A3B8; font-size:12.5px;">All qualified setups are filled into live positions or waiting for the next 50% Mean Threshold confirmation.</p>
+                            <p style="color:#94A3B8; font-size:12.5px;">All qualified setups are filled into live positions or waiting for the next 5% Boundary Penetration confirmation.</p>
                         </div>
                     `;
                     if (homeContainer) homeContainer.innerHTML = '';
@@ -3838,11 +3838,11 @@
                                 </div>
                             </div>
 
-                            <!-- Row 2: Badges (Limit Long/Short, 5x Isolated, 50% MT) -->
+                            <!-- Row 2: Badges (Limit Long/Short, 5x Isolated, 5% Boundary) -->
                             <div class="bpc-badges-row">
                                 <span class="${sideBadgeClass}">${sideText}</span>
                                 <span class="bpc-pill-outline">${leverage}</span>
-                                <span class="bpc-pill-outline" style="border-color:rgba(245,158,11,0.4); color:#F59E0B;">50% Mean Threshold</span>
+                                <span class="bpc-pill-outline" style="border-color:rgba(245,158,11,0.4); color:#F59E0B;">5% Boundary Penetration</span>
                                 <span class="bpc-pill-outline">Resting on Bitget</span>
                             </div>
 
@@ -4064,14 +4064,14 @@
                                         <span class="armor-val">${durationStr}</span>
                                     </div>
                                     <div class="bpc-armor-chip shield">
-                                        <i class="fa-solid fa-shield-halved"></i> Model 2A
+                                        <i class="fa-solid fa-shield-halved"></i> Hermes 3.5 Single Tier
                                     </div>
                                 </div>
 
                                 <!-- Row 8: 3-Button Action Dock (Bitget Pro Exact) -->
                                 <div class="bpc-dock">
                                     <button class="bpc-btn" onclick="openTpSlModal('${p.symbol}', '${entryPrice}', '${tpVal}', '${slVal}')">TP/SL</button>
-                                    <button class="bpc-btn" onclick="alert('${p.symbol} Reverse: Reversal orders placed at 50% Mean Threshold confirmation.')">Reverse</button>
+                                    <button class="bpc-btn" onclick="alert('${p.symbol} Reverse: Reversal orders placed at 5% Boundary Penetration confirmation.')">Reverse</button>
                                     <button class="bpc-btn close-btn" onclick="closePosDirect('${p.symbol}')">Close</button>
                                 </div>
                             </div>
