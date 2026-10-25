@@ -156,8 +156,33 @@
                 minBarSpacing: 3,
                 fixLeftEdge: false,
                 fixRightEdge: false
+            },
+            handleScroll: {
+                mouseWheel: false,
+                pressedMouseMove: true,
+                horzTouchDrag: true,
+                vertTouchDrag: true
+            },
+            handleScale: {
+                axisPressedMouseMove: {
+                    time: true,
+                    price: true
+                },
+                axisDoubleClickReset: {
+                    time: true,
+                    price: true
+                },
+                mouseWheel: true,
+                pinch: true
+            },
+            kineticScroll: {
+                touch: true,
+                mouse: false
             }
         });
+
+        container.style.touchAction = "pan-y";
+        container.style.cursor = "crosshair";
 
         // Candlestick Series - full height, sharp institutional theme
         mCandleSeries = mChart.addCandlestickSeries({
@@ -495,6 +520,8 @@
             canvas.style.pointerEvents = "none";
             canvas.style.zIndex = "10";
             container.appendChild(canvas);
+        } else {
+            canvas.style.pointerEvents = "none";
         }
 
         const dpr = window.devicePixelRatio || 1;
@@ -589,32 +616,51 @@
 
             const isLight = (mThemeMode === 'light');
 
-            // Item 6: Order Block Boxes (Translucent Theme Parity)
+            // Item 6: Order Block Boxes (TradingView Rich Color & Strong Visibility)
             ctx.save();
             if (isMitigated) {
                 if (isLight) {
-                    ctx.fillStyle = isBuySide ? 'rgba(5, 150, 105, 0.05)' : 'rgba(220, 38, 38, 0.05)';
-                    ctx.strokeStyle = isBuySide ? 'rgba(5, 150, 105, 0.25)' : 'rgba(220, 38, 38, 0.25)';
+                    ctx.fillStyle = isBuySide ? 'rgba(16, 185, 129, 0.14)' : 'rgba(239, 68, 68, 0.14)';
+                    ctx.strokeStyle = isBuySide ? 'rgba(5, 150, 105, 0.45)' : 'rgba(220, 38, 38, 0.45)';
                 } else {
-                    ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.03)' : 'rgba(255, 59, 105, 0.03)';
-                    ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.18)' : 'rgba(255, 59, 105, 0.18)';
+                    ctx.fillStyle = isBuySide ? 'rgba(0, 230, 118, 0.14)' : 'rgba(255, 59, 105, 0.14)';
+                    ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.45)' : 'rgba(255, 59, 105, 0.45)';
                 }
                 ctx.fillRect(x1, minY, boxWidth, boxHeight);
-                ctx.lineWidth = 1.0;
-                ctx.setLineDash([3, 4]);
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([4, 4]);
                 ctx.strokeRect(x1, minY, boxWidth, boxHeight);
             } else {
                 if (isLight) {
-                    ctx.fillStyle = isBuySide ? 'rgba(5, 150, 105, 0.18)' : 'rgba(220, 38, 38, 0.18)';
+                    // Crisp, deep emerald green for Buy OB and deep crimson for Sell OB
+                    ctx.fillStyle = isBuySide ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)';
                     ctx.strokeStyle = isBuySide ? '#059669' : '#DC2626';
                 } else {
-                    ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.16)' : 'rgba(255, 59, 105, 0.16)';
-                    ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.65)' : 'rgba(255, 59, 105, 0.65)';
+                    // Vibrant rich green with high opacity (no more faint washed-out box!)
+                    ctx.fillStyle = isBuySide ? 'rgba(0, 230, 118, 0.35)' : 'rgba(255, 59, 105, 0.35)';
+                    ctx.strokeStyle = isBuySide ? '#00F59B' : '#FF3B69';
                 }
                 ctx.fillRect(x1, minY, boxWidth, boxHeight);
-                ctx.lineWidth = 1.3;
+                ctx.lineWidth = 2.0;
                 ctx.setLineDash([]);
                 ctx.strokeRect(x1, minY, boxWidth, boxHeight);
+
+                // Add professional TradingView OB Label inside the box
+                ctx.font = "bold 10px 'JetBrains Mono', -apple-system, sans-serif";
+                const obLabel = isBuySide ? "DEMAND OB (BUY)" : "SUPPLY OB (SELL)";
+                const labelWidth = ctx.measureText(obLabel).width;
+                const pillX = x1 + 6;
+                const pillY = minY + 4;
+                if (boxHeight >= 18 && boxWidth >= labelWidth + 14) {
+                    ctx.fillStyle = isLight 
+                        ? (isBuySide ? 'rgba(5, 150, 105, 0.20)' : 'rgba(220, 38, 38, 0.20)')
+                        : (isBuySide ? 'rgba(0, 245, 155, 0.22)' : 'rgba(255, 59, 105, 0.22)');
+                    ctx.fillRect(pillX, pillY, labelWidth + 8, 14);
+                    ctx.fillStyle = isLight
+                        ? (isBuySide ? '#065F46' : '#991B1B')
+                        : (isBuySide ? '#00F59B' : '#FF6B8B');
+                    ctx.fillText(obLabel, pillX + 4, pillY + 11);
+                }
             }
             ctx.restore();
 
