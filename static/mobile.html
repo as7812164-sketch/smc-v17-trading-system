@@ -1988,8 +1988,20 @@
         }
 
         body.chart-fs-open .app-header,
-        body.chart-fs-open .bottom-nav {
+        body.chart-fs-open .bottom-nav,
+        body.chart-fs-open .hero-wallet-card,
+        body.chart-fs-open #mobileActivePosStrip,
+        body.chart-fs-open .search-box {
             display: none !important;
+        }
+
+        body.chart-fs-open .tab-panel.active {
+            transform: none !important;
+            -webkit-transform: none !important;
+            animation: none !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
 
         #mobileChartSectionWrapper.chart-fullscreen-active {

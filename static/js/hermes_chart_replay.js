@@ -274,15 +274,9 @@
                 updateChartHeaderOHLC(mFullCandles[mFullCandles.length - 1]);
             }
 
-            // Item 8: Right Breathing Space (rightOffset: 18) - Do NOT call fitContent()
-            const totalBars = mFullCandles.length;
-            if (totalBars > 0) {
-                mChart.timeScale().applyOptions({ rightOffset: 18 });
-                mChart.timeScale().setVisibleLogicalRange({
-                    from: Math.max(0, totalBars - 75),
-                    to: totalBars + 18
-                });
-            }
+            // Item 8: Right Breathing Space with 100% Guaranteed Visible Candles
+            mChart.timeScale().applyOptions({ rightOffset: 18 });
+            mChart.timeScale().fitContent();
 
             // Item 11: Top Header Strip & Search Bar Sync
             const symEl = document.getElementById("mobileChartSymbolText");
@@ -1393,33 +1387,20 @@
     // -------------------------------------------------------------
 
     let mIsFullscreen = false;
-    let mChartPlaceholder = null;
 
     async function toggleMobileFullscreen() {
         const chartWrapper = document.getElementById("mobileChartSectionWrapper");
-        if (!chartWrapper) return;
+        if (!chartWrapper || !mChart) return;
 
         mIsFullscreen = !mIsFullscreen;
 
         if (mIsFullscreen) {
-            // 1. Create DOM placeholder so original layout position is remembered
-            if (!mChartPlaceholder) {
-                mChartPlaceholder = document.createElement("div");
-                mChartPlaceholder.id = "mChartOriginalPlaceholder";
-                mChartPlaceholder.style.display = "none";
-            }
-            if (chartWrapper.parentNode) {
-                chartWrapper.parentNode.insertBefore(mChartPlaceholder, chartWrapper);
-            }
-            // 2. Move chartWrapper directly to document.body to escape any parent overflow/transform clipping
-            document.body.appendChild(chartWrapper);
-
             chartWrapper.classList.add("chart-fullscreen-active");
             document.body.classList.add("chart-fs-open");
 
             updateFullscreenButtonLabels(true);
 
-            // 3. Request native browser fullscreen if supported
+            // Request native browser fullscreen if supported
             try {
                 if (chartWrapper.requestFullscreen) {
                     await chartWrapper.requestFullscreen();
@@ -1428,19 +1409,11 @@
                 }
             } catch(e) {}
 
-            // 4. Smooth dynamic layout resize
-            setTimeout(resizeFullscreenChart, 60);
-            setTimeout(resizeFullscreenChart, 250);
+            setTimeout(resizeFullscreenChart, 50);
+            setTimeout(resizeFullscreenChart, 180);
         } else {
-            // Restore chartWrapper to original location in tab-trade
             chartWrapper.classList.remove("chart-fullscreen-active");
             document.body.classList.remove("chart-fs-open");
-
-            if (mChartPlaceholder && mChartPlaceholder.parentNode) {
-                mChartPlaceholder.parentNode.insertBefore(chartWrapper, mChartPlaceholder);
-                mChartPlaceholder.remove();
-                mChartPlaceholder = null;
-            }
 
             updateFullscreenButtonLabels(false);
 
@@ -1452,21 +1425,15 @@
                 }
             } catch(e) {}
 
-            // Restore normal 480px portrait height
             setTimeout(() => {
                 const w = chartWrapper.clientWidth || 360;
                 if (mChart) {
                     mChart.applyOptions({ width: w, height: 480 });
-                    if (mFullCandles && mFullCandles.length > 0) {
-                        mChart.timeScale().applyOptions({ rightOffset: 18 });
-                        mChart.timeScale().setVisibleLogicalRange({
-                            from: Math.max(0, mFullCandles.length - 75),
-                            to: mFullCandles.length + 18
-                        });
-                    }
+                    mChart.timeScale().applyOptions({ rightOffset: 18 });
+                    mChart.timeScale().fitContent();
                     drawMobileHermes35Boxes();
                 }
-            }, 100);
+            }, 80);
         }
     }
 
@@ -1517,15 +1484,8 @@
 
         const chartH = Math.max(260, h - headerOffset);
         mChart.applyOptions({ width: w, height: chartH });
-
-        if (mFullCandles && mFullCandles.length > 0) {
-            const barCount = w > 600 ? 110 : 75;
-            mChart.timeScale().applyOptions({ rightOffset: 18 });
-            mChart.timeScale().setVisibleLogicalRange({
-                from: Math.max(0, mFullCandles.length - barCount),
-                to: mFullCandles.length + 18
-            });
-        }
+        mChart.timeScale().applyOptions({ rightOffset: 18 });
+        mChart.timeScale().fitContent();
         drawMobileHermes35Boxes();
     }
 
@@ -1543,12 +1503,25 @@
     window.addEventListener("resize", () => {
         if (mIsFullscreen) {
             resizeFullscreenChart();
+        } else if (mChart) {
+            const chartWrapper = document.getElementById("mobileChartSectionWrapper");
+            if (chartWrapper) {
+                mChart.applyOptions({ width: chartWrapper.clientWidth || 360, height: 480 });
+                mChart.timeScale().fitContent();
+            }
         }
     });
     window.addEventListener("orientationchange", () => {
-        if (mIsFullscreen) {
-            setTimeout(resizeFullscreenChart, 150);
-        }
+        setTimeout(() => {
+            if (mIsFullscreen) resizeFullscreenChart();
+            else if (mChart) {
+                const chartWrapper = document.getElementById("mobileChartSectionWrapper");
+                if (chartWrapper) {
+                    mChart.applyOptions({ width: chartWrapper.clientWidth || 360, height: 480 });
+                    mChart.timeScale().fitContent();
+                }
+            }
+        }, 150);
     });
 
     // -------------------------------------------------------------
