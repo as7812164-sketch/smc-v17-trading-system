@@ -1095,9 +1095,15 @@ def get_hermes_account() -> Dict[str, Any]:
     return get_paper_account()
 
 def reset_compounding_sections(starting_balance: float = 50.0) -> Dict[str, Any]:
-    """Resets all 10 Compounding Sections for Hermes 3.5 to starting balance ($50.00 each -> $500.00 total) and purges open paper trades for sections 1-10."""
+    """Resets all 10 Compounding Sections for Hermes 3.5 to starting balance ($50.00 each -> $500.00 total) and purges all paper trades & history for sections 1-10."""
+    import time
+    now_ts = time.time()
+    set_setting("live_trading_start_time", str(now_ts))
+    
     with get_connection() as conn:
-        conn.execute("DELETE FROM paper_trades WHERE status = 'OPEN' AND (account_id IS NULL OR account_id <= 10)")
+        # Delete ALL trades for sections 1-10 so old history and PnL are completely wiped clean
+        conn.execute("DELETE FROM paper_trades WHERE account_id IS NULL OR account_id <= 10")
+        conn.execute("DELETE FROM trade_journal WHERE channel IN ('sec_1', 'sec_2', 'sec_3', 'sec_4', 'sec_5', 'sec_6', 'sec_7', 'sec_8', 'sec_9', 'sec_10') OR section_id <= 10")
         for i in range(1, 11):
             tf = "4h" if i <= 5 else "1h"
             name = f"Section {i} (4H Macro)" if i <= 5 else f"Section {i} (1H Intraday)"
@@ -1121,6 +1127,30 @@ def reset_compounding_sections(starting_balance: float = 50.0) -> Dict[str, Any]
                 exchange = excluded.exchange
             """, (i, tf, name, starting_balance, starting_balance, ch))
         conn.commit()
+
+    # Reset bb20_shadow_ledger.json
+    try:
+        ledger_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "bb20_shadow_ledger.json")
+        if os.path.exists(ledger_path):
+            with open(ledger_path, "r", encoding="utf-8") as f:
+                led = json.load(f)
+            led["total_initial_capital"] = 500.0
+            led["total_current_equity"] = 500.0
+            led["active_positions"] = []
+            led["closed_trades"] = []
+            led["active_setups"] = {}
+            if "sections" in led and isinstance(led["sections"], dict):
+                for sec_k in led["sections"]:
+                    led["sections"][sec_k]["balance"] = 50.0
+                    led["sections"][sec_k]["initial_capital"] = 50.0
+                    led["sections"][sec_k]["total_pnl"] = 0.0
+                    led["sections"][sec_k]["win_count"] = 0
+                    led["sections"][sec_k]["loss_count"] = 0
+            with open(ledger_path, "w", encoding="utf-8") as f:
+                json.dump(led, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error resetting shadow ledger: {e}")
+
     return get_compounding_sections()
 
 def reset_hermes40_sections(starting_balance: float = 50.0) -> Dict[str, Any]:

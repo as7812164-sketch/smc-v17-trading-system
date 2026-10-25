@@ -3897,6 +3897,20 @@
                 const res = await fetch('/api/paper/sections/reset', { method: 'POST' });
                 if (res.ok) {
                     alert("10-Section Deca Matrix successfully reset to $500.00 USDT starting portfolio!");
+                    const balEl = document.getElementById('hwTotalBalance');
+                    if (balEl) balEl.innerText = '$500.00';
+                    const freeEl = document.getElementById('hwFreeMargin');
+                    if (freeEl) freeEl.innerText = '$500.00';
+                    const usedEl = document.getElementById('hwUsedMargin');
+                    if (usedEl) usedEl.innerText = '$0.00';
+                    const pnlEl = document.getElementById('hwPnlPill');
+                    if (pnlEl) { pnlEl.innerText = '+0.00% Return'; pnlEl.className = 'hw-pnl-pill'; }
+                    const progEl = document.getElementById('cbProgressPct');
+                    if (progEl) progEl.innerText = '0.0% of $20,000';
+                    const fillEl = document.getElementById('cbProgressFill');
+                    if (fillEl) fillEl.style.width = '0.0%';
+                    const histCont = document.getElementById('tradesHistoryContainer');
+                    if (histCont) histCont.innerHTML = '<div style="text-align:center; padding:18px; color:var(--text-muted); font-size:12px;">No closed trades recorded yet.</div>';
                     fetchAccountData();
                     fetchPositions();
                     fetchTradesHistory();
