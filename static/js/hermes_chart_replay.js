@@ -47,6 +47,7 @@
     // Landscape Fullscreen State
     let mIsLandscape = false;
     let mCountdownTimerInterval = null;
+    let mThemeMode = (typeof localStorage !== 'undefined' && localStorage.getItem('hermes_app_theme')) || 'dark';
 
     // -------------------------------------------------------------
     // LIVE CANDLE COUNTDOWN TIMER (Item 2)
@@ -107,46 +108,47 @@
         container.innerHTML = "";
 
         // PURE CANDLESTICK CHART (NO EMA LINES, NO VOLUME SERIES)
+        const isLight = (mThemeMode === 'light');
         mChart = window.LightweightCharts.createChart(container, {
             width: container.clientWidth || 360,
             height: container.clientHeight || 480,
             layout: {
-                background: { type: 'solid', color: '#0B0E14' },
-                textColor: '#94A3B8',
+                background: { type: 'solid', color: isLight ? '#FFFFFF' : '#0B0E14' },
+                textColor: isLight ? '#1E293B' : '#94A3B8',
                 fontSize: 11,
                 fontFamily: "'JetBrains Mono', -apple-system, sans-serif"
             },
             grid: {
-                vertLines: { color: 'rgba(255, 255, 255, 0.04)' },
-                horzLines: { color: 'rgba(255, 255, 255, 0.04)' }
+                vertLines: { color: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.04)' },
+                horzLines: { color: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.04)' }
             },
             crosshair: {
                 mode: window.LightweightCharts.CrosshairMode.Normal,
                 vertLine: {
-                    color: 'rgba(255, 255, 255, 0.45)',
+                    color: isLight ? 'rgba(0, 0, 0, 0.40)' : 'rgba(255, 255, 255, 0.45)',
                     width: 1,
                     style: 2,
                     visible: true,
                     labelVisible: true,
-                    labelBackgroundColor: '#1E293B'
+                    labelBackgroundColor: isLight ? '#334155' : '#1E293B'
                 },
                 horzLine: {
-                    color: 'rgba(255, 255, 255, 0.45)',
+                    color: isLight ? 'rgba(0, 0, 0, 0.40)' : 'rgba(255, 255, 255, 0.45)',
                     width: 1,
                     style: 2,
                     visible: true,
                     labelVisible: true,
-                    labelBackgroundColor: '#1E293B'
+                    labelBackgroundColor: isLight ? '#334155' : '#1E293B'
                 }
             },
             rightPriceScale: {
-                borderColor: 'rgba(255, 255, 255, 0.08)',
+                borderColor: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.08)',
                 autoScale: true,
                 scaleMargins: { top: 0.10, bottom: 0.10 },
                 alignLabels: true
             },
             timeScale: {
-                borderColor: 'rgba(255, 255, 255, 0.08)',
+                borderColor: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.08)',
                 timeVisible: true,
                 secondsVisible: false,
                 rightOffset: 18,
@@ -585,31 +587,44 @@
             const entPx = z.entry_price || (isBuySide ? (z.ob_high - obRange * 0.05) : (z.ob_low + obRange * 0.05));
             const radPx = z.radar_price || (isBuySide ? entPx * 1.0020 : entPx * 0.9980);
 
-            // Item 6: Purane Mitigated Boxes ka Fade (80% opacity reduction & faint dotted border)
+            const isLight = (mThemeMode === 'light');
+
+            // Item 6: Order Block Boxes (Translucent Theme Parity)
             ctx.save();
             if (isMitigated) {
-                ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.03)' : 'rgba(255, 59, 105, 0.03)';
+                if (isLight) {
+                    ctx.fillStyle = isBuySide ? 'rgba(5, 150, 105, 0.05)' : 'rgba(220, 38, 38, 0.05)';
+                    ctx.strokeStyle = isBuySide ? 'rgba(5, 150, 105, 0.25)' : 'rgba(220, 38, 38, 0.25)';
+                } else {
+                    ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.03)' : 'rgba(255, 59, 105, 0.03)';
+                    ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.18)' : 'rgba(255, 59, 105, 0.18)';
+                }
                 ctx.fillRect(x1, minY, boxWidth, boxHeight);
-                ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.18)' : 'rgba(255, 59, 105, 0.18)';
                 ctx.lineWidth = 1.0;
                 ctx.setLineDash([3, 4]);
                 ctx.strokeRect(x1, minY, boxWidth, boxHeight);
             } else {
-                // Fresh Active Order Block Box
-                ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.16)' : 'rgba(255, 59, 105, 0.16)';
+                if (isLight) {
+                    ctx.fillStyle = isBuySide ? 'rgba(5, 150, 105, 0.18)' : 'rgba(220, 38, 38, 0.18)';
+                    ctx.strokeStyle = isBuySide ? '#059669' : '#DC2626';
+                } else {
+                    ctx.fillStyle = isBuySide ? 'rgba(0, 245, 155, 0.16)' : 'rgba(255, 59, 105, 0.16)';
+                    ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.65)' : 'rgba(255, 59, 105, 0.65)';
+                }
                 ctx.fillRect(x1, minY, boxWidth, boxHeight);
-                ctx.strokeStyle = isBuySide ? 'rgba(0, 245, 155, 0.65)' : 'rgba(255, 59, 105, 0.65)';
                 ctx.lineWidth = 1.3;
                 ctx.setLineDash([]);
                 ctx.strokeRect(x1, minY, boxWidth, boxHeight);
             }
             ctx.restore();
 
-            // 2. 5% Boundary Penetration Line (Amber Gold #F59E0B dashed)
+            // 2. 5% Boundary Penetration Line (Amber Gold dashed)
             const yEnt = mCandleSeries.priceToCoordinate(entPx);
             if (yEnt !== null && !isNaN(yEnt)) {
                 ctx.save();
-                ctx.strokeStyle = isMitigated ? 'rgba(245, 158, 11, 0.25)' : '#F59E0B';
+                ctx.strokeStyle = isMitigated 
+                    ? (isLight ? 'rgba(217, 119, 6, 0.30)' : 'rgba(245, 158, 11, 0.25)') 
+                    : (isLight ? '#D97706' : '#F59E0B');
                 ctx.lineWidth = isMitigated ? 0.8 : 1.2;
                 ctx.setLineDash([4, 3]);
                 ctx.beginPath();
@@ -619,11 +634,13 @@
                 ctx.restore();
             }
 
-            // 3. 0.20% Proximity Radar Line (Cyan #38BDF8 dotted)
+            // 3. 0.20% Proximity Radar Line (Cyan Blue dotted)
             const yRad = mCandleSeries.priceToCoordinate(radPx);
             if (yRad !== null && !isNaN(yRad)) {
                 ctx.save();
-                ctx.strokeStyle = isMitigated ? 'rgba(56, 189, 248, 0.25)' : 'rgba(56, 189, 248, 0.90)';
+                ctx.strokeStyle = isMitigated 
+                    ? (isLight ? 'rgba(2, 132, 199, 0.30)' : 'rgba(56, 189, 248, 0.25)') 
+                    : (isLight ? '#0284C7' : 'rgba(56, 189, 248, 0.90)');
                 ctx.lineWidth = 1.0;
                 ctx.setLineDash([2, 3]);
                 ctx.beginPath();
@@ -1386,6 +1403,39 @@
     // ROBUST LANDSCAPE & FULLSCREEN ROTATION CONTROLLER
     // -------------------------------------------------------------
 
+        function setChartTheme(theme) {
+        mThemeMode = theme;
+        const isLight = (theme === 'light');
+        if (!mChart) return;
+        mChart.applyOptions({
+            layout: {
+                background: { type: 'solid', color: isLight ? '#FFFFFF' : '#0B0E14' },
+                textColor: isLight ? '#1E293B' : '#94A3B8'
+            },
+            grid: {
+                vertLines: { color: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.04)' },
+                horzLines: { color: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.04)' }
+            },
+            crosshair: {
+                vertLine: {
+                    color: isLight ? 'rgba(0, 0, 0, 0.40)' : 'rgba(255, 255, 255, 0.45)',
+                    labelBackgroundColor: isLight ? '#334155' : '#1E293B'
+                },
+                horzLine: {
+                    color: isLight ? 'rgba(0, 0, 0, 0.40)' : 'rgba(255, 255, 255, 0.45)',
+                    labelBackgroundColor: isLight ? '#334155' : '#1E293B'
+                }
+            },
+            rightPriceScale: {
+                borderColor: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.08)'
+            },
+            timeScale: {
+                borderColor: isLight ? '#CBD5E1' : 'rgba(255, 255, 255, 0.08)'
+            }
+        });
+        drawMobileHermes35Boxes();
+    }
+
     let mIsFullscreen = false;
 
     async function toggleMobileFullscreen() {
@@ -1782,6 +1832,7 @@
         init: initHermesChart,
         setTimeframe: setMobileTimeframe,
         setSymbol: setMobileSymbol,
+        setTheme: setChartTheme,
         toggleFullscreen: toggleMobileFullscreen,
         toggleLandscape: toggleMobileFullscreen,
         toggleReplay: toggleMobileReplay,

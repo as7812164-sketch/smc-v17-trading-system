@@ -2051,6 +2051,167 @@
             min-height: 0 !important;
             position: relative !important;
         }
+        /* ==============================================================
+           LIGHT MODE COMPREHENSIVE OVERRIDES (Theme Switch)
+           ============================================================== */
+        body.light-mode {
+            --bg-base: #F8FAFC !important;
+            --bg-card: #FFFFFF !important;
+            --bg-card-subtle: #F1F5F9 !important;
+            --bg-elevated: #E2E8F0 !important;
+            --border: #CBD5E1 !important;
+            --border-glow: rgba(0, 192, 135, 0.35) !important;
+            --text-primary: #0F172A !important;
+            --text-secondary: #334155 !important;
+            --text-muted: #64748B !important;
+            --green: #059669 !important;
+            --red: #DC2626 !important;
+            --cyan: #0284C7 !important;
+            --gold: #D97706 !important;
+            background-color: #F8FAFC !important;
+            color: #0F172A !important;
+        }
+
+        body.light-mode .app-header {
+            background: rgba(255, 255, 255, 0.96) !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+            color: #0F172A !important;
+        }
+
+        body.light-mode .header-title {
+            color: #0F172A !important;
+        }
+
+        body.light-mode .hero-wallet-card {
+            background: #FFFFFF !important;
+            border: 1px solid #CBD5E1 !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+            color: #0F172A !important;
+        }
+
+        body.light-mode #tradeMarkPrice,
+        body.light-mode #tradeSymbol {
+            color: #0F172A !important;
+        }
+
+        body.light-mode #mobileChartSectionWrapper {
+            background: #FFFFFF !important;
+            border: 1px solid #CBD5E1 !important;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        body.light-mode #mChartTvHeaderStrip {
+            background: #F8FAFC !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+        }
+
+        body.light-mode #mTvHeaderSymbol {
+            color: #0F172A !important;
+        }
+
+        body.light-mode .chart-controls-wrapper {
+            background: #FFFFFF !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+        }
+
+        body.light-mode .tf-btn {
+            background: #F1F5F9 !important;
+            border-color: #CBD5E1 !important;
+            color: #334155 !important;
+        }
+
+        body.light-mode .tf-btn.active {
+            background: #059669 !important;
+            color: #FFFFFF !important;
+            border-color: #059669 !important;
+        }
+
+        body.light-mode .chart-tool-btn {
+            background: #F1F5F9 !important;
+            border-color: #CBD5E1 !important;
+            color: #334155 !important;
+        }
+
+        body.light-mode .chart-ohlc-bar {
+            background: #F1F5F9 !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+            color: #334155 !important;
+        }
+
+        body.light-mode .chart-ohlc-bar b {
+            color: #0F172A !important;
+        }
+
+        body.light-mode #mobileChartCanvas {
+            background: #FFFFFF !important;
+        }
+
+        body.light-mode .bottom-nav {
+            background: rgba(255, 255, 255, 0.96) !important;
+            border-top: 1px solid #E2E8F0 !important;
+        }
+
+        body.light-mode .nav-item {
+            color: #64748B !important;
+        }
+
+        body.light-mode .nav-item.active {
+            color: #059669 !important;
+        }
+
+        body.light-mode .search-box,
+        body.light-mode div[style*="background:#141B2B"] {
+            background: #FFFFFF !important;
+            border: 1px solid #CBD5E1 !important;
+        }
+
+        body.light-mode #mobileChartCoinSearch,
+        body.light-mode #marketsSearchInput {
+            color: #0F172A !important;
+        }
+
+        body.light-mode .coin-pill-btn {
+            background: #FFFFFF !important;
+            border-color: #CBD5E1 !important;
+            color: #334155 !important;
+        }
+
+        body.light-mode .drawer {
+            background: #FFFFFF !important;
+            border-right: 1px solid #CBD5E1 !important;
+            color: #0F172A !important;
+        }
+
+        body.light-mode .drawer-link {
+            color: #334155 !important;
+        }
+
+        body.light-mode .drawer-link:hover,
+        body.light-mode .drawer-link.active {
+            background: #F1F5F9 !important;
+            color: #059669 !important;
+        }
+
+        body.light-mode .account-toggle-btn {
+            background: #F1F5F9 !important;
+            border-color: #CBD5E1 !important;
+            color: #0F172A !important;
+        }
+
+        body.light-mode .theme-toggle-btn {
+            background: #F1F5F9 !important;
+            border: 1px solid #CBD5E1 !important;
+            color: #0F172A !important;
+        }
+
+        body.light-mode #mobileChartSectionWrapper.chart-fullscreen-active {
+            background: #FFFFFF !important;
+        }
+
+        body.light-mode #mobileChartSectionWrapper.chart-fullscreen-active #mChartTvHeaderStrip {
+            background: #F8FAFC !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+        }
     </style>
 </head>
 <body>
@@ -2071,6 +2232,10 @@
             <div class="header-top-right">
                 <button class="account-toggle-btn binance" id="btnToggleAccount" onclick="toggleAccountMode()">
                     <i class="fa-solid fa-layer-group"></i> <span id="hdrModeLabel">Deca ($500)</span>
+                </button>
+                <!-- THEME TOGGLE BUTTON (LIGHT / DARK) -->
+                <button class="theme-toggle-btn" id="btnThemeToggle" onclick="toggleAppTheme()" title="Switch Light / Dark Mode" aria-label="Toggle Theme Mode" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#F59E0B; width:34px; height:34px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:all 0.2s ease;">
+                    <i class="fa-solid fa-sun" id="themeToggleIcon"></i>
                 </button>
                 <button class="refresh-btn" id="btnHeaderRefresh" onclick="refreshAllDataManual(this)" title="Refresh Live Data">
                     <i class="fa-solid fa-arrows-rotate"></i>
@@ -2629,6 +2794,10 @@
                     </span>
                     <button id="btnTvHeaderFullscreen" onclick="HermesMobileChart.toggleFullscreen()" style="background:rgba(0,223,192,0.15); border:1px solid var(--brand-teal); color:var(--brand-teal); border-radius:4px; padding:2px 8px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Toggle Fullscreen">
                         <i class="fa-solid fa-expand"></i> <span id="mTvFsBtnText">Fullscreen</span>
+                    </button>
+                    <!-- CHART THEME TOGGLE (LIGHT / DARK) -->
+                    <button id="btnChartThemeToggle" onclick="toggleAppTheme()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#F59E0B; border-radius:4px; padding:2px 7px; font-size:11px; cursor:pointer; display:inline-flex; align-items:center;" title="Switch Light / Dark Mode">
+                        <i class="fa-solid fa-sun" id="chartThemeToggleIcon"></i>
                     </button>
                 </div>
             </div>
@@ -4623,5 +4792,42 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+
+    <!-- THEME TOGGLE SCRIPT (LIGHT / DARK MODE SWITCH) -->
+    <script>
+        function toggleAppTheme() {
+            const isLight = document.body.classList.toggle('light-mode');
+            const theme = isLight ? 'light' : 'dark';
+            try { localStorage.setItem('hermes_app_theme', theme); } catch(e) {}
+            updateThemeIcons(isLight);
+            if (window.HermesMobileChart && window.HermesMobileChart.setTheme) {
+                window.HermesMobileChart.setTheme(theme);
+            }
+        }
+
+        function updateThemeIcons(isLight) {
+            const icon1 = document.getElementById('themeToggleIcon');
+            const icon2 = document.getElementById('chartThemeToggleIcon');
+            if (icon1) {
+                icon1.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+                icon1.style.color = isLight ? '#0F172A' : '#F59E0B';
+            }
+            if (icon2) {
+                icon2.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+                icon2.style.color = isLight ? '#0F172A' : '#F59E0B';
+            }
+        }
+
+        // Auto-initialize theme on load
+        (function initThemeOnStartup() {
+            try {
+                const saved = localStorage.getItem('hermes_app_theme');
+                if (saved === 'light') {
+                    document.body.classList.add('light-mode');
+                    updateThemeIcons(true);
+                }
+            } catch(e) {}
+        })();
+    </script>
 </body>
 </html>
