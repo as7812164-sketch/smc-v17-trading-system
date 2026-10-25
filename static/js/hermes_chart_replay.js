@@ -1392,64 +1392,72 @@
     // ROBUST LANDSCAPE & FULLSCREEN ROTATION CONTROLLER
     // -------------------------------------------------------------
 
-    async function toggleMobileLandscape() {
+    let mIsFullscreen = false;
+    let mChartPlaceholder = null;
+
+    async function toggleMobileFullscreen() {
         const chartWrapper = document.getElementById("mobileChartSectionWrapper");
-        const canvas = document.getElementById("mobileChartCanvas");
-        const btn = document.getElementById("btnMobileLandscape");
-        if (!chartWrapper || !canvas) return;
+        if (!chartWrapper) return;
 
-        mIsLandscape = !mIsLandscape;
+        mIsFullscreen = !mIsFullscreen;
 
-        if (mIsLandscape) {
-            chartWrapper.classList.add("chart-forced-landscape");
-            document.body.classList.add("landscape-locked");
-            if (btn) btn.innerHTML = '<i class="fa-solid fa-compress"></i> Portrait';
+        if (mIsFullscreen) {
+            // 1. Create DOM placeholder so original layout position is remembered
+            if (!mChartPlaceholder) {
+                mChartPlaceholder = document.createElement("div");
+                mChartPlaceholder.id = "mChartOriginalPlaceholder";
+                mChartPlaceholder.style.display = "none";
+            }
+            if (chartWrapper.parentNode) {
+                chartWrapper.parentNode.insertBefore(mChartPlaceholder, chartWrapper);
+            }
+            // 2. Move chartWrapper directly to document.body to escape any parent overflow/transform clipping
+            document.body.appendChild(chartWrapper);
 
-            // Try native screen orientation lock
+            chartWrapper.classList.add("chart-fullscreen-active");
+            document.body.classList.add("chart-fs-open");
+
+            updateFullscreenButtonLabels(true);
+
+            // 3. Request native browser fullscreen if supported
             try {
-                if (screen.orientation && screen.orientation.lock) {
-                    await screen.orientation.lock('landscape');
+                if (chartWrapper.requestFullscreen) {
+                    await chartWrapper.requestFullscreen();
+                } else if (chartWrapper.webkitRequestFullscreen) {
+                    await chartWrapper.webkitRequestFullscreen();
                 }
             } catch(e) {}
 
-            // Resize canvas to full window dimensions (100vw x 100vh)
-            setTimeout(() => {
-                const w = window.innerWidth || screen.width;
-                const h = window.innerHeight || screen.height;
-                const topBar = chartWrapper.querySelector('.chart-controls-wrapper');
-                const tvBar = document.getElementById('mChartTvHeaderStrip');
-                const ohlcBar = chartWrapper.querySelector('.chart-ohlc-bar');
-                const overhead = (topBar ? topBar.offsetHeight : 40) + (tvBar ? tvBar.offsetHeight : 30) + (ohlcBar ? ohlcBar.offsetHeight : 24);
-                const chartH = Math.max(260, h - overhead);
-                if (mChart) {
-                    mChart.applyOptions({ width: w, height: chartH });
-                    if (mFullCandles.length > 0) {
-                        mChart.timeScale().applyOptions({ rightOffset: 18 });
-                        mChart.timeScale().setVisibleLogicalRange({
-                            from: Math.max(0, mFullCandles.length - 85),
-                            to: mFullCandles.length + 18
-                        });
-                    }
-                    drawMobileHermes35Boxes();
-                }
-            }, 150);
+            // 4. Smooth dynamic layout resize
+            setTimeout(resizeFullscreenChart, 60);
+            setTimeout(resizeFullscreenChart, 250);
         } else {
-            chartWrapper.classList.remove("chart-forced-landscape");
-            document.body.classList.remove("landscape-locked");
-            if (btn) btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button" style="transform:rotate(90deg);"></i> Landscape';
+            // Restore chartWrapper to original location in tab-trade
+            chartWrapper.classList.remove("chart-fullscreen-active");
+            document.body.classList.remove("chart-fs-open");
+
+            if (mChartPlaceholder && mChartPlaceholder.parentNode) {
+                mChartPlaceholder.parentNode.insertBefore(chartWrapper, mChartPlaceholder);
+                mChartPlaceholder.remove();
+                mChartPlaceholder = null;
+            }
+
+            updateFullscreenButtonLabels(false);
 
             try {
-                if (screen.orientation && screen.orientation.unlock) {
-                    screen.orientation.unlock();
+                if (document.exitFullscreen) {
+                    await document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    await document.webkitExitFullscreen();
                 }
             } catch(e) {}
 
-            // Restore portrait 480px height (Item 9)
+            // Restore normal 480px portrait height
             setTimeout(() => {
                 const w = chartWrapper.clientWidth || 360;
                 if (mChart) {
                     mChart.applyOptions({ width: w, height: 480 });
-                    if (mFullCandles.length > 0) {
+                    if (mFullCandles && mFullCandles.length > 0) {
                         mChart.timeScale().applyOptions({ rightOffset: 18 });
                         mChart.timeScale().setVisibleLogicalRange({
                             from: Math.max(0, mFullCandles.length - 75),
@@ -1458,9 +1466,90 @@
                     }
                     drawMobileHermes35Boxes();
                 }
-            }, 150);
+            }, 100);
         }
     }
+
+    function updateFullscreenButtonLabels(isFs) {
+        const btnHero = document.getElementById("btnMobileFullscreen") || document.getElementById("btnMobileLandscape");
+        const btnHeader = document.getElementById("btnTvHeaderFullscreen");
+        const fsText = document.getElementById("mTvFsBtnText");
+
+        if (isFs) {
+            if (btnHero) btnHero.innerHTML = '<i class="fa-solid fa-compress"></i> Exit';
+            if (btnHeader) {
+                btnHeader.innerHTML = '<i class="fa-solid fa-compress" style="color:#FFF;"></i> <span id="mTvFsBtnText">Exit Fullscreen</span>';
+                btnHeader.style.background = '#EF4444';
+                btnHeader.style.borderColor = '#DC2626';
+                btnHeader.style.color = '#FFFFFF';
+            }
+        } else {
+            if (btnHero) btnHero.innerHTML = '<i class="fa-solid fa-expand"></i> Fullscreen';
+            if (btnHeader) {
+                btnHeader.innerHTML = '<i class="fa-solid fa-expand" style="color:var(--brand-teal);"></i> <span id="mTvFsBtnText">Fullscreen</span>';
+                btnHeader.style.background = 'rgba(0,223,192,0.15)';
+                btnHeader.style.borderColor = 'var(--brand-teal)';
+                btnHeader.style.color = 'var(--brand-teal)';
+            }
+        }
+    }
+
+    function resizeFullscreenChart() {
+        if (!mIsFullscreen || !mChart) return;
+        const chartWrapper = document.getElementById("mobileChartSectionWrapper");
+        if (!chartWrapper) return;
+
+        const w = window.innerWidth || document.documentElement.clientWidth || screen.width;
+        const h = window.innerHeight || document.documentElement.clientHeight || screen.height;
+
+        const tvBar = document.getElementById("mChartTvHeaderStrip");
+        const ctrlBar = chartWrapper.querySelector(".chart-controls-wrapper");
+        const ohlcBar = chartWrapper.querySelector(".chart-ohlc-bar");
+        const replayBar = document.getElementById("mobileReplayBar");
+
+        let headerOffset = (tvBar ? tvBar.offsetHeight : 34) 
+                         + (ctrlBar ? ctrlBar.offsetHeight : 38)
+                         + (ohlcBar ? ohlcBar.offsetHeight : 22);
+
+        if (replayBar && replayBar.style.display !== "none") {
+            headerOffset += replayBar.offsetHeight;
+        }
+
+        const chartH = Math.max(260, h - headerOffset);
+        mChart.applyOptions({ width: w, height: chartH });
+
+        if (mFullCandles && mFullCandles.length > 0) {
+            const barCount = w > 600 ? 110 : 75;
+            mChart.timeScale().applyOptions({ rightOffset: 18 });
+            mChart.timeScale().setVisibleLogicalRange({
+                from: Math.max(0, mFullCandles.length - barCount),
+                to: mFullCandles.length + 18
+            });
+        }
+        drawMobileHermes35Boxes();
+    }
+
+    // Auto-sync fullscreen changes (hardware back button or browser gesture)
+    document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement && mIsFullscreen) {
+            toggleMobileFullscreen();
+        }
+    });
+    document.addEventListener("webkitfullscreenchange", () => {
+        if (!document.webkitFullscreenElement && mIsFullscreen) {
+            toggleMobileFullscreen();
+        }
+    });
+    window.addEventListener("resize", () => {
+        if (mIsFullscreen) {
+            resizeFullscreenChart();
+        }
+    });
+    window.addEventListener("orientationchange", () => {
+        if (mIsFullscreen) {
+            setTimeout(resizeFullscreenChart, 150);
+        }
+    });
 
     // -------------------------------------------------------------
     // CUSTOMIZABLE DRAG RULER MEASURE TOOL (ENLARGED TOUCH HANDLES)
@@ -1720,7 +1809,8 @@
         init: initHermesChart,
         setTimeframe: setMobileTimeframe,
         setSymbol: setMobileSymbol,
-        toggleLandscape: toggleMobileLandscape,
+        toggleFullscreen: toggleMobileFullscreen,
+        toggleLandscape: toggleMobileFullscreen,
         toggleReplay: toggleMobileReplay,
         stepForward: stepMobileReplayForward,
         stepBackward: stepMobileReplayBackward,
