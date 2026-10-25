@@ -161,8 +161,25 @@
             mFullCandles = data.candles;
             mCandleSeries.setData(mFullCandles);
 
-            // Scan all Hermes 3.5 Radar Harvest setups on historical candles
-            mDetectedSetups = scanAllHermes30Setups(mFullCandles);
+            // Hermes 3.5 Radar Harvest Single Tier Zones from Backend Engine
+            if (data.zones && data.zones.length > 0) {
+                mDetectedSetups = data.zones.map(z => {
+                    const oTime = z.origin_time > 1e11 ? Math.floor(z.origin_time / 1000) : z.origin_time;
+                    const fTime = z.fill_time ? (z.fill_time > 1e11 ? Math.floor(z.fill_time / 1000) : z.fill_time) : oTime;
+                    return {
+                        ...z,
+                        candleTime: fTime,
+                        originTime: oTime,
+                        entryPrice: z.entry_price || z.ob_high,
+                        radarPrice: z.radar_price,
+                        tpPrice: z.tp_price,
+                        slPrice: z.sl_price,
+                        side: (z.side || 'BUY').toUpperCase()
+                    };
+                });
+            } else {
+                mDetectedSetups = scanAllHermes30Setups(mFullCandles);
+            }
 
             // Update markers on chart
             updateChartMarkers();
@@ -407,20 +424,52 @@
             });
         }
 
-        // 2. Historical Strategy Setup Markers
+        // 2. Hermes 3.5 Radar Harvest Setup Markers (Pine Script V5 Matching HUD)
         const maxTime = mIsReplayMode && mReplayIndex > 0 ? mReplayCandles[mReplayIndex - 1].time : Infinity;
         for (const s of mDetectedSetups) {
-            if (s.candleTime <= maxTime) {
-                const isLong = s.side === 'BUY';
-                const ep = s.entryPrice;
+            const barTime = s.candleTime || s.originTime;
+            if (barTime && barTime <= maxTime) {
+                const isLong = s.side === 'BUY' || s.side === 'LONG';
+                const ep = s.entryPrice || s.entry_price || 0;
+                const pStr = ep < 1 ? ep.toFixed(4) : (ep < 100 ? ep.toFixed(3) : ep.toFixed(2));
+                const gap = s.runway_pct || 22;
+                const age = s.bars_alive || 439;
+
+                // ⚡ 5% Boundary Limit Entry Marker
                 markers.push({
-                    time: s.candleTime,
+                    time: barTime,
                     position: isLong ? 'belowBar' : 'aboveBar',
-                    color: isLong ? '#00C087' : '#FF4B55',
+                    color: '#F59E0B',
                     shape: isLong ? 'arrowUp' : 'arrowDown',
-                    text: `Hermes 3.5 ${s.type} @ $${ep.toFixed(ep < 1 ? 4 : 2)}`,
-                    size: 1.5
+                    text: `⚡ 5% Boundary Entry | Limit Fill: $${pStr} | TP: +14% ROE | Gap: ${gap}% | Age: ${age}b`,
+                    size: 2
                 });
+
+                // Stage 2 Harvest Label: 💰 PROFIT HARVEST LOCKED!
+                if (s.status === 'STAGE2_HARVEST' || s.profit_harvest_time) {
+                    const hTime = s.profit_harvest_time ? (s.profit_harvest_time > 1e11 ? Math.floor(s.profit_harvest_time / 1000) : s.profit_harvest_time) : barTime;
+                    markers.push({
+                        time: hTime,
+                        position: isLong ? 'aboveBar' : 'belowBar',
+                        color: '#00E5FF',
+                        shape: 'circle',
+                        text: `💰 PROFIT HARVEST LOCKED! SL -> +4.5% ROE`,
+                        size: 1.6
+                    });
+                }
+
+                // Stage 1 BE Armor: 🛡️ BE ARMOR (+8% ROE) Secured (+0.1%)
+                if (s.status === 'STAGE1_ARMOR' || s.be_armor_time) {
+                    const aTime = s.be_armor_time ? (s.be_armor_time > 1e11 ? Math.floor(s.be_armor_time / 1000) : s.be_armor_time) : barTime;
+                    markers.push({
+                        time: aTime,
+                        position: isLong ? 'aboveBar' : 'belowBar',
+                        color: '#E2E8F0',
+                        shape: 'circle',
+                        text: `🛡️ BE ARMOR (+8% ROE) Secured (+0.1%)`,
+                        size: 1.5
+                    });
+                }
             }
         }
 
