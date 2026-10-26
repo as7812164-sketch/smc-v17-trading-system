@@ -824,14 +824,33 @@ class Hermes30Model2ALiveEngine:
                     candles = await binance_feed.fetch_klines(symbol, interval=interval, limit=120)
                     if candles and len(candles) >= 40:
                         detected = self.detect_hermes35_single_tier_zones(symbol, candles, interval)
-                        # Filter strictly for TRUE unmitigated active setups waiting for 1st tap!
-                        unmitigated = [
-                            z for z in detected 
-                            if not z.get("completed", False) 
-                            and not z.get("tapped", False) 
-                            and z.get("status") in ("ACTIVE_UNMITIGATED", "RADAR_PRE_ARMED")
-                        ]
-                        all_setups.extend(unmitigated)
+                        last_c = candles[-1]["time"]
+                        prev_c = candles[-2]["time"] if len(candles) >= 2 else last_c
+                        last_sec = int(last_c / 1000) if last_c > 1e11 else int(last_c)
+                        prev_sec = int(prev_c / 1000) if prev_c > 1e11 else int(prev_c)
+
+                        valid_setups = []
+                        for z in detected:
+                            if z.get("completed", False):
+                                continue
+                            st = str(z.get("status", "")).upper()
+                            if st.startswith("COMPLETED") or st in ("INVALIDATED", "MITIGATED", "BROKEN"):
+                                continue
+
+                            # 1. Unmitigated setup waiting for 1st tap (for radar & pending queue)
+                            if not z.get("tapped", False) and st in ("ACTIVE_UNMITIGATED", "RADAR_PRE_ARMED"):
+                                valid_setups.append(z)
+                                continue
+
+                            # 2. Fresh 1st tap trigger that happened on the CURRENT or PREVIOUS live candle!
+                            if z.get("tapped", False) and z.get("is_fresh_trigger", False):
+                                f_time = z.get("fill_time")
+                                if f_time:
+                                    f_sec = int(f_time / 1000) if f_time > 1e11 else int(f_time)
+                                    if f_sec in (last_sec, prev_sec):
+                                        valid_setups.append(z)
+
+                        all_setups.extend(valid_setups)
                 except Exception as e:
                     logger.debug(f"Scan error for {symbol} {interval}: {e}")
 
