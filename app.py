@@ -478,6 +478,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="HERMES 3.5 RADAR HARVEST Autonomous Terminal & Quant Engine", lifespan=lifespan)
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
@@ -858,6 +867,20 @@ async def serve_trade_forensics():
 
     )
 
+
+
+@app.get("/terminal", response_class=HTMLResponse)
+@app.get("/tradingview", response_class=HTMLResponse)
+async def serve_trading_terminal():
+    file_path = STATIC_DIR / "terminal.html"
+    return FileResponse(
+        file_path,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 
 @app.get("/pro-charts", response_class=HTMLResponse)
@@ -4726,7 +4749,8 @@ async def get_autotrade_status():
 
     
 
-    is_on = (not kill_switch) and auto_enabled and bg_auto
+    # Paper trading on website is ON if kill-switch is inactive and auto_trading is enabled
+    is_on = (not kill_switch) and auto_enabled
 
     return {
 
@@ -4778,9 +4802,10 @@ async def toggle_autotrade_switch(body: Dict[str, Any] = Body(default={})):
 
         set_setting("auto_trading_enabled", "true")
 
-        set_setting("bitget_auto_trade", "true")
+        # STRICT REAL MONEY GUARD: Bitget auto-trading is hard-locked to OFF (Paper Trading Only)
+        set_setting("bitget_auto_trade", "false")
 
-        config.BITGET_AUTO_TRADE = True
+        config.BITGET_AUTO_TRADE = False
 
         hermes2_apex_engine.set_kill_switch(False)
 
@@ -4820,13 +4845,17 @@ async def toggle_autotrade_switch(body: Dict[str, Any] = Body(default={})):
 
         tg_text = (
 
-            "🟢 <b>AUTO-TRADING ACTIVATED (ON)!</b>\n"
+            "🟢 <b>HERMES 3.5 PAPER AUTO-TRADING ACTIVATED (ON)!</b>\n"
 
             "━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
-            "✅ The website button was toggled ON.\n"
+            "🎮 <b>Mode</b>: 100% Demo / Paper Trading (Website Vault Only)\n"
 
-            "📡 Scanner is actively evaluating Order Blocks and executing trades."
+            "🔒 <b>Bitget Real Money</b>: STRICTLY OFF / DISABLED\n"
+
+            "📡 Scanner is evaluating 68 pairs for 5% boundary taps.\n"
+
+            "⚡ Every trade entry & exit will trigger an instant alert here!"
 
             if turn_on else
 

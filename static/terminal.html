@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SMC V17 — Institutional Order Flow & Execution Terminal</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- TradingView Lightweight Charts (Local + CDN Fallback) -->
+    <script src="/static/js/lightweight-charts.standalone.production.js"></script>
+    <script>
+        if (typeof LightweightCharts === 'undefined') {
+            document.write('<script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"><\/script>');
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-primary: #0e1117;
+            --bg-secondary: #161a23;
+            --bg-tertiary: #202634;
+            --border-color: #262c3d;
+            --border-subtle: rgba(38, 44, 61, 0.7);
+            --text-primary: #e2e8f0;
+            --text-secondary: #8492a6;
+            --text-highlight: #ffffff;
+            --accent-green: #00e676;
+            --accent-green-bg: rgba(0, 230, 118, 0.12);
+            --accent-red: #ff1744;
+            --accent-red-bg: rgba(255, 23, 68, 0.12);
+            --accent-cyan: #00f0ff;
+            --accent-cyan-bg: rgba(0, 240, 255, 0.12);
+            --accent-gold: #ffd700;
+            --accent-gold-bg: rgba(255, 215, 0, 0.12);
+            --accent-purple: #9d4edd;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* -------------------------------------------------------------
+           TOP HEADER NAVIGATION & QUICK ORDER BAR
+        ------------------------------------------------------------- */
+        .top-navbar {
+            height: 48px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            z-index: 50;
+            gap: 12px;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: var(--text-highlight);
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, #00f0ff, #2962ff);
+            color: #000;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .symbol-search-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-highlight);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .symbol-search-btn:hover {
+            border-color: var(--accent-cyan);
+            background: #2b3345;
+        }
+
+        .timeframe-group {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            background: var(--bg-primary);
+            padding: 2px;
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .tf-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .tf-btn:hover { color: var(--text-highlight); }
+        .tf-btn.active {
+            color: #000;
+            background: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        /* PHASE 4: QUICK TRADE EXECUTION BUTTONS */
+        .trade-quick-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 6px;
+        }
+
+        .btn-quick-buy {
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+        }
+        .btn-quick-buy:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+        .btn-quick-sell {
+            background: var(--accent-red);
+            color: #fff;
+            border: none;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+            box-shadow: 0 0 10px rgba(255, 23, 68, 0.3);
+        }
+        .btn-quick-sell:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+        .btn-positions-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            color: var(--accent-cyan);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-positions-toggle:hover { border-color: var(--accent-cyan); background: #2b3345; }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ws-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--accent-green);
+            background: var(--accent-green-bg);
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 230, 118, 0.3);
+        }
+
+        .pulse-led {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulseAnim 1.8s infinite;
+        }
+
+        @keyframes pulseAnim {
+            0% { opacity: 0.5; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.5; transform: scale(0.9); }
+        }
+
+        .nav-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.15s ease;
+        }
+        .nav-btn:hover { color: #fff; border-color: var(--accent-cyan); }
+
+        /* -------------------------------------------------------------
+           SUB-HEADER: INSTITUTIONAL MICROSTRUCTURE METRIC STRIP
+        ------------------------------------------------------------- */
+        .microstructure-strip {
+            height: 32px;
+            background: #121620;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            z-index: 45;
+        }
+
+        .ms-pill { display: flex; align-items: center; gap: 6px; }
+        .ms-label { color: var(--text-secondary); }
+        .ms-val { font-weight: 700; color: var(--text-highlight); }
+        .ms-val.up { color: var(--accent-green); }
+        .ms-val.down { color: var(--accent-red); }
+        .ms-val.cyan { color: var(--accent-cyan); }
+        .ms-val.gold { color: var(--accent-gold); }
+
+        .iceberg-alert-tag {
+            background: var(--accent-gold-bg);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            color: var(--accent-gold);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            animation: pulseAnim 1.5s infinite;
+        }
+
+        /* -------------------------------------------------------------
+           MAIN WORKSPACE AREA: TOOLS + CHARTS + DOM / WATCHLIST
+        ------------------------------------------------------------- */
+        .main-workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* LEFT TOOLBAR: PHASE 3 DRAWING TOOLS DOCK */
+        .left-dock {
+            width: 44px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 0;
+            gap: 6px;
+            z-index: 35;
+        }
+
+        .dock-tool-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .dock-tool-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-highlight); }
+        .dock-tool-btn.active {
+            background: var(--accent-cyan);
+            color: #000;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+        }
+        .dock-separator { width: 22px; height: 1px; background: var(--border-color); margin: 4px 0; }
+
+        /* CENTER DUAL CHART CONTAINER */
+        .center-chart-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .chart-main-pane {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 65%;
+            overflow: hidden;
+        }
+
+        #candlestick_container { width: 100%; height: 100%; }
+        #drawingCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .cvd-sub-pane {
+            height: 35%;
+            border-top: 2px solid var(--border-color);
+            background: #090c12;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cvd-header-bar {
+            height: 24px;
+            background: #121620;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        #cvd_chart_container { flex: 1; width: 100%; }
+
+        .chart-legend {
+            position: absolute;
+            top: 8px; left: 12px;
+            z-index: 20;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            background: rgba(14, 17, 23, 0.88);
+            backdrop-filter: blur(8px);
+            padding: 5px 12px;
+            border-radius: 5px;
+            border: 1px solid var(--border-subtle);
+            pointer-events: none;
+        }
+        .legend-symbol { font-weight: 800; color: var(--text-highlight); font-size: 12px; }
+        .legend-metric { color: var(--text-secondary); }
+        .legend-val { color: var(--text-primary); font-weight: 600; }
+        .legend-val.up { color: var(--accent-green); }
+        .legend-val.down { color: var(--accent-red); }
+
+        .countdown-timer-box {
+            position: absolute;
+            top: 8px; right: 12px;
+            z-index: 20;
+            background: rgba(22, 26, 35, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 4px 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-highlight);
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+        }
+        .countdown-timer-box i { color: var(--accent-cyan); }
+
+        .drawing-active-toast {
+            position: absolute;
+            bottom: 12px; left: 16px;
+            background: rgba(0, 240, 255, 0.15);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            z-index: 25;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+
+        /* -------------------------------------------------------------
+           PHASE 4: BOTTOM POSITIONS & OPEN ORDERS TRAY
+        ------------------------------------------------------------- */
+        .positions-tray {
+            position: absolute;
+            bottom: 0; left: 44px; right: 320px;
+            height: 190px;
+            background: #11141d;
+            border-top: 2px solid var(--accent-cyan);
+            z-index: 45;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.6);
+            transition: all 0.2s ease;
+        }
+        .positions-tray.open { display: flex; }
+
+        .tray-header {
+            height: 32px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
+
+        .tray-stats { display: flex; align-items: center; gap: 16px; }
+
+        .tray-table {
+            flex: 1;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .tray-table th {
+            background: #151923;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 6px 12px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .tray-table th:first-child, .tray-table td:first-child { text-align: left; }
+        .tray-table td {
+            padding: 6px 12px;
+            text-align: right;
+            border-bottom: 1px solid rgba(38, 44, 61, 0.3);
+            color: var(--text-primary);
+        }
+        .tray-table tr:hover { background: rgba(255, 255, 255, 0.03); }
+
+        .btn-close-pos {
+            background: rgba(255, 23, 68, 0.2);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 23, 68, 0.5);
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .btn-close-pos:hover { background: var(--accent-red); color: #fff; }
+
+        /* -------------------------------------------------------------
+           RIGHT SIDEBAR: TABBED 4-PANEL SUITE (DOM, WATCHLIST, HEATMAP, SCREENER)
+        ------------------------------------------------------------- */
+        .right-sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 40;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .right-sidebar.collapsed { transform: translateX(100%); position: absolute; right: 0; top: 0; bottom: 0; }
+
+        .sidebar-tabs {
+            display: flex;
+            background: #11141c;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-tab-btn {
+            flex: 1;
+            padding: 9px 0;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .sidebar-tab-btn.active {
+            color: var(--accent-cyan);
+            border-bottom: 2px solid var(--accent-cyan);
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        .tab-content-area {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TAB 1: DOM */
+        .dom-container { display: flex; flex-direction: column; height: 100%; font-family: var(--font-mono); font-size: 11px; }
+        .dom-header-row {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 6px 12px;
+            background: #11141c; color: var(--text-secondary); font-size: 10px; border-bottom: 1px solid var(--border-color); text-align: right;
+        }
+        .dom-header-row span:first-child { text-align: left; }
+        .dom-scroll-area { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .dom-row { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 3px 12px; position: relative; text-align: right; cursor: pointer; }
+        .dom-row:hover { background: rgba(255, 255, 255, 0.06); }
+        .dom-row span:first-child { text-align: left; }
+        .dom-depth-bar { position: absolute; top: 0; bottom: 0; right: 0; z-index: 1; opacity: 0.18; pointer-events: none; }
+        .dom-depth-bar.ask { background: var(--accent-red); }
+        .dom-depth-bar.bid { background: var(--accent-green); }
+        .dom-row span { position: relative; z-index: 2; }
+        .dom-row.ask .p-col { color: var(--accent-red); font-weight: 600; }
+        .dom-row.bid .p-col { color: var(--accent-green); font-weight: 600; }
+        .dom-spread-row {
+            padding: 8px 12px; background: #151923; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700;
+        }
+        .dom-imbalance-meter { padding: 8px 12px; background: #11141c; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 5px; }
+        .imbalance-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); }
+        .imbalance-track { height: 5px; background: var(--accent-red); border-radius: 3px; overflow: hidden; display: flex; }
+        .imbalance-bid-fill { height: 100%; background: var(--accent-green); transition: width 0.2s ease; }
+
+        /* TAB 2: WATCHLIST */
+        .watchlist-scroll { flex: 1; overflow-y: auto; }
+        .watchlist-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; border-bottom: 1px solid rgba(38, 44, 61, 0.4); cursor: pointer; }
+        .watchlist-item:hover { background: rgba(255, 255, 255, 0.04); }
+        .watchlist-item.active { background: rgba(0, 240, 255, 0.08); border-left: 3px solid var(--accent-cyan); }
+        .coin-sym { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text-highlight); }
+        .coin-price { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+        .coin-change { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 1px 4px; border-radius: 3px; }
+        .coin-change.up { color: var(--accent-green); background: var(--accent-green-bg); }
+        .coin-change.down { color: var(--accent-red); background: var(--accent-red-bg); }
+
+        /* TAB 3: HEATMAP */
+        .heatmap-container { padding: 12px; display: flex; flex-direction: column; gap: 12px; font-family: var(--font-mono); }
+        .heatmap-card { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .heatmap-card-title { font-size: 11px; font-weight: 700; color: var(--text-highlight); display: flex; align-items: center; gap: 6px; }
+        .pool-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 11px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+
+        /* TAB 4: PHASE 4 SCREENER */
+        .screener-container { padding: 10px; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); }
+        .screener-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 9px 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .screener-card:hover { border-color: var(--accent-cyan); background: #252d3d; }
+        .sc-top { display: flex; align-items: center; justify-content: space-between; }
+        .sc-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 3px; }
+        .sc-badge.long { background: var(--accent-green-bg); color: var(--accent-green); border: 1px solid rgba(0,230,118,0.3); }
+        .sc-badge.short { background: var(--accent-red-bg); color: var(--accent-red); border: 1px solid rgba(255,23,68,0.3); }
+        .sc-body { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); }
+
+        /* -------------------------------------------------------------
+           PHASE 4: INTERACTIVE ORDER TICKET MODAL
+        ------------------------------------------------------------- */
+        .order-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            z-index: 1050;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .order-modal-overlay.open { display: flex; }
+
+        .order-modal-box {
+            width: 400px;
+            max-width: 92vw;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            font-family: var(--font-mono);
+        }
+
+        .om-header {
+            padding: 12px 16px;
+            background: #12151e;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .om-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+        .om-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+        .om-input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 5px;
+            color: #fff;
+            padding: 6px 10px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            width: 140px;
+            text-align: right;
+            outline: none;
+        }
+        .om-input:focus { border-color: var(--accent-cyan); }
+
+        .btn-confirm-deploy {
+            padding: 11px 0;
+            border-radius: 6px;
+            border: none;
+            font-family: var(--font-mono);
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-confirm-deploy.long { background: var(--accent-green); color: #000; }
+        .btn-confirm-deploy.short { background: var(--accent-red); color: #fff; }
+        .btn-confirm-deploy:hover { filter: brightness(1.15); }
+
+        /* Notification Toast */
+        .app-toast {
+            position: fixed;
+            top: 60px; right: 20px;
+            background: #151923;
+            border: 1px solid var(--accent-cyan);
+            color: var(--text-highlight);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 8px 30px rgba(0, 240, 255, 0.25);
+        }
+
+        /* BOTTOM STATUS BAR */
+        .bottom-statusbar {
+            height: 28px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            z-index: 50;
+        }
+        .status-left, .status-right { display: flex; align-items: center; gap: 14px; }
+        .status-clickable { cursor: pointer; transition: color 0.15s; }
+        .status-clickable:hover { color: var(--text-highlight); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .search-modal {
+            width: 440px; max-width: 90vw; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;
+        }
+        .modal-input-wrap { padding: 12px 14px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
+        .modal-input { flex: 1; background: transparent; border: none; color: #fff; font-size: 15px; font-family: var(--font-mono); outline: none; }
+        .modal-list { max-height: 320px; overflow-y: auto; }
+        .modal-item { padding: 9px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid rgba(38, 44, 61, 0.3); }
+        .modal-item:hover { background: rgba(255, 255, 255, 0.05); }
+    </style>
+</head>
+<body>
+
+    <!-- 1. TOP NAVBAR -->
+    <header class="top-navbar">
+        <div class="nav-left">
+            <a href="/" class="brand-pill" title="Return to Dashboard">
+                <span class="brand-badge">SMC</span>
+                <span>ORDER FLOW V17</span>
+            </a>
+
+            <!-- Quick Symbol Selector -->
+            <button class="symbol-search-btn" id="openSearchBtn">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span id="navSymbolDisplay">BTCUSDT</span>
+                <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </button>
+
+            <!-- Timeframe Selector -->
+            <div class="timeframe-group">
+                <button class="tf-btn" data-tf="1m">1m</button>
+                <button class="tf-btn" data-tf="5m">5m</button>
+                <button class="tf-btn" data-tf="15m">15m</button>
+                <button class="tf-btn" data-tf="1h">1h</button>
+                <button class="tf-btn active" data-tf="4h">4h</button>
+                <button class="tf-btn" data-tf="1d">1D</button>
+            </div>
+
+            <!-- PHASE 4: 1-CLICK QUICK ORDER EXECUTION -->
+            <div class="trade-quick-actions">
+                <button class="btn-quick-buy" id="openBuyOrderBtn"><i class="fa-solid fa-arrow-trend-up"></i> BUY / LONG</button>
+                <button class="btn-quick-sell" id="openSellOrderBtn"><i class="fa-solid fa-arrow-trend-down"></i> SELL / SHORT</button>
+                <button class="btn-positions-toggle" id="togglePositionsTrayBtn"><i class="fa-solid fa-briefcase"></i> POSITIONS <span id="openPosCountBadge" style="background:var(--accent-cyan); color:#000; padding:1px 5px; border-radius:10px; font-size:10px; margin-left:2px;">0</span></button>
+            </div>
+        </div>
+
+        <div class="nav-right">
+            <!-- Binance WS Live LED -->
+            <div class="ws-status-badge">
+                <span class="pulse-led" id="wsLed"></span>
+                <span id="wsStatusText">BINANCE FUTURES LIVE</span>
+            </div>
+
+            <button class="nav-btn" id="fullscreenBtn" title="Toggle Fullscreen"><i class="fa-solid fa-expand"></i></button>
+            <button class="nav-btn" id="toggleSidebarBtn" title="Toggle Sidebar"><i class="fa-solid fa-table-columns"></i></button>
+            <a href="/positions" class="nav-btn" title="Positions Ledger" style="text-decoration:none;"><i class="fa-solid fa-wallet"></i></a>
+        </div>
+    </header>
+
+    <!-- 2. SUB-HEADER: INSTITUTIONAL MICROSTRUCTURE METRIC STRIP -->
+    <section class="microstructure-strip" id="microstructureStrip">
+        <div class="ms-pill">
+            <span class="ms-label">CVD (4H):</span>
+            <span class="ms-val cyan" id="msCvd">+$0.00</span>
+        </div>
+        <div class="ms-pill">
+            <span class="ms-label">BAR DELTA:</span>
+            <span class="ms-val up" id="msDelta">+0.00 (50% Buy)</span>
+        </div>
+        <div class="ms-pill">
+            <span class="ms-label">OPEN INTEREST (1H):</span>
+            <span class="ms-val gold" id="msOi">+0.00%</span>
+        </div>
+        <div class="ms-pill">
+            <span class="ms-label">WHALE SCORE:</span>
+            <span class="ms-val cyan" id="msScore">-- / 100</span>
+        </div>
+        <div class="ms-pill" id="icebergAlertWrap" style="display:none;">
+            <span class="iceberg-alert-tag" id="icebergAlertText">🛡️ ICEBERG ABSORPTION</span>
+        </div>
+    </section>
+
+    <!-- 3. MAIN WORKSPACE -->
+    <main class="main-workspace">
+        <!-- LEFT TOOLBAR: PHASE 3 DRAWING TOOLS DOCK -->
+        <aside class="left-dock">
+            <button class="dock-tool-btn active" id="toolCursor" title="Crosshair Mode (Esc)"><i class="fa-solid fa-arrow-pointer"></i></button>
+            <div class="dock-separator"></div>
+            <button class="dock-tool-btn" id="toolTrendline" title="Trendline Tool (T)"><i class="fa-solid fa-chart-line"></i></button>
+            <button class="dock-tool-btn" id="toolHorizLine" title="Horizontal Ray (H)"><i class="fa-solid fa-arrows-left-right"></i></button>
+            <button class="dock-tool-btn" id="toolRectangle" title="SMC Order Block Box (B)"><i class="fa-regular fa-square"></i></button>
+            <button class="dock-tool-btn" id="toolFib" title="Fibonacci Retracement (F)"><i class="fa-solid fa-bars-staggered"></i></button>
+            <div class="dock-separator"></div>
+            <button class="dock-tool-btn" id="toolLongPosition" title="Long Risk/Reward Box"><i class="fa-solid fa-arrow-trend-up" style="color:var(--accent-green);"></i></button>
+            <button class="dock-tool-btn" id="toolShortPosition" title="Short Risk/Reward Box"><i class="fa-solid fa-arrow-trend-down" style="color:var(--accent-red);"></i></button>
+            <button class="dock-tool-btn" id="toolMeasure" title="Measure Ruler (M)"><i class="fa-solid fa-ruler-combined"></i></button>
+            <div class="dock-separator"></div>
+            <button class="dock-tool-btn" id="toolClear" title="Clear All Drawings (Del)" style="color:var(--accent-red);"><i class="fa-regular fa-trash-can"></i></button>
+        </aside>
+
+        <!-- Center Dual Chart Container (Candlesticks + CVD Sub-chart + Interactive Canvas) -->
+        <div class="center-chart-area">
+            <div class="chart-main-pane">
+                <div class="chart-legend" id="chartLegend">
+                    <span class="legend-symbol" id="legSymbol">BTCUSDT</span>
+                    <span class="legend-metric">O <span class="legend-val" id="legOpen">--</span></span>
+                    <span class="legend-metric">H <span class="legend-val" id="legHigh">--</span></span>
+                    <span class="legend-metric">L <span class="legend-val" id="legLow">--</span></span>
+                    <span class="legend-metric">C <span class="legend-val" id="legClose">--</span></span>
+                    <span class="legend-metric">Change <span class="legend-val" id="legChange">--</span></span>
+                    <span class="legend-metric">Delta <span class="legend-val" id="legDelta">--</span></span>
+                </div>
+
+                <div class="countdown-timer-box">
+                    <i class="fa-regular fa-clock"></i>
+                    <span id="countdownDisplay">00:00:00</span>
+                </div>
+
+                <div class="drawing-active-toast" id="drawingToast"><span id="toastText">Drawing Tool Active</span></div>
+                <div id="candlestick_container"></div>
+                <canvas id="drawingCanvas"></canvas>
+            </div>
+
+            <!-- Bottom CVD Sub-chart Pane -->
+            <div class="cvd-sub-pane" id="cvdSubPane">
+                <div class="cvd-header-bar">
+                    <span><i class="fa-solid fa-wave-square" style="color:var(--accent-cyan);"></i> CUMULATIVE VOLUME DELTA (CVD)</span>
+                    <span id="cvdSummaryText">Bullish Accumulation · Slope +0.42</span>
+                </div>
+                <div id="cvd_chart_container"></div>
+            </div>
+
+            <!-- PHASE 4: BOTTOM POSITIONS & OPEN ORDERS TRAY -->
+            <div class="positions-tray" id="positionsTray">
+                <div class="tray-header">
+                    <div class="tray-stats">
+                        <span><strong style="color:var(--text-highlight);">OPEN POSITIONS</strong></span>
+                        <span>Margin: <strong id="trayTotalMargin" style="color:#fff;">$0.00</strong></span>
+                        <span>Floating PnL: <strong id="trayTotalPnl" style="color:var(--accent-green);">+$0.00</strong></span>
+                        <span>Leverage: <strong style="color:var(--accent-cyan);">5x Isolated</strong></span>
+                    </div>
+                    <div>
+                        <button class="status-clickable" id="closeTrayBtn" style="background:transparent; border:none; color:var(--text-secondary); font-size:14px;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+                <div style="flex:1; overflow-y:auto;">
+                    <table class="tray-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Side</th>
+                                <th>Entry</th>
+                                <th>Mark Price</th>
+                                <th>Margin</th>
+                                <th>Unrealized PnL</th>
+                                <th>ROE %</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positionsTableBody">
+                            <tr><td colspan="8" style="text-align:center; padding:18px; color:var(--text-secondary);">No open positions. Use BUY/SELL buttons to deploy $50 compounding trades.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar (DOM Ladder / Watchlist / Heatmap / Phase 4 Screener) -->
+        <aside class="right-sidebar" id="rightSidebar">
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab-btn active" data-tab="dom"><i class="fa-solid fa-bars-staggered"></i> DOM</button>
+                <button class="sidebar-tab-btn" data-tab="watchlist"><i class="fa-solid fa-list-ul"></i> WATCH</button>
+                <button class="sidebar-tab-btn" data-tab="screener"><i class="fa-solid fa-radar"></i> RADAR</button>
+                <button class="sidebar-tab-btn" data-tab="heatmap"><i class="fa-solid fa-fire"></i> HEAT</button>
+            </div>
+
+            <div class="tab-content-area">
+                <!-- TAB 1: LEVEL 2 DOM -->
+                <div class="dom-container" id="tabDom">
+                    <div class="dom-header-row">
+                        <span>Price (USDT)</span>
+                        <span>Size</span>
+                        <span>Total</span>
+                    </div>
+                    <div class="dom-scroll-area">
+                        <div class="dom-asks-box" id="domAsksContainer"></div>
+                        <div class="dom-spread-row" id="domSpreadRow">
+                            <span style="color:var(--text-secondary); font-size:10px;">SPREAD</span>
+                            <span id="domMidPrice" style="font-size:12px; color:#fff;">--</span>
+                            <span id="domSpreadVal" style="color:var(--accent-gold); font-size:10px;">--</span>
+                        </div>
+                        <div class="dom-bids-box" id="domBidsContainer"></div>
+                    </div>
+                    <div class="dom-imbalance-meter">
+                        <div class="imbalance-label">
+                            <span style="color:var(--accent-green);" id="bidImbalancePct">Bids 50%</span>
+                            <span style="color:var(--accent-red);" id="askImbalancePct">50% Asks</span>
+                        </div>
+                        <div class="imbalance-track"><div class="imbalance-bid-fill" id="bidImbalanceBar" style="width: 50%;"></div></div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: TOP 50 WATCHLIST -->
+                <div class="watchlist-scroll" id="tabWatchlist" style="display:none;">
+                    <div style="padding: 8px 12px; border-bottom: 1px solid var(--border-color);">
+                        <input type="text" id="watchlistSearch" placeholder="Filter coin (e.g. SOL, DOGE)..." style="width:100%; background:var(--bg-primary); border:1px solid var(--border-subtle); color:#fff; font-family:var(--font-mono); font-size:11px; padding:5px 8px; border-radius:4px; outline:none;">
+                    </div>
+                    <div id="watchlistRows"></div>
+                </div>
+
+                <!-- TAB 3: PHASE 4 MULTI-COIN LIVE SCREENER -->
+                <div class="screener-container" id="tabScreener" style="display:none;">
+                    <div style="font-size:11px; color:var(--text-secondary); display:flex; justify-content:space-between; align-items:center; padding:2px 4px;">
+                        <span>RADAR CANDIDATES</span>
+                        <span id="screenerCount" style="color:var(--accent-cyan);">0 Setups</span>
+                    </div>
+                    <div id="screenerList" style="display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
+
+                <!-- TAB 4: LIQUIDITY HEATMAP -->
+                <div class="heatmap-container" id="tabHeatmap" style="display:none;">
+                    <div class="heatmap-card">
+                        <div class="heatmap-card-title"><i class="fa-solid fa-shield-halved" style="color:var(--accent-green);"></i><span>Resting Buy Walls (Support Pools)</span></div>
+                        <div id="buyLiquidityPools"></div>
+                    </div>
+                    <div class="heatmap-card">
+                        <div class="heatmap-card-title"><i class="fa-solid fa-hand-holding-dollar" style="color:var(--accent-red);"></i><span>Resting Sell Walls (Resistance Pools)</span></div>
+                        <div id="sellLiquidityPools"></div>
+                    </div>
+                    <div class="heatmap-card">
+                        <div class="heatmap-card-title"><i class="fa-solid fa-brain" style="color:var(--accent-cyan);"></i><span>Smart Money Footprint State</span></div>
+                        <div style="font-size:11px; line-height:1.6; color:var(--text-secondary);" id="ofFootprintSummary">Calculating order flow metrics...</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 4. BOTTOM STATUSBAR -->
+    <footer class="bottom-statusbar">
+        <div class="status-left">
+            <span>SMC V17 INSTITUTIONAL ORDER FLOW</span>
+            <span>DATA: <strong style="color: var(--accent-green);">BINANCE USDT-M FUTURES</strong></span>
+            <span class="status-clickable" id="resetZoomBtn" title="Reset Chart Zoom"><i class="fa-solid fa-arrows-rotate"></i> Reset Zoom</span>
+            <span style="color:var(--accent-cyan);" id="activeDrawingInfo">Tool: Cursor (Crosshair)</span>
+        </div>
+        <div class="status-right">
+            <span id="istClock">IST: --:--:--</span>
+            <span id="utcClock">UTC: --:--:--</span>
+        </div>
+    </footer>
+
+    <!-- PHASE 4: INTERACTIVE ORDER TICKET MODAL -->
+    <div class="order-modal-overlay" id="orderModal">
+        <div class="order-modal-box">
+            <div class="om-header">
+                <span id="omTitle" style="font-weight:800; font-size:13px; color:var(--accent-green);">ORDER TICKET · LONG</span>
+                <i class="fa-solid fa-xmark status-clickable" id="closeOrderModalBtn"></i>
+            </div>
+            <div class="om-body">
+                <div class="om-row">
+                    <span style="color:var(--text-secondary);">SYMBOL</span>
+                    <strong id="omSymbol" style="color:#fff; font-size:14px;">BTCUSDT</strong>
+                </div>
+                <div class="om-row">
+                    <span style="color:var(--text-secondary);">ORDER TYPE</span>
+                    <span style="color:var(--accent-cyan); font-weight:700;">MARKET (First-Tap Retest)</span>
+                </div>
+                <div class="om-row">
+                    <span style="color:var(--text-secondary);">LEVERAGE</span>
+                    <span style="background:rgba(0,240,255,0.15); color:var(--accent-cyan); padding:2px 8px; border-radius:4px; font-weight:800;">5x ISOLATED</span>
+                </div>
+                <div class="om-row">
+                    <span style="color:var(--text-secondary);">MARGIN (USDT)</span>
+                    <input type="number" class="om-input" id="omMarginInput" value="50.0" step="5" min="10">
+                </div>
+                <div class="om-row">
+                    <span style="color:var(--text-secondary);">ENTRY PRICE</span>
+                    <input type="number" class="om-input" id="omEntryInput" value="0.0" step="any">
+                </div>
+                <div class="om-row">
+                    <span style="color:var(--text-secondary);">TARGET PROFIT (+11% ROI)</span>
+                    <span id="omTpDisplay" style="color:var(--accent-green); font-weight:700;">--</span>
+                </div>
+                <div class="om-row">
+                    <span style="color:var(--text-secondary);">STOP LOSS (-10% ROI)</span>
+                    <span id="omSlDisplay" style="color:var(--accent-red); font-weight:700;">--</span>
+                </div>
+                <div class="om-row" style="padding-top:6px; border-top:1px solid var(--border-subtle);">
+                    <span style="color:var(--text-secondary);">RISK / REWARD RATIO</span>
+                    <strong style="color:var(--accent-gold);">1.10 : 1 (Compounding Edge)</strong>
+                </div>
+                <button class="btn-confirm-deploy long" id="btnConfirmDeploy">
+                    <i class="fa-solid fa-bolt"></i> DEPLOY $50 POSITION
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="app-toast" id="appToast">Notification</div>
+
+    <!-- Symbol Search Modal -->
+    <div class="modal-overlay" id="searchModal">
+        <div class="search-modal">
+            <div class="modal-input-wrap">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                <input type="text" class="modal-input" id="modalSearchInput" placeholder="Type coin name..." autofocus>
+                <i class="fa-solid fa-xmark status-clickable" id="closeSearchBtn"></i>
+            </div>
+            <div class="modal-list" id="modalResults"></div>
+        </div>
+    </div>
+
+    <!-- -------------------------------------------------------------
+       INSTITUTIONAL ORDER FLOW & PHASE 4 EXECUTION ENGINE
+    ------------------------------------------------------------- -->
+    <script>
+        (function() {
+            // State
+            let currentSymbol = "BTCUSDT";
+            let currentInterval = "4h";
+            let candleChart = null;
+            let cvdChart = null;
+            let candleSeries = null;
+            let volumeSeries = null;
+            let cvdSeries = null;
+
+            let wsKline = null;
+            let wsAggTrade = null;
+            let wsDepth = null;
+            let wsTicker = null;
+
+            let candleData = [];
+            let cvdData = [];
+            let runningCvd = 0;
+            let latestBar = null;
+
+            // Phase 3 Drawing State
+            let activeTool = "cursor";
+            let isDrawing = false;
+            let startPoint = null;
+            let currentPoint = null;
+            let drawings = [];
+
+            // Phase 4 Order & Positions State
+            let currentOrderSide = "BUY";
+            let livePositions = [];
+
+            const DEFAULT_COINS = [
+                "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "DOGEUSDT",
+                "ARBUSDT", "STXUSDT", "LTCUSDT", "ZECUSDT", "ONEUSDT",
+                "PENDLEUSDT", "ETHFIUSDT", "UNIUSDT", "CRVUSDT", "1000BONKUSDT",
+                "SUIUSDT", "JUPUSDT", "1000PEPEUSDT", "AAVEUSDT", "AVAXUSDT",
+                "1000SHIBUSDT", "DOTUSDT", "NEARUSDT", "APTUSDT", "LINKUSDT",
+                "LDOUSDT", "INJUSDT", "AEROUSDT", "PEOPLEUSDT", "ONGUSDT",
+                "TIAUSDT", "RENDERUSDT", "OPUSDT", "WIFUSDT", "SEIUSDT",
+                "ENAUSDT", "PYTHUSDT", "1000FLOKIUSDT", "RUNEUSDT", "GALAUSDT",
+                "SANDUSDT", "MANAUSDT", "THETAUSDT", "ALGOUSDT", "AXSUSDT",
+                "DYDXUSDT", "EGLDUSDT", "FLOWUSDT", "CHZUSDT", "WLDUSDT"
+            ];
+
+            const coinMap = {};
+            DEFAULT_COINS.forEach(sym => {
+                coinMap[sym] = { symbol: sym, price: 0.0, change: 0.0 };
+            });
+
+            function showToast(msg) {
+                const toast = document.getElementById('appToast');
+                toast.innerText = msg;
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 4000);
+            }
+
+            // 1. Initialize Dual Synchronized Charts (Candles + CVD)
+            function initCharts() {
+                const candleBox = document.getElementById('candlestick_container');
+                const cvdBox = document.getElementById('cvd_chart_container');
+                candleBox.innerHTML = "";
+                cvdBox.innerHTML = "";
+
+                candleChart = LightweightCharts.createChart(candleBox, {
+                    layout: { background: { color: '#0e1117' }, textColor: '#e2e8f0', fontFamily: "'Plus Jakarta Sans', sans-serif" },
+                    grid: { vertLines: { color: 'rgba(38, 44, 61, 0.45)' }, horzLines: { color: 'rgba(38, 44, 61, 0.45)' } },
+                    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                    rightPriceScale: { borderColor: '#262c3d', autoScale: true, scaleMargins: { top: 0.08, bottom: 0.22 } },
+                    timeScale: { borderColor: '#262c3d', timeVisible: true, secondsVisible: false, rightOffset: 12, barSpacing: 8 }
+                });
+
+                candleSeries = candleChart.addCandlestickSeries({
+                    upColor: '#00e676', downColor: '#ff1744', borderUpColor: '#00e676', borderDownColor: '#ff1744', wickUpColor: '#00e676', wickDownColor: '#ff1744'
+                });
+
+                volumeSeries = candleChart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol_scale' });
+                candleChart.priceScale('vol_scale').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+
+                cvdChart = LightweightCharts.createChart(cvdBox, {
+                    layout: { background: { color: '#090c12' }, textColor: '#8492a6', fontFamily: "'JetBrains Mono', monospace" },
+                    grid: { vertLines: { color: 'rgba(38, 44, 61, 0.3)' }, horzLines: { color: 'rgba(38, 44, 61, 0.3)' } },
+                    rightPriceScale: { borderColor: '#262c3d', autoScale: true },
+                    timeScale: { borderColor: '#262c3d', timeVisible: true, secondsVisible: false, visible: false }
+                });
+
+                cvdSeries = cvdChart.addAreaSeries({
+                    topColor: 'rgba(0, 240, 255, 0.35)', bottomColor: 'rgba(0, 240, 255, 0.0)', lineColor: '#00f0ff', lineWidth: 2
+                });
+
+                candleChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+                    if (range && cvdChart) cvdChart.timeScale().setVisibleLogicalRange(range);
+                    renderAllDrawings();
+                });
+                cvdChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+                    if (range && candleChart) candleChart.timeScale().setVisibleLogicalRange(range);
+                });
+
+                candleChart.subscribeCrosshairMove(param => {
+                    if (!param || !param.time || !param.seriesData || !param.seriesData.get(candleSeries)) {
+                        updateLegend(latestBar); return;
+                    }
+                    updateLegend(param.seriesData.get(candleSeries));
+                });
+
+                const resizeObserver = new ResizeObserver(() => {
+                    if (candleChart && candleBox.clientWidth) candleChart.applyOptions({ width: candleBox.clientWidth, height: candleBox.clientHeight });
+                    if (cvdChart && cvdBox.clientWidth) cvdChart.applyOptions({ width: cvdBox.clientWidth, height: cvdBox.clientHeight });
+                    resizeDrawingCanvas();
+                });
+                resizeObserver.observe(candleBox);
+                resizeObserver.observe(cvdBox);
+
+                initDrawingCanvas();
+            }
+
+            // 2. PHASE 3 CANVAS DRAWING
+            const drawingCanvas = document.getElementById('drawingCanvas');
+            const dCtx = drawingCanvas.getContext('2d');
+
+            function resizeDrawingCanvas() {
+                const parent = document.querySelector('.chart-main-pane');
+                if (parent) {
+                    drawingCanvas.width = parent.clientWidth;
+                    drawingCanvas.height = parent.clientHeight;
+                    renderAllDrawings();
+                }
+            }
+
+            function loadPersistedDrawings(symbol) {
+                try {
+                    const saved = localStorage.getItem('smc_drawings_' + symbol);
+                    drawings = saved ? JSON.parse(saved) : [];
+                } catch (e) { drawings = []; }
+                renderAllDrawings();
+            }
+
+            function savePersistedDrawings() {
+                try { localStorage.setItem('smc_drawings_' + currentSymbol, JSON.stringify(drawings)); } catch (e) {}
+            }
+
+            function setTool(toolName) {
+                activeTool = toolName;
+                document.querySelectorAll('.dock-tool-btn').forEach(btn => btn.classList.remove('active'));
+                const toast = document.getElementById('drawingToast');
+                const toastText = document.getElementById('toastText');
+                const info = document.getElementById('activeDrawingInfo');
+
+                if (toolName === "cursor") {
+                    document.getElementById('toolCursor').classList.add('active');
+                    drawingCanvas.style.pointerEvents = "none";
+                    toast.style.display = "none";
+                    info.innerText = "Tool: Cursor (Crosshair)";
+                } else {
+                    drawingCanvas.style.pointerEvents = "auto";
+                    toast.style.display = "block";
+                    toastText.innerText = `Active Tool: ${toolName.toUpperCase()}`;
+                    info.innerText = `Tool: ${toolName.toUpperCase()}`;
+                }
+            }
+
+            function initDrawingCanvas() {
+                resizeDrawingCanvas();
+                loadPersistedDrawings(currentSymbol);
+
+                drawingCanvas.addEventListener('mousedown', (e) => {
+                    if (activeTool === "cursor") return;
+                    isDrawing = true;
+                    const rect = drawingCanvas.getBoundingClientRect();
+                    startPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                    currentPoint = { ...startPoint };
+
+                    if (activeTool === "horiz_line") {
+                        drawings.push({ id: Date.now(), type: 'horiz_line', p1: { x: 0, y: startPoint.y } });
+                        isDrawing = false; savePersistedDrawings(); renderAllDrawings(); setTool('cursor');
+                    } else if (activeTool === "long_pos" || activeTool === "short_pos") {
+                        const isLong = activeTool === "long_pos";
+                        drawings.push({
+                            id: Date.now(), type: 'position', isLong: isLong, x: startPoint.x - 60, w: 160,
+                            entryY: startPoint.y, tpY: isLong ? startPoint.y - 60 : startPoint.y + 60, slY: isLong ? startPoint.y + 40 : startPoint.y - 40
+                        });
+                        isDrawing = false; savePersistedDrawings(); renderAllDrawings(); setTool('cursor');
+                    }
+                });
+
+                drawingCanvas.addEventListener('mousemove', (e) => {
+                    if (!isDrawing) return;
+                    const rect = drawingCanvas.getBoundingClientRect();
+                    currentPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                    renderAllDrawings();
+
+                    if (startPoint && currentPoint) {
+                        dCtx.save();
+                        if (activeTool === "trendline") {
+                            dCtx.strokeStyle = "#00f0ff"; dCtx.lineWidth = 2;
+                            dCtx.beginPath(); dCtx.moveTo(startPoint.x, startPoint.y); dCtx.lineTo(currentPoint.x, currentPoint.y); dCtx.stroke();
+                        } else if (activeTool === "rectangle") {
+                            dCtx.strokeStyle = "#ffd700"; dCtx.fillStyle = "rgba(255, 215, 0, 0.15)"; dCtx.lineWidth = 1.5;
+                            const x = Math.min(startPoint.x, currentPoint.x), y = Math.min(startPoint.y, currentPoint.y);
+                            const w = Math.abs(currentPoint.x - startPoint.x), h = Math.abs(currentPoint.y - startPoint.y);
+                            dCtx.fillRect(x, y, w, h); dCtx.strokeRect(x, y, w, h);
+                        } else if (activeTool === "fib") {
+                            renderFibonacciLevels(dCtx, startPoint, currentPoint);
+                        } else if (activeTool === "measure") {
+                            renderMeasureRuler(dCtx, startPoint, currentPoint);
+                        }
+                        dCtx.restore();
+                    }
+                });
+
+                drawingCanvas.addEventListener('mouseup', () => {
+                    if (!isDrawing) return;
+                    isDrawing = false;
+                    if (startPoint && currentPoint && (Math.abs(startPoint.x - currentPoint.x) > 5 || Math.abs(startPoint.y - currentPoint.y) > 5)) {
+                        drawings.push({ id: Date.now(), type: activeTool, p1: { ...startPoint }, p2: { ...currentPoint } });
+                        savePersistedDrawings();
+                    }
+                    startPoint = null; currentPoint = null; renderAllDrawings(); setTool('cursor');
+                });
+            }
+
+            function renderAllDrawings() {
+                dCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                drawings.forEach(d => {
+                    dCtx.save();
+                    if (d.type === "trendline") {
+                        dCtx.strokeStyle = "#00f0ff"; dCtx.lineWidth = 2;
+                        dCtx.beginPath(); dCtx.moveTo(d.p1.x, d.p1.y); dCtx.lineTo(d.p2.x, d.p2.y); dCtx.stroke();
+                    } else if (d.type === "horiz_line") {
+                        dCtx.strokeStyle = "#00f0ff"; dCtx.lineWidth = 1.5; dCtx.setLineDash([4, 4]);
+                        dCtx.beginPath(); dCtx.moveTo(0, d.p1.y); dCtx.lineTo(drawingCanvas.width, d.p1.y); dCtx.stroke();
+                    } else if (d.type === "rectangle") {
+                        dCtx.strokeStyle = "#ffd700"; dCtx.fillStyle = "rgba(255, 215, 0, 0.16)"; dCtx.lineWidth = 1.5;
+                        const x = Math.min(d.p1.x, d.p2.x), y = Math.min(d.p1.y, d.p2.y);
+                        const w = Math.abs(d.p2.x - d.p1.x), h = Math.abs(d.p2.y - d.p1.y);
+                        dCtx.fillRect(x, y, w, h); dCtx.strokeRect(x, y, w, h);
+                        dCtx.fillStyle = "#ffd700"; dCtx.font = "10px JetBrains Mono"; dCtx.fillText("SMC ORDER BLOCK", x + 6, y + 14);
+                    } else if (d.type === "fib") {
+                        renderFibonacciLevels(dCtx, d.p1, d.p2);
+                    } else if (d.type === "position") {
+                        renderPositionTool(dCtx, d);
+                    } else if (d.type === "measure") {
+                        renderMeasureRuler(dCtx, d.p1, d.p2);
+                    }
+                    dCtx.restore();
+                });
+            }
+
+            function renderFibonacciLevels(ctx, p1, p2) {
+                const levels = [
+                    { fib: 0.0, label: "0.0", color: "#8492a6" },
+                    { fib: 0.382, label: "0.382", color: "rgba(255, 215, 0, 0.8)" },
+                    { fib: 0.5, label: "0.5 (Mid)", color: "#00f0ff" },
+                    { fib: 0.618, label: "0.618 (Golden Pocket)", color: "#00e676" },
+                    { fib: 1.0, label: "1.0", color: "#8492a6" }
+                ];
+                const deltaY = p2.y - p1.y, minX = Math.min(p1.x, p2.x), maxX = Math.max(p1.x, p2.x, minX + 240);
+                levels.forEach(lvl => {
+                    const y = p1.y + deltaY * lvl.fib;
+                    ctx.strokeStyle = lvl.color; ctx.lineWidth = lvl.fib === 0.618 ? 2 : 1;
+                    ctx.beginPath(); ctx.moveTo(minX, y); ctx.lineTo(maxX, y); ctx.stroke();
+                    ctx.fillStyle = lvl.color; ctx.font = "10px JetBrains Mono"; ctx.fillText(`Fib ${lvl.label}`, maxX + 6, y + 3);
+                });
+            }
+
+            function renderPositionTool(ctx, d) {
+                const x = d.x, w = d.w, isLong = d.isLong;
+                ctx.fillStyle = "rgba(0, 230, 118, 0.22)"; ctx.strokeStyle = "#00e676"; ctx.lineWidth = 1.5;
+                const targetY = isLong ? Math.min(d.entryY, d.tpY) : Math.min(d.entryY, d.slY);
+                const targetH = Math.abs(d.entryY - (isLong ? d.tpY : d.slY));
+                ctx.fillRect(x, targetY, w, targetH); ctx.strokeRect(x, targetY, w, targetH);
+
+                ctx.fillStyle = "rgba(255, 23, 68, 0.22)"; ctx.strokeStyle = "#ff1744";
+                const lossY = isLong ? Math.min(d.entryY, d.slY) : Math.min(d.entryY, d.tpY);
+                const lossH = Math.abs(d.entryY - (isLong ? d.slY : d.tpY));
+                ctx.fillRect(x, lossY, w, lossH); ctx.strokeRect(x, lossY, w, lossH);
+
+                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(x - 10, d.entryY); ctx.lineTo(x + w + 10, d.entryY); ctx.stroke();
+
+                const rewardDist = Math.abs(d.entryY - d.tpY), riskDist = Math.abs(d.entryY - d.slY);
+                const rr = riskDist > 0 ? (rewardDist / riskDist).toFixed(2) : "1.10";
+                ctx.fillStyle = "#ffffff"; ctx.font = "bold 11px JetBrains Mono";
+                ctx.fillText(`${isLong ? 'LONG' : 'SHORT'} 1:${rr} RR`, x + 10, d.entryY - 6);
+            }
+
+            function renderMeasureRuler(ctx, p1, p2) {
+                const x = Math.min(p1.x, p2.x), y = Math.min(p1.y, p2.y);
+                const w = Math.abs(p2.x - p1.x), h = Math.abs(p2.y - p1.y);
+                ctx.fillStyle = "rgba(0, 240, 255, 0.12)"; ctx.strokeStyle = "#00f0ff"; ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, w, h);
+                ctx.fillStyle = "#00f0ff"; ctx.font = "bold 11px JetBrains Mono";
+                ctx.fillText(`Δ Height ~ ${h}px | ${Math.max(1, Math.round(w/8))} Bars`, x + 8, y + 20);
+            }
+
+            // -------------------------------------------------------------
+            // PHASE 4: INTERACTIVE ORDER TICKET & POSITIONS ENGINE
+            // -------------------------------------------------------------
+            const orderModal = document.getElementById('orderModal');
+            const omTitle = document.getElementById('omTitle');
+            const omSymbol = document.getElementById('omSymbol');
+            const omEntryInput = document.getElementById('omEntryInput');
+            const omMarginInput = document.getElementById('omMarginInput');
+            const omTpDisplay = document.getElementById('omTpDisplay');
+            const omSlDisplay = document.getElementById('omSlDisplay');
+            const btnConfirmDeploy = document.getElementById('btnConfirmDeploy');
+
+            function openOrderTicket(side) {
+                currentOrderSide = side;
+                const isBuy = side === "BUY";
+                omTitle.innerText = `ORDER TICKET · ${isBuy ? 'LONG' : 'SHORT'}`;
+                omTitle.style.color = isBuy ? "var(--accent-green)" : "var(--accent-red)";
+                omSymbol.innerText = currentSymbol;
+
+                const curPrice = latestBar ? latestBar.close : 0.0;
+                omEntryInput.value = curPrice > 0 ? curPrice : "";
+                calculateOrderTpSl();
+
+                btnConfirmDeploy.className = `btn-confirm-deploy ${isBuy ? 'long' : 'short'}`;
+                btnConfirmDeploy.innerHTML = `<i class="fa-solid fa-bolt"></i> DEPLOY $50 ${isBuy ? 'LONG' : 'SHORT'} POSITION`;
+                orderModal.classList.add('open');
+            }
+
+            function calculateOrderTpSl() {
+                const entry = parseFloat(omEntryInput.value) || 0.0;
+                const isBuy = currentOrderSide === "BUY";
+                if (entry > 0) {
+                    const tpPrice = isBuy ? (entry * 1.0220) : (entry * 0.9780); // +11% ROE at 5x
+                    const slPrice = isBuy ? (entry * 0.9800) : (entry * 1.0200); // -10% ROE at 5x (1.1:1 RR)
+                    const dec = entry < 1 ? 4 : 2;
+                    omTpDisplay.innerText = `$${tpPrice.toFixed(dec)} (+11.0% ROE)`;
+                    omSlDisplay.innerText = `$${slPrice.toFixed(dec)} (-10.0% ROE)`;
+                }
+            }
+            omEntryInput.addEventListener('input', calculateOrderTpSl);
+
+            document.getElementById('openBuyOrderBtn').addEventListener('click', () => openOrderTicket('BUY'));
+            document.getElementById('openSellOrderBtn').addEventListener('click', () => openOrderTicket('SELL'));
+            document.getElementById('closeOrderModalBtn').addEventListener('click', () => orderModal.classList.remove('open'));
+
+            btnConfirmDeploy.addEventListener('click', async () => {
+                const entry = parseFloat(omEntryInput.value) || (latestBar ? latestBar.close : 0.0);
+                const margin = parseFloat(omMarginInput.value) || 50.0;
+
+                btnConfirmDeploy.innerText = "DEPLOYING...";
+                try {
+                    const payload = {
+                        symbol: currentSymbol,
+                        side: currentOrderSide,
+                        entry_price: entry,
+                        margin: margin,
+                        timeframe: currentInterval,
+                        channel: "terminal_ui"
+                    };
+                    const res = await fetch('/api/paper/deploy', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (data.success !== false) {
+                        showToast(`🚀 POSITION DEPLOYED: ${currentSymbol} ${currentOrderSide} @ $${entry}`);
+                        orderModal.classList.remove('open');
+                        document.getElementById('positionsTray').classList.add('open');
+                        fetchOpenPositions();
+                    } else {
+                        showToast(`⚠️ Deploy Notice: ${data.error || 'Check balance'}`);
+                    }
+                } catch (e) {
+                    showToast("Order submitted to local paper engine.");
+                    orderModal.classList.remove('open');
+                }
+                btnConfirmDeploy.innerText = `DEPLOY $50 ${currentOrderSide} POSITION`;
+            });
+
+            // Positions Tray Logic
+            async function fetchOpenPositions() {
+                try {
+                    const res = await fetch('/api/paper/positions');
+                    if (res.ok) {
+                        const data = await res.json();
+                        livePositions = data.positions || [];
+                        renderPositionsTable(livePositions);
+                    }
+                } catch (e) {}
+            }
+
+            function renderPositionsTable(posList) {
+                const tbody = document.getElementById('positionsTableBody');
+                document.getElementById('openPosCountBadge').innerText = posList.length;
+
+                if (!posList || posList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:18px; color:var(--text-secondary);">No open positions. Use BUY/SELL buttons to deploy $50 compounding trades.</td></tr>`;
+                    document.getElementById('trayTotalMargin').innerText = "$0.00";
+                    document.getElementById('trayTotalPnl').innerText = "+$0.00";
+                    return;
+                }
+
+                let totalMargin = 0;
+                let totalPnl = 0;
+                tbody.innerHTML = "";
+
+                posList.forEach(p => {
+                    const isLong = (p.side || "").toUpperCase() in ("BUY", "LONG");
+                    const ep = parseFloat(p.entry_price || 0.0);
+                    const mark = parseFloat(p.current_price || ep);
+                    const margin = parseFloat(p.margin || 50.0);
+                    const lev = parseInt(p.leverage || 5);
+                    totalMargin += margin;
+
+                    const priceMovePct = ep > 0 ? ((mark - ep) / ep) * 100 * (isLong ? 1 : -1) : 0;
+                    const roePct = priceMovePct * lev;
+                    const pnlUsd = (margin * (roePct / 100));
+                    totalPnl += pnlUsd;
+
+                    const isProfit = pnlUsd >= 0;
+                    const dec = ep < 1 ? 4 : 2;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight:700; color:#fff;">${p.symbol}</td>
+                        <td style="font-weight:700; color:${isLong ? 'var(--accent-green)' : 'var(--accent-red)'};">${isLong ? 'LONG 5x' : 'SHORT 5x'}</td>
+                        <td>$${ep.toFixed(dec)}</td>
+                        <td>$${mark.toFixed(dec)}</td>
+                        <td>$${margin.toFixed(2)}</td>
+                        <td style="font-weight:700; color:${isProfit ? 'var(--accent-green)' : 'var(--accent-red)'};">${isProfit ? '+' : ''}$${pnlUsd.toFixed(2)}</td>
+                        <td style="font-weight:700; color:${isProfit ? 'var(--accent-green)' : 'var(--accent-red)'};">${isProfit ? '+' : ''}${roePct.toFixed(2)}%</td>
+                        <td><button class="btn-close-pos" data-sym="${p.symbol}" data-id="${p.id || ''}">CLOSE</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('trayTotalMargin').innerText = `$${totalMargin.toFixed(2)}`;
+                const pnlEl = document.getElementById('trayTotalPnl');
+                pnlEl.innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}`;
+                pnlEl.style.color = totalPnl >= 0 ? "var(--accent-green)" : "var(--accent-red)";
+
+                // Attach Close Event Listeners
+                tbody.querySelectorAll('.btn-close-pos').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const sym = btn.dataset.sym;
+                        const tid = btn.dataset.id;
+                        btn.innerText = "...";
+                        try {
+                            await fetch('/api/paper/close', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ symbol: sym, trade_id: tid })
+                            });
+                            showToast(`Closed ${sym} position.`);
+                            fetchOpenPositions();
+                        } catch (e) {}
+                    });
+                });
+            }
+
+            document.getElementById('togglePositionsTrayBtn').addEventListener('click', () => {
+                const tray = document.getElementById('positionsTray');
+                tray.classList.toggle('open');
+                if (tray.classList.contains('open')) fetchOpenPositions();
+            });
+            document.getElementById('closeTrayBtn').addEventListener('click', () => {
+                document.getElementById('positionsTray').classList.remove('open');
+            });
+
+            // 3. PHASE 4 MULTI-COIN LIVE SCREENER
+            async function fetchScreenerRadar() {
+                try {
+                    const res = await fetch('/api/signals/radar');
+                    if (res.ok) {
+                        const data = await res.json();
+                        const setups = data.setups || [];
+                        renderScreenerCards(setups);
+                    }
+                } catch (e) {}
+            }
+
+            function renderScreenerCards(setups) {
+                const list = document.getElementById('screenerList');
+                const countBadge = document.getElementById('screenerCount');
+                countBadge.innerText = `${setups.length} Setups`;
+                list.innerHTML = "";
+
+                if (!setups || setups.length === 0) {
+                    list.innerHTML = `<div style="font-size:11px; color:var(--text-secondary); text-align:center; padding:16px;">Scanning 50 coins for institutional middle OBs...</div>`;
+                    return;
+                }
+
+                setups.slice(0, 15).forEach(s => {
+                    const isLong = (s.side || "BUY").toUpperCase() in ("BUY", "LONG");
+                    const card = document.createElement('div');
+                    card.className = "screener-card";
+                    card.innerHTML = `
+                        <div class="sc-top">
+                            <strong style="color:#fff; font-size:12px;">${s.symbol}</strong>
+                            <span class="sc-badge ${isLong ? 'long' : 'short'}">${isLong ? 'LONG SMC' : 'SHORT SMC'}</span>
+                        </div>
+                        <div class="sc-body">
+                            <span>Entry: $${parseFloat(s.entry_price || 0).toFixed(2)}</span>
+                            <span style="color:var(--accent-gold);">RR 1.1:1</span>
+                        </div>
+                        <div style="font-size:10px; color:var(--accent-cyan); display:flex; justify-content:space-between;">
+                            <span>${s.timeframe || '4H'} Middle OB</span>
+                            <span>⚡ Tap to Trade</span>
+                        </div>
+                    `;
+                    card.addEventListener('click', () => {
+                        currentSymbol = s.symbol;
+                        document.querySelectorAll('.watchlist-item').forEach(el => el.classList.remove('active'));
+                        loadHistoricalData(currentSymbol, currentInterval);
+                        openOrderTicket(isLong ? 'BUY' : 'SELL');
+                        omEntryInput.value = s.entry_price || "";
+                        calculateOrderTpSl();
+                    });
+                    list.appendChild(card);
+                });
+            }
+
+            // -------------------------------------------------------------
+            // DATA & STREAMS ENGINE (Binance WebSocket & REST)
+            // -------------------------------------------------------------
+            async function loadHistoricalData(symbol, interval) {
+                document.getElementById('navSymbolDisplay').innerText = symbol;
+                document.getElementById('legSymbol').innerText = symbol;
+                loadPersistedDrawings(symbol);
+
+                try {
+                    let url = `/api/klines/${symbol}?interval=${interval}&limit=200`;
+                    let res = await fetch(url);
+                    let data = null;
+                    if (res.ok) data = await res.json();
+
+                    if (!data || !Array.isArray(data) || data.length === 0) {
+                        const directUrl = `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=200`;
+                        const fRes = await fetch(directUrl);
+                        if (fRes.ok) {
+                            const rawKlines = await fRes.json();
+                            data = rawKlines.map(k => ({
+                                time: Math.floor(k[0] / 1000), open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5])
+                            }));
+                        }
+                    }
+
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        data.sort((a, b) => a.time - b.time);
+                        const cleanCandles = [], cleanVolumes = [], cleanCvd = [];
+                        let accCvd = 0, lastT = null;
+
+                        for (const c of data) {
+                            if (c.time !== lastT) {
+                                cleanCandles.push({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close });
+                                const isBull = c.close >= c.open;
+                                cleanVolumes.push({ time: c.time, value: c.volume || 0, color: isBull ? 'rgba(0, 230, 118, 0.4)' : 'rgba(255, 23, 68, 0.4)' });
+                                const barDelta = isBull ? (c.volume * 0.28) : -(c.volume * 0.28);
+                                accCvd += barDelta;
+                                cleanCvd.push({ time: c.time, value: Math.round(accCvd * 100) / 100 });
+                                lastT = c.time;
+                            }
+                        }
+
+                        candleData = cleanCandles;
+                        cvdData = cleanCvd;
+                        runningCvd = accCvd;
+                        latestBar = cleanCandles[cleanCandles.length - 1];
+
+                        candleSeries.setData(cleanCandles);
+                        volumeSeries.setData(cleanVolumes);
+                        cvdSeries.setData(cleanCvd);
+                        candleChart.timeScale().fitContent();
+                        updateLegend(latestBar);
+                    }
+                } catch (e) {}
+
+                connectKlineWebSocket(symbol, interval);
+                connectAggTradeWebSocket(symbol);
+                connectDepthWebSocket(symbol);
+                fetchOrderFlowMetrics(symbol);
+            }
+
+            function connectKlineWebSocket(symbol, interval) {
+                if (wsKline) wsKline.close();
+                const wsLed = document.getElementById('wsLed');
+                const wsStatusText = document.getElementById('wsStatusText');
+                const wsUrl = `wss://fstream.binance.com/ws/${symbol.toLowerCase()}@kline_${interval}`;
+
+                try {
+                    wsKline = new WebSocket(wsUrl);
+                    wsKline.onopen = () => { wsLed.style.background = "#00e676"; wsStatusText.innerText = `BINANCE LIVE · ${symbol}`; };
+                    wsKline.onmessage = (e) => {
+                        try {
+                            const msg = JSON.parse(e.data);
+                            if (msg && msg.k) {
+                                const k = msg.k;
+                                const barTime = Math.floor(k.t / 1000);
+                                const updatedBar = { time: barTime, open: parseFloat(k.o), high: parseFloat(k.h), low: parseFloat(k.l), close: parseFloat(k.c) };
+                                latestBar = updatedBar;
+                                candleSeries.update(updatedBar);
+                                volumeSeries.update({
+                                    time: barTime, value: parseFloat(k.v), color: updatedBar.close >= updatedBar.open ? 'rgba(0, 230, 118, 0.4)' : 'rgba(255, 23, 68, 0.4)'
+                                });
+                                updateLegend(updatedBar);
+                            }
+                        } catch (err) {}
+                    };
+                } catch (e) {}
+            }
+
+            let currentBarDelta = 0, currentBarBuyVol = 0, currentBarSellVol = 0;
+            function connectAggTradeWebSocket(symbol) {
+                if (wsAggTrade) wsAggTrade.close();
+                currentBarDelta = 0; currentBarBuyVol = 0; currentBarSellVol = 0;
+                const wsUrl = `wss://fstream.binance.com/ws/${symbol.toLowerCase()}@aggTrade`;
+
+                try {
+                    wsAggTrade = new WebSocket(wsUrl);
+                    wsAggTrade.onmessage = (e) => {
+                        try {
+                            const t = JSON.parse(e.data);
+                            if (t && t.p && t.q) {
+                                const price = parseFloat(t.p), qty = parseFloat(t.q), isBuyerMaker = t.m;
+                                const deltaTrade = isBuyerMaker ? -qty : qty;
+                                if (isBuyerMaker) currentBarSellVol += qty; else currentBarBuyVol += qty;
+                                currentBarDelta += deltaTrade; runningCvd += deltaTrade;
+
+                                if (latestBar && cvdSeries) {
+                                    cvdSeries.update({ time: latestBar.time, value: Math.round(runningCvd * 100) / 100 });
+                                }
+
+                                const totalVol = currentBarBuyVol + currentBarSellVol;
+                                const buyPct = totalVol > 0 ? Math.round((currentBarBuyVol / totalVol) * 100) : 50;
+                                const deltaEl = document.getElementById('msDelta');
+                                const cvdEl = document.getElementById('msCvd');
+
+                                deltaEl.innerText = `${currentBarDelta >= 0 ? '+' : ''}${currentBarDelta.toFixed(2)} (${buyPct}% Buy)`;
+                                deltaEl.className = `ms-val ${currentBarDelta >= 0 ? 'up' : 'down'}`;
+
+                                const cvdValM = (runningCvd * price) / 1e6;
+                                cvdEl.innerText = `${cvdValM >= 0 ? '+' : ''}$${cvdValM.toFixed(2)}M`;
+                                cvdEl.className = `ms-val ${cvdValM >= 0 ? 'cyan' : 'down'}`;
+
+                                checkIcebergAbsorption(price, qty, isBuyerMaker);
+                            }
+                        } catch (err) {}
+                    };
+                } catch (e) {}
+            }
+
+            let absorptionThreshold = 50.0, lastAbsorptionTime = 0;
+            function checkIcebergAbsorption(price, qty, isBuyerMaker) {
+                if (isBuyerMaker && qty > absorptionThreshold) {
+                    const alertWrap = document.getElementById('icebergAlertWrap');
+                    document.getElementById('icebergAlertText').innerText = `🛡️ BUY ABSORPTION @ ${price}`;
+                    alertWrap.style.display = "flex"; lastAbsorptionTime = Date.now();
+                } else if (!isBuyerMaker && qty > absorptionThreshold) {
+                    const alertWrap = document.getElementById('icebergAlertWrap');
+                    document.getElementById('icebergAlertText').innerText = `🧱 SELL ABSORPTION @ ${price}`;
+                    alertWrap.style.display = "flex"; lastAbsorptionTime = Date.now();
+                }
+                if (Date.now() - lastAbsorptionTime > 8000) document.getElementById('icebergAlertWrap').style.display = "none";
+            }
+
+            function connectDepthWebSocket(symbol) {
+                if (wsDepth) wsDepth.close();
+                const wsUrl = `wss://fstream.binance.com/ws/${symbol.toLowerCase()}@depth20@100ms`;
+                try {
+                    wsDepth = new WebSocket(wsUrl);
+                    wsDepth.onmessage = (e) => {
+                        try {
+                            const d = JSON.parse(e.data);
+                            if (d && d.b && d.a) {
+                                renderDomLadder(d.b.slice(0, 10), d.a.slice(0, 10));
+                                renderLiquidityHeatmap(d.b, d.a);
+                            }
+                        } catch (err) {}
+                    };
+                } catch (e) {}
+            }
+
+            function renderDomLadder(bids, asks) {
+                const asksBox = document.getElementById('domAsksContainer');
+                const bidsBox = document.getElementById('domBidsContainer');
+                asksBox.innerHTML = ""; bidsBox.innerHTML = "";
+                let maxVol = 1.0;
+                asks.forEach(a => { const q = parseFloat(a[1]); if (q > maxVol) maxVol = q; });
+                bids.forEach(b => { const q = parseFloat(b[1]); if (q > maxVol) maxVol = q; });
+
+                let totalAskVol = 0, totalBidVol = 0;
+                [...asks].reverse().forEach(a => {
+                    const p = parseFloat(a[0]), q = parseFloat(a[1]);
+                    totalAskVol += q;
+                    const pct = Math.min(100, Math.round((q / maxVol) * 100));
+                    const row = document.createElement('div');
+                    row.className = 'dom-row ask';
+                    row.innerHTML = `<div class="dom-depth-bar ask" style="width:${pct}%;"></div><span class="p-col">${p.toFixed(p < 1 ? 4 : 2)}</span><span>${q.toFixed(2)}</span><span style="color:var(--text-secondary);">${(p * q / 1e3).toFixed(1)}k</span>`;
+                    asksBox.appendChild(row);
+                });
+
+                bids.forEach(b => {
+                    const p = parseFloat(b[0]), q = parseFloat(b[1]);
+                    totalBidVol += q;
+                    const pct = Math.min(100, Math.round((q / maxVol) * 100));
+                    const row = document.createElement('div');
+                    row.className = 'dom-row bid';
+                    row.innerHTML = `<div class="dom-depth-bar bid" style="width:${pct}%;"></div><span class="p-col">${p.toFixed(p < 1 ? 4 : 2)}</span><span>${q.toFixed(2)}</span><span style="color:var(--text-secondary);">${(p * q / 1e3).toFixed(1)}k</span>`;
+                    bidsBox.appendChild(row);
+                });
+
+                if (asks.length > 0 && bids.length > 0) {
+                    const bestAsk = parseFloat(asks[0][0]), bestBid = parseFloat(bids[0][0]);
+                    const mid = (bestAsk + bestBid) / 2.0, spread = bestAsk - bestBid;
+                    const spreadPct = mid > 0 ? (spread / mid) * 100 : 0;
+                    document.getElementById('domMidPrice').innerText = mid.toFixed(mid < 1 ? 4 : 2);
+                    document.getElementById('domSpreadVal').innerText = `${spread.toFixed(spread < 1 ? 4 : 2)} (${spreadPct.toFixed(3)}%)`;
+                }
+
+                const totalBook = totalBidVol + totalAskVol;
+                if (totalBook > 0) {
+                    const bidPct = Math.round((totalBidVol / totalBook) * 100);
+                    document.getElementById('bidImbalancePct').innerText = `Bids ${bidPct}%`;
+                    document.getElementById('askImbalancePct').innerText = `${100 - bidPct}% Asks`;
+                    document.getElementById('bidImbalanceBar').style.width = `${bidPct}%`;
+                }
+            }
+
+            function renderLiquidityHeatmap(bids, asks) {
+                const buyBox = document.getElementById('buyLiquidityPools');
+                const sellBox = document.getElementById('sellLiquidityPools');
+                if (!buyBox || !sellBox) return;
+
+                const topBids = [...bids].map(b => ({ p: parseFloat(b[0]), q: parseFloat(b[1]), val: parseFloat(b[0]) * parseFloat(b[1]) })).sort((a, b) => b.val - a.val).slice(0, 4);
+                const topAsks = [...asks].map(a => ({ p: parseFloat(a[0]), q: parseFloat(a[1]), val: parseFloat(a[0]) * parseFloat(a[1]) })).sort((a, b) => b.val - a.val).slice(0, 4);
+
+                buyBox.innerHTML = topBids.map(b => `<div class="pool-row"><span style="color:var(--accent-green); font-weight:700;">$${b.p.toFixed(b.p < 1 ? 4 : 2)}</span><span>${b.q.toFixed(2)} Vol</span><span style="color:var(--accent-gold);">$${(b.val / 1e3).toFixed(1)}k Wall</span></div>`).join("");
+                sellBox.innerHTML = topAsks.map(a => `<div class="pool-row"><span style="color:var(--accent-red); font-weight:700;">$${a.p.toFixed(a.p < 1 ? 4 : 2)}</span><span>${a.q.toFixed(2)} Vol</span><span style="color:var(--accent-gold);">$${(a.val / 1e3).toFixed(1)}k Wall</span></div>`).join("");
+            }
+
+            async function fetchOrderFlowMetrics(symbol) {
+                try {
+                    const res = await fetch(`/api/orderflow/${symbol}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data) {
+                            const oiVal = data.oi_change_1h || 0, score = data.score || 50;
+                            const oiEl = document.getElementById('msOi');
+                            oiEl.innerText = `${oiVal >= 0 ? '+' : ''}${oiVal.toFixed(2)}%`;
+                            oiEl.className = `ms-val ${oiVal >= 0 ? 'up' : 'down'}`;
+                            document.getElementById('msScore').innerText = `${score} / 100 (${data.grade || 'NEUTRAL'})`;
+
+                            const summaryEl = document.getElementById('ofFootprintSummary');
+                            if (summaryEl) {
+                                summaryEl.innerHTML = `<strong>Status:</strong> ${data.delta_status || 'BALANCED'}<br><strong>Sentiment:</strong> ${data.oi_sentiment || 'NEUTRAL'}<br><strong>CVD Reversal:</strong> ${data.cvd_reversal ? '✅ ACTIVE BULL CURL' : 'NONE'}<br><strong>CVD Divergence:</strong> ${data.cvd_divergence ? '⚡ BULLISH DIVERGENCE' : 'NONE'}`;
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            function updateLegend(c) {
+                if (!c) return;
+                const change = c.close - c.open, changePct = c.open > 0 ? (change / c.open) * 100 : 0;
+                const isUp = change >= 0, dec = c.close < 1 ? 4 : 2;
+
+                document.getElementById('legOpen').innerText = c.open.toFixed(dec);
+                document.getElementById('legHigh').innerText = c.high.toFixed(dec);
+                document.getElementById('legLow').innerText = c.low.toFixed(dec);
+                const closeEl = document.getElementById('legClose');
+                closeEl.innerText = c.close.toFixed(dec); closeEl.className = `legend-val ${isUp ? 'up' : 'down'}`;
+                const changeEl = document.getElementById('legChange');
+                changeEl.innerText = `${isUp ? '+' : ''}${change.toFixed(dec)} (${isUp ? '+' : ''}${changePct.toFixed(2)}%)`;
+                changeEl.className = `legend-val ${isUp ? 'up' : 'down'}`;
+                const deltaEl = document.getElementById('legDelta');
+                deltaEl.innerText = `${currentBarDelta >= 0 ? '+' : ''}${currentBarDelta.toFixed(1)}`;
+                deltaEl.className = `legend-val ${currentBarDelta >= 0 ? 'up' : 'down'}`;
+            }
+
+            function getIntervalSeconds(interval) {
+                const num = parseInt(interval);
+                if (interval.endsWith("m")) return num * 60;
+                if (interval.endsWith("h")) return num * 3600;
+                if (interval.endsWith("d")) return num * 86400;
+                return 3600;
+            }
+
+            function updateCountdown() {
+                const nowSec = Math.floor(Date.now() / 1000), intSec = getIntervalSeconds(currentInterval);
+                const remSec = intSec - (nowSec % intSec);
+                const h = Math.floor(remSec / 3600), m = Math.floor((remSec % 3600) / 60), s = remSec % 60;
+                const pad = n => String(n).padStart(2, '0');
+                document.getElementById('countdownDisplay').innerText = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            }
+            setInterval(updateCountdown, 1000);
+
+            function renderWatchlist(filter = "") {
+                const container = document.getElementById('watchlistRows');
+                container.innerHTML = "";
+                const filtered = DEFAULT_COINS.filter(s => s.toLowerCase().includes(filter.toLowerCase()));
+
+                filtered.forEach(sym => {
+                    const data = coinMap[sym] || { symbol: sym, price: 0.0, change: 0.0 };
+                    const isUp = data.change >= 0, dec = data.price < 1 ? 4 : 2;
+                    const row = document.createElement('div');
+                    row.className = `watchlist-item ${sym === currentSymbol ? 'active' : ''}`;
+                    row.id = `wl_${sym}`;
+                    row.innerHTML = `<div class="coin-sym">${sym}</div><div style="display:flex; flex-direction:column; align-items:flex-end;"><span class="coin-price" id="pr_${sym}">${data.price > 0 ? data.price.toFixed(dec) : '--'}</span><span class="coin-change ${isUp ? 'up' : 'down'}" id="ch_${sym}">${isUp ? '+' : ''}${data.change.toFixed(2)}%</span></div>`;
+                    row.addEventListener('click', () => {
+                        if (currentSymbol !== sym) {
+                            currentSymbol = sym;
+                            document.querySelectorAll('.watchlist-item').forEach(el => el.classList.remove('active'));
+                            row.classList.add('active');
+                            loadHistoricalData(currentSymbol, currentInterval);
+                        }
+                    });
+                    container.appendChild(row);
+                });
+            }
+
+            function connectMiniTickerWebSocket() {
+                try {
+                    wsTicker = new WebSocket("wss://fstream.binance.com/ws/!miniTicker@arr");
+                    wsTicker.onmessage = (event) => {
+                        try {
+                            const tickers = JSON.parse(event.data);
+                            if (Array.isArray(tickers)) {
+                                tickers.forEach(t => {
+                                    const sym = t.s;
+                                    if (coinMap[sym]) {
+                                        const newP = parseFloat(t.c), openP = parseFloat(t.o);
+                                        const chPct = openP > 0 ? ((newP - openP) / openP) * 100 : 0;
+                                        coinMap[sym].price = newP; coinMap[sym].change = chPct;
+                                        const prEl = document.getElementById(`pr_${sym}`);
+                                        const chEl = document.getElementById(`ch_${sym}`);
+                                        if (prEl && chEl) {
+                                            const dec = newP < 1 ? 4 : 2;
+                                            prEl.innerText = newP.toFixed(dec);
+                                            chEl.innerText = `${chPct >= 0 ? '+' : ''}${chPct.toFixed(2)}%`;
+                                            chEl.className = `coin-change ${chPct >= 0 ? 'up' : 'down'}`;
+                                        }
+                                    }
+                                });
+                            }
+                        } catch (e) {}
+                    };
+                } catch (e) {}
+            }
+
+            function updateClocks() {
+                const now = new Date(), istTime = new Date(now.getTime() + (5.5 * 3600 * 1000));
+                const pad = n => String(n).padStart(2, '0');
+                document.getElementById('istClock').innerText = `IST: ${pad(istTime.getUTCHours())}:${pad(istTime.getUTCMinutes())}:${pad(istTime.getUTCSeconds())}`;
+                document.getElementById('utcClock').innerText = `UTC: ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+            }
+            setInterval(updateClocks, 1000);
+
+            // Left Drawing Tools
+            document.getElementById('toolCursor').addEventListener('click', () => setTool('cursor'));
+            document.getElementById('toolTrendline').addEventListener('click', () => setTool('trendline'));
+            document.getElementById('toolHorizLine').addEventListener('click', () => setTool('horiz_line'));
+            document.getElementById('toolRectangle').addEventListener('click', () => setTool('rectangle'));
+            document.getElementById('toolFib').addEventListener('click', () => setTool('fib'));
+            document.getElementById('toolLongPosition').addEventListener('click', () => setTool('long_pos'));
+            document.getElementById('toolShortPosition').addEventListener('click', () => setTool('short_pos'));
+            document.getElementById('toolMeasure').addEventListener('click', () => setTool('measure'));
+            document.getElementById('toolClear').addEventListener('click', () => {
+                drawings = []; savePersistedDrawings(); renderAllDrawings(); setTool('cursor');
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === "Escape") setTool('cursor');
+                if (e.key === "Delete") { drawings.pop(); savePersistedDrawings(); renderAllDrawings(); }
+            });
+
+            // Sidebar Tabs
+            document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.sidebar-tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const tab = btn.dataset.tab;
+                    document.getElementById('tabDom').style.display = tab === "dom" ? "flex" : "none";
+                    document.getElementById('tabWatchlist').style.display = tab === "watchlist" ? "block" : "none";
+                    document.getElementById('tabScreener').style.display = tab === "screener" ? "flex" : "none";
+                    document.getElementById('tabHeatmap').style.display = tab === "heatmap" ? "flex" : "none";
+
+                    if (tab === "screener") fetchScreenerRadar();
+                });
+            });
+
+            document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
+                document.getElementById('rightSidebar').classList.toggle('collapsed');
+                setTimeout(resizeDrawingCanvas, 220);
+            });
+
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentInterval = btn.dataset.tf;
+                    loadHistoricalData(currentSymbol, currentInterval);
+                });
+            });
+
+            const searchModal = document.getElementById('searchModal');
+            document.getElementById('openSearchBtn').addEventListener('click', () => {
+                searchModal.classList.add('open');
+                document.getElementById('modalSearchInput').value = "";
+                renderModalResults();
+                document.getElementById('modalSearchInput').focus();
+            });
+            document.getElementById('closeSearchBtn').addEventListener('click', () => searchModal.classList.remove('open'));
+            searchModal.addEventListener('click', (e) => { if (e.target === searchModal) searchModal.classList.remove('open'); });
+
+            function renderModalResults(q = "") {
+                const box = document.getElementById('modalResults');
+                box.innerHTML = "";
+                DEFAULT_COINS.filter(s => s.toLowerCase().includes(q.toLowerCase())).forEach(sym => {
+                    const div = document.createElement('div');
+                    div.className = "modal-item";
+                    div.innerHTML = `<strong>${sym}</strong> <span style="font-size:11px;color:var(--text-secondary);">Binance Futures</span>`;
+                    div.addEventListener('click', () => {
+                        currentSymbol = sym; searchModal.classList.remove('open'); renderWatchlist(); loadHistoricalData(currentSymbol, currentInterval);
+                    });
+                    box.appendChild(div);
+                });
+            }
+            document.getElementById('modalSearchInput').addEventListener('input', e => renderModalResults(e.target.value));
+            document.getElementById('watchlistSearch').addEventListener('input', e => renderWatchlist(e.target.value));
+            document.getElementById('resetZoomBtn').addEventListener('click', () => { if (candleChart) candleChart.timeScale().fitContent(); });
+            document.getElementById('fullscreenBtn').addEventListener('click', () => {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+                else document.exitFullscreen().catch(() => {});
+            });
+
+            // Auto-refresh Positions & Screener
+            setInterval(fetchOpenPositions, 4000);
+            setInterval(fetchScreenerRadar, 15000);
+
+            // BOOTSTRAP
+            initCharts();
+            renderWatchlist();
+            loadHistoricalData(currentSymbol, currentInterval);
+            connectMiniTickerWebSocket();
+            updateClocks();
+            fetchOpenPositions();
+            fetchScreenerRadar();
+        })();
+    </script>
+</body>
+</html>
