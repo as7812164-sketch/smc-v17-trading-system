@@ -179,14 +179,15 @@ User Query / Request:
 {user_query if user_query else "Provide an institutional Smart Money breakdown of this setup in Hinglish. Cover Confluence Grade, Multi-Timeframe alignment, Liquidity traps/risks, and execution discipline."}
 """
 
-        model_pref = get_setting("gemini_model", getattr(config, "GEMINI_MODEL", "gemini-3.8-flash") if 'config' in globals() else "gemini-3.8-flash")
+        model_pref = get_setting("gemini_model", GEMINI_MODEL)
         models_to_try = [
             model_pref,
             "gemini-3.8-flash",
-            "gemini-3.5-flash",
+            "gemini-3-flash-preview",
             "gemini-flash-latest",
-            "gemini-3.7-flash",
-            "gemini-2.5-flash"
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash",
+            "gemini-3.7-flash"
         ]
         unique_models = []
         for m in models_to_try:
@@ -194,6 +195,35 @@ User Query / Request:
                 unique_models.append(m)
 
         session = await self.get_session()
+
+        # 1. Try OpenAI-compatible endpoint first
+        openai_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+        openai_headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        for model_name in unique_models:
+            openai_payload = {
+                "model": model_name,
+                "messages": [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.25,
+                "max_tokens": 900
+            }
+            try:
+                req_timeout = aiohttp.ClientTimeout(total=8.0)
+                async with session.post(openai_url, json=openai_payload, headers=openai_headers, timeout=req_timeout) as resp:
+                    if resp.status == 200:
+                        res_data = await resp.json()
+                        choices = res_data.get("choices", [])
+                        if choices:
+                            return choices[0].get("message", {}).get("content", "")
+            except Exception:
+                pass
+
+        # 2. Native endpoint fallback
         payload = {
             "contents": [
                 {"role": "user", "parts": [{"text": SYSTEM_PROMPT + "\n\n" + user_prompt}]}
@@ -367,10 +397,12 @@ User Query / Request:
         model_pref = get_setting("gemini_model", GEMINI_MODEL)
         models_to_try = [
             model_pref,
-            "gemini-2.5-flash",
-            "gemini-2.5-flash-lite",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash"
+            "gemini-3.8-flash",
+            "gemini-3-flash-preview",
+            "gemini-flash-latest",
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash",
+            "gemini-3.7-flash"
         ]
         unique_models = []
         for m in models_to_try:
@@ -378,6 +410,35 @@ User Query / Request:
                 unique_models.append(m)
 
         session = await self.get_session()
+
+        # 1. Try OpenAI-compatible endpoint first
+        openai_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+        openai_headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        for model_name in unique_models:
+            openai_payload = {
+                "model": model_name,
+                "messages": [
+                    {"role": "system", "content": hermes_system_prompt},
+                    {"role": "user", "content": user_content}
+                ],
+                "temperature": 0.3,
+                "max_tokens": 900
+            }
+            try:
+                req_timeout = aiohttp.ClientTimeout(total=8.0)
+                async with session.post(openai_url, json=openai_payload, headers=openai_headers, timeout=req_timeout) as resp:
+                    if resp.status == 200:
+                        res_data = await resp.json()
+                        choices = res_data.get("choices", [])
+                        if choices:
+                            return choices[0].get("message", {}).get("content", "")
+            except Exception:
+                pass
+
+        # 2. Native endpoint fallback
         payload = {
             "contents": [
                 {"role": "user", "parts": [{"text": hermes_system_prompt + "\n\n" + user_content}]}
