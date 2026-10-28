@@ -58,7 +58,14 @@ CHANNEL_MAP = {
     20: ("BITGET", "hermes4_sec_10", "Hermes 4.0 - Section 10 (1H Intraday)", "1h", "HERMES_4.0_BALANCED_APEX"),
 }
 
-def push_vault_state() -> bool:
+_last_vault_push_time = 0
+
+def push_vault_state(force: bool = False) -> bool:
+    global _last_vault_push_time
+    _now = time.time()
+    if not force and (_now - _last_vault_push_time < 90):
+        return True
+    _last_vault_push_time = _now
     """
     Dumps all accounts, open/closed paper trades, and trade journal
     to GitHub branch 'data-vault' and local disk backup.
@@ -196,6 +203,12 @@ def push_vault_state() -> bool:
                 logger.info("Successfully pushed state to Cloud Vault (branch: data-vault)!")
                 return True
 
+    except urllib.error.HTTPError as he:
+        if he.code == 409:
+            logger.debug("Cloud Vault push conflict (409) - remote sha diverged, will re-sync next cycle")
+        else:
+            logger.warning(f"Cloud Vault HTTP error: {he}")
+        return False
     except Exception as e:
         logger.warning(f"Failed to push state to Cloud Vault: {e}")
         return False
