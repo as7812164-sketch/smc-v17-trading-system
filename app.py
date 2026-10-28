@@ -1371,6 +1371,25 @@ async def get_nexus_positions():
 
 
 
+
+@app.get("/api/positions")
+async def get_positions_alias():
+    """Alias for /api/trade/positions and /api/paper/positions."""
+    return await get_futures_positions()
+
+
+@app.get("/api/trades")
+async def get_trades_alias(limit: int = 50):
+    """Alias for /api/trade/history and /api/paper/trades."""
+    return await get_paper_trades_route(limit=limit)
+
+
+@app.get("/api/status")
+async def get_status_alias():
+    """Alias for /api/autotrade/status."""
+    return await get_autotrade_status()
+
+
 @app.get("/api/trade/history")
 
 async def get_nexus_trade_history(limit: int = 50):
