@@ -34,7 +34,7 @@
 | **07** | All Type Of Liquidity Explained In SMC & ICT Part -2 | https://youtu.be/_WEEmT2wgg8 | 🟢 Ingested & Locked | Ep 01-06 | 12-Liquidity Framework, LRL vs HRL, Liquidity Voids, ERL <-> IRL Loop, Daily/Weekly Candle Sweeps/Runs, Asian Kill Zone | living_engine_v07.pine |
 | **08** | Perfect Entry Strategy For SMC & ICT: High Probability Entries | https://youtu.be/rbcLFn07z4k | 🟢 Ingested & Locked | Ep 01-07 | 5 Master Entry Models, Golden Ratio Timeframe Stacking, Displacement (FVG+OB) Law, LTF MSS Wick Break Rule, 3-Candle Swing Myth, Triple Timeframe Alignment | living_engine_v08.pine |
 | **09** | Premium and Discount Zones Explained: The Truth No One Tells You | https://youtu.be/dG5Cwyq2d6Y | 🟢 Ingested & Locked | Ep 01-08 | 40% Technicals vs 60% Psychology/Money Mgmt, Stripped 3-Level Fib (0/0.5/1), Buy Discount / Sell Premium Only Law, 1:3 R:R Sweet Spot, 50% Win Rate Doubling Math, Dynamic Lot Sizing ($100 Account) | living_engine_v09.pine |
-| **10** | *Queued: Video 10* | - | ⏳ Queued | Ep 01-09 | - | - |
+| **10** | Optimal Trade Entry (OTE) Explained \| ICT Golden Zone + Inside Bar Strategy | https://youtu.be/xMNx8f-aGQE | 🟢 Ingested & Locked | Ep 01-09 | OTE Golden Zone (0.618-0.790), Confluence Triad (OTE + OB/FVG/Mitigation), Inside Bar Institutional Doctrine, 1H to 5m Sniper Refinement, 3 Candidate POIs Architecture, Gold 1:20 500-Pip Master Forensic | living_engine_v10.pine |
 | **11** | *Queued: Video 11* | - | ⏳ Queued | Ep 01-10 | - | - |
 | **12** | *Queued: Video 12* | - | ⏳ Queued | Ep 01-11 | - | - |
 | **13** | *Queued: Video 13* | - | ⏳ Queued | Ep 01-12 | - | - |
