@@ -378,8 +378,12 @@ bool isTwoCandleCollapseBull = isBullDisplacement[1] and not na(latestBullFVG) a
 bool isTwoCandleCollapseBear = isBearDisplacement[1] and not na(latestBearFVG) and (high >= latestBearFVG.bottom) and (close < open)
 
 // Valuation Gate Filtering (Episode 09 Law: Buy ONLY in Discount, Sell ONLY in Premium!)
-bool buyAllowedByValuation  = enforceValuation ? (isInDiscount or allowLRL_Bypass) : true
-bool sellAllowedByValuation = enforceValuation ? (isInPremium or allowLRL_Bypass) : true
+// The 1,300-Pip Expansion Candle Exception: High-momentum expansion permits 1st FVG entry near Equilibrium
+bool isExpansionRunBull = (candleBody >= (atrVal * 1.8)) and isBullFVG
+bool isExpansionRunBear = (candleBody >= (atrVal * 1.8)) and isBearFVG
+
+bool buyAllowedByValuation  = enforceValuation ? (isInDiscount or allowLRL_Bypass or isExpansionRunBull) : true
+bool sellAllowedByValuation = enforceValuation ? (isInPremium or allowLRL_Bypass or isExpansionRunBear) : true
 
 if not buyAllowedByValuation
     sigBuyModel1 := false
@@ -480,9 +484,11 @@ if finalBuySignal and not isTradeActive
     activeBEPrice    := close + (slDist * beTriggerRR)  // Breakeven at 1:1.2R
     activeTPPrice    := close + (slDist * targetRR)     // Institutional 1:3 Take Profit
     
-    string buyDetails = "🟢 HERMES LONG (DISCOUNT)\n" + activeSignalModel
+    string buyDetails = "🟢 HERMES LONG (" + (isInDiscount ? "DISCOUNT" : "EXPANSION RUN") + ")\n" + activeSignalModel
     if hasBreakerConfluenceBull
         buyDetails := buyDetails + "\n[+ BREAKER BLOCK CONFLUENCE]"
+    if isExpansionRunBull and not isInDiscount
+        buyDetails := buyDetails + "\n[⚡ EXPANSION RUN - 1,300P RUN EXCEPTION]"
     buyDetails := buyDetails + "\nEntry: " + str.tostring(close, "#.##") + "\nTP (1:3): " + str.tostring(activeTPPrice, "#.##") + " | SL: " + str.tostring(activeSLPrice, "#.##")
     buyDetails := buyDetails + "\nLot Size: " + str.tostring(recLotSize) + " ($" + str.tostring(maxDollarRisk, "#.##") + " Risk)"
     
@@ -497,9 +503,11 @@ if finalSellSignal and not isTradeActive
     activeBEPrice    := close - (slDist * beTriggerRR)
     activeTPPrice    := close - (slDist * targetRR)
     
-    string sellDetails = "🔴 HERMES SHORT (PREMIUM)\n" + activeSignalModel
+    string sellDetails = "🔴 HERMES SHORT (" + (isInPremium ? "PREMIUM" : "EXPANSION RUN") + ")\n" + activeSignalModel
     if hasBreakerConfluenceBear
         sellDetails := sellDetails + "\n[+ BREAKER BLOCK CONFLUENCE]"
+    if isExpansionRunBear and not isInPremium
+        sellDetails := sellDetails + "\n[⚡ EXPANSION RUN - 1,300P RUN EXCEPTION]"
     sellDetails := sellDetails + "\nEntry: " + str.tostring(close, "#.##") + "\nTP (1:3): " + str.tostring(activeTPPrice, "#.##") + " | SL: " + str.tostring(activeSLPrice, "#.##")
     sellDetails := sellDetails + "\nLot Size: " + str.tostring(recLotSize) + " ($" + str.tostring(maxDollarRisk, "#.##") + " Risk)"
     
