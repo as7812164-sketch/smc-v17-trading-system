@@ -1,0 +1,464 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// ██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗    ███╗   ███╗███████╗
+// ██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝    ████╗ ████║██╔════╝
+// ███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗    ██╔████╔██║███████╗
+// ██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║    ██║╚██╔╝██║╚════██║
+// ██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║    ██║ ╚═╝ ██║███████║
+// ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝    ╚═╝     ╚═╝╚══════╝
+// ══════════════════════════════════════════════════════════════════════════════
+// HERMES MS TRADING ORDER BLOCK INDICATOR v2.0
+// Pure Institutional Study & Visual Execution Engine — Based on Shoaib Khan / MS Trading
+// Complete 7-Order Block Architecture | Strong, Weak & Conditional Classification
+// Invalidation Body-Close Rule | Weak OB Wick Sweep Protocol | Dynamic Profit Armor Lines
+// Zero Retail Indicators (No RSI, MACD, EMA) | Native TradingView Alert Conditions
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes MS Trading Order Block Indicator v2.0", "⚡ Hermes MS-OB Indicator", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 1. USER SETTINGS & CONFIGURATION
+// ══════════════════════════════════════════════════════════════════════════════
+grp_ob            = "═══ 1. Order Block Classification Models ═══"
+obTapTrigger      = input.string("First Tap (OB Boundary)", "OB Tap Entry Level", options=["First Tap (OB Boundary)", "50% Mean Threshold (MT)"], group=grp_ob, tooltip="First Tap alerts at outer boundary; 50% MT alerts at the exact equilibrium midpoint.")
+tradeWeakSweeps   = input.bool(true, "Detect Weak OB Wick Sweeps", group=grp_ob, tooltip="Trigger reversal signals when market sweeps a Weak OB wick and rejects with >= 18% rejection wick.")
+showStrongOB      = input.bool(true, "Display 🟢 Strong Order Blocks", group=grp_ob)
+showWeakOB        = input.bool(true, "Display 🔴 Weak Order Blocks", group=grp_ob)
+showCondOB        = input.bool(true, "Display ⚡ Conditional Order Blocks", group=grp_ob)
+showFVG           = input.bool(true, "Display 📦 Fair Value Gaps (FVG)", group=grp_ob)
+minDispAtrMult    = input.float(1.2, "Min Displacement Candle (×ATR)", minval=0.5, maxval=4.0, step=0.1, group=grp_ob, tooltip="Candle 2 must have sufficient expansion.")
+atrLen            = input.int(14, "ATR Period", minval=5, maxval=50, group=grp_ob)
+swingLen          = input.int(5, "Swing Pivot Lookback", minval=2, maxval=20, group=grp_ob, tooltip="Bars to left/right for swing highs and lows.")
+minRejectionWick  = input.float(18.0, "Min Weak OB Sweep Rejection Wick (%)", minval=10.0, maxval=50.0, step=1.0, group=grp_ob, tooltip="Required rejection wick size to validate a Weak OB sweep entry.")
+
+grp_armor         = "═══ 2. Dynamic Profit Armor Targets ═══"
+showArmorLines    = input.bool(true, "Draw Target & Protection Lines on Signal", group=grp_armor)
+targetTP_pct      = input.float(2.8, "Take Profit Target (+%)", minval=0.5, maxval=10.0, step=0.1, group=grp_armor)
+breakeven_pct     = input.float(1.0, "Breakeven Trigger (+%)", minval=0.2, maxval=5.0, step=0.1, group=grp_armor)
+maxSL_pct         = input.float(2.8, "Hard Stop Loss Max Risk (-%)", minval=0.5, maxval=10.0, step=0.1, group=grp_armor)
+
+grp_vis           = "═══ 3. Visual Styles & Colors ═══"
+colStrongBull     = input.color(#00E676, "Strong Bullish OB", group=grp_vis)
+colStrongBear     = input.color(#FF1744, "Strong Bearish OB", group=grp_vis)
+colWeakBull       = input.color(#FF9100, "Weak Bullish OB", group=grp_vis)
+colWeakBear       = input.color(#FF5252, "Weak Bearish OB", group=grp_vis)
+colCondBull       = input.color(#2979FF, "Conditional Bullish OB", group=grp_vis)
+colCondBear       = input.color(#D500F9, "Conditional Bearish OB", group=grp_vis)
+colFVG            = input.color(#FFE57F, "Fair Value Gap", group=grp_vis)
+showDashboard     = input.bool(true, "Show Institutional Dashboard HUD", group=grp_vis)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📐 2. DATA STRUCTURES & DEFINITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+type OrderBlock
+    int     id
+    int     barIndex
+    float   top
+    float   bottom
+    float   midPoint
+    bool    isBullish
+    int     modelType       // 1 to 7
+    string  categoryName    // "STRONG", "WEAK", "STRONGEST_COND"
+    string  modelName       // Descriptive text
+    bool    isMitigated
+    bool    isInvalidated   // Body close beyond
+    bool    isSwept         // Wick penetrated
+    box     boxId
+    label   labelId
+
+type FVGZone
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    bool    isMitigated
+    box     boxId
+
+// Persistent Storage Arrays
+var OrderBlock[] activeOBs      = array.new<OrderBlock>(0)
+var FVGZone[]    activeFVGs     = array.new<FVGZone>(0)
+var int          nextObId       = 1
+
+// Technical Volatility & Swings (Zero Retail Indicators)
+atrVal        = ta.atr(atrLen)
+candleRange   = high - low
+isBodyBullish = close > open
+isBodyBearish = close < open
+
+// Swings identification
+pivotHigh = ta.pivothigh(high, swingLen, swingLen)
+pivotLow  = ta.pivotlow(low, swingLen, swingLen)
+
+var float lastSwingHighPrice = na
+var int   lastSwingHighBar   = na
+var float lastSwingLowPrice  = na
+var int   lastSwingLowBar    = na
+
+var float prevSwingHighPrice = na
+var float prevSwingLowPrice  = na
+
+if not na(pivotHigh)
+    prevSwingHighPrice := lastSwingHighPrice
+    lastSwingHighPrice := pivotHigh
+    lastSwingHighBar   := bar_index - swingLen
+
+if not na(pivotLow)
+    prevSwingLowPrice  := lastSwingLowPrice
+    lastSwingLowPrice  := pivotLow
+    lastSwingLowBar    := bar_index - swingLen
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔍 3. LIQUIDITY SWEEP & BOS DETECTION (CONDITIONAL SENTRY)
+// ══════════════════════════════════════════════════════════════════════════════
+var bool bullishLegSweptLiquidity = false
+var bool bearishLegSweptLiquidity = false
+var int  bullishSweepBar          = 0
+var int  bearishSweepBar          = 0
+
+// Bullish sweep: Low dipped below swing low, but candle body closed above
+if not na(lastSwingLowPrice) and low < lastSwingLowPrice and close > lastSwingLowPrice
+    bullishLegSweptLiquidity := true
+    bullishSweepBar          := bar_index
+
+// Bearish sweep: High spiked above swing high, but candle body closed below
+if not na(lastSwingHighPrice) and high > lastSwingHighPrice and close < lastSwingHighPrice
+    bearishLegSweptLiquidity := true
+    bearishSweepBar          := bar_index
+
+// Reset sweep flag after 35 bars
+if bar_index - bullishSweepBar > 35
+    bullishLegSweptLiquidity := false
+if bar_index - bearishSweepBar > 35
+    bearishLegSweptLiquidity := false
+
+// Break of Structure (BOS / MSS) — Candle body close beyond last swing
+bullishBOS = not na(lastSwingHighPrice) and close > lastSwingHighPrice and close[1] <= lastSwingHighPrice
+bearishBOS = not na(lastSwingLowPrice)  and close < lastSwingLowPrice  and close[1] >= lastSwingLowPrice
+
+// Inducement (IDM) Filter — First internal pullback after BOS
+var float lastIDMBullishPrice = na
+var float lastIDMBearishPrice = na
+var bool  idmBullishSwept     = false
+var bool  idmBearishSwept     = false
+
+if bullishBOS
+    float lowestInLeg = low
+    int lookbackBars = math.min(100, math.max(1, bar_index - lastSwingLowBar))
+    if lookbackBars > 1
+        for k = 1 to lookbackBars - 1
+            lowestInLeg := math.min(lowestInLeg, low[k])
+    lastIDMBullishPrice := lowestInLeg
+    idmBullishSwept     := false
+
+if bearishBOS
+    float highestInLeg = high
+    int lookbackBars = math.min(100, math.max(1, bar_index - lastSwingHighBar))
+    if lookbackBars > 1
+        for k = 1 to lookbackBars - 1
+            highestInLeg := math.max(highestInLeg, high[k])
+    lastIDMBearishPrice := highestInLeg
+    idmBearishSwept     := false
+
+if not na(lastIDMBullishPrice) and low < lastIDMBullishPrice
+    idmBullishSwept := true
+
+if not na(lastIDMBearishPrice) and high > lastIDMBearishPrice
+    idmBearishSwept := true
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🏛️ 4. 3-CANDLE ORDER BLOCK DETECTION & 7-MODEL CLASSIFICATION
+// ══════════════════════════════════════════════════════════════════════════════
+// Candle 1 (Base): bar_index - 2
+// Candle 2 (Displacement): bar_index - 1
+// Candle 3 (Continuation): bar_index - 0
+
+bullishFVG = low[0] > high[2] and (low[0] - high[2]) >= (atrVal * 0.15)
+bearishFVG = high[0] < low[2] and (low[2] - high[0]) >= (atrVal * 0.15)
+
+bullishDisplacement = (close[1] - open[1]) >= (atrVal * minDispAtrMult)
+bearishDisplacement = (open[1] - close[1]) >= (atrVal * minDispAtrMult)
+
+// ── BULLISH ORDER BLOCK CLASSIFICATION ──
+if bullishFVG and bullishDisplacement
+    c1_isBullish = close[2] > open[2]
+    c1_isBearish = close[2] < open[2]
+    c2_breachedLow = low[1] < low[2]
+    
+    isSwingOrigin = not na(lastSwingLowPrice) and math.abs(low[2] - lastSwingLowPrice) < (atrVal * 0.5)
+    
+    int    modelNum     = 1
+    string catName      = "WEAK"
+    string descText     = ""
+    color  borderCol    = colWeakBull
+    color  bgCol        = color.new(colWeakBull, 88)
+    
+    // Conditional Promotion Priority
+    if bullishLegSweptLiquidity
+        modelNum  := 6
+        catName   := "STRONGEST_COND"
+        descText  := "Type 6: Sweep+BOS Leg OB"
+        borderCol := colCondBull
+        bgCol     := color.new(colCondBull, 82)
+    else if idmBullishSwept and not na(lastIDMBullishPrice) and low[2] < lastIDMBullishPrice
+        modelNum  := 7
+        catName   := "STRONGEST_COND"
+        descText  := "Type 7: Post-IDM Decisional OB"
+        borderCol := colCondBull
+        bgCol     := color.new(colCondBull, 82)
+    else if c2_breachedLow
+        modelNum  := 3
+        catName   := "WEAK"
+        descText  := "Type 3: Outlier C2 Low Breach"
+        borderCol := colWeakBull
+        bgCol     := color.new(colWeakBull, 90)
+    else if c1_isBullish
+        modelNum  := 1
+        catName   := "WEAK"
+        descText  := "Type 1: Momentum Same-Color OB"
+        borderCol := colWeakBull
+        bgCol     := color.new(colWeakBull, 90)
+    else if c1_isBearish and isSwingOrigin
+        modelNum  := 4
+        catName   := "STRONG"
+        descText  := "Type 4: Swing Origin OB"
+        borderCol := colStrongBull
+        bgCol     := color.new(colStrongBull, 82)
+    else if c1_isBearish
+        modelNum  := 2
+        catName   := "STRONG"
+        descText  := "Type 2: Classic Opposite-Color OB"
+        borderCol := colStrongBull
+        bgCol     := color.new(colStrongBull, 82)
+    else
+        modelNum  := 5
+        catName   := "WEAK"
+        descText  := "Type 5: Mid-Leg Internal OB"
+        borderCol := colWeakBull
+        bgCol     := color.new(colWeakBull, 90)
+        
+    obTop = high[2]
+    obBottom = c2_breachedLow ? low[1] : low[2]
+    obMid = (obTop + obBottom) / 2.0
+    
+    bool allowDisplay = (catName == "STRONG" and showStrongOB) or (catName == "WEAK" and showWeakOB) or (catName == "STRONGEST_COND" and showCondOB)
+    box   newBox   = na
+    label newLabel = na
+    
+    if allowDisplay
+        newBox := box.new(left=bar_index - 2, top=obTop, right=bar_index + 10, bottom=obBottom, border_color=borderCol, border_width=1, border_style=(catName == "WEAK" ? line.style_dashed : line.style_solid), bgcolor=bgCol)
+        labelPrefix = catName == "STRONGEST_COND" ? "⚡ COND-OB" : (catName == "STRONG" ? "🟢 STRONG-OB" : "🔴 WEAK-OB (SWEEP REQ)")
+        newLabel := label.new(x=bar_index - 2, y=obTop, text=labelPrefix + "\n" + descText, color=color.new(color.white, 100), textcolor=borderCol, style=label.style_label_down, size=size.small)
+        
+    OrderBlock newOB = OrderBlock.new(nextObId, bar_index - 2, obTop, obBottom, obMid, true, modelNum, catName, descText, false, false, false, newBox, newLabel)
+    array.push(activeOBs, newOB)
+    nextObId += 1
+    
+    if showFVG
+        box fvgBox = box.new(left=bar_index - 1, top=low[0], right=bar_index + 6, bottom=high[2], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 85))
+        array.push(activeFVGs, FVGZone.new(bar_index - 1, low[0], high[2], true, false, fvgBox))
+
+// ── BEARISH ORDER BLOCK CLASSIFICATION ──
+if bearishFVG and bearishDisplacement
+    c1_isBullish = close[2] > open[2]
+    c1_isBearish = close[2] < open[2]
+    c2_breachedHigh = high[1] > high[2]
+    
+    isSwingOrigin = not na(lastSwingHighPrice) and math.abs(high[2] - lastSwingHighPrice) < (atrVal * 0.5)
+    
+    int    modelNum     = 1
+    string catName      = "WEAK"
+    string descText     = ""
+    color  borderCol    = colWeakBear
+    color  bgCol        = color.new(colWeakBear, 88)
+    
+    if bearishLegSweptLiquidity
+        modelNum  := 6
+        catName   := "STRONGEST_COND"
+        descText  := "Type 6: Sweep+BOS Leg OB"
+        borderCol := colCondBear
+        bgCol     := color.new(colCondBear, 82)
+    else if idmBearishSwept and not na(lastIDMBearishPrice) and high[2] > lastIDMBearishPrice
+        modelNum  := 7
+        catName   := "STRONGEST_COND"
+        descText  := "Type 7: Post-IDM Decisional OB"
+        borderCol := colCondBear
+        bgCol     := color.new(colCondBear, 82)
+    else if c2_breachedHigh
+        modelNum  := 3
+        catName   := "WEAK"
+        descText  := "Type 3: Outlier C2 High Breach"
+        borderCol := colWeakBear
+        bgCol     := color.new(colWeakBear, 90)
+    else if c1_isBearish
+        modelNum  := 1
+        catName   := "WEAK"
+        descText  := "Type 1: Momentum Same-Color OB"
+        borderCol := colWeakBear
+        bgCol     := color.new(colWeakBear, 90)
+    else if c1_isBullish and isSwingOrigin
+        modelNum  := 4
+        catName   := "STRONG"
+        descText  := "Type 4: Swing Origin OB"
+        borderCol := colStrongBear
+        bgCol     := color.new(colStrongBear, 82)
+    else if c1_isBullish
+        modelNum  := 2
+        catName   := "STRONG"
+        descText  := "Type 2: Classic Opposite-Color OB"
+        borderCol := colStrongBear
+        bgCol     := color.new(colStrongBear, 82)
+    else
+        modelNum  := 5
+        catName   := "WEAK"
+        descText  := "Type 5: Mid-Leg Internal OB"
+        borderCol := colWeakBear
+        bgCol     := color.new(colWeakBear, 90)
+        
+    obTop = c2_breachedHigh ? high[1] : high[2]
+    obBottom = low[2]
+    obMid = (obTop + obBottom) / 2.0
+    
+    bool allowDisplay = (catName == "STRONG" and showStrongOB) or (catName == "WEAK" and showWeakOB) or (catName == "STRONGEST_COND" and showCondOB)
+    box   newBox   = na
+    label newLabel = na
+    
+    if allowDisplay
+        newBox := box.new(left=bar_index - 2, top=obTop, right=bar_index + 10, bottom=obBottom, border_color=borderCol, border_width=1, border_style=(catName == "WEAK" ? line.style_dashed : line.style_solid), bgcolor=bgCol)
+        labelPrefix = catName == "STRONGEST_COND" ? "⚡ COND-OB" : (catName == "STRONG" ? "🟢 STRONG-OB" : "🔴 WEAK-OB (SWEEP REQ)")
+        newLabel := label.new(x=bar_index - 2, y=obBottom, text=labelPrefix + "\n" + descText, color=color.new(color.white, 100), textcolor=borderCol, style=label.style_label_up, size=size.small)
+        
+    OrderBlock newOB = OrderBlock.new(nextObId, bar_index - 2, obTop, obBottom, obMid, false, modelNum, catName, descText, false, false, false, newBox, newLabel)
+    array.push(activeOBs, newOB)
+    nextObId += 1
+    
+    if showFVG
+        box fvgBox = box.new(left=bar_index - 1, top=low[2], right=bar_index + 6, bottom=high[0], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 85))
+        array.push(activeFVGs, FVGZone.new(bar_index - 1, low[2], high[0], false, false, fvgBox))
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 5. EXECUTION PROTOCOL & WEAK OB SWEEP DETECTION
+// ══════════════════════════════════════════════════════════════════════════════
+var bool buySignalStrong  = false
+var bool sellSignalStrong = false
+var bool buySignalWeak    = false
+var bool sellSignalWeak   = false
+var float activeEntrySL   = na
+
+buySignalStrong  := false
+sellSignalStrong := false
+buySignalWeak    := false
+sellSignalWeak   := false
+
+// Iterate active Order Blocks to update mitigation, invalidation, and sweep signals
+if array.size(activeOBs) > 0
+    for i = array.size(activeOBs) - 1 to 0
+        OrderBlock currentOB = array.get(activeOBs, i)
+        
+        // Extend box to current bar if still active
+        if not currentOB.isMitigated and not currentOB.isInvalidated and not na(currentOB.boxId)
+            box.set_right(currentOB.boxId, bar_index)
+            
+        // ── BULLISH OB CHECKS ──
+        if currentOB.isBullish
+            // Shoaib Khan Invalidation Rule: Candle BODY close below OB
+            if close < currentOB.bottom
+                currentOB.isInvalidated := true
+                if not na(currentOB.boxId)
+                    box.set_border_style(currentOB.boxId, line.style_dotted)
+                    box.set_border_color(currentOB.boxId, color.gray)
+            // Liquidity Sweep Check: Low wicks below OB bottom, but close finishes above OB bottom
+            else if low < currentOB.bottom and close >= currentOB.bottom
+                currentOB.isSwept := true
+                if currentOB.categoryName == "WEAK" and tradeWeakSweeps
+                    candleTotRange = high - low
+                    lowerWick = math.min(open, close) - low
+                    wickPct = candleTotRange > 0 ? (lowerWick / candleTotRange) * 100.0 : 0.0
+                    if wickPct >= minRejectionWick and close > open
+                        buySignalWeak   := true
+                        activeEntrySL   := low - (atrVal * 0.1)
+                        currentOB.isMitigated := true
+            // Strong or Conditional OB: First Tap Entry
+            else if (currentOB.categoryName == "STRONG" or currentOB.categoryName == "STRONGEST_COND") and not currentOB.isMitigated
+                triggerPrice = obTapTrigger == "50% Mean Threshold (MT)" ? currentOB.midPoint : currentOB.top
+                if low <= triggerPrice and close >= currentOB.bottom
+                    buySignalStrong := true
+                    activeEntrySL   := currentOB.bottom - (atrVal * 0.1)
+                    currentOB.isMitigated := true
+                    
+        // ── BEARISH OB CHECKS ──
+        else
+            // Invalidation: Body close above OB top
+            if close > currentOB.top
+                currentOB.isInvalidated := true
+                if not na(currentOB.boxId)
+                    box.set_border_style(currentOB.boxId, line.style_dotted)
+                    box.set_border_color(currentOB.boxId, color.gray)
+            // Sweep Check: High wicks above OB top, but close finishes below OB top
+            else if high > currentOB.top and close <= currentOB.top
+                currentOB.isSwept := true
+                if currentOB.categoryName == "WEAK" and tradeWeakSweeps
+                    candleTotRange = high - low
+                    upperWick = high - math.max(open, close)
+                    wickPct = candleTotRange > 0 ? (upperWick / candleTotRange) * 100.0 : 0.0
+                    if wickPct >= minRejectionWick and close < open
+                        sellSignalWeak  := true
+                        activeEntrySL   := high + (atrVal * 0.1)
+                        currentOB.isMitigated := true
+            // Strong or Conditional OB: First Tap Entry
+            else if (currentOB.categoryName == "STRONG" or currentOB.categoryName == "STRONGEST_COND") and not currentOB.isMitigated
+                triggerPrice = obTapTrigger == "50% Mean Threshold (MT)" ? currentOB.midPoint : currentOB.bottom
+                if high >= triggerPrice and close <= currentOB.top
+                    sellSignalStrong := true
+                    activeEntrySL    := currentOB.top + (atrVal * 0.1)
+                    currentOB.isMitigated := true
+
+        // Clean up completed or invalidated OBs from memory if array grows too large
+        if array.size(activeOBs) > 30 and (currentOB.isMitigated or currentOB.isInvalidated)
+            array.remove(activeOBs, i)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🛡️ 6. DYNAMIC PROFIT ARMOR LEVEL LINES (INDICATOR TARGETS)
+// ══════════════════════════════════════════════════════════════════════════════
+if showArmorLines and (buySignalStrong or buySignalWeak)
+    line.new(bar_index, close, bar_index + 12, close, color=color.white, width=1, style=line.style_solid)
+    line.new(bar_index, close * (1.0 + targetTP_pct / 100.0), bar_index + 12, close * (1.0 + targetTP_pct / 100.0), color=colStrongBull, width=1, style=line.style_dashed)
+    line.new(bar_index, activeEntrySL, bar_index + 12, activeEntrySL, color=color.red, width=1, style=line.style_dashed)
+
+if showArmorLines and (sellSignalStrong or sellSignalWeak)
+    line.new(bar_index, close, bar_index + 12, close, color=color.white, width=1, style=line.style_solid)
+    line.new(bar_index, close * (1.0 - targetTP_pct / 100.0), bar_index + 12, close * (1.0 - targetTP_pct / 100.0), color=colStrongBear, width=1, style=line.style_dashed)
+    line.new(bar_index, activeEntrySL, bar_index + 12, activeEntrySL, color=color.red, width=1, style=line.style_dashed)
+
+// Visual Signal Plotting (Zero Retail Indicators)
+plotshape(buySignalStrong, title="🟢 Strong OB Tap (Buy)", style=shape.triangleup, location=location.belowbar, color=colStrongBull, size=size.small)
+plotshape(sellSignalStrong, title="🔴 Strong OB Tap (Sell)", style=shape.triangledown, location=location.abovebar, color=colStrongBear, size=size.small)
+plotshape(buySignalWeak, title="⚡ Weak OB Swept (Buy)", style=shape.diamond, location=location.belowbar, color=colCondBull, size=size.small)
+plotshape(sellSignalWeak, title="⚡ Weak OB Swept (Sell)", style=shape.diamond, location=location.abovebar, color=colCondBear, size=size.small)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔔 7. NATIVE TRADINGVIEW ALERTS
+// ══════════════════════════════════════════════════════════════════════════════
+alertcondition(buySignalStrong,  "🟢 Strong Bullish OB Tap",        "🟢 Hermes MS-OB: Strong Bullish OB Tapped! High Defense Origin.")
+alertcondition(sellSignalStrong, "🔴 Strong Bearish OB Tap",        "🔴 Hermes MS-OB: Strong Bearish OB Tapped! High Defense Origin.")
+alertcondition(buySignalWeak,    "⚡ Weak Bullish OB Swept",        "⚡ Hermes MS-OB: Weak Bullish OB Liquidity Swept with Rejection Wick! Aggressive Buy.")
+alertcondition(sellSignalWeak,   "⚡ Weak Bearish OB Swept",        "⚡ Hermes MS-OB: Weak Bearish OB Liquidity Swept with Rejection Wick! Aggressive Sell.")
+alertcondition(bullishBOS,       "📈 Bullish Break of Structure",   "📈 Hermes MS-OB: Bullish BOS / MSS Confirmed!")
+alertcondition(bearishBOS,       "📉 Bearish Break of Structure",   "📉 Hermes MS-OB: Bearish BOS / MSS Confirmed!")
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 8. INSTITUTIONAL HUD DASHBOARD
+// ══════════════════════════════════════════════════════════════════════════════
+var table hudTable = table.new(position.top_right, 5, 2, bgcolor=color.new(#131722, 10), border_color=color.new(#2A2E39, 0), border_width=1)
+
+if showDashboard and barstate.islast
+    table.cell(hudTable, 0, 0, "HERMES MS-OB INDICATOR", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hudTable, 1, 0, "ACTIVE OBS",             bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hudTable, 2, 0, "SWEEP STATUS",           bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hudTable, 3, 0, "ARMOR TARGETS",          bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hudTable, 4, 0, "COMPOUND GOAL",          bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    
+    // Status Row
+    table.cell(hudTable, 0, 1, "7 MODELS ACTIVE",        bgcolor=color.new(#00E676, 20), text_color=color.white, text_size=size.small)
+    table.cell(hudTable, 1, 1, str.tostring(array.size(activeOBs)), bgcolor=color.new(#2979FF, 20), text_color=color.white, text_size=size.small)
+    table.cell(hudTable, 2, 1, (bullishLegSweptLiquidity or bearishLegSweptLiquidity) ? "⚡ COND SWEEP" : "NORMAL", bgcolor=color.new(#FF9100, 20), text_color=color.white, text_size=size.small)
+    table.cell(hudTable, 3, 1, "TP +" + str.tostring(targetTP_pct) + "% | SL -" + str.tostring(maxSL_pct) + "%", bgcolor=color.new(#131722, 0), text_color=color.yellow, text_size=size.small)
+    table.cell(hudTable, 4, 1, "$50 ➔ $2,000 (5x)",      bgcolor=color.new(#00E676, 30), text_color=color.white, text_size=size.small)
