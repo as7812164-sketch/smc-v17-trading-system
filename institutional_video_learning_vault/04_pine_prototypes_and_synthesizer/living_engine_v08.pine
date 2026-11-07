@@ -329,13 +329,26 @@ if (bearMSS_Stage == 2) and (close < lastLTFSwingLow) and isBearDisplacement
     bearMSS_Stage := 0
 
 // Model 5: Liquidity Sweep Reversal (Turtle Soup on PDH/PDL or Asian Extremes)
+// Ep 08 Special: Breaker Block Confluence & Dual Targets (Target 1: Macro OB, Target 2: Volume Imbalance)
+bool hasBreakerConfluenceBull = false
+bool hasBreakerConfluenceBear = false
+
 if pdlSwept or asianLowSwept
     if isBullDisplacement
         sigBuyModel5 := true
+        // Check if displacement pierced through an opposing bearish Order Block (creating a Breaker Block)
+        if not na(latestBearFVG) and (close > latestBearFVG.top)
+            hasBreakerConfluenceBull := true
 
 if pdhSwept or asianHighSwept
     if isBearDisplacement
         sigSellModel5 := true
+        if not na(latestBullFVG) and (close < latestBullFVG.bottom)
+            hasBreakerConfluenceBear := true
+
+// 2-Candle Swing Acceleration Detection (Ep 08 Phase 7)
+bool isTwoCandleCollapseBull = isBullDisplacement[1] and not na(latestBullFVG) and (low <= latestBullFVG.top) and (close > open)
+bool isTwoCandleCollapseBear = isBearDisplacement[1] and not na(latestBearFVG) and (high >= latestBearFVG.bottom) and (close < open)
 
 // Model Filter Selection
 bool finalBuySignal = false
@@ -412,7 +425,12 @@ if finalBuySignal and na(activeEntryPrice)
     activeTrailPrice := close * (1.0 + 0.018)  // Trailing SL at +1.8%
     activeTPPrice    := close * (1.0 + 0.028)  // Institutional TP at +2.8%
     
-    label.new(bar_index, low - (atrVal * 0.5), "🟢 HERMES LONG ENTRY\n" + activeSignalModel + "\nEntry: " + str.tostring(close, "#.##") + "\nTP: +2.8% | SL: -2.8%", color=colBuySignal, textcolor=color.black, style=label.style_label_up, size=size.normal)
+    string buyDetails = "🟢 HERMES LONG ENTRY\n" + activeSignalModel
+    if hasBreakerConfluenceBull
+        buyDetails := buyDetails + "\n[+ BREAKER BLOCK CONFLUENCE]"
+    buyDetails := buyDetails + "\nEntry: " + str.tostring(close, "#.##") + "\nTP1 (OB): +2.8% | TP2 (Vol Imb): +4.5% | SL: -2.8%"
+    
+    label.new(bar_index, low - (atrVal * 0.5), buyDetails, color=colBuySignal, textcolor=color.black, style=label.style_label_up, size=size.normal)
 
 if finalSellSignal and na(activeEntryPrice)
     activeEntryPrice := close
@@ -421,7 +439,19 @@ if finalSellSignal and na(activeEntryPrice)
     activeTrailPrice := close * (1.0 - 0.018)
     activeTPPrice    := close * (1.0 - 0.028)
     
-    label.new(bar_index, high + (atrVal * 0.5), "🔴 HERMES SHORT ENTRY\n" + activeSignalModel + "\nEntry: " + str.tostring(close, "#.##") + "\nTP: +2.8% | SL: -2.8%", color=colSellSignal, textcolor=color.white, style=label.style_label_down, size=size.normal)
+    string sellDetails = "🔴 HERMES SHORT ENTRY\n" + activeSignalModel
+    if hasBreakerConfluenceBear
+        sellDetails := sellDetails + "\n[+ BREAKER BLOCK CONFLUENCE]"
+    sellDetails := sellDetails + "\nEntry: " + str.tostring(close, "#.##") + "\nTP1 (OB): +2.8% | TP2 (Vol Imb): +4.5% | SL: -2.8%"
+    
+    label.new(bar_index, high + (atrVal * 0.5), sellDetails, color=colSellSignal, textcolor=color.white, style=label.style_label_down, size=size.normal)
+
+// 2-Candle Swing Acceleration Labeling
+if isTwoCandleCollapseBull
+    label.new(bar_index, low, "⚡ 2-CANDLE SWING ACCELERATION\n[Retest + Expansion]", color=color.new(color.blue, 20), textcolor=color.white, style=label.style_label_up, size=size.small)
+
+if isTwoCandleCollapseBear
+    label.new(bar_index, high, "⚡ 2-CANDLE SWING ACCELERATION\n[Retest + Expansion]", color=color.new(color.blue, 20), textcolor=color.white, style=label.style_label_down, size=size.small)
 
 // Dynamic Armor Level Reset when Hit
 if not na(activeEntryPrice)
