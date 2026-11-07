@@ -32,7 +32,7 @@
 | **05** | Mitigation Block And Breaker Block Simplified: Full Breakdown | https://youtu.be/Qcn-i18O9Iw | 🟢 Ingested & Locked | Ep 01-04 | Mitigation (TJL 1 Continuation), Breaker (Dual Liquidity Reversal), Strong Mit 2-Brick FVG Overlap, Wick Refinement | living_engine_v05.pine |
 | **06** | All Types Of Liquidity Explained In SMC & ICT: Stop Getting Trapped | https://youtu.be/7lX8V0XJnd8 | 🟢 Ingested & Locked | Ep 01-05 | 6 Liquidity Types, 10K-Lot Dilemma, Biryani Plate Analogy, HTF Pattern Alignment Law, EQH/EQL & BSL/SSL Sweep Engine | living_engine_v06.pine |
 | **07** | All Type Of Liquidity Explained In SMC & ICT Part -2 | https://youtu.be/_WEEmT2wgg8 | 🟢 Ingested & Locked | Ep 01-06 | 12-Liquidity Framework, LRL vs HRL, Liquidity Voids, ERL <-> IRL Loop, Daily/Weekly Candle Sweeps/Runs, Asian Kill Zone | living_engine_v07.pine |
-| **08** | *Queued: Video 08* | - | ⏳ Queued | Ep 01-07 | - | - |
+| **08** | Perfect Entry Strategy For SMC & ICT: High Probability Entries | https://youtu.be/rbcLFn07z4k | 🟢 Ingested & Locked | Ep 01-07 | 5 Master Entry Models, Golden Ratio Timeframe Stacking, Displacement (FVG+OB) Law, LTF MSS Wick Break Rule, 3-Candle Swing Myth, Triple Timeframe Alignment | living_engine_v08.pine |
 | **09** | *Queued: Video 09* | - | ⏳ Queued | Ep 01-08 | - | - |
 | **10** | *Queued: Video 10* | - | ⏳ Queued | Ep 01-09 | - | - |
 | **11** | *Queued: Video 11* | - | ⏳ Queued | Ep 01-10 | - | - |
