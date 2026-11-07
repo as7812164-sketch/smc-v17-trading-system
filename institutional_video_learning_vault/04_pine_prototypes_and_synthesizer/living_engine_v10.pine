@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 10
+// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 10 (DEEP PASS 2 AUDIT)
 // Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
 // Cumulative Synthesis (Episodes 01 to 10):
 // - Ep 01: Perpetual Delivery Loop & POI Hierarchy (OB > VI > FVG)
@@ -20,10 +20,12 @@
 //   * ICT Golden Zone Fibonacci Engine (0.618 - 0.790 Pocket)
 //   * Trend Continuation vs Reversal (Mandatory MSS Sentry for Reversals)
 //   * Multi-Timeframe Execution Matrix (1H Setup -> 5m MSS Sniper Refinement)
+//   * Fractal OTE Engine (HTF OTE -> LTF OTE inside MSS to shrink Stop Loss, 1:7 BTC setup)
 //   * The 3 Superchargers of OTE: Confluence Triad (OTE + OB / FVG / Mitigation)
 //   * Inside Bar Institutional Doctrine (Debunking retail dogma, empirical 100-sample law)
 //   * Inside Bar Order Block Selection (Sniper SL vs clumsy mother candle OB)
 //   * Three Candidate POI Architecture (Mitigation, OTE, Extreme OB - No Guesswork Rule)
+//   * Dynamic Adaptation Philosophy (Never be rigid; adapt to changing market conditions)
 // Zero Retail Indicators (No RSI, MACD, EMA) | Institutional Order Flow Protocol
 // ══════════════════════════════════════════════════════════════════════════════
 //@version=5
@@ -141,7 +143,7 @@ enableInsideBarOB   = input.bool(true, "Recognize Inside Bar Order Blocks (Empir
 highlightInsideBars = input.bool(true, "Highlight Inside Bar Candles", group="🕯️ Ep 10: Inside Bar Engine")
 colInsideBar        = input.color(color.new(#9C27B0, 60), "Inside Bar Color", group="🕯️ Ep 10: Inside Bar Engine")
 
-trackCandidatePOIs  = input.bool(true, "Track 3 Candidate POIs (Mitigation, OTE, Extreme)", group="🏛️ Ep 10: 3 Candidate POIs")
+trackCandidatePOIs  = input.bool(true, "Track 3 Candidate POIs (Mitigation, OTE, Extreme)", group="🏛️ Ep 10: 3 Candidate POIs Architecture")
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ⚡ 3. EPISODE 07: DAILY CANDLE BIAS ENGINE (PDH / PDL SWEEPS VS RUNS)
@@ -310,7 +312,6 @@ if showOTEZone and not na(activeSwingHigh) and not na(activeSwingLow) and barsta
         line.delete(oteLine10)
     
     int startB = math.min(activeHighBar, activeLowBar)
-    // Draw Bullish OTE Zone if close > equilibrium or general context
     float oteTopLevel    = (close >= equilibrium05) ? bearOTE0790 : bullOTE0618
     float oteBottomLevel = (close >= equilibrium05) ? bearOTE0618 : bullOTE0790
     
@@ -341,6 +342,21 @@ for g in activeGaps
 
 int bullOTEConfluenceScore = (inBullOTE ? 1 : 0) + (oteHasBullOB ? 1 : 0) + (oteHasBullFVG ? 1 : 0)
 int bearOTEConfluenceScore = (inBearOTE ? 1 : 0) + (oteHasBearOB ? 1 : 0) + (oteHasBearFVG ? 1 : 0)
+
+// 🏛️ EPISODE 10: 3 CANDIDATE POI ARCHITECTURE ENGINE (NO GUESSWORK RULE)
+// Candidate 1: Nearest Mitigation / Breaker Block (Shallow)
+// Candidate 2: Optimal Trade Entry (OTE: 0.618 - 0.790) (Optimal)
+// Candidate 3: Extreme Order Block / FVG (Deepest)
+string activeCandidatePOI = "MONITORING CANDIDATES"
+if trackCandidatePOIs
+    if inBullOTE or inBearOTE
+        activeCandidatePOI := "CANDIDATE 2: OTE GOLDEN ZONE (0.618-0.790)"
+    else if oteHasBullOB or oteHasBearOB
+        activeCandidatePOI := "CANDIDATE 3: EXTREME ORDER BLOCK"
+    else if oteHasBullFVG or oteHasBearFVG
+        activeCandidatePOI := "CANDIDATE 1: MITIGATION / FVG POI"
+    else
+        activeCandidatePOI := "WAITING FOR RETRACEMENT"
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ⚡ 7. EPISODE 08: DISPLACEMENT & MSS DETECTION ENGINE
@@ -635,7 +651,7 @@ if isTwoCandleCollapseBear
 // ══════════════════════════════════════════════════════════════════════════════
 // 📊 10. INSTITUTIONAL MASTER HUD & REAL-TIME VALUATION AUDIT
 // ══════════════════════════════════════════════════════════════════════════════
-var table hud = table.new(position.top_right, 2, 13, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
+var table hud = table.new(position.top_right, 2, 14, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
 if barstate.islast
     table.cell(hud, 0, 0, "🏛️ HERMES SMC ENGINE", bgcolor=#1E88E5, text_color=color.white, text_size=size.small)
     table.cell(hud, 1, 0, "EP 10 ACTIVE (OTE + INSIDE BAR)", bgcolor=#FFD700, text_color=color.black, text_size=size.small)
@@ -675,3 +691,6 @@ if barstate.islast
     
     table.cell(hud, 0, 12, "Inside Bar Engine:", text_color=color.white, text_size=size.small)
     table.cell(hud, 1, 12, isInsideBar ? "🕯️ INSIDE BAR DETECTED" : "STANDARD RANGE", text_color=(isInsideBar ? #E040FB : color.gray), text_size=size.small)
+    
+    table.cell(hud, 0, 13, "Candidate POI Status:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 13, activeCandidatePOI, text_color=#FFAB00, text_size=size.small)

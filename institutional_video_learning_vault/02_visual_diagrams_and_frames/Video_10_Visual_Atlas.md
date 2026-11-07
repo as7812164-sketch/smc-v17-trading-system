@@ -1,4 +1,4 @@
-# Visual Atlas: Video 10
+# Visual Atlas: Video 10 (Deep Pass 2 Audit)
 ## Optimal Trade Entry (OTE) & Inside Bar Institutional Framework
 
 ---
@@ -55,9 +55,9 @@
         /\
        /  \    (Pullback into OTE)
       /    \
-     /      v [OTE 0.618 - 0.79]  <--- BUY EXECUTION!
-[HH1]        \ /                       SL: Below [HL1] (Fib 1.0)
- /\           v                        TP: Target [HH2] (Fib 0.0)
+     /      v [OTE 0.618 - 0.790]  <--- BUY EXECUTION!
+[HH1]        \ /                        SL: Below [HL1] (Fib 1.0)
+ /\           v                         TP: Target [HH2] (Fib 0.0)
 /  \
     \
      v
@@ -72,8 +72,8 @@
       v               /^\
      [LL1]           /   \
        \            /     \
-        \          /       v [OTE 0.618 - 0.79] <--- SAFE INSTITUTIONAL BUY!
-         v        /            (MSS Displacement Leg Fib Anchor)
+        \          /       v [OTE 0.618 - 0.790] <--- SAFE INSTITUTIONAL BUY!
+         v        /             (MSS Displacement Leg Fib Anchor)
        [HTF POI TAPPED!]
 ```
 
@@ -86,7 +86,7 @@
 Swing Low [Fib 1.0] ------------------------> Swing High [Fib 0.0]
            \                                       /
             \                                     /
-             \----> [1H OTE Zone: 0.618 - 0.79] <-
+             \----> [1H OTE Zone: 0.618 - 0.790] <-
                                |
                                | (Price enters 1H OTE)
                                v
@@ -96,9 +96,9 @@ Swing Low [Fib 1.0] ------------------------> Swing High [Fib 0.0]
                \ /  \  [5m MSS]
                 v    \  /\
                       \/  \  [5m OTE / FVG] <--- SNIPER ENTRY!
-                           v                      SL: 5m Low (Extremely Tight)
-                                                  TP: 1-Hour Fib 0.0 High!
-                                                  (Result: 1:10 to 1:20 R:R)
+                           v                       SL: 5m Low (Extremely Tight)
+                                                   TP: 1-Hour Fib 0.0 High!
+                                                   (Result: 1:10 to 1:20 R:R)
 ```
 
 ---
@@ -112,7 +112,7 @@ Swing Low [Fib 1.0] ------------------------> Swing High [Fib 0.0]
 [1-Hour MTF] 1H MSS Confirmed
              - First FVG: Breached
              - Extreme 1H OB: Untapped
-             - 1H OTE (0.618 - 0.79) Placed
+             - 1H OTE (0.618 - 0.790) Placed
                                                                  |
                                                                  v
 [4-Hour Refinement] 4H FVG Aligned Directly Inside 1H OTE!
@@ -125,50 +125,81 @@ Swing Low [Fib 1.0] ------------------------> Swing High [Fib 0.0]
 
 ---
 
-### Frame 06: Real Trade Forensic: Bitcoin Multi-Timeframe Cascading Short
+### Frame 06: The Viewer's Bitcoin 4H SL Trap (Weekly Sweep vs 4H Buying Trap)
 
 ```
-[Weekly HTF]  Sweeps Weekly Candle Buy-Side Liquidity (BSL)
-              Institutional Directive: Must deliver into Weekly Breakaway Gap below!
-                                                                 |
-                                                                 v
-[4-Hour HTF]  4H MSS Downwards
-              - Swing 1: First POI missed
-              - Swing 2: Retraced to 4H OTE (0.618-0.79) -> Short 1
-              - Swing 3: Retraced to Mitigation Block     -> Short 2
-              - Swing 4: Retraced to 4H FVG               -> Short 3
-              - Swing 5: Retraced to 4H OTE (0.618-0.79) -> Short 4
-                                                                 |
-                                                                 v
-[15-Minute Execution] Refined each 4H OTE with 15m MSS + LTF FVG/OTE Retracement
-                      Target Delivered Fully into Weekly Breakaway Gap!
+  [WEEKLY TIMEFRAME]
+  Weekly Candle Sweeps Buy-Side Liquidity (BSL)!
+       |
+       v
+  Institutional Mandate: Price MUST seek untracked Weekly Imbalance below!
+  Target: [WEEKLY BREAKAWAY GAP] ===================================== (Massive Bearish Magnet)
+       |
+       |
+  [4-HOUR TIMEFRAME (What the retail student saw)]:
+  Price dropped into 4H Order Block -> 4H MSS -> Trader pressed BUY!
+       |
+       v
+  [THE TRAP]:
+  Price smashed straight through the 4H Order Block and wiped the SL!
+  Lesson: Never buy an MTF OB when HTF has swept liquidity and is driving
+  into an HTF Breakaway Gap!
 ```
 
 ---
 
-### Frame 07: Inside Bar Anatomy & Chronological Orientation
+### Frame 07: Fractal OTE on Bitcoin (4H OTE $\rightarrow$ 15m OTE SL Reduction $\rightarrow$ 1:7 Captured)
 
 ```
+  [4-Hour Swing]
+  Sweeps Weekly Liquidity -> 4H MSS Down -> 4H OTE (0.618 - 0.790) Tapped!
+       |
+       v
+  [15-Minute LTF Chart]
+  15m MSS confirms down.
+  There is 1 Order Block on 15m.
+  Full 15m OB Entry -> Massive Clumsy Stop Loss!
+       |
+       v
+  [THE FRACTAL OTE SOLUTION]:
+  Anchor OTE tool on the 15m MSS Swing Leg (High to Low)!
+  Price retraces into 15m OTE (0.790 - 0.618).
+  Limit entry executed directly at 15m OTE tap!
+  SL placed tightly above 15m Fib 1.0!
+  Target: Weekly Breakaway Gap!
+  Outcome: 1:7 Risk-to-Reward Captured Stress-Free!
+```
+
+---
+
+### Frame 08: The "Man Standing Outside the Mother Bar" Analogy
+
+```
+                                              Eye of Trader
+                                                   \
   Past (Left)  ==========================> Present (Right)
+                                                    |
+  [MOTHER CANDLE]                                   v
+        |  High --------------------------------- [Visible to observer]
+     +-----+                                        |
+     |     |                                        |
+     |     |       [INSIDE BAR 1]   [INSIDE BAR 2]  |
+     |     |          |  High          |  High      |
+     |     |       +-----+          +-----+         |
+     |     |       |     |          |     |         |
+     |     |       |     |          |     |         |
+     |     |       +-----+          +-----+         |
+     |     |          |  Low           |  Low       |
+     +-----+                                        |
+        |  Low ---------------------------------- [Visible to observer]
 
-  [MOTHER CANDLE]
-        |  High
-     +-----+
-     |     |
-     |     |       [INSIDE BAR]
-     |     |          |  High < Mother High
-     |     |       +-----+
-     |     |       |     |
-     |     |       |     |
-     |     |       +-----+
-     |     |          |  Low > Mother Low
-     +-----+
-        |  Low
+  "An observer standing on the right sees ONLY the Mother Candle's boundary!
+   Everything inside is hidden in consolidation until price breaks out!"
 ```
 
 ---
 
-### Frame 08: Inside Bar Order Block vs Mother Candle Order Block
+### Frame 09: Inside Bar Order Block vs Mother Candle Order Block
 
 ```
 [The Retail SMC Dogma (Flawed)]:
@@ -192,7 +223,27 @@ Taps INSIDE BAR ORDER BLOCK precisely -> Explosive Impulse Launch!
 
 ---
 
-### Frame 09: The Confluence Triad (OTE Superchargers)
+### Frame 10: The 4 Gold Daily Inside Bar Cases (Empirical Proofs)
+
+```
+[CASE 1: Precision SL vs Clumsy SL]
+Mother OB gives 80-pip SL. Inside Bar OB gives 25-pip SL. Price taps Inside OB and explodes!
+
+[CASE 2: The Invisible POI Phenomenon]
+Ignoring inside bar leaves ZERO POI on the chart. Yet price bounces violently.
+Source of bounce: Inside Bar Order Block!
+
+[CASE 3: Clean Inside Bar Tap]
+Price ignores mother candle boundary and mitigates the Inside Bar OB directly.
+
+[CASE 4: Mother OB Failure & Deeper Mitigation]
+Mother OB formed with FVG. Price taps mother OB, gives fake reaction, then breaches
+down to mitigate the deeper Inside Bar Order Block before launching into a multi-hundred pip rally!
+```
+
+---
+
+### Frame 11: The Confluence Triad (OTE Superchargers)
 
 ```
         +---------------------------------------------------------+
@@ -213,7 +264,7 @@ Taps INSIDE BAR ORDER BLOCK precisely -> Explosive Impulse Launch!
 
 ---
 
-### Frame 10: The Three Candidate POI Architecture (The No-Guesswork Rule)
+### Frame 12: The Three Candidate POI Architecture (The No-Guesswork Rule)
 
 ```
 Impulsive Leg High
@@ -221,7 +272,7 @@ Impulsive Leg High
          \
           +---> POI Candidate 1: Mitigation Block / Breaker Block (Shallow)
           |
-          +---> POI Candidate 2: Optimal Trade Entry (OTE: 0.618 - 0.79) (Optimal)
+          +---> POI Candidate 2: Optimal Trade Entry (OTE: 0.618 - 0.790) (Optimal)
           |
           +---> POI Candidate 3: Extreme Order Block / FVG (Deepest)
           |

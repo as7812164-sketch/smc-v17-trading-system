@@ -1,4 +1,4 @@
-# Institutional Trading Masterclass Dossier: Video 10
+# Institutional Trading Masterclass Dossier: Video 10 (Deep Pass 2 Audit)
 ## Optimal Trade Entry (OTE) Explained | ICT Golden Zone + Inside Bar Strategy
 
 ---
@@ -14,133 +14,193 @@
 
 ---
 
-### 1. Chronological Forensic Transcript Breakdown
+### 1. Chronological Forensic Transcript Breakdown & Deep Case Studies
 
-#### [00:00:01 - 00:03:50] The Missing Middle Dilemma & Introduction to OTE
+#### [00:00:01 — 00:03:50] The "Missing Middle" Dilemma & Introduction to OTE
 - **The Universal Trader Pain Point:** In standard Smart Money Concepts (SMC), traders are taught to mark only two POIs: the Decisional/First POI (nearest FVG) or the Extreme Last Order Block. In live markets, price frequently breaches the First POI and completely ignores/never reaches the Extreme Order Block, reversing right in the middle.
 - **The Resulting Psychological Breakdown:** Traders freeze, waiting for the extreme order block, and watch multi-hundred pip expansion moves explode without them.
 - **The Core Solution — OTE (Optimal Trade Entry):** OTE is the institutional algorithm's rebalancing sweet spot. It provides:
   1. Asymmetrical Risk-to-Reward Ratio (often exceeding 1:10 to 1:20).
   2. Early capture of expansion moves directly from the algorithmic launchpad.
 
-#### [00:03:51 - 00:07:45] Fibonacci Tool Configuration & Golden Zone Geometry
+#### [00:03:51 — 00:06:00] Fibonacci Tool Calibration (Strict ICT Institutional Settings)
 - **Fibonacci Retracement Tool Calibration:**
   - `0.0`: Swing High (in Bullish leg) / Swing Low (in Bearish leg) $\rightarrow$ Primary Profit Target (TP1).
   - `0.5`: Equilibrium (50% valuation divider between Premium and Discount).
   - `0.618`: 61.8% Golden Ratio Retracement level.
-  - `0.79`: 79.0% Institutional Discount/Premium threshold.
+  - `0.790`: 79.0% Institutional Discount/Premium threshold.
   - `1.0`: Swing Origin / Low (Bullish) / Swing High (Bearish) $\rightarrow$ Stop Loss anchor reference.
-  - *(All other retail levels like 0.236, 0.382, 0.786 are disabled).*
-- **The Golden Zone Definition:** The zone spanning between `0.618` and `0.79` is defined as the **Optimal Trade Entry (OTE)**.
-- **Valuation Filtering Engine:** While Discount (< 0.5) tells you *where* it is cheap to buy, OTE (0.618 - 0.79) acts as an institutional sub-filter, isolating the highest probability reaccumulation pocket within the Discount zone.
+  - *(All retail levels like 0.236, 0.382, 0.786 are permanently disabled).*
+- **The Golden Zone Definition:** The zone spanning between `0.618` and `0.790` is defined as the **Optimal Trade Entry (OTE)**.
+- **Valuation Filtering Engine:** While Discount (< 0.5) tells you *where* it is cheap to buy, OTE (0.618 - 0.790) acts as an institutional sub-filter, isolating the highest probability reaccumulation pocket within the Discount zone.
 
-#### [00:07:46 - 00:11:59] Trend Continuation vs Trend Reversal Directives
+#### [00:06:01 — 00:07:45] Trend Continuation vs Trend Reversal Directives
 - **Trend Continuation Protocol:**
-  - Uptrend: In an established series of Higher Highs and Higher Lows, anchor Fib from Swing Low to Swing High of the latest impulse leg. Mark 0.618 - 0.79.
+  - Uptrend: In an established series of Higher Highs and Higher Lows, anchor Fib from Swing Low to Swing High of the latest impulse leg. Mark 0.618 - 0.790.
   - Downtrend: In Lower Highs and Lower Lows, anchor Fib from Swing High to Swing Low.
 - **Trend Reversal Protocol (Mandatory Sentry):**
   - **ABSOLUTE BAN on blind reversal Fibs:** Reversal trades CANNOT be taken using OTE without a confirmed **Market Structure Shift (MSS)**!
   - Step 1: Wait for price to tap an HTF POI (Daily/4H OB or Liquidity Sweep).
   - Step 2: Confirm HTF/MTF Market Structure Shift with impulsive displacement.
   - Step 3: Anchor OTE Fib on the MSS displacement leg.
-  - Step 4: Execute on the retracement into the 0.618 - 0.79 Golden Zone.
+  - Step 4: Execute on the retracement into the 0.618 - 0.790 Golden Zone.
 
-#### [00:12:00 - 00:14:00] Multi-Timeframe Execution Matrix (The 1H $\rightarrow$ 5m Precision Engine)
-- **The Raw HTF Trap:** Taking a limit entry directly on a 1-Hour OTE zone with SL below Fib 1.0 yields a mediocre 1:1.62 R:R.
-- **Multi-Timeframe Refinement Law:**
-  - Identify 1-Hour Swing Leg $\rightarrow$ Mark 1H OTE (0.618 - 0.79).
-  - Drop down to **5-Minute Chart** when price enters the 1H OTE zone.
-  - Observe LTF Price Action: 5-minute Market Structure Shift (MSS) forming inside the 1H OTE.
-  - Apply 5-minute OTE on the LTF MSS leg.
-  - Entry on 5m OTE with Stop Loss below the 5m swing low (or 5m Fib 1.0).
-  - Target: Retain the **1-Hour Fib 0.0 Level** (HTF Swing High) as TP1!
-  - This transforms a 1:1.62 trade into an institutional 1:8 to 1:15 sniper execution!
+#### [00:07:46 — 00:11:59] Live Chart Walkthrough: Gold 1H Forensic Check (BPR, Mit, Volume Imbalance)
+- **The Gold 1-Hour Chart Scenario:**
+  - Price taps HTF POI and creates a clean 1H Market Structure Shift (MSS).
+  - Price pulls back into the 1st FVG, gives a minor reaction, and then completely breaches it downward.
+  - Retail traders immediately wait for the Extreme Last Order Block at the bottom.
+  - Price reverses in mid-air and rallies violently!
+- **Shoaib Khan's Forensic Checklist (Why Did It Reverse in Mid-Air?):**
+  1. *Mitigation Block check:* Is there a Mitigation Block? No.
+  2. *Balanced Price Range (BPR) check:* Is there a BPR? No.
+  3. *Volume Imbalance check:* Is there a Volume Imbalance? Yes, a minor Volume Imbalance exists.
+  4. *The True Institutional Launchpad:* Anchor OTE from 1H Swing Low to Swing High $\rightarrow$ The 0.618 - 0.790 Golden Zone aligns perfectly with where price reversed!
+- **The 1:1.62 Raw Entry Trap:** If a trader takes entry on the raw 1H OTE with SL below Fib 1.0, Risk-to-Reward is only 1:1.62. This must be refined!
 
-#### [00:14:01 - 00:16:50] Real Trade Forensic 1: Gold 1:20 R:R (500 Pips Master Trade)
-- **Higher Timeframe Setup (Daily):**
-  - Price taps a Daily Bullish Order Block.
-  - Prints the Institutional 4-Stage Reaction:
-    1. Tap Order Block.
-    2. Displacement (impulsive candle).
-    3. Retest.
-    4. Expansion Candle!
-- **1-Hour Structure:**
-  - 1H Market Structure Shift confirmed.
-  - First FVG tapped and breached (failed to push price higher).
-  - Extreme Order Block at the bottom was left untracked (never tapped).
-  - OTE applied from 1H swing low to swing high.
+#### [00:12:00 — 00:13:40] Multi-Timeframe Execution Matrix (1-Hour $\rightarrow$ 5-Minute Precision Engine)
+- **Drop to 5-Minute Chart:**
+  - When price enters the 1-Hour OTE zone, switch to 5-Minute timeframe.
+  - Observe LTF Structure: 5m is making Lower Lows into the 1H OTE.
+  - 5m prints a clean **Market Structure Shift (MSS)** with displacement!
+  - Anchor OTE on the 5-Minute MSS leg (or target 5m FVG/OB).
+  - Stop Loss: Below the 5m swing low (tight sniper SL).
+  - Primary Target: Retain the **1-Hour Fib 0.0 Level** (HTF Swing High)!
+  - Outcome: The 1:1.62 trade is refined into an institutional **1:10 to 1:20 Risk-to-Reward masterpiece**!
+
+#### [00:13:41 — 00:16:50] Real Trade Forensic 1: Gold 1:20 R:R (500 Pips Master Trade)
+- **Daily HTF Context:**
+  - Gold taps Daily Bullish Order Block.
+  - Executes the institutional **4-Stage Reaction Cycle**:
+    1. *Tap Order Block*
+    2. *Displacement (Impulsive candle)*
+    3. *Retest*
+    4. *Expansion Candle*
+- **1-Hour MTF Context:**
+  - 1H MSS confirmed. First FVG breached; extreme 1H OB left untouched.
+  - OTE applied from 1H low to high.
 - **4-Hour Confluence Refinement:**
-  - Inside the 1H OTE (0.618 - 0.79), an unmitigated **4-Hour FVG** was perfectly aligned!
-  - Entry triggered at the 4H FVG inside the OTE zone.
-- **Targeting & Path of Least Resistance:**
-  - Intermediate hurdle: A 4H bearish Order Block stood in the way.
-  - Shoaib Khan announced live entry on Telegram *after* price cleanly breached above this 4H hurdle, knowing that beyond it lay pure **Low Resistance Liquidity (LRL)** void up to the Daily Bearish Order Block.
-  - Outcome: 500 pips captured at a 1:20 Risk-to-Reward ratio!
+  - Inside the 1H OTE (0.618 - 0.790), a clean **4-Hour FVG** was sitting unmitigated!
+  - Entry executed directly at the 4H FVG inside the OTE Golden Zone.
+- **Targeting & Overcoming the 4H Hurdle:**
+  - Target: Daily Bearish Order Block.
+  - Intermediate Hurdle: A 4-Hour Bearish Order Block was blocking the path.
+  - Shoaib Khan posted the trade proof live on Telegram *after* price cleanly breached above this 4H hurdle, knowing that beyond it lay pure **Low Resistance Liquidity (LRL)** void!
+  - Price ran 500 pips uninterrupted into the Daily OB $\implies$ **1:20 Risk-to-Reward captured!**
 
-#### [00:16:51 - 00:22:20] Real Trade Forensic 2: Bitcoin Multi-Timeframe Institutional Short
-- **Weekly Liquidity Sweep:** BTC swept Weekly Candle Buy-Side Liquidity (BSL).
-- **Institutional Delivery Rule:** When an HTF candle purges liquidity, it must deliver price to an HTF imbalance/POI below. Below lay an untracked **Weekly Breakaway Gap**!
-- **4-Hour / 15-Minute Cascading Execution:**
-  - 4H Market Structure Shift (MSS) occurs.
-  - Swing 1: Short from 1st POI missed.
-  - Swing 2: Pullback into 4H OTE (0.618 - 0.79) $\rightarrow$ Short entered.
-  - Swing 3: Reversal from 4H Mitigation Block $\rightarrow$ Short entered.
-  - Swing 4: Reversal from 4H FVG $\rightarrow$ Short entered.
-  - Swing 5: Another 4H OTE tap $\rightarrow$ Short entered.
-  - **15-Minute Refinement:** Each 4H OTE tap was refined on the 15-minute chart by waiting for a 15m MSS and pullback into 15m FVG/OTE.
-  - Ultimate Target: Delivered completely into the Weekly Breakaway Gap!
+#### [00:16:51 — 00:18:00] Case Study: The Viewer's Bitcoin 4H SL Trap (Weekly Sweep vs 4H OB)
+- **The Viewer's Dilemma:** A student commented: *"I took a long trade from a 4-Hour Order Block in Bitcoin. There was an MSS, and price tapped the last POI, but my Stop Loss still got hit! Why did it fail?"*
+- **Shoaib's Institutional Diagnosis:**
+  - The trader made the fatal retail mistake of looking at the 4-Hour chart in isolation!
+  - On the **Weekly Chart**, Bitcoin had just swept Weekly Candle Buy-Side Liquidity (BSL)!
+  - Institutional Delivery Law: When an HTF candle purges liquidity, price **must deliver** into an HTF POI below!
+  - Below sat an untracked **Weekly Breakaway Gap**!
+  - Therefore, taking a 4H buy was buying directly into an institutional distribution cascade. The 4H OB was guaranteed to be destroyed!
 
-#### [00:22:21 - 00:30:00] The Inside Bar (Inside Candle) Institutional Doctrine
-- **Definition & Left-to-Right Orientation:**
-  - An Inside Bar is a candle whose High and Low are completely encompassed within the High and Low of the preceding candle (Mother Candle).
-  - Markets are parsed strictly Chronologically from Left (Past) to Right (Present).
-  - The Mother Candle is on the Left; the Inside Bar is on the Right.
-- **The Standard SMC / ICT Myth Debunked:**
-  - Myth: "Inside bars have no significance. Any FVG or Order Block inside an inside bar is completely invalid and must be ignored."
-  - Empirical Reality on Live Charts (Gold Daily Walkthrough):
-    - Case A: Ignoring inside bars forces traders to select giant, clumsy mother candles as Order Blocks, causing massive Stop Losses.
-    - Case B: Often, without the inside bar, NO FVG or Order Block exists on the chart! Yet price reverses cleanly from the Inside Bar OB.
-    - Case C: Price frequently taps the Mother OB, fakes a minor reaction, then plunges deeper to mitigate the **Inside Bar Order Block** before launching into an impulsive run!
-- **Asset Specificity & The 100-Sample Law:**
-  - Never blindly accept dogma. Test 100 setups on your specific asset.
-  - In Gold (XAUUSD): Inside Bar Order Blocks are exceptionally accurate and provide precision entries.
-  - In Bitcoin (BTCUSD): Price often respects FVGs over OBs entirely.
+#### [00:18:01 — 00:21:15] Real Trade Forensic 2: Bitcoin Multi-Timeframe Cascading Short (Fractal OTE Engine)
+- **4-Hour Cascading Trail into Weekly Breakaway Gap:**
+  - 4H MSS confirmed downward.
+  - *Swing 1:* First POI missed.
+  - *Swing 2:* 4H OTE (0.618 - 0.790) tapped $\rightarrow$ Short executed.
+  - *Swing 3:* 4H Mitigation Block tapped $\rightarrow$ Short executed.
+  - *Swing 4:* 4H FVG tapped $\rightarrow$ Short executed.
+  - *Swing 5:* Another 4H OTE tapped $\rightarrow$ Short executed.
+- **15-Minute Sniper Refinement & The Fractal OTE Discovery:**
+  - Price taps the 4-Hour OTE zone.
+  - On 15m chart, price creates a 15m MSS downward.
+  - There is only ONE 15m FVG and Order Block.
+  - **The Large SL Problem:** Taking the full 15m Order Block created an unacceptably large Stop Loss!
+  - **The Fractal Solution:** Shoaib applied OTE **AGAIN directly on the 15-minute MSS swing leg** (from High to Low)!
+  - The 15m OTE level was 0.790 to 0.618.
+  - Direct limit entry executed upon tapping the 15m OTE!
+  - SL placed right above 15m Fib 1.0; Target set to the Weekly Breakaway Gap!
+  - Outcome: **1:7 Risk-to-Reward captured completely!**
 
-#### [00:30:01 - 00:36:37] The Three Candidate POI Architecture & Dynamic Adaptation
-- **The Three Reversal Hotspots:** After any impulsive swing, price has exactly 3 potential institutional reaction zones:
-  1. *Zone 1: Mitigation Block / Breaker Block* (Shallowest retracement).
-  2. *Zone 2: Optimal Trade Entry (OTE) Golden Zone (0.618 - 0.79)* (Medium, rebalancing launchpad).
-  3. *Zone 3: Extreme Order Block / FVG* (Deepest discount/premium).
+#### [00:21:16 — 00:22:20] The Universal Invariance Law (Indian Market, Crypto, Gold, Forex)
+- OTE is not a crypto or gold gimmick.
+- Shoaib clarifies: *"It works in the Indian Market (Nifty/Bank Nifty), Stocks, Forex, Gold, and Crypto identically. I show Gold and Bitcoin examples only because those are the two primary assets I actively trade!"*
+
+#### [00:22:21 — 00:25:35] The Inside Bar Institutional Doctrine & The "Man Standing" Analogy
+- **Definition & Chronological Parsing:**
+  - Charts are parsed strictly Left (Past) to Right (Present).
+  - The **Mother Candle** is formed first on the Left.
+  - The **Inside Bar** forms to the Right, with its High $\le$ Mother High and Low $\ge$ Mother Low.
+- **The "Man Standing Outside" Analogy:**
+  - Imagine a person standing on the right looking left at the chart.
+  - He only sees the giant Mother Candle's High and Low.
+  - Everything inside is completely invisible to him!
+  - He only sees price emerge when a candle finally breaks outside the Mother Candle's High or Low.
+  - That is why SMC/ICT treats 4-5 inside candles as **ONE single consolidated candle**!
+- **The Retail Dogma Debunked:**
+  - Retail educators teach: *"Inside bar ke andar jo bhi Order Block ya FVG hota hai, woh invalid hota hai; use ignore karo!"*
+  - Shoaib Khan shows why this dogma causes retail traders to bleed.
+
+#### [00:25:36 — 00:30:00] Live Gold Daily Walkthrough: 4 Consecutive Inside Bar Proofs
+Shoaib Khan proves empirically on the Gold Daily chart:
+1. **Case 1 (Clumsy Mother OB vs Precision Inside OB):**
+   - Ignoring inside bars forces you to select a massive mother candle as an OB, giving a huge SL.
+   - Using the Inside Bar Order Block gives a tight, precision entry. Price tapped the inside OB and exploded!
+2. **Case 2 (The Invisible POI Phenomenon):**
+   - A swing on Gold Daily: If you treat the inside bar as invisible, there is **NO FVG and NO Order Block** on the chart!
+   - Retail dogma says: "No setup here."
+   - Yet price reverses with ferocious momentum! Where did it bounce from? **Precisely from the Inside Bar Order Block!**
+3. **Case 3 (Mother OB Tap vs Inside OB Tap):**
+   - Another setup: Both mother OB and inside OB are visible. Price taps the Inside Bar OB cleanly and runs!
+4. **Case 4 (The Trap & Breakdown of the Mother OB):**
+   - Latest Gold live trade: A mother candle forms, followed by an inside bar and a 3-candle FVG.
+   - Retail traders marked the Mother Candle as the Order Block.
+   - Price dropped, touched the Mother OB, gave a small reaction, and then **completely broke through and failed the Mother OB**!
+   - Why? Because the institutional algorithm was reaching down to tap the **Inside Bar Order Block**!
+   - Once the Inside Bar OB was mitigated, price launched into displacement, retest, and massive expansion!
+
+#### [00:30:01 — 00:33:45] The 100-Sample Empirical Law & Asset-Specific Personalities
+- **The 100-Sample Test:**
+  - Do not blindly trust anyone (not even Shoaib). Open your chart and backtest the **last 100 inside bar order blocks**.
+  - If out of 100, the inside bar OB fails repeatedly, then in that asset use the Mother Candle.
+  - If out of 100, the inside bar OB provides precision bounces, use the Inside Bar OB!
+- **Asset Personalities:**
+  - **Gold (XAUUSD):** Inside Bar Order Blocks work exceptionally well and provide elite sniper risk-to-reward.
+  - **Bitcoin (BTCUSD):** Price frequently front-runs Order Blocks and reverses from FVGs alone.
+
+#### [00:33:46 — 00:35:40] The Three Candidate POI Architecture & Confluence Triad
+- **The Three Reversal Hotspots:** After any impulsive leg, price has 3 candidate reaction levels:
+  1. *Shallow:* Mitigation Block / Breaker Block.
+  2. *Optimal:* Optimal Trade Entry (OTE: 0.618 - 0.790).
+  3. *Deep:* Extreme Order Block / FVG.
 - **The No-Guesswork Rule:**
-  - NO trader knows with 100% certainty which of the three zones price will bounce from.
-  - NEVER place blind limit orders across all three zones.
-  - *The Protocol:* Mark all three candidate zones. Monitor them on LTF (5m for 1H, 15m for 4H). Whichever zone prints an **LTF Market Structure Shift (MSS)** with displacement, THAT is your confirmed entry zone!
-- **Psychological Principle:** Markets change behavior dynamically. Traders must remain fluid, empirical, and adapt their framework rather than forcing dogmatic beliefs onto the chart.
+  - Nobody knows with certainty which of the three levels price will bounce from.
+  - Anyone who claims they know is lying!
+  - **The Protocol:** Mark all three levels. If analyzing a 1-Hour swing, monitor 5-minute price action at all 3 zones. Whichever zone prints an **LTF Market Structure Shift (MSS) with displacement**, THAT is your confirmed institutional entry!
+- **The Confluence Triad (OTE Superchargers):**
+  - OTE (0.618 - 0.790) + Order Block.
+  - OTE (0.618 - 0.790) + Fair Value Gap.
+  - OTE (0.618 - 0.790) + Mitigation / Breaker Block.
+  - Score $\ge 2 \implies$ Institutional Grade A+ Setup!
+
+#### [00:35:41 — 00:36:37] Dynamic Adaptation vs Dogmatic Stubbornness
+- **The Closing Institutional Philosophy:**
+  - *"Market dynamic hai. Kal ko agar market apna behavior change karta hai aur inside bar work karna band kar deta hai, toh aapko rigid hokar nahi baithna ki 'Shoaib ne bola tha toh main inside bar hi use karunga!'"*
+  - *"Market agar apna condition change kar raha hai, toh humein bhi uske hisab se change hona padega. Cheezon ko seekho, samjho aur live market ke hisab se dynamically adapt karo!"*
 
 ---
 
-### 2. The 3 Superchargers of OTE (Confluence Triad)
-An OTE zone (0.618 - 0.79) is powerful on its own, but its probability approaches near-certainty when aligned with institutional structural markers:
-1. **OTE + Order Block (OB):** An unmitigated Bullish/Bearish Order Block overlapping or embedded within 0.618 - 0.79.
-2. **OTE + Fair Value Gap (FVG):** A clean 3-candle imbalance cavity overlapping 0.618 - 0.79.
-3. **OTE + Mitigation / Breaker Block:** A previously broken support/resistance level intersecting the 0.618 - 0.79 zone.
-
----
-
-### 3. Quantitative Pine Script Mathematical Formulation
+### 2. Quantitative Pine Script Mathematical Formulation
 
 #### 1. Swing Leg & Fibonacci Coordinates:
 $$\text{Range} = \text{SwingHigh} - \text{SwingLow}$$
-$$\text{Fib}_{0.0} = \text{SwingHigh}\quad (\text{for Bullish Continuation/Reversal})$$
+$$\text{Fib}_{0.0} = \text{SwingHigh}\quad (\text{Primary Target TP1 in Bullish})$$
 $$\text{Fib}_{0.5} = \text{SwingHigh} - 0.50 \times \text{Range} = \text{Equilibrium}$$
 $$\text{Fib}_{0.618} = \text{SwingHigh} - 0.618 \times \text{Range} \quad (\text{OTE Zone Upper Bound})$$
-$$\text{Fib}_{0.79} = \text{SwingHigh} - 0.790 \times \text{Range} \quad (\text{OTE Zone Lower Bound})$$
+$$\text{Fib}_{0.790} = \text{SwingHigh} - 0.790 \times \text{Range} \quad (\text{OTE Zone Lower Bound})$$
 $$\text{Fib}_{1.0} = \text{SwingLow} \quad (\text{Origin / SL Reference})$$
 
-#### 2. Inside Bar Detection Logic:
+#### 2. Inside Bar Detection & Order Block Logic:
 $$\text{IsInsideBar}_i = (\text{high}_i \le \text{high}_{i-1}) \land (\text{low}_i \ge \text{low}_{i-1})$$
 $$\text{InsideBarOB} = \text{IsInsideBar}_i \land (\text{close}_i < \text{open}_i) \implies \text{Valid Bullish OB within Mother Bar}$$
 
-#### 3. Confluence Score Engine:
-$$\text{OTE\_Score} = \mathbf{1}_{[\text{low} \le \text{Fib}_{0.618} \land \text{high} \ge \text{Fib}_{0.79}]} \times (1 + \mathbf{1}_{\text{HasOB}} + \mathbf{1}_{\text{HasFVG}} + \mathbf{1}_{\text{HasMitigation}})$$
+#### 3. Fractal OTE Refinement:
+$$\text{OTE}_{\text{LTF}} = \text{Fib}_{0.618-0.790}(\text{Swing}_{\text{LTF\_MSS}}) \quad \text{inside} \quad \text{OTE}_{\text{HTF}}$$
+
+#### 4. Confluence Score Engine:
+$$\text{OTE\_Score} = \mathbf{1}_{[\text{low} \le \text{Fib}_{0.618} \land \text{high} \ge \text{Fib}_{0.790}]} \times (1 + \mathbf{1}_{\text{HasOB}} + \mathbf{1}_{\text{HasFVG}} + \mathbf{1}_{\text{HasMitigation}})$$
 An OTE score $\ge 2$ signifies an institutional grade setup.
