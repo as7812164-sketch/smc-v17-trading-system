@@ -30,7 +30,7 @@
 | **03** | 5 Powerful Gaps Every Smart Money Trader Must Know: FVG, BPR, Imbalance | https://youtu.be/FtJ79wQgpOA | 🟢 Ingested & Locked | Ep 01-02 | 5 Gaps (FVG, BPR, Volume Imbalance, Gap Imbalance, Breakaway Gap), Apple Market Psychology, Size Fallacy, First/Last FVG Rule | living_engine_v03.pine |
 | **04** | The Most Detailed Order Block Explanation in Hindi: ICT + SMC Strategy | https://youtu.be/Y9l-nO3VsrA | 🟢 Ingested & Locked | Ep 01-03 | Color Doesn't Matter Law, Mandatory FVG & FVG Shift Rule, Fib 0.5 Amazon Sale, Post-IDM Decisional OB & Liquidity Sweep OB | living_engine_v04.pine |
 | **05** | Mitigation Block And Breaker Block Simplified: Full Breakdown | https://youtu.be/Qcn-i18O9Iw | 🟢 Ingested & Locked | Ep 01-04 | Mitigation (TJL 1 Continuation), Breaker (Dual Liquidity Reversal), Strong Mit 2-Brick FVG Overlap, Wick Refinement | living_engine_v05.pine |
-| **06** | *Queued: Video 06* | - | ⏳ Queued | Ep 01-05 | - | - |
+| **06** | All Types Of Liquidity Explained In SMC & ICT: Stop Getting Trapped | https://youtu.be/7lX8V0XJnd8 | 🟢 Ingested & Locked | Ep 01-05 | 6 Liquidity Types, 10K-Lot Dilemma, Biryani Plate Analogy, HTF Pattern Alignment Law, EQH/EQL & BSL/SSL Sweep Engine | living_engine_v06.pine |
 | **07** | *Queued: Video 07* | - | ⏳ Queued | Ep 01-06 | - | - |
 | **08** | *Queued: Video 08* | - | ⏳ Queued | Ep 01-07 | - | - |
 | **09** | *Queued: Video 09* | - | ⏳ Queued | Ep 01-08 | - | - |
