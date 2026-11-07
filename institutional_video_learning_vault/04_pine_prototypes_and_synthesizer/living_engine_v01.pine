@@ -1,0 +1,53 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 01 BASE
+// Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
+// Episode 01: Perpetual Delivery Loop (POI <-> Liquidity) & POI Power Hierarchy
+// Zero Retail Indicators (No RSI, MACD, EMA) | Multi-Timeframe Institutional Engine
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes 34-Pillar Master Engine (Ep 01 Living)", "⚡ Hermes 34-Pillar Engine", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📐 1. CORE INSTITUTIONAL DATA STRUCTURES (EPISODE 01 FOUNDATION)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// POI Power Ranking Hierarchy (Shoaib Khan Rule: OB > VI > FVG)
+// When stacked in the same leg, highest rank takes absolute precedence.
+enum POIPowerRank
+    RANK_1_ORDER_BLOCK       = 1  // Most powerful: Resting institutional limits
+    RANK_2_VOLUME_IMBALANCE  = 2  // Intermediate: Body gap imbalances
+    RANK_3_FAIR_VALUE_GAP    = 3  // Baseline: 3-candle displacement inefficiencies
+
+// Market State Delivery Loop: POI <---> Liquidity
+enum DeliveryState
+    STATE_SEEKING_LIQUIDITY       // Price launched from POI, targeting BSL/SSL
+    STATE_SEEKING_POI             // Liquidity swept, price seeking unmitigated POI
+
+// Entry Execution Architecture
+enum EntryStyle
+    AGGRESSIVE_1ST_OB_TAP        // Instant limit/market entry on first tap
+    SAFE_2ND_OB_CONFIRMATION     // Wait for 1st tap -> displacement -> 2nd fresh OB tap
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 2. INPUT PARAMETERS & TOGGLES
+// ══════════════════════════════════════════════════════════════════════════════
+grp_ep01          = "═══ Episode 01: POI Hierarchy & Execution ═══"
+entryExecution    = input.string("Safe 2nd OB Confirmation", "Execution Architecture", options=["Aggressive 1st OB Tap", "Safe 2nd OB Confirmation"], group=grp_ep01, tooltip="Episode 01 Rule: Safe confirmation waits for a second fresh decisional OB.")
+bookPartialAtRR   = input.float(4.0, "Partial Booking Target (1:R)", minval=2.0, maxval=10.0, step=0.5, group=grp_ep01, tooltip="Shoaib Khan booked 50% position at 1:4 RR / First Liquidity Target.")
+shiftBeAtPartial  = input.bool(true, "Shift SL to Breakeven at Partial", group=grp_ep01)
+
+// Colors
+colOB             = input.color(#00E676, "Tier 1: Order Block Color", group=grp_ep01)
+colVI             = input.color(#2979FF, "Tier 2: Volume Imbalance Color", group=grp_ep01)
+colFVG            = input.color(#FFE57F, "Tier 3: Fair Value Gap Color", group=grp_ep01)
+
+// Foundational State Indicators (Zero Retail Indicators)
+var string currentDeliveryState = "INITIALIZING"
+
+// Visual Watermark
+var table hud = table.new(position.top_right, 2, 2, bgcolor=color.new(#131722, 20), border_color=color.new(#2A2E39, 0), border_width=1)
+if barstate.islast
+    table.cell(hud, 0, 0, "HERMES 34-PILLAR", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 0, "EPISODE 01: POI-TO-LIQUIDITY", bgcolor=color.new(#00E676, 20), text_color=color.white, text_size=size.small)
+    table.cell(hud, 0, 1, "POI HIERARCHY", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 1, "OB > VI > FVG (LOCKED)", bgcolor=color.new(#2979FF, 20), text_color=color.white, text_size=size.small)

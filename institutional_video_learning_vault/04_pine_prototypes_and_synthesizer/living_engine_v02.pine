@@ -1,0 +1,207 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 02
+// Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
+// Episode 01 + Episode 02 Cumulative Synthesis:
+// - POI-to-Liquidity Perpetual Loop & POI Power Hierarchy (OB > VI > FVG)
+// - True Institutional Structure Mapping: Inducement (IDM), BOS, CHoCH
+// - Strict Candle Body Close for BOS/CHoCH vs Wick Sweep for IDM
+// Zero Retail Indicators (No RSI, MACD, EMA) | Multi-Timeframe Algorithmic Engine
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes 34-Pillar Master Engine (Ep 02 Living)", "⚡ Hermes 34-Pillar Engine", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📐 1. CORE TYPES & DEFINITIONS (EPISODES 01 & 02)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// POI Power Ranking Hierarchy (Ep 01: OB > VI > FVG)
+enum POIPowerRank
+    RANK_1_ORDER_BLOCK       = 1  // Most powerful: Resting institutional limits
+    RANK_2_VOLUME_IMBALANCE  = 2  // Intermediate: Body gap imbalances
+    RANK_3_FAIR_VALUE_GAP    = 3  // Baseline: 3-candle displacement inefficiencies
+
+// Market Trend State
+enum MarketTrend
+    UPTREND
+    DOWNTREND
+    SIDEWAYS_CONSOLIDATION        // Strict Ep 02 Mandate: NO TRADING
+
+// Structural Event Types
+enum StructuralEvent
+    EVENT_NONE
+    EVENT_IDM_TAKEN               // Wick sweep is sufficient
+    EVENT_BOS                     // Body close strictly required
+    EVENT_CHOCH                   // Body close strictly required
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 2. INPUT SETTINGS & TOGGLES
+// ══════════════════════════════════════════════════════════════════════════════
+grp_ep02          = "═══ Episode 02: SMC Structure Mapping ═══"
+swingLookback     = input.int(5, "Internal Swing Lookback", minval=2, maxval=20, group=grp_ep02, tooltip="Bars on left/right for internal structure pivots.")
+showIDMLines      = input.bool(true, "Show Inducement (IDM) Levels", group=grp_ep02)
+showBOSLines      = input.bool(true, "Show BOS Continuation Lines", group=grp_ep02)
+showCHoCHLines    = input.bool(true, "Show CHoCH Trend Reversal Lines", group=grp_ep02)
+
+grp_vis           = "═══ Visual Styles & Colors ═══"
+colBullBOS        = input.color(#00E676, "Bullish BOS / HH Color", group=grp_vis)
+colBearBOS        = input.color(#FF1744, "Bearish BOS / LL Color", group=grp_vis)
+colIDM            = input.color(#FF9100, "Inducement (IDM) Line Color", group=grp_vis)
+colCHoCH          = input.color(#D500F9, "CHoCH Reversal Color", group=grp_vis)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔍 3. INTERNAL SWING PIVOT ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+pHigh = ta.pivothigh(high, swingLookback, swingLookback)
+pLow  = ta.pivotlow(low, swingLookback, swingLookback)
+
+var float activeIDMPrice    = na
+var int   activeIDMBar      = na
+var bool  idmSwept          = false
+
+var float confirmedHHPrice  = na
+var int   confirmedHHBar    = na
+var float confirmedHLPrice  = na
+var int   confirmedHLBar    = na
+
+var float confirmedLLPrice  = na
+var int   confirmedLLBar    = na
+var float confirmedLHPrice  = na
+var int   confirmedLHBar    = na
+
+var bool  isUptrend         = true
+var float floatingPeakHigh  = high
+var int   floatingPeakBar   = bar_index
+var float floatingTroughLow = low
+var int   floatingTroughBar = bar_index
+
+// Update Floating Extreme of Current Structural Leg
+if isUptrend
+    if high > floatingPeakHigh
+        floatingPeakHigh := high
+        floatingPeakBar  := bar_index
+else
+    if low < floatingTroughLow
+        floatingTroughLow := low
+        floatingTroughBar := bar_index
+
+// When an internal pivot low forms in an uptrend to the LEFT of the peak:
+if not na(pLow)
+    pLowBar   = bar_index - swingLookback
+    pLowPrice = pLow
+    if isUptrend and pLowBar < floatingPeakBar
+        activeIDMPrice := pLowPrice
+        activeIDMBar   := pLowBar
+        idmSwept       := false
+
+// When an internal pivot high forms in a downtrend to the LEFT of the trough:
+if not na(pHigh)
+    pHighBar   = bar_index - swingLookback
+    pHighPrice = pHigh
+    if not isUptrend and pHighBar < floatingTroughBar
+        activeIDMPrice := pHighPrice
+        activeIDMBar   := pHighBar
+        idmSwept       := false
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 4. INDUCEMENT (IDM) SWEEP VALIDATION (WICK SWEEP IS SUFFICIENT)
+// ══════════════════════════════════════════════════════════════════════════════
+if isUptrend and not na(activeIDMPrice) and not idmSwept
+    // Shoaib Khan Rule: Wick sweep below internal low to the left is 100% valid
+    if low < activeIDMPrice
+        idmSwept        := true
+        confirmedHHPrice := floatingPeakHigh
+        confirmedHHBar   := floatingPeakBar
+        if showIDMLines
+            line.new(activeIDMBar, activeIDMPrice, bar_index, activeIDMPrice, color=colIDM, style=line.style_dotted, width=1)
+            label.new(bar_index, activeIDMPrice, "⚡ IDM SWEPT\n(HH Confirmed)", color=color.new(color.white, 100), textcolor=colIDM, style=label.style_label_up, size=size.small)
+
+if not isUptrend and not na(activeIDMPrice) and not idmSwept
+    // Wick sweep above internal high to the left
+    if high > activeIDMPrice
+        idmSwept        := true
+        confirmedLLPrice := floatingTroughLow
+        confirmedLLBar   := floatingTroughBar
+        if showIDMLines
+            line.new(activeIDMBar, activeIDMPrice, bar_index, activeIDMPrice, color=colIDM, style=line.style_dotted, width=1)
+            label.new(bar_index, activeIDMPrice, "⚡ IDM SWEPT\n(LL Confirmed)", color=color.new(color.white, 100), textcolor=colIDM, style=label.style_label_down, size=size.small)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🏛️ 5. BOS & CHOCH VALIDATION (STRICT CANDLE BODY CLOSE REQUIRED)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── BULLISH BOS: Body close above confirmed Higher High ──
+if isUptrend and idmSwept and not na(confirmedHHPrice)
+    if close > confirmedHHPrice and close[1] <= confirmedHHPrice
+        // BOS Confirmed! Lock Higher Low
+        confirmedHLPrice  := floatingTroughLow
+        confirmedHLBar    := floatingTroughBar
+        floatingPeakHigh  := high
+        floatingPeakBar   := bar_index
+        idmSwept          := false
+        activeIDMPrice    := na
+        
+        if showBOSLines
+            line.new(confirmedHHBar, confirmedHHPrice, bar_index, confirmedHHPrice, color=colBullBOS, style=line.style_solid, width=2)
+            label.new(bar_index, confirmedHHPrice, "📈 BULLISH BOS\n(Body Close)", color=color.new(color.white, 100), textcolor=colBullBOS, style=label.style_label_down, size=size.small)
+
+// ── BEARISH CHOCH: Body close below confirmed Higher Low ──
+if isUptrend and not na(confirmedHLPrice)
+    if close < confirmedHLPrice and close[1] >= confirmedHLPrice
+        // Trend Reversal to Bearish!
+        isUptrend         := false
+        confirmedLHPrice  := floatingPeakHigh
+        confirmedLHBar    := floatingPeakBar
+        floatingTroughLow := low
+        floatingTroughBar := bar_index
+        idmSwept          := false
+        activeIDMPrice    := na
+        
+        if showCHoCHLines
+            line.new(confirmedHLBar, confirmedHLPrice, bar_index, confirmedHLPrice, color=colCHoCH, style=line.style_dashed, width=2)
+            label.new(bar_index, confirmedHLPrice, "🔄 CHoCH (BEARISH REVERSAL)\nBody Close Below HL", color=color.new(color.white, 100), textcolor=colCHoCH, style=label.style_label_up, size=size.small)
+
+// ── BEARISH BOS: Body close below confirmed Lower Low ──
+if not isUptrend and idmSwept and not na(confirmedLLPrice)
+    if close < confirmedLLPrice and close[1] >= confirmedLLPrice
+        // BOS Confirmed! Lock Lower High
+        confirmedLHPrice  := floatingPeakHigh
+        confirmedLHBar    := floatingPeakBar
+        floatingTroughLow := low
+        floatingTroughBar := bar_index
+        idmSwept          := false
+        activeIDMPrice    := na
+        
+        if showBOSLines
+            line.new(confirmedLLBar, confirmedLLPrice, bar_index, confirmedLLPrice, color=colBearBOS, style=line.style_solid, width=2)
+            label.new(bar_index, confirmedLLPrice, "📉 BEARISH BOS\n(Body Close)", color=color.new(color.white, 100), textcolor=colBearBOS, style=label.style_label_up, size=size.small)
+
+// ── BULLISH CHOCH: Body close above confirmed Lower High ──
+if not isUptrend and not na(confirmedLHPrice)
+    if close > confirmedLHPrice and close[1] <= confirmedLHPrice
+        // Trend Reversal to Bullish!
+        isUptrend         := true
+        confirmedHLPrice  := floatingTroughLow
+        confirmedHLBar    := floatingTroughBar
+        floatingPeakHigh  := high
+        floatingPeakBar   := bar_index
+        idmSwept          := false
+        activeIDMPrice    := na
+        
+        if showCHoCHLines
+            line.new(confirmedLHBar, confirmedLHPrice, bar_index, confirmedLHPrice, color=colCHoCH, style=line.style_dashed, width=2)
+            label.new(bar_index, confirmedLHPrice, "🔄 CHoCH (BULLISH REVERSAL)\nBody Close Above LH", color=color.new(color.white, 100), textcolor=colCHoCH, style=label.style_label_down, size=size.small)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 6. INSTITUTIONAL HUD TABLE (EPISODES 01 & 02 COMBINED)
+// ══════════════════════════════════════════════════════════════════════════════
+var table hud = table.new(position.top_right, 4, 2, bgcolor=color.new(#131722, 15), border_color=color.new(#2A2E39, 0), border_width=1)
+if barstate.islast
+    table.cell(hud, 0, 0, "HERMES 34-PILLAR", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 0, "TREND REGIME", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 2, 0, "IDM STATUS", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 3, 0, "CONFIRMED EXTREME", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    
+    table.cell(hud, 0, 1, "EP 01 + EP 02 ACTIVE", bgcolor=color.new(#00E676, 25), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 1, isUptrend ? "🟢 UPTREND (HH/HL)" : "🔴 DOWNTREND (LH/LL)", bgcolor=isUptrend ? color.new(#00E676, 20) : color.new(#FF1744, 20), text_color=color.white, text_size=size.small)
+    table.cell(hud, 2, 1, idmSwept ? "⚡ IDM SWEPT" : "⏳ HUNTING IDM", bgcolor=idmSwept ? color.new(#FF9100, 20) : color.new(#131722, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 3, 1, isUptrend ? ("HH: " + str.tostring(confirmedHHPrice, "#.##")) : ("LL: " + str.tostring(confirmedLLPrice, "#.##")), bgcolor=color.new(#2979FF, 20), text_color=color.white, text_size=size.small)
