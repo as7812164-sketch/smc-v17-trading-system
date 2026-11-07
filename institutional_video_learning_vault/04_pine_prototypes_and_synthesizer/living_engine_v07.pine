@@ -260,9 +260,9 @@ if array.size(activeLiqPools) > 0 and showLiqSweeps
                 line.set_x2(pool.lineId, bar_index + 5)
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 📊 7. INSTITUTIONAL 12-LIQUIDITY UNIFIED HUD
+// 📊 7. INSTITUTIONAL 12-LIQUIDITY UNIFIED HUD & DUAL TARGET SYMMETRY
 // ══════════════════════════════════════════════════════════════════════════════
-var table hud = table.new(position.top_right, 2, 7, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
+var table hud = table.new(position.top_right, 2, 8, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
 if barstate.islast
     table.cell(hud, 0, 0, "🏛️ HERMES SMC ENGINE", bgcolor=#1E88E5, text_color=color.white, text_size=size.small)
     table.cell(hud, 1, 0, "EP 07 ACTIVE", bgcolor=#1E88E5, text_color=color.white, text_size=size.small)
@@ -282,5 +282,8 @@ if barstate.islast
     table.cell(hud, 0, 5, "LRL Liquidity Voids:", text_color=color.white, text_size=size.small)
     table.cell(hud, 1, 5, showLRL_Voids ? "MAPPED (⚡ FAST)" : "OFF", text_color=colLRLVoid, text_size=size.small)
     
-    table.cell(hud, 0, 6, "Target Universe:", text_color=color.white, text_size=size.small)
-    table.cell(hud, 1, 6, "12-LIQUIDITY POOLS", text_color=#00E5FF, text_size=size.small)
+    table.cell(hud, 0, 6, "Dual Target Symmetry:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 6, "POI ↔ LIQUIDITY", text_color=#00E676, text_size=size.small)
+
+    table.cell(hud, 0, 7, "Target Universe:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 7, "12-LIQUIDITY POOLS", text_color=#00E5FF, text_size=size.small)

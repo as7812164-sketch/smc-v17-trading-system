@@ -1,5 +1,5 @@
 # 🏛️ Hermes Institutional Visual Atlas: Episode 07
-**Series:** MS Trading 34-Video Masterclass | **Episode:** 07 (Advanced Liquidity & The 12-Pillar System)  
+**Series:** MS Trading 34-Video Masterclass | **Episode:** 07 (Advanced Liquidity & Dual Target Symmetry)  
 **Instructor:** Shoaib Khan | **Source:** [`https://youtu.be/_WEEmT2wgg8`](https://youtu.be/_WEEmT2wgg8)  
 **Status:** 100% Forensic Visual Reconstruction Locked  
 
@@ -66,7 +66,7 @@ Price ($)
 
 ---
 
-## 🎨 Frame 4: Daily Candle Liquidity Sweep vs Run (The Daily Bias Engine) (20:00 – 26:20)
+## 🎨 Frame 4: Daily Candle Liquidity Sweep vs Run (The 4-Day Gold Walkthrough) (20:00 – 26:20)
 
 ```
 SCENARIO A: LIQUIDITY SWEEP (REVERSAL BIAS)       SCENARIO B: LIQUIDITY RUN (EXPANSION BIAS)
@@ -108,7 +108,27 @@ Price ($)
 
 ---
 
-## 🎨 Frame 6: The Complete 12-Liquidity Target Universe Map (35:00 – 36:42)
+## 🎨 Frame 6: The Dual Target Symmetry Law (35:00 – 36:42)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    THE DUAL TARGET SYMMETRY LAW                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   CASE 1: ENTRY AT POI                                                      │
+│   [ 1H Order Block / FVG / Breaker ] ═══════════════► TARGET: LIQUIDITY     │
+│                                                       (One of 12 Pools)     │
+│                                                                             │
+│   CASE 2: ENTRY AT LIQUIDITY SWEEP                                          │
+│   [ Turtle Soup / Stop Run of EQH/EQL/PDH/PDL ] ════► TARGET: POI           │
+│                                                       (Opposing OB / FVG)   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🎨 Frame 7: The Complete 12-Liquidity Target Universe Map
 
 ```mermaid
 flowchart TD
@@ -122,18 +142,17 @@ flowchart TD
     end
 
     subgraph Part2["<b>Part 2: Advanced Order Flow & Time (Ep 07)</b>"]
-        L7["7. Low Resistance Liquidity (Voids & Fast Zones)"]
-        L8["8. High Resistance Liquidity (POIs & Friction Walls)"]
-        L9["9. External Range Liquidity (ERL)"]
-        L10["10. Internal Range Liquidity (IRL)"]
+        L7["7. Low Resistance Liquidity (Type 1: Voids)"]
+        L8["8. Low Resistance Liquidity (Type 2: Mitigated Zones)"]
+        L9["9. High Resistance Liquidity (POI Friction Walls)"]
+        L10["10. External vs Internal Liquidity (ERL <--> IRL)"]
         L11["11. Candle-Based Liquidity (PDH/PDL Sweeps & Runs)"]
         L12["12. Time-Based Session Liquidity (Kill Zones)"]
     end
 
-    EntryPOI["<b>1H POI ENTRY</b><br/>(Order Block / Breaker / FVG)"] --> Target["<b>TARGET SELECTION</b><br/>One of the 12 Institutional Liquidity Pools!"]
-    Part1 -.-> Target
-    Part2 -.-> Target
+    TargetPool["<b>TARGET UNIVERSE</b><br/>Always select your exit from these 12 pools!"]
+    Part1 --> TargetPool
+    Part2 --> TargetPool
 
-    style EntryPOI fill:#0f766e,stroke:#14b8a6,stroke-width:2px,color:#fff
-    style Target fill:#b91c1c,stroke:#f87171,stroke-width:2px,color:#fff
+    style TargetPool fill:#b91c1c,stroke:#f87171,stroke-width:2px,color:#fff
 ```
