@@ -119,16 +119,18 @@ var LiquidityPoolRecord[] activeLiqPools = array.new<LiquidityPoolRecord>(0)
 // ⚙️ 2. INPUT SETTINGS & TOGGLES (EPISODES 01–09)
 // ══════════════════════════════════════════════════════════════════════════════
 
-grp_ep15          = "═══ Episode 15: Strong, Weak & Conditional Order Block Classifier ═══"
-enableOBClassifier   = input.bool(true, "Enable Strong / Weak / Conditional OB Classifier", group=grp_ep15)
-showWeakOBTraps      = input.bool(true, "Highlight Weak OBs as Liquidity Traps (Red)", group=grp_ep15)
+grp_ep15          = "═══ Episode 15: Advanced 7-Condition Order Block Classifier ═══"
+enableOBClassifier   = input.bool(true, "Enable 7-Condition Order Block Engine", group=grp_ep15)
+showWeakOBTraps      = input.bool(true, "Highlight Weak OBs as Inducement / Liquidity Traps", group=grp_ep15)
 enforceCondMSSGate   = input.bool(true, "Enforce Mandatory 5m MSS Sentry for Conditional OBs", group=grp_ep15)
+colStrongestOB       = input.color(color.new(#00E676, 75), "Strongest Conditional OB Color (Emerald)", group=grp_ep15)
+colStrongestOBBorder = input.color(#00E676, "Strongest Conditional OB Border", group=grp_ep15)
 colStrongOB          = input.color(color.new(#1E88E5, 75), "Strong Order Block Color (Institutional Blue)", group=grp_ep15)
 colStrongOBBorder    = input.color(#1E88E5, "Strong Order Block Border", group=grp_ep15)
 colConditionalOB     = input.color(color.new(#FFB300, 75), "Conditional Order Block Color (Amber)", group=grp_ep15)
 colCondOBBorder      = input.color(#FFB300, "Conditional Order Block Border", group=grp_ep15)
-colWeakOBTrap        = input.color(color.new(#D32F2F, 80), "Weak Order Block Trap Color (Crimson)", group=grp_ep15)
-colWeakOBBorder      = input.color(#D32F2F, "Weak Order Block Border", group=grp_ep15)
+colWeakOBTrap        = input.color(color.new(#D32F2F, 80), "Weak OB / IDM Trap Color (Crimson)", group=grp_ep15)
+colWeakOBBorder      = input.color(#D32F2F, "Weak OB / IDM Trap Border", group=grp_ep15)
 
 grp_ep14          = "═══ Episode 14: CBDR Day High/Low Predictor Engine ═══"
 enableCBDR        = input.bool(true, "Enable CBDR Day High/Low Predictor Engine", group=grp_ep14)
@@ -499,77 +501,159 @@ if bearMSS_Trigger
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════════════════════
-// 🏛️ EPISODE 15: ADVANCED ORDER BLOCK CLASSIFIER (STRONG, WEAK & CONDITIONAL)
+// 🏛️ EPISODE 15: ADVANCED ORDER BLOCK CLASSIFIER (7-CONDITION INSTITUTIONAL TAXONOMY)
 // ══════════════════════════════════════════════════════════════════════════════
+// Ep 15 Mandate: Total 7 Order Block Conditions:
+// - 5 Structural Anatomy Types:
+//   * Type 1: Same Color Candle (Bullish Green / Bearish Red) -> WEAK OB
+//   * Type 2: Opposite Color Candle (Bullish Red / Bearish Green) -> STRONG OB candidate
+//   * Type 3: Candle 2 (FVG candle) breaches Candle 1 extreme -> WEAK OB (False Extreme Trap)
+//   * Type 4: OB sitting at absolute swing extreme (OB Low = Swing Low) -> STRONG OB
+//   * Type 5: Mid-Leg / Floating OB (OB Low > Swing Low) -> WEAK OB (Inducement / IDM)
+// - 2 Conditional Formations (The STRONGEST OBs in Market):
+//   * Conditional 1: Formed immediately after Prior Swing Wick Sweep + Internal BOS -> STRONGEST OB
+//   * Conditional 2: Formed immediately behind / at extreme of Swept Weak OB (Post-IDM) -> STRONGEST OB
+// - Same-Timeframe Body Close Invalidation Rule: Wick penetration is NOT invalidation (Liquidity Sweep).
 
-// Detection of 3-Candle Displacement & FVG Origin
+// 3-Candle Displacement & FVG Origin
 bool isBullDisplacement = (close > high[2]) and (low > high[2]) // Candle leaves bullish FVG
 bool isBearDisplacement = (close < low[2]) and (high < low[2])  // Candle leaves bearish FVG
 
-var box   lastStrongOBBox = na
-var box   lastCondOBBox   = na
-var box   lastWeakOBBox   = na
-var string currentOBQuality = "SEARCHING"
+var box    lastStrongestOBBox = na
+var box    lastStrongOBBox    = na
+var box    lastCondOBBox      = na
+var box    lastWeakOBBox      = na
+var float  lastActiveOBLow    = na
+var float  lastActiveOBHigh   = na
+var bool   isLastOBBullish    = na
+var string currentOBQuality   = "SEARCHING"
+
+// Prior Swing Swept Tracker (Last 10 bars)
+bool priorSwingLowSwept  = (ta.lowest(low, 5)[2] < ta.lowest(low, 20)[7]) and (ta.lowest(close, 5)[2] > ta.lowest(low, 20)[7])
+bool priorSwingHighSwept = (ta.highest(high, 5)[2] > ta.highest(high, 20)[7]) and (ta.highest(close, 5)[2] < ta.highest(high, 20)[7])
 
 if enableOBClassifier
-    // Bullish Order Block Formation (Candle [2] is the OB candidate)
+    // ══════════════════════════════════════════════════════════════════════════
+    // BULLISH ORDER BLOCK FORMATION (Candle [2] is OB candidate, Candle [1] is FVG)
+    // ══════════════════════════════════════════════════════════════════════════
     if isBullDisplacement
-        bool bullColorAligned  = (close[2] < open[2])          // Parameter 1: Down-close candle before up-move
-        bool bullSweptLiq      = (low[2] < low[3])             // Parameter 2: Swept prior candle low / liquidity
-        bool bullSwingExtreme  = (low[2] <= ta.lowest(low, 10)) // Parameter 3: Low is the local swing extreme
-        bool bullInsideHTF     = isInDiscount                  // Parameter 4: Nested inside HTF Discount POI
-        
-        int bullScore = (bullColorAligned ? 1 : 0) + (bullSweptLiq ? 3 : 0) + (bullSwingExtreme ? 2 : 0) + (bullInsideHTF ? 2 : 0)
-        
-        // Classification Matrix (Ep 15 Law)
-        if bullSweptLiq and bullSwingExtreme
-            // STRONG ORDER BLOCK (Institutional High Probability)
-            currentOBQuality := "🏛️ STRONG BULLISH OB"
+        // 5 Structural Anatomy Parameters
+        bool isType1_SameColor   = (close[2] > open[2])          // Candle [2] is Green/Up -> WEAK OB
+        bool isType2_OppColor    = (close[2] <= open[2])         // Candle [2] is Red/Down -> STRONG candidate
+        bool isType3_BreachedExt = (low[1] < low[2])             // Candle [1] (FVG) went LOWER than Candle [2] -> WEAK OB
+        bool isType4_SwingExt    = (low[2] <= ta.lowest(low, 15)[1]) // Candle [2] is the absolute local swing low -> STRONG candidate
+        bool isType5_MidLeg      = not isType4_SwingExt          // Candle [2] floats mid-leg -> WEAK OB (IDM)
+
+        // 2 Conditional Formations
+        bool isCond1_PostSwingSweep = priorSwingLowSwept
+        bool isCond2_PostIDMSweep   = not na(lastActiveOBLow) and (low[1] < lastActiveOBLow or low[2] < lastActiveOBLow) and str.contains(currentOBQuality, "WEAK")
+
+        // Invalidation & Target Levels
+        lastActiveOBLow  := low[2]
+        lastActiveOBHigh := high[2]
+        isLastOBBullish  := true
+
+        // Institutional Decision Hierarchy (Ep 15 Law)
+        if isCond1_PostSwingSweep or isCond2_PostIDMSweep
+            // ⚡ STRONGEST CONDITIONAL ORDER BLOCK (Post-Sweep / Post-IDM)
+            currentOBQuality := "⚡ STRONGEST CONDITIONAL OB (SWEEP/IDM PURGED)"
+            box.delete(lastStrongestOBBox)
+            lastStrongestOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colStrongestOB, border_color=colStrongestOBBorder, border_width=2)
+            string reason = isCond1_PostSwingSweep ? "[Post-Swing Sweep + BOS]" : "[Post-Weak OB / IDM Swept]"
+            label.new(bar_index - 2, low[2], "⚡ STRONGEST OB\n" + reason + "\nColor Ignored - Sniper Limit Entry!", color=#00E676, textcolor=color.black, style=label.style_label_up, size=size.small)
+
+        else if isType2_OppColor and isType4_SwingExt and not isType3_BreachedExt
+            // 🏛️ STRONG ORDER BLOCK (True Institutional Accumulation Base)
+            currentOBQuality := "🏛️ STRONG BULLISH OB (OPP COLOR + SWING LOW)"
             box.delete(lastStrongOBBox)
             lastStrongOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colStrongOB, border_color=colStrongOBBorder, border_width=2)
-            label.new(bar_index - 2, low[2], "🏛️ STRONG BULLISH OB\n[Swept Liq + Swing Extreme + FVG]\nLimit Entry Allowed (80% Prob)", color=#1E88E5, textcolor=color.white, style=label.style_label_up, size=size.small)
-        else if bullInsideHTF or bullScore >= 4
-            // CONDITIONAL ORDER BLOCK (Contextual: 5m MSS Sentry Required!)
-            currentOBQuality := "⏳ CONDITIONAL BULLISH OB"
+            label.new(bar_index - 2, low[2], "🏛️ STRONG BULLISH OB\n[Red Candle + Swing Low + Clean FVG]\nDirect Limit Allowed (80% Win Expectancy)", color=#1E88E5, textcolor=color.white, style=label.style_label_up, size=size.small)
+
+        else if isInDiscount
+            // ⏳ CONDITIONAL ORDER BLOCK (Nested inside HTF Discount POI)
+            currentOBQuality := "⏳ CONDITIONAL BULLISH OB (HTF DISCOUNT NESTED)"
             box.delete(lastCondOBBox)
             lastCondOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colConditionalOB, border_color=colCondOBBorder, border_width=1, border_style=line.style_dashed)
-            label.new(bar_index - 2, low[2], "⏳ CONDITIONAL OB\n[Nested in HTF Discount]\nBLIND LIMIT BANNED -> 5m MSS REQ!", color=#FFB300, textcolor=color.black, style=label.style_label_up, size=size.tiny)
+            label.new(bar_index - 2, low[2], "⏳ CONDITIONAL OB\n[Nested in HTF Discount POI]\nBLIND LIMIT BANNED -> Require 5m MSS!", color=#FFB300, textcolor=color.black, style=label.style_label_up, size=size.tiny)
+
         else if showWeakOBTraps
-            // WEAK ORDER BLOCK (Retail Trap: Liquidity Fuel for Smart Money!)
-            currentOBQuality := "🚨 WEAK OB (LIQUIDITY TRAP)"
+            // 🚨 WEAK ORDER BLOCK (Retail Trap: Acts as Inducement / Liquidity)
+            string weakReason = isType1_SameColor ? "[Type 1: Same Color Candle]" : (isType3_BreachedExt ? "[Type 3: FVG Candle Breached Low]" : "[Type 5: Mid-Leg Floating]")
+            currentOBQuality := "🚨 WEAK OB (LIQUIDITY TRAP / IDM)"
             box.delete(lastWeakOBBox)
             lastWeakOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colWeakOBTrap, border_color=colWeakOBBorder, border_width=1, border_style=line.style_dotted)
-            label.new(bar_index - 2, low[2], "🚨 WEAK OB TRAP\n[No Sweep - Mid Range]\nTARGET AS LIQUIDITY!", color=#D32F2F, textcolor=color.white, style=label.style_label_up, size=size.tiny)
+            label.new(bar_index - 2, low[2], "🚨 WEAK OB TRAP\n" + weakReason + "\nTARGET AS LIQUIDITY / IDM!", color=#D32F2F, textcolor=color.white, style=label.style_label_up, size=size.tiny)
 
-    // Bearish Order Block Formation (Candle [2] is the OB candidate)
+    // ══════════════════════════════════════════════════════════════════════════
+    // BEARISH ORDER BLOCK FORMATION (Candle [2] is OB candidate, Candle [1] is FVG)
+    // ══════════════════════════════════════════════════════════════════════════
     if isBearDisplacement
-        bool bearColorAligned  = (close[2] > open[2])          // Parameter 1: Up-close candle before down-move
-        bool bearSweptLiq      = (high[2] > high[3])           // Parameter 2: Swept prior candle high / liquidity
-        bool bearSwingExtreme  = (high[2] >= ta.highest(high, 10)) // Parameter 3: High is the local swing extreme
-        bool bearInsideHTF     = isInPremium                   // Parameter 4: Nested inside HTF Premium POI
-        
-        int bearScore = (bearColorAligned ? 1 : 0) + (bearSweptLiq ? 3 : 0) + (bearSwingExtreme ? 2 : 0) + (bearInsideHTF ? 2 : 0)
-        
-        if bearSweptLiq and bearSwingExtreme
-            // STRONG BEARISH ORDER BLOCK
-            currentOBQuality := "🏛️ STRONG BEARISH OB"
+        // 5 Structural Anatomy Parameters
+        bool isType1_SameColor   = (close[2] < open[2])          // Candle [2] is Red/Down -> WEAK OB
+        bool isType2_OppColor    = (close[2] >= open[2])         // Candle [2] is Green/Up -> STRONG candidate
+        bool isType3_BreachedExt = (high[1] > high[2])           // Candle [1] (FVG) went HIGHER than Candle [2] -> WEAK OB
+        bool isType4_SwingExt    = (high[2] >= ta.highest(high, 15)[1]) // Candle [2] is the absolute local swing high -> STRONG candidate
+        bool isType5_MidLeg      = not isType4_SwingExt          // Candle [2] floats mid-leg -> WEAK OB (IDM)
+
+        // 2 Conditional Formations
+        bool isCond1_PostSwingSweep = priorSwingHighSwept
+        bool isCond2_PostIDMSweep   = not na(lastActiveOBHigh) and (high[1] > lastActiveOBHigh or high[2] > lastActiveOBHigh) and str.contains(currentOBQuality, "WEAK")
+
+        lastActiveOBLow  := low[2]
+        lastActiveOBHigh := high[2]
+        isLastOBBullish  := false
+
+        if isCond1_PostSwingSweep or isCond2_PostIDMSweep
+            // ⚡ STRONGEST CONDITIONAL ORDER BLOCK
+            currentOBQuality := "⚡ STRONGEST CONDITIONAL OB (SWEEP/IDM PURGED)"
+            box.delete(lastStrongestOBBox)
+            lastStrongestOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colStrongestOB, border_color=colStrongestOBBorder, border_width=2)
+            string reason = isCond1_PostSwingSweep ? "[Post-Swing Sweep + BOS]" : "[Post-Weak OB / IDM Swept]"
+            label.new(bar_index - 2, high[2], "⚡ STRONGEST OB\n" + reason + "\nColor Ignored - Sniper Limit Entry!", color=#00E676, textcolor=color.black, style=label.style_label_down, size=size.small)
+
+        else if isType2_OppColor and isType4_SwingExt and not isType3_BreachedExt
+            // 🏛️ STRONG BEARISH ORDER BLOCK
+            currentOBQuality := "🏛️ STRONG BEARISH OB (OPP COLOR + SWING HIGH)"
             box.delete(lastStrongOBBox)
             lastStrongOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colStrongOB, border_color=colStrongOBBorder, border_width=2)
-            label.new(bar_index - 2, high[2], "🏛️ STRONG BEARISH OB\n[Swept Liq + Swing Extreme + FVG]\nLimit Entry Allowed (80% Prob)", color=#1E88E5, textcolor=color.white, style=label.style_label_down, size=size.small)
-        else if bearInsideHTF or bearScore >= 4
-            // CONDITIONAL BEARISH ORDER BLOCK
-            currentOBQuality := "⏳ CONDITIONAL BEARISH OB"
+            label.new(bar_index - 2, high[2], "🏛️ STRONG BEARISH OB\n[Green Candle + Swing High + Clean FVG]\nDirect Limit Allowed (80% Win Expectancy)", color=#1E88E5, textcolor=color.white, style=label.style_label_down, size=size.small)
+
+        else if isInPremium
+            // ⏳ CONDITIONAL BEARISH ORDER BLOCK
+            currentOBQuality := "⏳ CONDITIONAL BEARISH OB (HTF PREMIUM NESTED)"
             box.delete(lastCondOBBox)
             lastCondOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colConditionalOB, border_color=colCondOBBorder, border_width=1, border_style=line.style_dashed)
-            label.new(bar_index - 2, high[2], "⏳ CONDITIONAL OB\n[Nested in HTF Premium]\nBLIND LIMIT BANNED -> 5m MSS REQ!", color=#FFB300, textcolor=color.black, style=label.style_label_down, size=size.tiny)
+            label.new(bar_index - 2, high[2], "⏳ CONDITIONAL OB\n[Nested in HTF Premium POI]\nBLIND LIMIT BANNED -> Require 5m MSS!", color=#FFB300, textcolor=color.black, style=label.style_label_down, size=size.tiny)
+
         else if showWeakOBTraps
-            // WEAK BEARISH ORDER BLOCK TRAP
-            currentOBQuality := "🚨 WEAK OB (LIQUIDITY TRAP)"
+            // 🚨 WEAK BEARISH ORDER BLOCK TRAP
+            string weakReason = isType1_SameColor ? "[Type 1: Same Color Candle]" : (isType3_BreachedExt ? "[Type 3: FVG Candle Breached High]" : "[Type 5: Mid-Leg Floating]")
+            currentOBQuality := "🚨 WEAK OB (LIQUIDITY TRAP / IDM)"
             box.delete(lastWeakOBBox)
             lastWeakOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colWeakOBTrap, border_color=colWeakOBBorder, border_width=1, border_style=line.style_dotted)
-            label.new(bar_index - 2, high[2], "🚨 WEAK OB TRAP\n[No Sweep - Mid Range]\nTARGET AS LIQUIDITY!", color=#D32F2F, textcolor=color.white, style=label.style_label_down, size=size.tiny)
+            label.new(bar_index - 2, high[2], "🚨 WEAK OB TRAP\n" + weakReason + "\nTARGET AS LIQUIDITY / IDM!", color=#D32F2F, textcolor=color.white, style=label.style_label_down, size=size.tiny)
 
-// ══════════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════════
+    // SAME-TIMEFRAME BODY CLOSE INVALIDATION VS WICK SWEEP MONITOR
+    // ══════════════════════════════════════════════════════════════════════════
+    if not na(lastActiveOBLow) and isLastOBBullish
+        // Wick pierced below OB low, but body closed ABOVE -> Potent Liquidity Sweep!
+        if (low < lastActiveOBLow) and (close >= lastActiveOBLow)
+            label.new(bar_index, low, "🛡️ OB LIQUIDITY SWEPT!\n[Wick Sweep Only - OB 100% Intact & Active]", color=#00E676, textcolor=color.black, style=label.style_label_up, size=size.tiny)
+        // Candle body closed BELOW OB low on same timeframe -> True Invalidation
+        else if (close < lastActiveOBLow)
+            lastActiveOBLow := na
+            currentOBQuality := "INVALIDATED (BODY BREAK)"
+
+    if not na(lastActiveOBHigh) and not isLastOBBullish
+        // Wick pierced above OB high, but body closed BELOW -> Potent Liquidity Sweep!
+        if (high > lastActiveOBHigh) and (close <= lastActiveOBHigh)
+            label.new(bar_index, high, "🛡️ OB LIQUIDITY SWEPT!\n[Wick Sweep Only - OB 100% Intact & Active]", color=#00E676, textcolor=color.black, style=label.style_label_down, size=size.tiny)
+        // Candle body closed ABOVE OB high on same timeframe -> True Invalidation
+        else if (close > lastActiveOBHigh)
+            lastActiveOBHigh := na
+            currentOBQuality := "INVALIDATED (BODY BREAK)"
+
 // 🏛️ EPISODE 14: CENTRAL BANK DEALERS RANGE (CBDR) ENGINE
 // ══════════════════════════════════════════════════════════════════════════════
 bool inCBDRWindow = not na(time(timeframe.period, "1400-2000", nyTimezone))

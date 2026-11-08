@@ -5,11 +5,18 @@
 
 ### Executive Visual Forensic Summary
 Direct visual extraction from the raw 85-minute video stream of Episode 15 (`https://youtu.be/aXTA1gpfwfE`) reveals Shoaib Khan's comprehensive visual framework for classifying, ranking, and executing Order Blocks:
-- **Primary Assets Analyzed:** Gold (XAUUSD 15m/5m on OANDA) and British Pound (GBPUSD 1H on OANDA).
-- **Core Visual Taxonomy:**
-  1. **Strong Order Block (Blue Box):** Sweeps prior liquidity, sits at the absolute swing extreme, accompanied by aggressive displacement and a clean Fair Value Gap (FVG).
-  2. **Weak Order Block (Purple/Red Box):** Sits in mid-range, failed to sweep liquidity, followed by overlapping candles; acts as Inducement (IDM) for retail traders.
-  3. **Conditional Order Block:** Weak on lower timeframe, but nested inside a Higher Timeframe (4H/Daily) POI; executed ONLY after Lower Timeframe (5m) Market Structure Shift (MSS) confirmation!
+- **Primary Assets Analyzed:** Gold (XAUUSD 15m/5m on OANDA), British Pound (GBPUSD 1H on OANDA), and Nasdaq (NDX / NSDC 1H/5m).
+- **Core Visual Taxonomy (Total 7 Conditions):**
+  1. **5 Structural Anatomy Types:**
+     - **Type 1 (Same Color OB):** Trend-direction candle (Green for Buy, Red for Sell) -> **WEAK OB**.
+     - **Type 2 (Opposite Color OB):** Contrarian candle (Red for Buy, Green for Sell) -> **STRONG OB** (if at extreme).
+     - **Type 3 (FVG Candle Breaches Extreme):** Middle candle wicks lower/higher than Candle 1 -> **WEAK OB (Liquidity Trap)**.
+     - **Type 4 (OB at True Swing Extreme):** `OB Low == Swing Low` -> **STRONG OB**.
+     - **Type 5 (Mid-Leg Floating OB):** Formed halfway up/down -> **WEAK OB (Inducement / IDM)**.
+  2. **2 Conditional Formations (The STRONGEST OBs):**
+     - **Conditional Formation 1:** Formed immediately after Prior Swing Liquidity Sweep (wick sweep only) + Internal BOS.
+     - **Conditional Formation 2:** Formed immediately behind / at extreme of a Swept Weak OB (Post-IDM Sweep).
+  3. **Visual Invalidation Law:** Order Block is only broken by a SAME TIMEFRAME CANDLE BODY CLOSE beyond the OB edge. Wick penetration is a Liquidity Sweep, NOT invalidation!
 
 ---
 
@@ -17,194 +24,15 @@ Direct visual extraction from the raw 85-minute video stream of Episode 15 (`htt
 
 | Frame # | Timestamp | Visual Content & Institutional Insight | Real Image File |
 |:---:|:---:|:---|:---|
-| **01** | `00:05:30` | Overview & 5-Min Alignment: Diagrammatic introduction to Order Block classifications and 5m refinement. | `frame_01_strong_weak_conditional_intro.jpg` |
-| **02** | `00:12:00` | Strong OB Sweep Rule: Visual marking of candle sweeping the prior wick before impulsive displacement. | `frame_02_strong_ob_liquidity_sweep_rule.jpg` |
-| **03** | `00:19:00` | The 5-Parameter Structure: Numbered schematic showing Candle Color (1-2), FVG (3), and Swing Low alignment (4-5). | `frame_03_the_5_types_ob_hierarchy.jpg` |
-| **04** | `00:26:00` | Weak OB Failure Anatomy: Price slicing straight through a mid-swing OB that failed to sweep liquidity. | `frame_04_weak_ob_anatomy_and_failure.jpg` |
-| **05** | `00:35:00` | Conditional OB Criteria: Showing a weak internal OB nested inside a HTF Daily demand block. | `frame_05_conditional_ob_criteria.jpg` |
-| **06** | `00:43:00` | Structural Reset: Clean screen transition demonstrating real-time chart mapping. | `frame_06_two_types_order_blocks_comparison.jpg` |
-| **07** | `00:52:00` | Live Gold 15m Case: Strong Blue OB tapping during NY session following BOS and liquidity sweep. | `frame_07_chart_case_1_strong_ob_tap.jpg` |
-| **08** | `01:02:00` | Liquidity Sweep vs Weak POI: Visual demonstration of retail buy stops getting purged beneath a weak OB. | `frame_08_liquidity_sweep_vs_weak_poi.jpg` |
-| **09** | `01:10:00` | Top-Down 4H to 1H Alignment: 4H POI zone refined to the decisive 1H displacement candle. | `frame_09_multi_timeframe_4h_to_1h_alignment.jpg` |
-| **10** | `01:15:40` | GBPUSD 1H Case Study: Massive 1:4.8 R:R short trade off Strong Bearish OB inside Daily supply. | `frame_10_gold_xauusd_real_case_study.jpg` |
-| **11** | `01:20:00` | Entry Refinement: Zooming into 5m displacement candle following HTF POI touch. | `frame_11_entry_refinement_and_displacement.jpg` |
-| **12** | `01:24:00` | Summary Execution Blueprint: Final recap of risk management, buffer rules, and entry sentries. | `frame_12_summary_execution_blueprint.jpg` |
-
----
-
-### Frame 01: The 3 Institutional Categories of Order Blocks
-
-```
-========================================================================================
-THE 3 INSTITUTIONAL ORDER BLOCK TIERS
-========================================================================================
-
-  1. STRONG ORDER BLOCK (High Probability: 80%+ Win Rate)
-     - Mandatory Liquidity Sweep (Swept prior swing/wick)
-     - Sits at Absolute Swing Extreme (OB Low = Swing Low)
-     - Impulsive Displacement leaving clean FVG
-     - Action: LIMIT ENTRY ALLOWED (with 0.5 ATR buffer)
-
-  2. WEAK ORDER BLOCK (Retail Trap: < 30% Win Rate)
-     - Swept ZERO Liquidity (Formed inside prior range)
-     - Mid-range / Internal Floating placement
-     - Sluggish displacement / small overlapping candles
-     - Action: STRICT NO TRADE! (Targeted as Liquidity Fuel)
-
-  3. CONDITIONAL ORDER BLOCK (Contextual: 65% - 75% Win Rate)
-     - Internal structural flaws on LTF
-     - BUT nested inside HTF (4H/Daily) POI + Session Timing
-     - Action: BLIND LIMIT BANNED! Trade ONLY on 5m MSS Retest!
-```
-
----
-
-### Frame 02: Strong Order Block Anatomy (Sweep + Displacement FVG)
-
-```
-========================================================================================
-STRONG ORDER BLOCK ANATOMY (BULLISH DEMAND EXAMPLE)
-========================================================================================
-
-                                            [Candle 3: Massive Rally]
-                                                       |
-                                                    +-----+
-                                                    |     |
-                                                    |     |
-                                                    +-----+
-                                                       |
-                                  [Candle 2: Imbalance FVG]
-                                                       |
-                                                    +-----+
-                                                    |     |
-                                                    |     |
-                                                    +-----+
-                                                       |
-            [Candle 1: The Strong OB]                  |
-                       |                               |
-                    +-----+                            |
-                    |     |                            |
-                    |     |                            |
-  ==================+=====+============================+======== [STRONG OB BOUNDARY]
-                       |
-                       |  <-- WICK SWEPT PRIOR LOW!
-                       |      (Absorbed retail stop losses)
-                       v
-                 [SWING LOW]  <--- Guaranteed absolute low of the swing!
-```
-
----
-
-### Frame 03: Weak Order Block Anatomy (The Internal Trap)
-
-```
-========================================================================================
-WEAK ORDER BLOCK ANATOMY (MID-SWING FLOATING)
-========================================================================================
-
-                                  [Candle 3: Sluggish Move]
-                                             |
-                                          +-----+
-                                          |     |
-                                          +-----+
-                                             |  <-- Overlapping Wicks!
-                                          +-----+   (Zero or microscopic FVG)
-                                          |     |
-                                          +-----+
-                                             |
-            [WEAK OB CANDLE]                 |
-                   |                         |
-                +-----+                      |
-  ==============|     |======================+============== [WEAK OB BOUNDARY]
-                +-----+
-                   |  <-- FAILED TO SWEEP PRIOR LOW!
-                   .      (Formed inside prior candle's range)
-                   .
-                   .  [TRUE SWING LOW SITS DEEPER!]
-                   v
-             [True Swing Low with Liquidity Pool]
-```
-
----
-
-### Frame 04: The Weak OB Liquidity Trap (Fuel for Strong OB)
-
-```
-========================================================================================
-HOW INSTITUTIONS EXPLOIT WEAK OBS AS LIQUIDITY FUEL
-========================================================================================
-
-  Price Rallies from Low -----------------------------------------------+
-                                                                        |
-     1. Creates internal Weak OB on 15m.                                v
-     2. Retail places BUY LIMIT orders at Weak OB.
-     3. Retail places STOP LOSSES right below Weak OB.
-                                                                        |
-  ------------------------------------------------------------- [WEAK OB]
-                                                                        |
-     4. Market Maker slams price through Weak OB!                       |
-        [RETAIL STOP LOSS CASCADE PURGED!]                              v
-                                                                        |
-  ============================================================= [TRUE STRONG OB]
-                                                                        |
-     5. Price taps True Strong OB (at absolute swing low).              |
-     6. Institutional Iceberg Bids absorb all selling pressure!        v
-     7. 15m candle closes with massive rejection wick!
-     8. Price explodes upward into major expansion target!
-```
-
----
-
-### Frame 05: The Conditional Order Block Architecture
-
-```
-========================================================================================
-THE CONDITIONAL ORDER BLOCK MSS SENTRY PROTOCOL
-========================================================================================
-
-  +---------------------------------------------------------------------------------+
-  |               HIGHER TIMEFRAME (4H / DAILY) DISCOUNT POI ZONE                   |
-  |                                                                                 |
-  |      [LTF Internal Weak OB]                                                     |
-  |                 |                                                               |
-  |                 v                                                               |
-  |     Price taps Conditional OB -------------------------------+                  |
-  |                                                              |                  |
-  |     PATH A (Respected):                                      |                  |
-  |     - 5m Market Structure Shift (MSS) CONFIRMS!              v                  |
-  |     - Enter on 5m FVG retest -> Zero blind limit risk!       |                  |
-  |                                                              |                  |
-  |     PATH B (Violated):                                       |                  |
-  |     - Price slices straight through to sweep liquidity.      |                  |
-  |     - Trader suffered $0.00 loss (No blind limit was active!)|                  |
-  +---------------------------------------------------------------------------------+
-```
-
----
-
-### Frame 06: The 5-Parameter Evaluation Flowchart
-
-```
-========================================================================================
-INSTITUTIONAL ORDER BLOCK AUDIT WORKFLOW
-========================================================================================
-
-                        [New Order Block Identified]
-                                     |
-                                     v
-                        Did it sweep prior liquidity?
-                                    / \
-                                   /   \
-                            YES   /     \   NO
-                                 /       \
-                                v         v
-             Is it at the Swing Extreme?   Is it inside a 4H/Daily POI?
-                       / \                         / \
-                      /   \                       /   \
-               YES   /     \   NO          YES   /     \   NO
-                    /       \                   /       \
-                   v         v                 v         v
-             [STRONG OB]  [CONDITIONAL OB]  [CONDITIONAL] [WEAK OB]
-             Limit Entry  Wait for 5m MSS   Wait for 5m   AVOID / TARGET
-             Allowed      Confirmation      MSS Confirm   AS LIQUIDITY!
-```
+| **01** | `00:05:30` | **Overview & 3 Categories:** Visual breakdown of Strong OB, Weak OB, and Conditional OB. Explaining why retail traders get repeatedly trapped. | [`frame_01_strong_weak_conditional_intro.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_01_strong_weak_conditional_intro.jpg) |
+| **02** | `00:12:00` | **Anatomy of Type 1 & Type 2 (Candle Color):** Shoaib draws Candle 1 as Green vs Red. Explaining why same-color OBs fail to absorb orders and act as Weak OBs. | [`frame_02_strong_ob_liquidity_sweep_rule.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_02_strong_ob_liquidity_sweep_rule.jpg) |
+| **03** | `00:19:00` | **The 5 Structural Types Schematic:** On-screen whiteboard showing the complete 5-type visual taxonomy (Type 1 Same Color, Type 2 Opp Color, Type 3 FVG Candle Breach, Type 4 Swing Low, Type 5 Mid-Leg). | [`frame_03_the_5_types_ob_hierarchy.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_03_the_5_types_ob_hierarchy.jpg) |
+| **04** | `00:26:00` | **Weak OB Anatomy & Slicing Failure:** Visual demonstration of how institutions deliberately breach Weak OBs to harvest retail limit order stop losses. | [`frame_04_weak_ob_anatomy_and_failure.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_04_weak_ob_anatomy_and_failure.jpg) |
+| **05** | `00:35:00` | **Reversal from FVG vs OB Tap:** Demonstrating why market often reacts only from FVG when the OB behind it is weak, leaving the OB unmitigated until swept later. | [`frame_05_conditional_ob_criteria.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_05_conditional_ob_criteria.jpg) |
+| **06** | `00:43:00` | **Conditional Formation 1 (Post-Swing Sweep):** Chart schematic showing swing high liquidity sweep (wick only) followed by internal BOS, creating the STRONGEST OB. | [`frame_06_two_types_order_blocks_comparison.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_06_two_types_order_blocks_comparison.jpg) |
+| **07** | `00:52:00` | **Conditional Formation 2 (Weak OB == IDM):** Chart example showing price sweeping a Weak OB (Inducement) to tap the Strong OB behind it. | [`frame_07_chart_case_1_strong_ob_tap.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_07_chart_case_1_strong_ob_tap.jpg) |
+| **08** | `01:02:00` | **Invalidation Law (Wick vs Body Close):** Visualizing 4H candle wick piercing an OB without closing below it—retaining 100% validity as a Liquidity Sweep. | [`frame_08_liquidity_sweep_vs_weak_poi.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_08_liquidity_sweep_vs_weak_poi.jpg) |
+| **09** | `01:10:00` | **Multi-Timeframe Refinement (Weekly -> Daily -> 4H -> 1H):** Mapping top-down POIs to identify which OBs will hold vs which will be swept. | [`frame_09_multi_timeframe_4h_to_1h_alignment.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_09_multi_timeframe_4h_to_1h_alignment.jpg) |
+| **10** | `01:15:40` | **Gold XAUUSD Counter-Trend Short Case Study:** Live chart showing Daily Bullish POI tap without 1H displacement, and selling the Low Resistance Liquidity Run! | [`frame_10_gold_xauusd_real_case_study.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_10_gold_xauusd_real_case_study.jpg) |
+| **11** | `01:20:00` | **GBPUSD Safe SL Buffer Execution:** 1H Weak OB trade with SL placed safely at swing extreme, surviving the retail sweep for 1:3 RR. | [`frame_11_entry_refinement_and_displacement.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_11_entry_refinement_and_displacement.jpg) |
+| **12** | `01:24:00` | **Nasdaq (NDX) Execution & Master Summary Table:** 1H rejection wicks + 5m displacement entry confirmation table. | [`frame_12_summary_execution_blueprint.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_15_Real_Frames/frame_12_summary_execution_blueprint.jpg) |
