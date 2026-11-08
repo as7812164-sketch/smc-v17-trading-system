@@ -30,7 +30,7 @@
 // - Max Stop Loss (SL): Strict max risk -2.8% on 5x Isolated Margin
 // ══════════════════════════════════════════════════════════════════════════════
 //@version=5
-indicator("HERMES 15-PILLAR UNIFIED MASTER STRATEGY", "🏛️ HERMES 15-PILLAR MASTER", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+indicator("HERMES 15-PILLAR INSTITUTIONAL MASTER INDICATOR", "🏛️ HERMES 15-PILLAR MASTER", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
 // ══════════════════════════════════════════════════════════════════════════════
 // 📐 1. CORE TYPES & DEFINITIONS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1254,3 +1254,11 @@ if showHUD and barstate.islast
     table.cell(hud, 0, 24, "Conditional MSS Sentry:", text_color=color.white, text_size=size.small)
     table.cell(hud, 1, 24, enforceCondMSSGate ? "ENFORCED (No Blind Limits)" : "BYPASS", text_color=#76FF03, text_size=size.small)
 
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔔 11. TRADINGVIEW REAL-TIME INSTITUTIONAL ALERT CONDITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+alertcondition(finalBuySignal,  title="🏛️ Hermes Institutional BUY Signal",  message="🏛️ HERMES BUY: All 5 Institutional Gates Passed! Discount Entry at {{close}} | Target: 1:3 RR (+2.8%) | Risk Armor Active.")
+alertcondition(finalSellSignal, title="🏛️ Hermes Institutional SELL Signal", message="🏛️ HERMES SELL: All 5 Institutional Gates Passed! Premium Entry at {{close}} | Target: 1:3 RR (+2.8%) | Risk Armor Active.")
+alertcondition(isAsianHighSwept or isAsianLowSwept, title="⚡ Asian Session Liquidity Swept", message="⚡ HERMES ALERT: Asian Range Extreme Swept! London / NY Manipulation Active.")
+alertcondition(str.contains(currentOBQuality, "STRONGEST"), title="⚡ Strongest Conditional OB Created", message="⚡ HERMES ALERT: Strongest Conditional Order Block Created (Post-Sweep / Post-IDM) at {{close}}!")
+alertcondition(isCBDRDayLowConfirmed or isCBDRDayHighConfirmed, title="🏛️ CBDR Day High/Low Confirmed", message="🏛️ HERMES ALERT: CBDR Standard Deviation Extreme Reached & Reversing!")
