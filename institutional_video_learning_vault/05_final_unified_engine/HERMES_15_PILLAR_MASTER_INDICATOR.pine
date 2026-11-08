@@ -2,23 +2,26 @@
 indicator("HERMES 15-PILLAR INSTITUTIONAL MASTER INDICATOR", "🏛️ HERMES 15-PILLAR MASTER", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
 
 // ─── 1. INPUT SETTINGS & MODULAR TOGGLES (EPISODES 01–15) ───────────────────
-// Master HUD & Visibility
-grp_hud             = "═══ 0. Master Institutional HUD & Display ═══"
+// Master HUD & Trade History
+grp_hud             = "═══ 0. Master Institutional HUD & History ═══"
 showHUD             = input.bool(true, "Display Institutional Real-Time HUD Table", group=grp_hud)
 transparentLabels   = input.bool(true, "Transparent Label Backgrounds (Zero Candle Occlusion)", group=grp_hud)
+showTradeHistory    = input.bool(true, "Show Historical Trades (Entry, TP, SL Lines & Exits)", group=grp_hud)
 
-// Ep 15: 7-Condition Order Block Classifier
+// Ep 15: 7-Condition Order Block Classifier & History
 grp_ep15            = "═══ Episode 15: Advanced 7-Condition Order Block Classifier ═══"
 enableOBClassifier   = input.bool(true, "Enable 7-Condition Order Block Engine", group=grp_ep15)
+showOBHistory        = input.bool(true, "Show Full History of Order Blocks (Keep All Historical OBs)", group=grp_ep15)
+obExtendBars         = input.int(25, "Order Block Forward Projection (Bars)", minval=5, maxval=100, group=grp_ep15)
 showWeakOBTraps      = input.bool(true, "Highlight Weak OBs as Inducement / Liquidity Traps", group=grp_ep15)
 enforceCondMSSGate   = input.bool(true, "Enforce Mandatory 5m MSS Sentry for Conditional OBs", group=grp_ep15)
-colStrongestOB       = input.color(color.new(#00E676, 85), "Strongest Conditional OB Box (Emerald)", group=grp_ep15)
+colStrongestOB       = input.color(color.new(#00E676, 82), "Strongest Conditional OB Box (Emerald)", group=grp_ep15)
 colStrongestOBBorder = input.color(#00E676, "Strongest Conditional OB Border", group=grp_ep15)
-colStrongOB          = input.color(color.new(#1E88E5, 85), "Strong Order Block Box (Blue)", group=grp_ep15)
+colStrongOB          = input.color(color.new(#1E88E5, 82), "Strong Order Block Box (Blue)", group=grp_ep15)
 colStrongOBBorder    = input.color(#1E88E5, "Strong Order Block Border", group=grp_ep15)
-colConditionalOB     = input.color(color.new(#FFB300, 85), "Conditional Order Block Box (Amber)", group=grp_ep15)
+colConditionalOB     = input.color(color.new(#FFB300, 82), "Conditional Order Block Box (Amber)", group=grp_ep15)
 colCondOBBorder      = input.color(#FFB300, "Conditional Order Block Border", group=grp_ep15)
-colWeakOBTrap        = input.color(color.new(#D32F2F, 88), "Weak OB / IDM Trap Box (Crimson)", group=grp_ep15)
+colWeakOBTrap        = input.color(color.new(#D32F2F, 85), "Weak OB / IDM Trap Box (Crimson)", group=grp_ep15)
 colWeakOBBorder      = input.color(#D32F2F, "Weak OB / IDM Trap Border", group=grp_ep15)
 
 // Ep 14: CBDR Engine
@@ -85,11 +88,9 @@ allowWickMSS        = input.bool(true, "Allow Wick-Only Break for LTF MSS", grou
 grp_core            = "═══ Episodes 01–07: Structure, Liquidity & Gaps ═══"
 swingLookback       = input.int(5, "LTF Local Swing Lookback", minval=2, maxval=20, group=grp_core)
 showFVG             = input.bool(true, "Show Fair Value Gaps (FVG)", group=grp_core)
-showLRL_Voids       = input.bool(true, "Show LRL Liquidity Voids", group=grp_core)
+fvgExtendBars       = input.int(15, "Fair Value Gap Projection (Bars)", minval=2, maxval=50, group=grp_core)
 showDailyBias       = input.bool(true, "Track Daily Candle Liquidity (PDH/PDL)", group=grp_core)
 showAsianSession    = input.bool(true, "Track Asian Session High/Low & Sweeps", group=grp_core)
-showEQH_EQL         = input.bool(true, "Show Equal Highs/Lows (EQH/EQL $$$)", group=grp_core)
-eqToleranceATR      = input.float(0.15, "EQH/EQL ATR Proximity Ratio", minval=0.05, maxval=0.5, step=0.05, group=grp_core)
 colPremium          = input.color(#FF1744, "Premium Zone Color", group=grp_core)
 colDiscount         = input.color(#00E676, "Discount Zone Color", group=grp_core)
 colEquilibrium      = input.color(#FFFFFF, "0.5 Equilibrium Line Color", group=grp_core)
@@ -185,20 +186,20 @@ if not na(pLow)
     activeSwingLow  := pLow
     activeLowBar    := bar_index - swingLookback
 
-// FVG Imbalances
+// FVG Imbalances (With Full Historical Forward Extension)
 bool isBullFVG = (low[0] > high[2])
 bool isBearFVG = (high[0] < low[2])
 
 if isBullFVG
     if showFVG
-        box.new(bar_index - 2, low[0], bar_index, high[2], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 88))
+        box.new(bar_index - 2, low[0], bar_index + fvgExtendBars, high[2], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 88))
     latestBullFVG_Top       := low[0]
     latestBullFVG_Bottom    := high[2]
     latestBullFVG_Mitigated := false
 
 if isBearFVG
     if showFVG
-        box.new(bar_index - 2, low[2], bar_index, high[0], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 88))
+        box.new(bar_index - 2, low[2], bar_index + fvgExtendBars, high[0], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 88))
     latestBearFVG_Top       := high[0]
     latestBearFVG_Bottom    := low[2]
     latestBearFVG_Mitigated := false
@@ -274,7 +275,7 @@ if bearMSS_Trigger
     lastBearMSS_Bar    := bar_index
     label.new(bar_index, activeSwingLow - (atrVal * 0.3), "⚡ BEARISH MSS (Displacement)", color=lblBg, textcolor=#FF1744, style=label.style_label_up, size=size.small)
 
-// ─── 7. 7-CONDITION ORDER BLOCK CLASSIFIER & WEAK OB TRAP (EP 15) ───────────
+// ─── 7. 7-CONDITION ORDER BLOCK CLASSIFIER WITH FULL HISTORY (EP 15) ────────
 bool isOBBullDisp = (close > high[2]) and (low > high[2])
 bool isOBBearDisp = (close < low[2]) and (high < low[2])
 
@@ -291,7 +292,7 @@ bool priorSwingLowSwept  = (ta.lowest(low, 5)[2] < ta.lowest(low, 20)[7]) and (t
 bool priorSwingHighSwept = (ta.highest(high, 5)[2] > ta.highest(high, 20)[7]) and (ta.highest(close, 5)[2] < ta.highest(high, 20)[7])
 
 if enableOBClassifier
-    // Bullish OB
+    // Bullish OB Formations
     if isOBBullDisp
         bool t1SameColor   = (close[2] > open[2])
         bool t2OppColor    = (close[2] <= open[2])
@@ -306,25 +307,29 @@ if enableOBClassifier
 
         if cond1Sweep or cond2IDMSweep
             currentOBQuality := "⚡ STRONGEST CONDITIONAL OB"
-            box.delete(lastStrongestOBBox)
-            lastStrongestOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colStrongestOB, border_color=colStrongestOBBorder, border_width=2)
+            if not showOBHistory
+                box.delete(lastStrongestOBBox)
+            lastStrongestOBBox := box.new(bar_index - 2, high[2], bar_index + obExtendBars, low[2], bgcolor=colStrongestOB, border_color=colStrongestOBBorder, border_width=2)
             label.new(bar_index - 2, low[2] - (atrVal * 0.3), "⚡ STRONGEST OB [Sweep+IDM Purged]", color=lblBg, textcolor=#00E676, style=label.style_label_up, size=size.small)
         else if t2OppColor and t4SwingExt and not t3BreachedExt
             currentOBQuality := "🏛️ STRONG BULLISH OB"
-            box.delete(lastStrongOBBox)
-            lastStrongOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colStrongOB, border_color=colStrongOBBorder, border_width=2)
+            if not showOBHistory
+                box.delete(lastStrongOBBox)
+            lastStrongOBBox := box.new(bar_index - 2, high[2], bar_index + obExtendBars, low[2], bgcolor=colStrongOB, border_color=colStrongOBBorder, border_width=2)
             label.new(bar_index - 2, low[2] - (atrVal * 0.3), "🏛️ STRONG BULLISH OB [Swing Low]", color=lblBg, textcolor=#1E88E5, style=label.style_label_up, size=size.small)
         else if isInDiscount
             currentOBQuality := "⏳ CONDITIONAL BULLISH OB"
-            box.delete(lastCondOBBox)
-            lastCondOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colConditionalOB, border_color=colCondOBBorder, border_width=1, border_style=line.style_dashed)
+            if not showOBHistory
+                box.delete(lastCondOBBox)
+            lastCondOBBox := box.new(bar_index - 2, high[2], bar_index + obExtendBars, low[2], bgcolor=colConditionalOB, border_color=colCondOBBorder, border_width=1, border_style=line.style_dashed)
         else if showWeakOBTraps
             currentOBQuality := "🚨 WEAK OB (LIQUIDITY TRAP / IDM)"
-            box.delete(lastWeakOBBox)
-            lastWeakOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colWeakOBTrap, border_color=colWeakOBBorder, border_width=1, border_style=line.style_dotted)
+            if not showOBHistory
+                box.delete(lastWeakOBBox)
+            lastWeakOBBox := box.new(bar_index - 2, high[2], bar_index + obExtendBars, low[2], bgcolor=colWeakOBTrap, border_color=colWeakOBBorder, border_width=1, border_style=line.style_dotted)
             label.new(bar_index - 2, low[2] - (atrVal * 0.3), "🚨 WEAK OB TRAP [IDM Fuel - Do Not Buy]", color=lblBg, textcolor=#FF5252, style=label.style_label_up, size=size.small)
 
-    // Bearish OB
+    // Bearish OB Formations
     if isOBBearDisp
         bool t1SameColorBear   = (close[2] < open[2])
         bool t2OppColorBear    = (close[2] >= open[2])
@@ -339,22 +344,26 @@ if enableOBClassifier
 
         if cond1SweepBear or cond2IDMSweepBear
             currentOBQuality := "⚡ STRONGEST CONDITIONAL OB"
-            box.delete(lastStrongestOBBox)
-            lastStrongestOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colStrongestOB, border_color=colStrongestOBBorder, border_width=2)
+            if not showOBHistory
+                box.delete(lastStrongestOBBox)
+            lastStrongestOBBox := box.new(bar_index - 2, high[2], bar_index + obExtendBars, low[2], bgcolor=colStrongestOB, border_color=colStrongestOBBorder, border_width=2)
             label.new(bar_index - 2, high[2] + (atrVal * 0.3), "⚡ STRONGEST OB [Sweep+IDM Purged]", color=lblBg, textcolor=#00E676, style=label.style_label_down, size=size.small)
         else if t2OppColorBear and t4SwingExtBear and not t3BreachedExtBear
             currentOBQuality := "🏛️ STRONG BEARISH OB"
-            box.delete(lastStrongOBBox)
-            lastStrongOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colStrongOB, border_color=colStrongOBBorder, border_width=2)
+            if not showOBHistory
+                box.delete(lastStrongOBBox)
+            lastStrongOBBox := box.new(bar_index - 2, high[2], bar_index + obExtendBars, low[2], bgcolor=colStrongOB, border_color=colStrongOBBorder, border_width=2)
             label.new(bar_index - 2, high[2] + (atrVal * 0.3), "🏛️ STRONG BEARISH OB [Swing High]", color=lblBg, textcolor=#1E88E5, style=label.style_label_down, size=size.small)
         else if isInPremium
             currentOBQuality := "⏳ CONDITIONAL BEARISH OB"
-            box.delete(lastCondOBBox)
-            lastCondOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colConditionalOB, border_color=colCondOBBorder, border_width=1, border_style=line.style_dashed)
+            if not showOBHistory
+                box.delete(lastCondOBBox)
+            lastCondOBBox := box.new(bar_index - 2, high[2], bar_index + obExtendBars, low[2], bgcolor=colConditionalOB, border_color=colCondOBBorder, border_width=1, border_style=line.style_dashed)
         else if showWeakOBTraps
             currentOBQuality := "🚨 WEAK OB (LIQUIDITY TRAP / IDM)"
-            box.delete(lastWeakOBBox)
-            lastWeakOBBox := box.new(bar_index - 2, high[2], bar_index + 20, low[2], bgcolor=colWeakOBTrap, border_color=colWeakOBBorder, border_width=1, border_style=line.style_dotted)
+            if not showOBHistory
+                box.delete(lastWeakOBBox)
+            lastWeakOBBox := box.new(bar_index - 2, high[2], bar_index + obExtendBars, low[2], bgcolor=colWeakOBTrap, border_color=colWeakOBBorder, border_width=1, border_style=line.style_dotted)
             label.new(bar_index - 2, high[2] + (atrVal * 0.3), "🚨 WEAK OB TRAP [IDM Fuel - Do Not Sell]", color=lblBg, textcolor=#FF5252, style=label.style_label_down, size=size.small)
 
     // Same-Timeframe Body Close Invalidation Rule (Ep 15)
@@ -582,13 +591,18 @@ else // All Models
         finalSellSignal := true
         activeSignalModel := "MODEL 2 (Aggressive)"
 
-// ─── 11. DYNAMIC PROFIT ARMOR & TRADE MANAGEMENT (EP 06–09) ─────────────────
+// ─── 11. DYNAMIC PROFIT ARMOR & HISTORICAL TRADE ENGINE (EP 06–09) ──────────
 var float activeEntryPrice = na
 var float activeSLPrice    = na
 var float activeBEPrice    = na
 var float activeTPPrice    = na
 var bool  isTradeActive    = false
 var bool  isLongTrade      = false
+
+// Persistent Historical Trade Lines
+var line tradeEntryLine = na
+var line tradeTPLine    = na
+var line tradeSLLine    = na
 
 // Position Sizing Calculator
 float maxDollarRisk  = accountCapital * (riskPctPerTrade / 100.0)
@@ -598,6 +612,7 @@ float estSLPips      = estSLDistance / (safeMinTick * 10.0)
 float recLotSize     = estSLPips > 0 ? (maxDollarRisk / estSLPips) : 0.01
 recLotSize          := math.round(math.max(0.01, math.min(recLotSize, 1.0)), 2)
 
+// Long Execution
 if finalBuySignal and not isTradeActive
     isTradeActive    := true
     isLongTrade      := true
@@ -607,8 +622,14 @@ if finalBuySignal and not isTradeActive
     activeBEPrice    := close + (buySLDist * beTriggerRR)
     activeTPPrice    := close + (buySLDist * targetRR)
     
-    label.new(bar_index, low - (atrVal * 0.6), "🏛️ HERMES LONG [" + activeSignalModel + "]\nEntry: " + str.tostring(close, "#.##") + " | TP: " + str.tostring(activeTPPrice, "#.##") + " | SL: " + str.tostring(activeSLPrice, "#.##"), color=lblBg, textcolor=#00E676, style=label.style_label_up, size=size.small)
+    label.new(bar_index, low - (atrVal * 0.6), "▲ HERMES BUY ENTRY [" + activeSignalModel + "]\nEntry: " + str.tostring(close, "#.##") + " | Target TP: " + str.tostring(activeTPPrice, "#.##") + " | SL: " + str.tostring(activeSLPrice, "#.##"), color=lblBg, textcolor=#00E676, style=label.style_label_up, size=size.small)
+    
+    if showTradeHistory
+        tradeEntryLine := line.new(bar_index, activeEntryPrice, bar_index + 1, activeEntryPrice, color=color.new(#00E5FF, 20), width=2)
+        tradeTPLine    := line.new(bar_index, activeTPPrice, bar_index + 1, activeTPPrice, color=color.new(#00E676, 20), width=2, style=line.style_dashed)
+        tradeSLLine    := line.new(bar_index, activeSLPrice, bar_index + 1, activeSLPrice, color=color.new(#FF1744, 20), width=2, style=line.style_dashed)
 
+// Short Execution
 if finalSellSignal and not isTradeActive
     isTradeActive    := true
     isLongTrade      := false
@@ -618,21 +639,62 @@ if finalSellSignal and not isTradeActive
     activeBEPrice    := close - (sellSLDist * beTriggerRR)
     activeTPPrice    := close - (sellSLDist * targetRR)
     
-    label.new(bar_index, high + (atrVal * 0.6), "🏛️ HERMES SHORT [" + activeSignalModel + "]\nEntry: " + str.tostring(close, "#.##") + " | TP: " + str.tostring(activeTPPrice, "#.##") + " | SL: " + str.tostring(activeSLPrice, "#.##"), color=lblBg, textcolor=#FF1744, style=label.style_label_down, size=size.small)
+    label.new(bar_index, high + (atrVal * 0.6), "▼ HERMES SELL ENTRY [" + activeSignalModel + "]\nEntry: " + str.tostring(close, "#.##") + " | Target TP: " + str.tostring(activeTPPrice, "#.##") + " | SL: " + str.tostring(activeSLPrice, "#.##"), color=lblBg, textcolor=#FF1744, style=label.style_label_down, size=size.small)
+    
+    if showTradeHistory
+        tradeEntryLine := line.new(bar_index, activeEntryPrice, bar_index + 1, activeEntryPrice, color=color.new(#00E5FF, 20), width=2)
+        tradeTPLine    := line.new(bar_index, activeTPPrice, bar_index + 1, activeTPPrice, color=color.new(#00E676, 20), width=2, style=line.style_dashed)
+        tradeSLLine    := line.new(bar_index, activeSLPrice, bar_index + 1, activeSLPrice, color=color.new(#FF1744, 20), width=2, style=line.style_dashed)
 
-// Dynamic Profit Armor: Breakeven Shift
+// Dynamic Profit Armor: Breakeven Shift & Target Exit Management with Full History
 if isTradeActive
     if isLongTrade
+        // Extend historical lines forward bar by bar
+        if showTradeHistory and not na(tradeEntryLine)
+            line.set_x2(tradeEntryLine, bar_index)
+            line.set_x2(tradeTPLine, bar_index)
+            line.set_x2(tradeSLLine, bar_index)
+        
+        // Fast Breakeven Shift (+1.0%)
         if high >= activeBEPrice and activeSLPrice < activeEntryPrice
             activeSLPrice := activeEntryPrice
-            label.new(bar_index, high + (atrVal * 0.4), "🛡️ SL SHIFTED TO BREAKEVEN ($0.00)", color=lblBg, textcolor=#00E5FF, style=label.style_label_down, size=size.small)
-        if high >= activeTPPrice or low <= activeSLPrice
+            label.new(bar_index, high + (atrVal * 0.4), "🛡️ SL -> BREAKEVEN ($0.00)", color=lblBg, textcolor=#00E5FF, style=label.style_label_down, size=size.small)
+            if showTradeHistory and not na(tradeSLLine)
+                line.set_y1(tradeSLLine, activeEntryPrice)
+                line.set_y2(tradeSLLine, activeEntryPrice)
+                line.set_color(tradeSLLine, color.new(#00E5FF, 20))
+        
+        // 🎯 Take Profit Hit (+2.8%)
+        if high >= activeTPPrice
+            label.new(bar_index, high + (atrVal * 0.5), "🎯 PROFIT BOOKED (+2.8%)! [1:3 RR TARGET SMASHED]", color=lblBg, textcolor=#00E676, style=label.style_label_down, size=size.normal)
+            isTradeActive := false
+        // Stop Loss Hit
+        else if low <= activeSLPrice
+            label.new(bar_index, low - (atrVal * 0.5), "🛡️ SL EXIT", color=lblBg, textcolor=#FF1744, style=label.style_label_up, size=size.small)
             isTradeActive := false
     else
+        // Extend short lines forward
+        if showTradeHistory and not na(tradeEntryLine)
+            line.set_x2(tradeEntryLine, bar_index)
+            line.set_x2(tradeTPLine, bar_index)
+            line.set_x2(tradeSLLine, bar_index)
+        
+        // Fast Breakeven Shift (+1.0%)
         if low <= activeBEPrice and activeSLPrice > activeEntryPrice
             activeSLPrice := activeEntryPrice
-            label.new(bar_index, low - (atrVal * 0.4), "🛡️ SL SHIFTED TO BREAKEVEN ($0.00)", color=lblBg, textcolor=#00E5FF, style=label.style_label_up, size=size.small)
-        if low <= activeTPPrice or high >= activeSLPrice
+            label.new(bar_index, low - (atrVal * 0.4), "🛡️ SL -> BREAKEVEN ($0.00)", color=lblBg, textcolor=#00E5FF, style=label.style_label_up, size=size.small)
+            if showTradeHistory and not na(tradeSLLine)
+                line.set_y1(tradeSLLine, activeEntryPrice)
+                line.set_y2(tradeSLLine, activeEntryPrice)
+                line.set_color(tradeSLLine, color.new(#00E5FF, 20))
+        
+        // 🎯 Take Profit Hit (+2.8%)
+        if low <= activeTPPrice
+            label.new(bar_index, low - (atrVal * 0.5), "🎯 PROFIT BOOKED (+2.8%)! [1:3 RR TARGET SMASHED]", color=lblBg, textcolor=#00E676, style=label.style_label_up, size=size.normal)
+            isTradeActive := false
+        // Stop Loss Hit
+        else if high >= activeSLPrice
+            label.new(bar_index, high + (atrVal * 0.5), "🛡️ SL EXIT", color=lblBg, textcolor=#FF1744, style=label.style_label_down, size=size.small)
             isTradeActive := false
 
 // ─── 12. INSTITUTIONAL MASTER HUD DASHBOARD (EP 13 & 15) ────────────────────
