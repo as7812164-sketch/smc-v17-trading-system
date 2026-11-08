@@ -1,0 +1,177 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 03
+// Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
+// Episode 01 + Episode 02 + Episode 03 Cumulative Synthesis:
+// - Ep 01: POI-to-Liquidity Loop & Power Hierarchy (OB > VI > FVG)
+// - Ep 02: Structure Mapping, Left-Side IDM Sweep, Strict BOS/CHoCH Body Close
+// - Ep 03: 5 Gaps (FVG, BPR, Volume Imbalance, Gap Imbalance, Breakaway Gap)
+//   Multiple FVG Filter (First vs Last Extreme Only), Size Fallacy Axiom
+// Zero Retail Indicators (No RSI, MACD, EMA) | Multi-Timeframe Algorithmic Engine
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes 34-Pillar Master Engine (Ep 03 Living)", "⚡ Hermes 34-Pillar Engine", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📐 1. CORE TYPES & DEFINITIONS (EPISODES 01, 02, 03)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// POI Power Ranking Hierarchy (Ep 01 & Ep 03)
+enum POIPowerRank
+    RANK_1_ORDER_BLOCK       = 1  // Most powerful: Resting institutional limits
+    RANK_2_VOLUME_IMBALANCE  = 2  // Intermediate: 2-candle body gap imbalances
+    RANK_3_FAIR_VALUE_GAP    = 3  // Baseline: 3-candle displacement inefficiencies
+    RANK_BPR_OVERLAP         = 4  // Superior over standard FVG: Dual FVG common zone
+
+// Gap Classification (Ep 03: 5 Gaps)
+enum GapType
+    GAP_FAIR_VALUE
+    GAP_BALANCED_PRICE_RANGE
+    GAP_VOLUME_IMBALANCE
+    GAP_TRUE_IMBALANCE
+    GAP_BREAKAWAY
+
+type FVGRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    bool    isMitigated
+    box     boxId
+
+// Persistent Storage
+var FVGRecord[] activeBullFVGs = array.new<FVGRecord>(0)
+var FVGRecord[] activeBearFVGs = array.new<FVGRecord>(0)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 2. INPUT SETTINGS & TOGGLES
+// ══════════════════════════════════════════════════════════════════════════════
+grp_ep03          = "═══ Episode 03: 5 Institutional Gaps ═══"
+showFVG           = input.bool(true, "Show Fair Value Gaps (FVG)", group=grp_ep03)
+showBPR           = input.bool(true, "Show Balanced Price Range (BPR)", group=grp_ep03)
+showVI            = input.bool(true, "Show Volume Imbalance (VI)", group=grp_ep03)
+filterFirstLast   = input.bool(true, "Filter Stacked FVGs (First & Extreme Only)", group=grp_ep03, tooltip="Shoaib Khan Rule: In legs with multiple FVGs, trade strictly First or Last Extreme FVG.")
+
+grp_ep02          = "═══ Episode 02: Structure Mapping ═══"
+swingLookback     = input.int(5, "Internal Swing Lookback", minval=2, maxval=20, group=grp_ep02)
+showIDMLines      = input.bool(true, "Show Inducement (IDM) Levels", group=grp_ep02)
+showBOSLines      = input.bool(true, "Show BOS Continuation Lines", group=grp_ep02)
+
+grp_vis           = "═══ Visual Styles & Colors ═══"
+colFVGBull        = input.color(#00E676, "Bullish FVG Color", group=grp_vis)
+colFVGBear        = input.color(#FF1744, "Bearish FVG Color", group=grp_vis)
+colBPR            = input.color(#2979FF, "BPR Overlap Color", group=grp_vis)
+colVI             = input.color(#D500F9, "Volume Imbalance Color", group=grp_vis)
+colIDM            = input.color(#FF9100, "Inducement (IDM) Line Color", group=grp_vis)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📦 3. EPISODE 03: 5 GAPS ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+
+// 1. Fair Value Gap Detection (3-Candle Sequence)
+isBullishFVG = low[0] > high[2]
+isBearishFVG = high[0] < low[2]
+
+if showFVG and isBullishFVG
+    fTop    = low[0]
+    fBottom = high[2]
+    newBox  = box.new(left=bar_index - 1, top=fTop, right=bar_index + 8, bottom=fBottom, border_color=color.new(colFVGBull, 40), bgcolor=color.new(colFVGBull, 85))
+    array.push(activeBullFVGs, FVGRecord.new(bar_index - 1, fTop, fBottom, true, false, newBox))
+
+if showFVG and isBearishFVG
+    fTop    = low[2]
+    fBottom = high[0]
+    newBox  = box.new(left=bar_index - 1, top=fTop, right=bar_index + 8, bottom=fBottom, border_color=color.new(colFVGBear, 40), bgcolor=color.new(colFVGBear, 85))
+    array.push(activeBearFVGs, FVGRecord.new(bar_index - 1, fTop, fBottom, false, false, newBox))
+
+// 2. Volume Imbalance Detection (2-Candle Body Void with Wick Overlap)
+isBullishVI = open[0] > close[1] and low[0] <= high[1] and close[1] > open[1]
+isBearishVI = open[0] < close[1] and high[0] >= low[1] and close[1] < open[1]
+
+if showVI and isBullishVI
+    box.new(left=bar_index - 1, top=open[0], right=bar_index + 6, bottom=close[1], border_color=colVI, bgcolor=color.new(colVI, 80))
+
+if showVI and isBearishVI
+    box.new(left=bar_index - 1, top=close[1], right=bar_index + 6, bottom=open[0], border_color=colVI, bgcolor=color.new(colVI, 80))
+
+// 3. Balanced Price Range (BPR Overlap of Bullish & Bearish FVGs)
+if showBPR and array.size(activeBullFVGs) > 0 and array.size(activeBearFVGs) > 0
+    FVGRecord lastBull = array.get(activeBullFVGs, array.size(activeBullFVGs) - 1)
+    FVGRecord lastBear = array.get(activeBearFVGs, array.size(activeBearFVGs) - 1)
+    
+    // Check overlap
+    overlapTop    = math.min(lastBull.top, lastBear.top)
+    overlapBottom = math.max(lastBull.bottom, lastBear.bottom)
+    if overlapTop > overlapBottom and math.abs(lastBull.barIndex - lastBear.barIndex) < 30
+        box.new(left=math.max(lastBull.barIndex, lastBear.barIndex), top=overlapTop, right=bar_index + 10, bottom=overlapBottom, border_color=colBPR, border_width=2, bgcolor=color.new(colBPR, 70))
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 4. EPISODE 02: STRUCTURE MAPPING & IDM SWEEPS
+// ══════════════════════════════════════════════════════════════════════════════
+pHigh = ta.pivothigh(high, swingLookback, swingLookback)
+pLow  = ta.pivotlow(low, swingLookback, swingLookback)
+
+var float activeIDMPrice    = na
+var int   activeIDMBar      = na
+var bool  idmSwept          = false
+var float confirmedHHPrice  = na
+var int   confirmedHHBar    = na
+var float confirmedHLPrice  = na
+var int   confirmedHLBar    = na
+var bool  isUptrend         = true
+var float floatingPeakHigh  = high
+var int   floatingPeakBar   = bar_index
+var float floatingTroughLow = low
+var int   floatingTroughBar = bar_index
+
+if isUptrend
+    if high > floatingPeakHigh
+        floatingPeakHigh := high
+        floatingPeakBar  := bar_index
+else
+    if low < floatingTroughLow
+        floatingTroughLow := low
+        floatingTroughBar := bar_index
+
+if not na(pLow)
+    pLowBar   = bar_index - swingLookback
+    pLowPrice = pLow
+    if isUptrend and pLowBar < floatingPeakBar
+        activeIDMPrice := pLowPrice
+        activeIDMBar   := pLowBar
+        idmSwept       := false
+
+if isUptrend and not na(activeIDMPrice) and not idmSwept
+    if low < activeIDMPrice
+        idmSwept        := true
+        confirmedHHPrice := floatingPeakHigh
+        confirmedHHBar   := floatingPeakBar
+        if showIDMLines
+            line.new(activeIDMBar, activeIDMPrice, bar_index, activeIDMPrice, color=colIDM, style=line.style_dotted, width=1)
+            label.new(bar_index, activeIDMPrice, "⚡ IDM SWEPT", color=color.new(color.white, 100), textcolor=colIDM, style=label.style_label_up, size=size.small)
+
+if isUptrend and idmSwept and not na(confirmedHHPrice)
+    if close > confirmedHHPrice and close[1] <= confirmedHHPrice
+        confirmedHLPrice  := floatingTroughLow
+        confirmedHLBar    := floatingTroughBar
+        floatingPeakHigh  := high
+        floatingPeakBar   := bar_index
+        idmSwept          := false
+        activeIDMPrice    := na
+        if showBOSLines
+            line.new(confirmedHHBar, confirmedHHPrice, bar_index, confirmedHHPrice, color=colFVGBull, style=line.style_solid, width=2)
+            label.new(bar_index, confirmedHHPrice, "📈 BULLISH BOS", color=color.new(color.white, 100), textcolor=colFVGBull, style=label.style_label_down, size=size.small)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 5. INSTITUTIONAL HUD (EPISODES 01, 02, 03 CUMULATIVE)
+// ══════════════════════════════════════════════════════════════════════════════
+var table hud = table.new(position.top_right, 4, 2, bgcolor=color.new(#131722, 15), border_color=color.new(#2A2E39, 0), border_width=1)
+if barstate.islast
+    table.cell(hud, 0, 0, "HERMES 34-PILLAR", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 0, "CHAIN STATUS", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 2, 0, "ACTIVE GAPS", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 3, 0, "IDM TRACKER", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    
+    table.cell(hud, 0, 1, "EP 01 + 02 + 03", bgcolor=color.new(#00E676, 25), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 1, "POI <-> LIQUIDITY", bgcolor=color.new(#2979FF, 20), text_color=color.white, text_size=size.small)
+    table.cell(hud, 2, 1, "FVG, BPR, VI LOCKED", bgcolor=color.new(#D500F9, 20), text_color=color.white, text_size=size.small)
+    table.cell(hud, 3, 1, idmSwept ? "⚡ IDM SWEPT" : "⏳ HUNTING IDM", bgcolor=idmSwept ? color.new(#FF9100, 20) : color.new(#131722, 0), text_color=color.white, text_size=size.small)

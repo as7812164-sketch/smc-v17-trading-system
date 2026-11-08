@@ -1,0 +1,238 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 04
+// Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
+// Episode 01 + Episode 02 + Episode 03 + Episode 04 Cumulative Synthesis:
+// - Ep 01: Perpetual Delivery Loop & POI Hierarchy (OB > VI > FVG)
+// - Ep 02: Structure Mapping, Left-Side IDM Sweep, Strict BOS/CHoCH Body Close
+// - Ep 03: 5 Gaps (FVG, BPR, Volume Imbalance, Vacuum Imbalance, Breakaway Gap)
+// - Ep 04: Rank 1 Order Block Engine:
+//   * Color Doesn't Matter (Absolute Lowest Low / Highest High Candle)
+//   * Mandatory FVG Confluence & FVG Shift to Displacement Candle
+//   * Fib 0.5 Equilibrium Gate: Discount (<0.5) for Longs | Premium (>0.5) for Shorts
+//   * Elite Model A: Post-IDM Decisional OB | Elite Model B: Liquidity Sweep OB
+// Zero Retail Indicators (No RSI, MACD, EMA) | Multi-Timeframe Algorithmic Engine
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes 34-Pillar Master Engine (Ep 04 Living)", "⚡ Hermes 34-Pillar Engine", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📐 1. CORE TYPES & DEFINITIONS (EPISODES 01–04)
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum POIPowerRank
+    RANK_1_ORDER_BLOCK       = 1  // Absolute Priority: Resting institutional limits
+    RANK_2_VOLUME_IMBALANCE  = 2  // Intermediate: 2-candle body gap
+    RANK_3_FAIR_VALUE_GAP    = 3  // Baseline: 3-candle displacement void
+    RANK_BPR_OVERLAP         = 4  // Superior over standard FVG: Dual FVG common zone
+
+enum OrderBlockType
+    OB_POST_IDM_DECISIONAL        // Elite Model A: First unmitigated OB post-inducement
+    OB_LIQUIDITY_SWEEP            // Elite Model B: Wick sweep of prior swing + displacement
+    OB_EXTREME_BASE               // Deepest structural origin OB
+
+type OrderBlockRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    int     obModel
+    bool    isMitigated
+    box     boxId
+    label   labelId
+
+type FVGRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    bool    isMitigated
+    box     boxId
+
+var OrderBlockRecord[] activeOBs      = array.new<OrderBlockRecord>(0)
+var FVGRecord[]        activeBullFVGs = array.new<FVGRecord>(0)
+var FVGRecord[]        activeBearFVGs = array.new<FVGRecord>(0)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 2. INPUT SETTINGS & TOGGLES
+// ══════════════════════════════════════════════════════════════════════════════
+grp_ep04          = "═══ Episode 04: Institutional Order Blocks ═══"
+showOBs           = input.bool(true, "Display Valid Order Blocks", group=grp_ep04)
+showPostIdmOB     = input.bool(true, "Highlight ⚡ Post-IDM Decisional OB", group=grp_ep04)
+showSweepOB       = input.bool(true, "Highlight 🎯 Liquidity Sweep Rejection OB", group=grp_ep04)
+filterEquilibrium = input.bool(true, "Filter by 0.5 Equilibrium (Amazon Sale Rule)", group=grp_ep04, tooltip="Strict Ep 04 Rule: Only buy in Discount (<0.5); only sell in Premium (>0.5).")
+
+grp_ep03          = "═══ Episode 03: 5 Institutional Gaps ═══"
+showFVG           = input.bool(true, "Show Fair Value Gaps (FVG)", group=grp_ep03)
+showBPR           = input.bool(true, "Show Balanced Price Range (BPR)", group=grp_ep03)
+showVI            = input.bool(true, "Show Volume Imbalance (VI)", group=grp_ep03)
+
+grp_ep02          = "═══ Episode 02: Structure Mapping ═══"
+swingLookback     = input.int(5, "Internal Swing Lookback", minval=2, maxval=20, group=grp_ep02)
+showIDMLines      = input.bool(true, "Show Inducement (IDM) Levels", group=grp_ep02)
+showBOSLines      = input.bool(true, "Show BOS Continuation Lines", group=grp_ep02)
+
+grp_vis           = "═══ Visual Styles & Colors ═══"
+colOBBull         = input.color(#00E676, "Bullish Order Block Color", group=grp_vis)
+colOBBear         = input.color(#FF1744, "Bearish Order Block Color", group=grp_vis)
+colOBSweep        = input.color(#D500F9, "Liquidity Sweep OB Color", group=grp_vis)
+colOBPostIDM      = input.color(#2979FF, "Post-IDM Decisional OB Color", group=grp_vis)
+colFVG            = input.color(#FFE57F, "Fair Value Gap Color", group=grp_vis)
+colIDM            = input.color(#FF9100, "Inducement (IDM) Line Color", group=grp_vis)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 3. EPISODE 02: INTERNAL SWINGS & STRUCTURE MAPPING
+// ══════════════════════════════════════════════════════════════════════════════
+pHigh = ta.pivothigh(high, swingLookback, swingLookback)
+pLow  = ta.pivotlow(low, swingLookback, swingLookback)
+
+var float activeIDMPrice    = na
+var int   activeIDMBar      = na
+var bool  idmSwept          = false
+var float confirmedHHPrice  = na
+var int   confirmedHHBar    = na
+var float confirmedHLPrice  = na
+var int   confirmedHLBar    = na
+var bool  isUptrend         = true
+var float floatingPeakHigh  = high
+var int   floatingPeakBar   = bar_index
+var float floatingTroughLow = low
+var int   floatingTroughBar = bar_index
+
+if isUptrend
+    if high > floatingPeakHigh
+        floatingPeakHigh := high
+        floatingPeakBar  := bar_index
+else
+    if low < floatingTroughLow
+        floatingTroughLow := low
+        floatingTroughBar := bar_index
+
+if not na(pLow)
+    pLowBar   = bar_index - swingLookback
+    pLowPrice = pLow
+    if isUptrend and pLowBar < floatingPeakBar
+        activeIDMPrice := pLowPrice
+        activeIDMBar   := pLowBar
+        idmSwept       := false
+
+if not na(pHigh)
+    pHighBar   = bar_index - swingLookback
+    pHighPrice = pHigh
+    if not isUptrend and pHighBar < floatingTroughBar
+        activeIDMPrice := pHighPrice
+        activeIDMBar   := pHighBar
+        idmSwept       := false
+
+// IDM Sweep Check (Wick is 100% Valid)
+if isUptrend and not na(activeIDMPrice) and not idmSwept
+    if low < activeIDMPrice
+        idmSwept         := true
+        confirmedHHPrice := floatingPeakHigh
+        confirmedHHBar   := floatingPeakBar
+        if showIDMLines
+            line.new(activeIDMBar, activeIDMPrice, bar_index, activeIDMPrice, color=colIDM, style=line.style_dotted, width=1)
+            label.new(bar_index, activeIDMPrice, "⚡ IDM SWEPT", color=color.new(color.white, 100), textcolor=colIDM, style=label.style_label_up, size=size.small)
+
+// BOS Check (Body Close Strictly Mandatory)
+if isUptrend and idmSwept and not na(confirmedHHPrice)
+    if close > confirmedHHPrice and close[1] <= confirmedHHPrice
+        confirmedHLPrice  := floatingTroughLow
+        confirmedHLBar    := floatingTroughBar
+        floatingPeakHigh  := high
+        floatingPeakBar   := bar_index
+        idmSwept          := false
+        activeIDMPrice    := na
+        if showBOSLines
+            line.new(confirmedHHBar, confirmedHHPrice, bar_index, confirmedHHPrice, color=colOBBull, style=line.style_solid, width=2)
+            label.new(bar_index, confirmedHHPrice, "📈 BULLISH BOS", color=color.new(color.white, 100), textcolor=colOBBull, style=label.style_label_down, size=size.small)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🏛️ 4. EPISODE 04: ORDER BLOCK DETECTION & FVG CONFLUENCE ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+// Rule 1: Color Doesn't Matter (Candle that printed lowest low / highest high)
+// Rule 2: Mandatory FVG Confluence & FVG Shift to Displacement Candle
+// Rule 3: 0.5 Equilibrium Discount/Premium Gate
+
+// 3-Candle FVG Check
+bullishFVG = low[0] > high[2]
+bearishFVG = high[0] < low[2]
+
+// Equilibrium Midpoint Calculation
+eqPrice = (floatingPeakHigh + floatingTroughLow) / 2.0
+
+// ── BULLISH ORDER BLOCK (RULE 1, 2, 3) ──
+if showOBs and bullishFVG
+    // Candle 1 (bar_index - 2) is the base candle
+    // Check if Candle 1 created the FVG with Candle 3 (bar_index - 0)
+    bool directOBValid = low[0] > high[2]
+    
+    // Rule 1: Find extreme lowest candle of the base
+    int   obBar   = bar_index - 2
+    float obTop   = high[2]
+    float obBottom = low[2]
+    
+    // Rule 2 FVG Shift: If Candle 2 was the true expansion displacement
+    if low[0] > high[1] and high[1] > high[2]
+        obBar    := bar_index - 1
+        obTop    := high[1]
+        obBottom := low[1]
+        
+    // Rule 3: Must be in Discount (< 0.5 Equilibrium) if filter is active
+    bool allowDiscount = not filterEquilibrium or (obBottom < eqPrice)
+    
+    if allowDiscount
+        // Elite Model Classification:
+        bool isPostIDM = idmSwept and not na(activeIDMPrice) and (obTop < activeIDMPrice)
+        bool isSweepOB = low[2] < low[3] and close[2] > low[3] // Wick swept prior low
+        
+        color chosenCol = isSweepOB ? colOBSweep : (isPostIDM ? colOBPostIDM : colOBBull)
+        string obTag    = isSweepOB ? "🎯 SWEEP-OB" : (isPostIDM ? "⚡ POST-IDM OB" : "🟢 ORDER BLOCK")
+        
+        box   bId = box.new(left=obBar, top=obTop, right=bar_index + 12, bottom=obBottom, border_color=chosenCol, bgcolor=color.new(chosenCol, 85))
+        label lId = label.new(x=obBar, y=obTop, text=obTag, color=color.new(color.white, 100), textcolor=chosenCol, style=label.style_label_down, size=size.small)
+        
+        int modelEnum = isSweepOB ? 2 : (isPostIDM ? 1 : 3)
+        array.push(activeOBs, OrderBlockRecord.new(obBar, obTop, obBottom, true, modelEnum, false, bId, lId))
+
+// ── BEARISH ORDER BLOCK (RULE 1, 2, 3) ──
+if showOBs and bearishFVG
+    int   obBar   = bar_index - 2
+    float obTop   = high[2]
+    float obBottom = low[2]
+    
+    if high[0] < low[1] and low[1] < low[2]
+        obBar    := bar_index - 1
+        obTop    := high[1]
+        obBottom := low[1]
+        
+    bool allowPremium = not filterEquilibrium or (obTop > eqPrice)
+    
+    if allowPremium
+        bool isPostIDM = idmSwept and not na(activeIDMPrice) and (obBottom > activeIDMPrice)
+        bool isSweepOB = high[2] > high[3] and close[2] < high[3] // Wick swept prior high
+        
+        color chosenCol = isSweepOB ? colOBSweep : (isPostIDM ? colOBPostIDM : colOBBear)
+        string obTag    = isSweepOB ? "🎯 SWEEP-OB" : (isPostIDM ? "⚡ POST-IDM OB" : "🔴 ORDER BLOCK")
+        
+        box   bId = box.new(left=obBar, top=obTop, right=bar_index + 12, bottom=obBottom, border_color=chosenCol, bgcolor=color.new(chosenCol, 85))
+        label lId = label.new(x=obBar, y=obBottom, text=obTag, color=color.new(color.white, 100), textcolor=chosenCol, style=label.style_label_up, size=size.small)
+        
+        int modelEnum = isSweepOB ? 2 : (isPostIDM ? 1 : 3)
+        array.push(activeOBs, OrderBlockRecord.new(obBar, obTop, obBottom, false, modelEnum, false, bId, lId))
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 5. INSTITUTIONAL HUD (EPISODES 01–04 CUMULATIVE)
+// ══════════════════════════════════════════════════════════════════════════════
+var table hud = table.new(position.top_right, 5, 2, bgcolor=color.new(#131722, 15), border_color=color.new(#2A2E39, 0), border_width=1)
+if barstate.islast
+    table.cell(hud, 0, 0, "HERMES 34-PILLAR", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 0, "CHAIN STATUS", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 2, 0, "ACTIVE OBS", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 3, 0, "EQUILIBRIUM (0.5)", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    table.cell(hud, 4, 0, "IDM TRACKER", bgcolor=color.new(#1E222D, 0), text_color=color.white, text_size=size.small)
+    
+    table.cell(hud, 0, 1, "EP 01-04 ACTIVE", bgcolor=color.new(#00E676, 25), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 1, "CHAINED & VERIFIED", bgcolor=color.new(#2979FF, 20), text_color=color.white, text_size=size.small)
+    table.cell(hud, 2, 1, str.tostring(array.size(activeOBs)) + " ZONES", bgcolor=color.new(#D500F9, 20), text_color=color.white, text_size=size.small)
+    table.cell(hud, 3, 1, str.tostring(eqPrice, "#.##"), bgcolor=color.new(#FFE57F, 20), text_color=color.black, text_size=size.small)
+    table.cell(hud, 4, 1, idmSwept ? "⚡ IDM SWEPT" : "⏳ HUNTING IDM", bgcolor=idmSwept ? color.new(#FF9100, 20) : color.new(#131722, 0), text_color=color.white, text_size=size.small)

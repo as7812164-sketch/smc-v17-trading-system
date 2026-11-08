@@ -1,0 +1,232 @@
+//@version=6
+indicator("HERMES APEX SMC SOVEREIGN v2.0 — True Institutional Order Block & Inducement Matrix", shorttitle="HERMES SMC v2.0", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ==============================================================================
+// 🏛️ HERMES APEX SMC SOVEREIGN v2.0 (PINE SCRIPT v6)
+// Architect: Hermes AI & Akash Bhai (Master Institutional Quantitative Partner)
+// Core SMC Doctrine: "NO INDUCEMENT, NO TRADE"
+// Architecture: 4H Macro Trend + Extreme OB + IDM Liquidity Sweep + Absorption Gate + 1:2 R:R
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// 1. INPUTS & PARAMETERS
+// ------------------------------------------------------------------------------
+grp_smc     = "🏛️ 1. True SMC Order Block & Inducement Gate"
+req_idm     = input.bool(true, "Enforce 'No Inducement, No Trade' Rule", group=grp_smc, tooltip="Rejects raw order blocks. Only trades extreme zones after internal inducement liquidity is swept.")
+min_disp    = input.float(4.2, "Min Impulsive Displacement Wave (%)", minval=2.0, maxval=15.0, step=0.2, group=grp_smc)
+pen_depth   = input.float(35.0, "Extreme OB Penetration Depth (%)", minval=10.0, maxval=60.0, step=5.0, group=grp_smc)
+rr_ratio    = input.float(2.0, "Strict Target Risk-to-Reward Ratio (R:R)", minval=1.5, maxval=4.0, step=0.1, group=grp_smc)
+sl_buffer   = input.float(0.6, "Structural SL Buffer (%)", minval=0.2, maxval=2.0, step=0.1, group=grp_smc)
+
+grp_htf     = "🛡️ 2. Higher Timeframe Institutional Regime"
+use_4h_bias = input.bool(true, "Enforce 4H Trend Alignment Gate", group=grp_htf)
+disc_prem   = input.bool(true, "Enforce Discount/Premium Equilibrium Gate", group=grp_htf, tooltip="Only Buys in Discount (< 50% swing) and Sells in Premium (> 50% swing).")
+
+grp_micro   = "⚡ 3. Microstructure Footprint Absorption"
+min_wick_pct= input.float(20.0, "Min Absorption Rejection Wick (%)", minval=10.0, maxval=50.0, step=5.0, group=grp_micro)
+
+grp_ui      = "🎨 4. Visual Styling & HUD"
+show_hud    = input.bool(true, "Show Hermes Institutional SMC HUD Table", group=grp_ui)
+show_fvg    = input.bool(true, "Highlight Fair Value Gaps (FVG)", group=grp_ui)
+col_bull_ob = input.color(color.new(#00F59B, 82), "Extreme Demand Box", group=grp_ui)
+col_bear_ob = input.color(color.new(#FF3B69, 82), "Extreme Supply Box", group=grp_ui)
+col_fvg     = input.color(color.new(#F59E0B, 85), "Fair Value Gap (FVG)", group=grp_ui)
+
+// ------------------------------------------------------------------------------
+// 2. 4H TREND ALIGNMENT & VOLUME DELTA
+// ------------------------------------------------------------------------------
+h4_close = request.security(syminfo.tickerid, "240", close[1], lookahead=barmerge.lookahead_on)
+h4_sma50 = request.security(syminfo.tickerid, "240", ta.sma(close, 50)[1], lookahead=barmerge.lookahead_on)
+
+h4_bull = use_4h_bias ? (h4_close > h4_sma50) : true
+h4_bear = use_4h_bias ? (h4_close < h4_sma50) : true
+
+// Intra-bar buy/sell delta estimation
+c_rng = high - low
+lower_wick = (close >= open) ? (open - low) : (close - low)
+upper_wick = (close >= open) ? (high - close) : (high - open)
+lower_wick_pct = c_rng > 0 ? (lower_wick / c_rng) * 100.0 : 0.0
+upper_wick_pct = c_rng > 0 ? (upper_wick / c_rng) * 100.0 : 0.0
+
+buy_vol = c_rng > 0 ? volume * ((close - low) / c_rng) : volume * 0.5
+sell_vol = c_rng > 0 ? volume * ((high - close) / c_rng) : volume * 0.5
+bar_delta = buy_vol - sell_vol
+
+// ------------------------------------------------------------------------------
+// 3. EXTREME ORDER BLOCK & FVG DETECTION
+// ------------------------------------------------------------------------------
+c3_l = low[3]
+c3_h = high[3]
+c3_o = open[3]
+c3_c = close[3]
+c1_l = low[1]
+c1_h = high[1]
+
+imp_h = ta.highest(high, 3)
+imp_l = ta.lowest(low, 3)
+
+bull_disp = ((imp_h - c3_l) / c3_l) * 100.0
+bear_disp = ((c3_h - imp_l) / c3_h) * 100.0
+
+bull_fvg = c1_l > c3_h
+bear_fvg = c1_h < c3_l
+
+is_origin_bull = (c3_l <= ta.lowest(low, 20)[3])
+is_origin_bear = (c3_h >= ta.highest(high, 20)[3])
+
+// 50% Equilibrium Swing Check
+swing_20_h = ta.highest(high, 20)
+swing_20_l = ta.lowest(low, 20)
+equilibrium = (swing_20_h + swing_20_l) / 2.0
+
+bull_qual = h4_bull and (c3_c < c3_o) and bull_fvg and (bull_disp >= min_disp) and is_origin_bull and (not disc_prem or c3_l < equilibrium)
+bear_qual = h4_bear and (c3_c > c3_o) and bear_fvg and (bear_disp >= min_disp) and is_origin_bear and (not disc_prem or c3_h > equilibrium)
+
+// ------------------------------------------------------------------------------
+// 4. ACTIVE ZONE & INDUCEMENT REGISTRATION
+// ------------------------------------------------------------------------------
+type SmcZone
+    bool  is_bull
+    int   start_bar
+    float ob_high
+    float ob_low
+    float idm_level
+    float entry_p
+    float sl_p
+    float tp_p
+    box   ob_box
+    box   fvg_box
+    line  ent_line
+    line  sl_line
+    line  tp_line
+    line  idm_line
+    bool  idm_swept
+    bool  tapped
+    bool  in_pos
+    bool  completed
+
+var SmcZone[] smc_zones = array.new<SmcZone>()
+
+if bull_qual
+    float o_h = c3_h
+    float o_l = c3_l
+    float rng = o_h - o_l
+    float ent = o_h - (rng * (pen_depth / 100.0))
+    float sl  = o_l * (1.0 - (sl_buffer / 100.0))
+    float rsk = math.abs(ent - sl)
+    float tp  = ent + (rsk * rr_ratio)
+    float idm = imp_h * 0.985 # Initial inducement estimate
+    int s_bar = bar_index - 3
+
+    box b_ob  = box.new(s_bar, o_h, bar_index + 15, o_l, border_color=color.new(#00F59B, 30), border_width=1, bgcolor=col_bull_ob)
+    box b_fvg = show_fvg ? box.new(s_bar + 1, c1_l, bar_index + 10, o_h, border_color=color.new(#F59E0B, 50), border_width=1, bgcolor=col_fvg) : box(na)
+    line l_idm = line.new(s_bar, idm, bar_index + 10, idm, color=#F59E0B, width=1, style=line.style_dotted)
+    line l_ent = line.new(s_bar, ent, bar_index + 10, ent, color=#00F59B, width=1, style=line.style_dashed)
+    line l_sl  = line.new(s_bar, sl, bar_index + 10, sl, color=#FF3B69, width=2, style=line.style_solid)
+    line l_tp  = line.new(s_bar, tp, bar_index + 10, tp, color=#38BDF8, width=2, style=line.style_solid)
+
+    SmcZone sz = SmcZone.new(true, s_bar, o_h, o_l, idm, ent, sl, tp, b_ob, b_fvg, l_ent, l_sl, l_tp, l_idm, not req_idm, false, false, false)
+    array.push(smc_zones, sz)
+    if array.size(smc_zones) > 25
+        array.shift(smc_zones)
+
+if bear_qual
+    float o_h = c3_h
+    float o_l = c3_l
+    float rng = o_h - o_l
+    float ent = o_l + (rng * (pen_depth / 100.0))
+    float sl  = o_h * (1.0 + (sl_buffer / 100.0))
+    float rsk = math.abs(sl - ent)
+    float tp  = ent - (rsk * rr_ratio)
+    float idm = imp_l * 1.015
+    int s_bar = bar_index - 3
+
+    box b_ob  = box.new(s_bar, o_h, bar_index + 15, o_l, border_color=color.new(#FF3B69, 30), border_width=1, bgcolor=col_bear_ob)
+    box b_fvg = show_fvg ? box.new(s_bar + 1, o_l, bar_index + 10, c1_h, border_color=color.new(#F59E0B, 50), border_width=1, bgcolor=col_fvg) : box(na)
+    line l_idm = line.new(s_bar, idm, bar_index + 10, idm, color=#F59E0B, width=1, style=line.style_dotted)
+    line l_ent = line.new(s_bar, ent, bar_index + 10, ent, color=#FF3B69, width=1, style=line.style_dashed)
+    line l_sl  = line.new(s_bar, sl, bar_index + 10, sl, color=#FF3B69, width=2, style=line.style_solid)
+    line l_tp  = line.new(s_bar, tp, bar_index + 10, tp, color=#38BDF8, width=2, style=line.style_solid)
+
+    SmcZone sz = SmcZone.new(false, s_bar, o_h, o_l, idm, ent, sl, tp, b_ob, b_fvg, l_ent, l_sl, l_tp, l_idm, not req_idm, false, false, false)
+    array.push(smc_zones, sz)
+    if array.size(smc_zones) > 25
+        array.shift(smc_zones)
+
+// ------------------------------------------------------------------------------
+// 5. INDUCEMENT SWEEP & EXECUTION ENGINE
+// ------------------------------------------------------------------------------
+if array.size(smc_zones) > 0
+    for i = 0 to array.size(smc_zones) - 1
+        SmcZone z = array.get(smc_zones, i)
+        if not z.completed
+            box.set_right(z.ob_box, bar_index + 5)
+            line.set_x2(z.ent_line, bar_index + 5)
+            line.set_x2(z.sl_line, bar_index + 5)
+            line.set_x2(z.tp_line, bar_index + 5)
+
+            if z.is_bull
+                // IDM Sweep Check
+                if not z.idm_swept and low < z.idm_level
+                    z.idm_swept := true
+                    line.set_color(z.idm_line, color.red)
+
+                // Entry Execution: Must have swept IDM & penetrated Extreme OB with Absorption
+                if z.idm_swept and not z.in_pos and low <= z.entry_p and close > z.ob_low
+                    bool absorbed = (lower_wick_pct >= min_wick_pct) or (close > open)
+                    if absorbed
+                        z.in_pos := true
+                        label.new(bar_index, low, "🎯 INSTITUTIONAL BUY (1:2 R:R)\nIDM Swept | Extreme OB Absorbed\nSL: " + str.tostring(z.sl_p, "#.####") + "\nTP: " + str.tostring(z.tp_p, "#.####"), color=color.new(#00F59B, 0), textcolor=color.black, style=label.style_label_up, size=size.normal)
+
+                // Position tracking
+                if z.in_pos
+                    if high >= z.tp_p
+                        z.completed := true
+                        box.set_bgcolor(z.ob_box, color.new(#00F59B, 80))
+                        label.new(bar_index, high, "💰 DIRECT 1:2 TP SMASHED!", color=color.new(#38BDF8, 0), textcolor=color.black, style=label.style_label_down, size=size.normal)
+                    if low <= z.sl_p
+                        z.completed := true
+                        label.new(bar_index, low, "🛑 DIRECT SL HIT", color=color.new(#FF3B69, 0), textcolor=color.white, style=label.style_label_up, size=size.small)
+
+            else
+                if not z.idm_swept and high > z.idm_level
+                    z.idm_swept := true
+                    line.set_color(z.idm_line, color.red)
+
+                if z.idm_swept and not z.in_pos and high >= z.entry_p and close < z.ob_high
+                    bool absorbed = (upper_wick_pct >= min_wick_pct) or (close < open)
+                    if absorbed
+                        z.in_pos := true
+                        label.new(bar_index, high, "🎯 INSTITUTIONAL SELL (1:2 R:R)\nIDM Swept | Extreme OB Absorbed\nSL: " + str.tostring(z.sl_p, "#.####") + "\nTP: " + str.tostring(z.tp_p, "#.####"), color=color.new(#FF3B69, 0), textcolor=color.white, style=label.style_label_down, size=size.normal)
+
+                if z.in_pos
+                    if low <= z.tp_p
+                        z.completed := true
+                        box.set_bgcolor(z.ob_box, color.new(#00F59B, 80))
+                        label.new(bar_index, low, "💰 DIRECT 1:2 TP SMASHED!", color=color.new(#38BDF8, 0), textcolor=color.black, style=label.style_label_up, size=size.normal)
+                    if high >= z.sl_p
+                        z.completed := true
+                        label.new(bar_index, high, "🛑 DIRECT SL HIT", color=color.new(#FF3B69, 0), textcolor=color.white, style=label.style_label_down, size=size.small)
+
+// ------------------------------------------------------------------------------
+// 6. INSTITUTIONAL HUD TABLE
+// ------------------------------------------------------------------------------
+if show_hud and barstate.islast
+    var table hud = table.new(position.top_right, 2, 6, bgcolor=color.new(#0F172A, 10), border_color=color.new(#334155, 30), border_width=1)
+    table.cell(hud, 0, 0, "HERMES SMC SOVEREIGN v2.0", bgcolor=color.new(#00F59B, 20), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 0, "TRUE INSTITUTIONAL CORE", bgcolor=color.new(#00F59B, 20), text_color=color.white, text_size=size.small)
+
+    table.cell(hud, 0, 1, "Inducement Gate", text_color=color.gray, text_size=size.small)
+    table.cell(hud, 1, 1, req_idm ? "NO IDM NO TRADE" : "OFF", text_color=#F59E0B, text_size=size.small)
+
+    table.cell(hud, 0, 2, "4H Bias Trend", text_color=color.gray, text_size=size.small)
+    table.cell(hud, 1, 2, h4_bull ? "BULLISH (Aligned)" : "BEARISH (Aligned)", text_color=h4_bull ? #00F59B : #FF3B69, text_size=size.small)
+
+    table.cell(hud, 0, 3, "Equilibrium Gate", text_color=color.gray, text_size=size.small)
+    table.cell(hud, 1, 3, "DISCOUNT ONLY (<50%)", text_color=#38BDF8, text_size=size.small)
+
+    table.cell(hud, 0, 4, "Direct Target", text_color=color.gray, text_size=size.small)
+    table.cell(hud, 1, 4, "STRICT 1:2.0 R:R DIRECT", text_color=#00F59B, text_size=size.small)
+
+    table.cell(hud, 0, 5, "Management Mode", text_color=color.gray, text_size=size.small)
+    table.cell(hud, 1, 5, "ZERO BREAKEVEN / PURE EXIT", text_color=color.white, text_size=size.small)

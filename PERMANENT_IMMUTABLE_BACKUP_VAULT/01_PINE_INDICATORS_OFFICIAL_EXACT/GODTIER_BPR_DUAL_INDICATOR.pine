@@ -1,0 +1,412 @@
+//@version=5
+indicator(title="Godtier BPR Dual System [Pure Buy]", shorttitle="Godtier BPR [Buy]", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500, format=format.price, precision=2)
+
+// =============================================================================
+// 1. DATA STRUCTURES (UDT) & FIFO QUEUE ARCHITECTURE
+// =============================================================================
+// Custom User Defined Type (UDT) encapsulating all visual components and math
+// properties of an institutional Balanced Price Range (BPR) or Inversion FVG (IFVG).
+type BPRZoneVisual
+    box    zone_box          // Main translucent overlap fill box
+    line   ce_line           // Consequent Encroachment (CE 50%) defense line (dashed)
+    line   entry_line        // Outer top springboard entry boundary (solid green)
+    line   be_line           // Fee-Shield Breakeven level (+0.10% net profit defense)
+    line   tp1_line          // Primary conservative Take Profit target (+1.60% / +2.50%)
+    line   tp2_line          // Compounding Take Profit target (+2.00% / +4.00%)
+    label  info_label        // Zone telemetry badge label
+    float  top_price         // Upper price bound of the overlap/inversion zone
+    float  bottom_price      // Lower price bound of the overlap/inversion zone
+    float  ce_price          // 50% Consequent Encroachment midpoint
+    float  entry_price       // Outer boundary springboard entry level
+    float  be_price          // Fee-Shield Breakeven price (Entry + 0.10%)
+    float  tp1_price         // Take Profit 1 price coordinate
+    float  tp2_price         // Take Profit 2 price coordinate
+    int    start_bar         // Bar index where zone formed
+    string zone_type         // "BPR" or "IFVG"
+    string tf_label          // "1H" or "4H"
+    bool   is_mitigated      // Has price tapped outer springboard boundary?
+    bool   is_invalidated    // Has candle closed below CE 50%?
+    bool   is_be_active      // Has price reached expansion trigger locking breakeven?
+
+// Persistent FIFO memory queue storing active and recently mitigated zones
+var zone_queue = array.new<BPRZoneVisual>()
+
+// =============================================================================
+// 2. USER INPUTS & CONFIGURATION SCHEMA
+// =============================================================================
+// Execution Mode Selection
+string i_mode          = input.string("1H Intraday", "Trading Mode", options=["1H Intraday", "4H Macro Swing", "Dual Visualizer"], group="Mode Configuration", tooltip="Select between 1H Intraday (+1.60%/+2.00% targets), 4H Macro Swing (+2.50%/+4.00% targets), or Dual Visualizer (renders both 1H and 4H zones with Cyan and Gold color grading).")
+
+// 1H Intraday Compounding Targets
+float  i_tp1_1h        = input.float(1.60, "1H TP1 Target (%)", minval=0.5, step=0.1, group="1H Intraday Targets", tooltip="Conservative intraday target (+8.0% ROE @ 5x leverage)")
+float  i_tp2_1h        = input.float(2.00, "1H TP2 Target (%)", minval=0.5, step=0.1, group="1H Intraday Targets", tooltip="Full expansion intraday target (+10.0% ROE @ 5x leverage)")
+float  i_be_trig_1h    = input.float(0.75, "1H BE Trigger (%)", minval=0.2, step=0.05, group="1H Intraday Targets", tooltip="Price expansion threshold to lock Fee-Shield Breakeven")
+
+// 4H Macro Swing Compounding Targets
+float  i_tp1_4h        = input.float(2.50, "4H TP1 Target (%)", minval=1.0, step=0.1, group="4H Macro Targets", tooltip="Conservative swing target (+12.5% ROE @ 5x leverage)")
+float  i_tp2_4h        = input.float(4.00, "4H TP2 Target (%)", minval=1.0, step=0.1, group="4H Macro Targets", tooltip="Full expansion swing target (+20.0% ROE @ 5x leverage)")
+float  i_be_trig_4h    = input.float(1.05, "4H BE Trigger (%)", minval=0.3, step=0.05, group="4H Macro Targets", tooltip="Price expansion threshold to lock Fee-Shield Breakeven")
+
+// Risk Management & Fee-Shield Protection
+float  i_be_offset     = input.float(0.10, "Fee-Shield SL Offset (%)", minval=0.05, step=0.01, group="Risk Management", tooltip="Shifts SL to Entry + 0.10%, guaranteeing $0 net capital loss after 0.05% maker/taker round-trip exchange fees")
+float  i_leverage      = input.float(5.0, "Isolated Margin Leverage (x)", minval=1.0, maxval=20.0, step=1.0, group="Risk Management", tooltip="Isolated leverage multiplier used for ROE calculations")
+
+// Institutional Filters & Regime Gates
+bool   i_enable_btc_shield = input.bool(true, "Enable Macro Bitcoin Shield", group="Regime Filters", tooltip="Disqualifies altcoin buy signals when Bitcoin momentum is aggressively bearish")
+string i_btc_ticker        = input.symbol("BINANCE:BTCUSDT", "BTC Shield Ticker", group="Regime Filters", tooltip="Reference benchmark pair for macro crypto momentum")
+int    i_sweep_lookback    = input.int(10, "Liquidity Sweep Lookback", minval=3, maxval=50, group="Regime Filters", tooltip="Lookback bars to verify prior Sell-Side Liquidity (SSL) sweep before BPR retest")
+float  i_min_atr_mult      = input.float(0.20, "Min ATR FVG Multiplier", minval=0.0, step=0.05, group="Filter Settings", tooltip="Minimum gap height relative to ATR(14) to filter micro noise")
+int    i_max_sibi_bars     = input.int(15, "Max SIBI-BISI Bar Separation", minval=1, maxval=50, group="Filter Settings", tooltip="Maximum candle distance between opposing FVGs to form a valid BPR")
+
+// Object Memory Management & HUD Settings
+int    i_max_zones     = input.int(30, "Max Visual Zones (FIFO Cap)", minval=5, maxval=50, group="Memory Management", tooltip="Strict FIFO array bounding ensuring total boxes <= 30, lines <= 150, labels <= 30 (well within TV 500 limit)")
+bool   i_show_hud      = input.bool(true, "Display Real-Time HUD Table", group="HUD Settings", tooltip="Enables top-right 7x2 real-time institutional HUD dashboard")
+string i_hud_pos_str   = input.string("Top Right", "HUD Screen Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group="HUD Settings")
+
+// Map HUD position string to native position
+f_get_hud_position(string pos_str) =>
+    pos_str == "Top Left" ? position.top_left : pos_str == "Bottom Right" ? position.bottom_right : pos_str == "Bottom Left" ? position.bottom_left : position.top_right
+
+var hud_position = f_get_hud_position(i_hud_pos_str)
+
+// Active parameters resolved dynamically based on selected Mode
+float active_tp1_pct = (i_mode == "4H Macro Swing") ? i_tp1_4h : i_tp1_1h
+float active_tp2_pct = (i_mode == "4H Macro Swing") ? i_tp2_4h : i_tp2_1h
+float active_be_trig = (i_mode == "4H Macro Swing") ? i_be_trig_4h : i_be_trig_1h
+
+// =============================================================================
+// 3. REGIME GATES & MACRO BITCOIN SHIELD (NON-REPAINTING)
+// =============================================================================
+// Request Bitcoin higher-timeframe metrics with strict non-repainting indexing
+string btc_tf = (i_mode == "4H Macro Swing") ? "240" : "60"
+
+[btc_close, btc_ema, btc_rsi] = request.security(i_btc_ticker, btc_tf, [close[barstate.isrealtime ? 1 : 0], ta.ema(close[barstate.isrealtime ? 1 : 0], 20), ta.rsi(close[barstate.isrealtime ? 1 : 0], 14)], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+
+// Macro Bitcoin momentum gate: Bearish if BTC close is below EMA20 and RSI < 45
+bool btc_is_bearish = not na(btc_close) and not na(btc_ema) and not na(btc_rsi) and (btc_close < btc_ema) and (btc_rsi < 45.0)
+
+// Altcoin buy setups are vetoed when Bitcoin momentum is aggressively bearish
+bool btc_shield_blocks = i_enable_btc_shield and btc_is_bearish and (syminfo.tickerid != i_btc_ticker)
+
+// =============================================================================
+// 4. ALGORITHMIC DETECTION CORE: BPR & INVERSION FVG (PURE BUY)
+// =============================================================================
+// ATR filter for institutional significance
+float atr_val = ta.atr(14)
+float min_gap_threshold = math.max(syminfo.mintick * 2.0, nz(atr_val * i_min_atr_mult, syminfo.mintick * 2.0))
+
+// 4.1 Bullish FVG (BISI - Buy-Side Imbalance Sell-Side Inefficiency)
+// 3-bar sequence: Low of bar 0 strictly higher than High of bar 2
+bool is_bisi = (low > high[2]) and ((low - high[2]) >= min_gap_threshold)
+float bisi_top = low
+float bisi_bot = high[2]
+
+// 4.2 Bearish FVG (SIBI - Sell-Side Imbalance Buy-Side Inefficiency)
+// 3-bar sequence: High of bar 0 strictly lower than Low of bar 2
+bool is_sibi = (high < low[2]) and ((low[2] - high) >= min_gap_threshold)
+float sibi_top = low[2]
+float sibi_bot = high
+
+// Track most recent SIBI candidate for Balanced Price Range overlap or Inversion
+var float last_sibi_top = na
+var float last_sibi_bot = na
+var int   last_sibi_bar = na
+
+// Update SIBI state on confirmed candle close
+if barstate.isconfirmed and is_sibi
+    last_sibi_top := sibi_top
+    last_sibi_bot := sibi_bot
+    last_sibi_bar := bar_index
+
+// 4.3 Liquidity Sweep / Inducement Confirmation
+// Checks if current or recent candle swept Sell-Side Liquidity (prior swing low)
+float recent_lowest_low = ta.lowest(low[1], i_sweep_lookback)
+bool is_liquidity_swept = (low < recent_lowest_low) or (low[1] < nz(recent_lowest_low[1], low[1]))
+
+// 4.4 Balanced Price Range (BPR) Overlap Detection
+// Forms when an expanding BISI overlaps an active prior SIBI within max allowed bars
+bool  bpr_formed    = false
+float bpr_top_price = na
+float bpr_bot_price = na
+
+if barstate.isconfirmed and is_bisi and not na(last_sibi_top) and (bar_index - last_sibi_bar <= i_max_sibi_bars)
+    float overlap_top = math.min(last_sibi_top, bisi_top)
+    float overlap_bot = math.max(last_sibi_bot, bisi_bot)
+    // Check two-sided volume efficiency overlap criteria
+    if (overlap_top - overlap_bot) >= (syminfo.mintick * 2.0)
+        bpr_formed    := true
+        bpr_top_price := overlap_top
+        bpr_bot_price := overlap_bot
+
+// 4.5 Inversion FVG (IFVG) Detection
+// Occurs when price forcefully closes strictly above a prior Bearish SIBI upper boundary
+bool  ifvg_formed    = false
+float ifvg_top_price = na
+float ifvg_bot_price = na
+
+if barstate.isconfirmed and not na(last_sibi_top) and (close > last_sibi_top) and (close[1] <= last_sibi_top)
+    ifvg_formed    := true
+    ifvg_top_price := last_sibi_top
+    ifvg_bot_price := last_sibi_bot
+    // SIBI is officially inverted; reset SIBI tracker to prevent duplicate inversions
+    last_sibi_top  := na
+    last_sibi_bot  := na
+    last_sibi_bar  := na
+
+// =============================================================================
+// 4.6 DUAL VISUALIZER MTF 4H DETECTION (CONFIRMED 4H CLOSE)
+// =============================================================================
+bool is_dual_mode = (i_mode == "Dual Visualizer")
+
+// HTF 4H Tuple detection function evaluated in 4H timeframe context
+f_htf_detect() =>
+    float h_atr = ta.atr(14)
+    float h_min_gap = math.max(syminfo.mintick * 2.0, nz(h_atr * 0.20, syminfo.mintick * 2.0))
+    bool  h_bisi = (low > high[2]) and ((low - high[2]) >= h_min_gap)
+    float h_bisi_t = low
+    float h_bisi_b = high[2]
+    bool  h_sibi = (high < low[2]) and ((low[2] - high) >= h_min_gap)
+    float h_sibi_t = low[2]
+    float h_sibi_b = high
+    [h_bisi, h_bisi_t, h_bisi_b, h_sibi, h_sibi_t, h_sibi_b]
+
+[htf_bisi, htf_bisi_t, htf_bisi_b, htf_sibi, htf_sibi_t, htf_sibi_b] = request.security(syminfo.tickerid, "240", f_htf_detect(), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+
+// Detect change in 4H bar
+bool is_new_4h_bar = ta.change(time("240")) != 0
+var float last_4h_sibi_t = na
+var float last_4h_sibi_b = na
+var int   last_4h_sibi_bar = na
+
+if is_dual_mode and is_new_4h_bar and htf_sibi
+    last_4h_sibi_t   := htf_sibi_t
+    last_4h_sibi_b   := htf_sibi_b
+    last_4h_sibi_bar := bar_index
+
+bool  bpr_4h_formed    = false
+float bpr_4h_top_price = na
+float bpr_4h_bot_price = na
+
+if is_dual_mode and is_new_4h_bar and htf_bisi and not na(last_4h_sibi_t) and (bar_index - last_4h_sibi_bar <= (i_max_sibi_bars * 4))
+    float ov_4h_top = math.min(last_4h_sibi_t, htf_bisi_t)
+    float ov_4h_bot = math.max(last_4h_sibi_b, htf_bisi_b)
+    if (ov_4h_top - ov_4h_bot) >= (syminfo.mintick * 2.0)
+        bpr_4h_formed    := true
+        bpr_4h_top_price := ov_4h_top
+        bpr_4h_bot_price := ov_4h_bot
+
+// =============================================================================
+// 5. VISUAL SPAWNING & ZERO-FLICKER FIFO QUEUE ENGINE
+// =============================================================================
+// Spawns a new visual BPRZoneVisual object and inserts it into bounded FIFO queue
+f_spawn_zone(float z_top, float z_bot, string z_type, string z_tf) =>
+    float z_ce    = (z_top + z_bot) / 2.0
+    float z_entry = z_top
+    float z_tp1_mult = (z_tf == "4H" ? i_tp1_4h : active_tp1_pct) / 100.0
+    float z_tp2_mult = (z_tf == "4H" ? i_tp2_4h : active_tp2_pct) / 100.0
+    float z_be    = z_entry * (1.0 + i_be_offset / 100.0)
+    float z_tp1   = z_entry * (1.0 + z_tp1_mult)
+    float z_tp2   = z_entry * (1.0 + z_tp2_mult)
+    
+    // Enforce strict FIFO bounding: Shift and destroy oldest zone when capacity is reached
+    if array.size(zone_queue) >= i_max_zones
+        BPRZoneVisual oldest = array.shift(zone_queue)
+        box.delete(oldest.zone_box)
+        line.delete(oldest.ce_line)
+        line.delete(oldest.entry_line)
+        line.delete(oldest.be_line)
+        line.delete(oldest.tp1_line)
+        line.delete(oldest.tp2_line)
+        label.delete(oldest.info_label)
+        
+    // Distinct institutional color grading
+    // Dual Visualizer: Cyan for 1H, Gold for 4H
+    // Standard Modes: Green for BPR, Purple for IFVG
+    color box_fill_col = is_dual_mode ? (z_tf == "4H" ? color.new(#FFD700, 85) : color.new(#00B0FF, 85)) : (z_type == "BPR" ? color.new(#00E676, 85) : color.new(#7C4DFF, 85))
+    color box_brd_col  = is_dual_mode ? (z_tf == "4H" ? color.new(#FFD700, 30) : color.new(#00B0FF, 30)) : (z_type == "BPR" ? color.new(#00E676, 30) : color.new(#7C4DFF, 30))
+    
+    int proj_x = bar_index + 12
+    
+    // Instantiate persistent graphics
+    box   new_box   = box.new(bar_index, z_top, proj_x, z_bot, border_color=box_brd_col, bgcolor=box_fill_col)
+    line  new_ce    = line.new(bar_index, z_ce, proj_x, z_ce, color=color.new(#FFD700, 20), style=line.style_dashed, width=1)
+    line  new_entry = line.new(bar_index, z_entry, proj_x, z_entry, color=color.new(#00E676, 0), style=line.style_solid, width=2)
+    line  new_be    = line.new(bar_index, z_be, proj_x, z_be, color=color.new(#00E5FF, 20), style=line.style_dotted, width=1)
+    line  new_tp1   = line.new(bar_index, z_tp1, proj_x, z_tp1, color=color.new(#00C853, 10), style=line.style_solid, width=2)
+    line  new_tp2   = line.new(bar_index, z_tp2, proj_x, z_tp2, color=color.new(#00E676, 10), style=line.style_solid, width=2)
+    
+    string lbl_text = "⚡ " + z_tf + " " + z_type + "\nEntry: " + str.tostring(z_entry, "#,###.00") + "\nCE 50%: " + str.tostring(z_ce, "#,###.00")
+    label new_lbl   = label.new(proj_x, z_top, text=lbl_text, color=color.new(#161B22, 15), textcolor=color.white, style=label.style_label_left, size=size.small)
+    
+    BPRZoneVisual zv = BPRZoneVisual.new(new_box, new_ce, new_entry, new_be, new_tp1, new_tp2, new_lbl, z_top, z_bot, z_ce, z_entry, z_be, z_tp1, z_tp2, bar_index, z_type, z_tf, false, false, false)
+    array.push(zone_queue, zv)
+
+// Execute zone spawning on confirmed candle close (Non-Repainting Invariant)
+if barstate.isconfirmed and not btc_shield_blocks
+    string cur_tf_label = (i_mode == "4H Macro Swing" ? "4H" : "1H")
+    if bpr_formed
+        f_spawn_zone(bpr_top_price, bpr_bot_price, "BPR", cur_tf_label)
+    else if ifvg_formed
+        f_spawn_zone(ifvg_top_price, ifvg_bot_price, "IFVG", cur_tf_label)
+        
+    // Dual Visualizer 4H BPR spawning
+    if is_dual_mode and bpr_4h_formed
+        f_spawn_zone(bpr_4h_top_price, bpr_4h_bot_price, "BPR", "4H")
+
+// Zero-Flicker Live Bar Coordinate Updating
+// Real-time ticks only modify rightward coordinates without recreating objects
+if array.size(zone_queue) > 0
+    int forward_x = bar_index + 12
+    for i = 0 to array.size(zone_queue) - 1
+        BPRZoneVisual z = array.get(zone_queue, i)
+        if not z.is_mitigated and not z.is_invalidated
+            box.set_right(z.zone_box, forward_x)
+            line.set_x2(z.ce_line, forward_x)
+            line.set_x2(z.entry_line, forward_x)
+            line.set_x2(z.be_line, forward_x)
+            line.set_x2(z.tp1_line, forward_x)
+            line.set_x2(z.tp2_line, forward_x)
+            label.set_x(z.info_label, forward_x)
+
+// =============================================================================
+// 6. SPRINGBOARD MITIGATION & LIFECYCLE STATE MACHINE
+// =============================================================================
+var string trade_state     = "IDLE - HUNTING"
+var float  active_entry    = na
+var float  active_ce       = na
+var float  active_be       = na
+var float  active_tp1      = na
+var float  active_tp2      = na
+var bool   is_be_locked    = false
+
+// Discrete trigger events for native alerts and JSON webhook dispatch
+bool event_buy        = false
+bool event_be_hit     = false
+bool event_tp1_hit    = false
+bool event_tp2_hit    = false
+bool event_ce_invalid = false
+
+// Scan active zones for Springboard Mitigation on confirmed candle close
+if barstate.isconfirmed and array.size(zone_queue) > 0
+    for i = 0 to array.size(zone_queue) - 1
+        BPRZoneVisual item = array.get(zone_queue, i)
+        if not item.is_mitigated and not item.is_invalidated and not btc_shield_blocks
+            // Mitigation Criteria: Candle low touches top springboard boundary while close holds above CE 50%
+            if (low <= item.top_price) and (close >= item.ce_price)
+                item.is_mitigated := true
+                trade_state       := "IN TRADE (LONG)"
+                active_entry      := item.top_price
+                active_ce         := item.ce_price
+                active_be         := item.be_price
+                active_tp1        := item.tp1_price
+                active_tp2        := item.tp2_price
+                is_be_locked      := false
+                event_buy         := true
+
+// Trade Position Lifecycle Evaluation
+if trade_state == "IN TRADE (LONG)" or trade_state == "FEE-SHIELD BE ACTIVE"
+    // 6.1 Fee-Shield Breakeven Shift: Locked when price touches expansion threshold
+    if not is_be_locked and (high >= active_entry * (1.0 + active_be_trig / 100.0))
+        is_be_locked := true
+        event_be_hit := true
+        trade_state  := "FEE-SHIELD BE ACTIVE"
+        
+    // 6.2 Take Profit 1 Target Touch
+    if high >= active_tp1 and not event_tp1_hit
+        event_tp1_hit := true
+        
+    // 6.3 Take Profit 2 Target Touch (Full Compounding Expansion)
+    if high >= active_tp2
+        event_tp2_hit := true
+        trade_state   := "IDLE - HUNTING"
+        
+    // 6.4 Consequent Encroachment (CE 50%) Soft Stop Defense
+    // Evaluated strictly on confirmed candle close breaching the midpoint
+    if barstate.isconfirmed and (close < active_ce)
+        event_ce_invalid := true
+        trade_state      := "IDLE - HUNTING"
+
+// Visual Buy Springboard Execution Marker
+plotshape(event_buy, title="Buy Springboard", style=shape.triangleup, location=location.belowbar, color=color.new(#00E676, 0), size=size.small, text="BPR BUY")
+
+// =============================================================================
+// 7. REAL-TIME INSTITUTIONAL HUD TABLE DASHBOARD (7x2 TOP-RIGHT)
+// =============================================================================
+var table hud = table.new(position=hud_position, columns=2, rows=7, bgcolor=color.new(#0D1117, 10), border_color=color.new(#30363D, 20), border_width=1)
+
+if i_show_hud and barstate.islast
+    // Row 0: Master Header
+    table.cell(hud, 0, 0, "⚡ GODTIER BPR SYSTEM", bgcolor=color.new(#161B22, 10), text_color=color.new(#FFD700, 0), text_size=size.small)
+    table.cell(hud, 1, 0, "[PURE BUY]", bgcolor=color.new(#161B22, 10), text_color=color.new(#00E676, 0), text_size=size.small)
+    
+    // Row 1: Live Market Price & Trading Mode
+    table.cell(hud, 0, 1, "Price / Mode", text_color=color.new(#8B949E, 0), text_size=size.small)
+    table.cell(hud, 1, 1, str.tostring(close, "#,###.00") + " (" + i_mode + ")", text_color=color.new(#58A6FF, 0), text_size=size.small)
+    
+    // Row 2: Macro Regime Gate Status
+    string regime_text = btc_shield_blocks ? "BLOCKED (BTC SHIELD)" : "ACTIVE BULLISH"
+    color  regime_col  = btc_shield_blocks ? color.new(#FF1744, 0) : color.new(#00E676, 0)
+    table.cell(hud, 0, 2, "Regime Gate", text_color=color.new(#8B949E, 0), text_size=size.small)
+    table.cell(hud, 1, 2, regime_text, text_color=regime_col, text_size=size.small)
+    
+    // Row 3: Distance to Nearest BPR Springboard (% and Pips)
+    float nearest_dist_pct = na
+    float nearest_dist_pips = na
+    if array.size(zone_queue) > 0
+        BPRZoneVisual latest_z = array.get(zone_queue, array.size(zone_queue) - 1)
+        nearest_dist_pct  := (latest_z.top_price - close) / close * 100.0
+        nearest_dist_pips := (latest_z.top_price - close) / (syminfo.mintick * 10.0)
+    
+    string dist_str = na(nearest_dist_pct) ? "None Active" : str.tostring(nearest_dist_pct, "+#.##") + "% (" + str.tostring(nearest_dist_pips, "+#.0") + " p)"
+    color  dist_col = na(nearest_dist_pct) ? color.new(#8B949E, 0) : (math.abs(nearest_dist_pct) < 0.50 ? color.new(#00E676, 0) : color.new(#FFB300, 0))
+    table.cell(hud, 0, 3, "Springboard Prox", text_color=color.new(#8B949E, 0), text_size=size.small)
+    table.cell(hud, 1, 3, dist_str, text_color=dist_col, text_size=size.small)
+    
+    // Row 4: Dynamic Trade Status Monitor
+    color status_col = (trade_state == "IN TRADE (LONG)") ? color.new(#00E676, 0) : (trade_state == "FEE-SHIELD BE ACTIVE") ? color.new(#00E5FF, 0) : color.new(#8B949E, 0)
+    table.cell(hud, 0, 4, "Trade Status", text_color=color.new(#8B949E, 0), text_size=size.small)
+    table.cell(hud, 1, 4, trade_state, text_color=status_col, text_size=size.small)
+    
+    // Row 5: Fee-Shield Breakeven Armor Status
+    string be_str = is_be_locked ? str.tostring(active_be, "#,###.00") + " [LOCKED +0.10%]" : "ARMED (" + str.tostring(active_be_trig, "#.##") + "% EXP)"
+    table.cell(hud, 0, 5, "Fee-Shield BE", text_color=color.new(#8B949E, 0), text_size=size.small)
+    table.cell(hud, 1, 5, be_str, text_color=color.new(#00E5FF, 0), text_size=size.small)
+    
+    // Row 6: Compounding Targets & Expected ROE
+    float expected_roe1 = active_tp1_pct * i_leverage
+    float expected_roe2 = active_tp2_pct * i_leverage
+    string tp_str = "TP1: +" + str.tostring(active_tp1_pct, "#.##") + "% | TP2: +" + str.tostring(active_tp2_pct, "#.##") + "% (+" + str.tostring(expected_roe1, "#.0") + "%/+" + str.tostring(expected_roe2, "#.0") + "% ROE @ 5x)"
+    table.cell(hud, 0, 6, "Compounding TP", text_color=color.new(#8B949E, 0), text_size=size.small)
+    table.cell(hud, 1, 6, tp_str, text_color=color.new(#00C853, 0), text_size=size.small)
+
+// =============================================================================
+// 8. ALERTING ENGINE & AUTOMATED JSON WEBHOOK PAYLOADS
+// =============================================================================
+// Native TradingView alertcondition triggers for mobile/desktop push notifications
+alertcondition(event_buy, title="BPR Buy Springboard Entry", message="Godtier BPR Dual System: Buy Springboard entry triggered at {{close}}!")
+alertcondition(event_be_hit, title="Fee-Shield Breakeven Activated", message="Godtier BPR Dual System: Price expanded to target! Stop Loss shifted to Breakeven (+0.10%). $0 net loss guaranteed.")
+alertcondition(event_tp1_hit, title="Take Profit 1 Hit", message="Godtier BPR Dual System: Take Profit 1 reached at {{close}}! Compounding target 1 secured.")
+alertcondition(event_tp2_hit, title="Take Profit 2 Hit", message="Godtier BPR Dual System: Take Profit 2 reached at {{close}}! Full compounding cycle complete.")
+alertcondition(event_ce_invalid, title="CE 50% Invalidation", message="Godtier BPR Dual System: Invalidation! Candle closed below CE 50% defense level.")
+alertcondition(btc_shield_blocks, title="BTC Shield Block Active", message="Godtier BPR Dual System: Altcoin buys suspended due to bearish Bitcoin momentum regime.")
+
+// Automated Bot JSON Webhook Generator
+f_build_webhook_payload(string ev_name, float ent_p, float ce_p, float be_p, float t1_p, float t2_p) =>
+    "{\"system\": \"Godtier_BPR_Dual_System\", \"version\": \"1.0\", \"event\": \"" + ev_name + "\", \"ticker\": \"" + syminfo.ticker + "\", \"exchange\": \"" + syminfo.prefix + "\", \"timeframe\": \"" + timeframe.period + "\", \"mode\": \"" + i_mode + "\", \"bar_close\": " + str.tostring(close) + ", \"order_params\": {\"action\": \"BUY\", \"order_type\": \"LIMIT\", \"entry_price\": " + str.tostring(ent_p) + ", \"soft_stop_loss\": " + str.tostring(ce_p) + ", \"fee_shield_be_price\": " + str.tostring(be_p) + ", \"take_profit_1\": " + str.tostring(t1_p) + ", \"take_profit_2\": " + str.tostring(t2_p) + ", \"leverage\": " + str.tostring(i_leverage) + ", \"capital_safety_factor\": 0.90}}"
+
+
+// Programmatic Webhook Alert Dispatch on Confirmed Candle Close
+if event_buy
+    alert(f_build_webhook_payload("SPRINGBOARD_BUY_ENTRY", active_entry, active_ce, active_be, active_tp1, active_tp2), alert.freq_once_per_bar_close)
+
+if event_be_hit
+    alert(f_build_webhook_payload("FEE_SHIELD_BREAKEVEN_LOCKED", active_entry, active_ce, active_be, active_tp1, active_tp2), alert.freq_once_per_bar_close)
+
+if event_tp1_hit
+    alert(f_build_webhook_payload("TAKE_PROFIT_1_HIT", active_entry, active_ce, active_be, active_tp1, active_tp2), alert.freq_once_per_bar_close)
+
+if event_tp2_hit
+    alert(f_build_webhook_payload("TAKE_PROFIT_2_HIT", active_entry, active_ce, active_be, active_tp1, active_tp2), alert.freq_once_per_bar_close)
+
+if event_ce_invalid
+    alert(f_build_webhook_payload("CE50_INVALIDATION", active_entry, active_ce, active_be, active_tp1, active_tp2), alert.freq_once_per_bar_close)

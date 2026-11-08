@@ -1,0 +1,286 @@
+//@version=5
+indicator("HERMES 3.5 APEX — Official Live Paper Trading Indicator", shorttitle="HERMES 3.5 APEX", overlay=true, max_boxes_count=100, max_labels_count=100, max_lines_count=100)
+
+// ==============================================================================
+// 🏛️ HERMES 3.5 APEX OFFICIAL QUANT ENGINE (PINE SCRIPT V5)
+// Exact match to the 24/7 Autonomous Live Paper Trading System on Hermes Platform
+//
+// Features:
+// 1. Sentry 1 (Macro BTC Causal Brake): Real-time multi-timeframe 4H BTC dump/pump veto
+// 2. Sentry 2 (Institutional Floor): >= 5.0% Displacement wave + FVG Footprint
+// 3. Sentry 3 (Liquidity Sweep & Entry): IDM Swept + >= 18% Wick Rejection + MT / Boundary Entry
+// 4. Sentry 4 (Freshness Guard): Retest tap countdown <= 28 bars
+// 5. Hermes 3.5 Micro-Sniper Gate: Rejects falling knives & runaway rockets (15% wick rule)
+// 6. Dual-Tier Classification: Tier 1 (Institutional Full Size) vs Tier 2 (Structural Half Size)
+// 7. Multi-Stage Profit Armor: Stage 1 BE @ +1.6% | Stage 2 Trailing Lock @ +2.2% | TP @ +2.44%
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// 1. USER INPUTS & ENGINE PARAMETERS
+// ------------------------------------------------------------------------------
+grp_entry   = "⚙️ Entry & Structure Settings"
+entry_mode  = input.string("OB Boundary (Edge Touch)", "Entry Trigger Mode", options=["OB Boundary (Edge Touch)", "50% Mean Threshold (MT)"], group=grp_entry)
+max_zones   = input.int(4, "Max Active Unmitigated Zones", minval=1, maxval=10, group=grp_entry)
+strict_col  = input.bool(true, "Strict Candle Color Gate (Red for Bull, Green for Bear)", group=grp_entry)
+min_disp    = input.float(5.0, "Min Displacement Wave (%)", minval=1.0, maxval=15.0, step=0.5, group=grp_entry)
+max_bars    = input.int(28, "Sentry 4 Freshness Limit (Bars)", minval=5, maxval=50, group=grp_entry)
+
+grp_sentry  = "🛡️ Sentry 1: Macro King BTC Brake"
+btc_filter  = input.bool(true, "Enable BTC 4H Macro Causal Brake", group=grp_sentry)
+btc_symbol  = input.symbol("BINANCE:BTCUSDT", "BTC Benchmark Symbol", group=grp_sentry)
+btc_dump_vt = input.float(2.0, "BTC 4H Dump Veto Threshold (%)", minval=0.5, step=0.5, group=grp_sentry)
+
+grp_micro   = "🎯 Hermes 3.5 Micro-Sniper & Dual-Tier Gate"
+sniper_gate = input.bool(true, "Enable 15m Micro-Sniper Gate (Knife/Rocket Rejection)", group=grp_micro)
+min_wick_pct= input.float(15.0, "Min Micro-Rejection Wick (%)", minval=5.0, maxval=50.0, step=1.0, group=grp_micro)
+show_tiers  = input.bool(true, "Classify Signals as Tier 1 (CVD Aligned) vs Tier 2 (Structural)", group=grp_micro)
+
+grp_risk    = "💰 Targets & Multi-Stage Armor (5x Leverage)"
+tp_pct_in   = input.float(2.44, "Take Profit Price Move (%) [+12.20% ROE]", step=0.1, group=grp_risk)
+sl_pct_in   = input.float(2.40, "Stop Loss Price Move (%) [-12.00% ROE]", step=0.1, group=grp_risk)
+be_trig_in  = input.float(1.60, "Stage 1 BE Trigger (%) [+8.0% ROE]", step=0.1, group=grp_risk)
+tr_trig_in  = input.float(2.20, "Stage 2 Trail Trigger (%) [+11.0% ROE]", step=0.1, group=grp_risk)
+
+grp_ui      = "🎨 UI & Zen Display"
+show_table  = input.bool(true, "Show Hermes 3.5 Live Sentries Dashboard", group=grp_ui)
+show_tp_sl  = input.bool(true, "Draw Projected TP / SL / Armor Lines", group=grp_ui)
+bull_color  = input.color(color.new(#00e676, 75), "Bullish OB Box Color", group=grp_ui)
+bear_color  = input.color(color.new(#ff5252, 75), "Bearish OB Box Color", group=grp_ui)
+
+// ------------------------------------------------------------------------------
+// 2. SENTRY 1: KING BTC 4H MACRO CAUSAL BRAKE
+// ------------------------------------------------------------------------------
+btc_4h_o = request.security(btc_symbol, "240", open[1], lookahead=barmerge.lookahead_off)
+btc_4h_c = request.security(btc_symbol, "240", close[1], lookahead=barmerge.lookahead_off)
+btc_4h_change = (btc_4h_c - btc_4h_o) / btc_4h_o * 100.0
+
+btc_long_veto  = btc_filter and (btc_4h_change <= -btc_dump_vt)
+btc_short_veto = btc_filter and (btc_4h_change >= btc_dump_vt)
+
+btc_status_str = btc_long_veto ? "🔴 DUMP VETO (Longs Blocked)" : btc_short_veto ? "🔴 PUMP VETO (Shorts Blocked)" : "🟢 SENTRY 1 CLEAN (" + str.tostring(btc_4h_change, "+#.##") + "%)"
+
+// ------------------------------------------------------------------------------
+// 3. CVD & VOLUME ESTIMATION (HERMES 3.5 PILLAR 1)
+// ------------------------------------------------------------------------------
+candle_range = high - low
+delta_ratio = candle_range > 0 ? (close - low) / candle_range : 0.50
+candle_delta = volume * (2.0 * delta_ratio - 1.0)
+vol_sma20 = ta.sma(volume, 20)
+vol_ratio = vol_sma20 > 0 ? volume / vol_sma20 : 1.0
+
+// Running 3-bar CVD slope
+var float running_cvd = 0.0
+running_cvd := running_cvd + candle_delta
+cvd_slope = running_cvd - running_cvd[3]
+
+// ------------------------------------------------------------------------------
+// 4. ATR & FVG DISPLACEMENT ENGINE (SENTRY 2)
+// ------------------------------------------------------------------------------
+atr14 = ta.atr(14)
+
+// 3-Bar Pattern Detection
+c3_open  = open[3]
+c3_high  = high[3]
+c3_low   = low[3]
+c3_close = close[3]
+
+c2_high  = high[2]
+c2_low   = low[2]
+
+c1_high  = high[1]
+c1_low   = low[1]
+
+impulse_high = math.max(c1_high, c2_high)
+impulse_low  = math.min(c1_low, c2_low)
+
+bull_fvg = (c1_low > c3_high)
+bear_fvg = (c1_high < c3_low)
+
+bull_disp_pct = ((impulse_high - c3_low) / c3_low) * 100.0
+bear_disp_pct = ((c3_high - impulse_low) / c3_high) * 100.0
+
+bull_color_ok = not strict_col or (c3_close < c3_open)
+bear_color_ok = not strict_col or (c3_close > c3_open)
+
+// Sentry 2 Qualification
+bull_ob_qual = bull_color_ok and bull_fvg and (bull_disp_pct >= min_disp) and not btc_long_veto
+bear_ob_qual = bear_color_ok and bear_fvg and (bear_disp_pct >= min_disp) and not btc_short_veto
+
+// ------------------------------------------------------------------------------
+// 5. UNMITIGATED ACTIVE ZONES STORAGE & RENDERING
+// ------------------------------------------------------------------------------
+type OBZone
+    int start_bar
+    float ob_high
+    float ob_low
+    float mt
+    float entry_level
+    string side
+    box box_id
+    line mt_line_id
+    bool mitigated
+    bool invalidated
+
+var OBZone[] active_zones = array.new<OBZone>()
+
+// Clean up arrays on each bar
+if array.size(active_zones) > 0
+    for idx = array.size(active_zones) - 1 to 0
+        OBZone z = array.get(active_zones, idx)
+        // Check invalidation
+        if (z.side == "LONG" and close < z.ob_low) or (z.side == "SHORT" and close > z.ob_high)
+            z.invalidated := true
+            box.delete(z.box_id)
+            line.delete(z.mt_line_id)
+            array.remove(active_zones, idx)
+        else if z.mitigated
+            // Auto delete mitigated zones to keep chart ultra-clean
+            box.delete(z.box_id)
+            line.delete(z.mt_line_id)
+            array.remove(active_zones, idx)
+        else
+            // Extend unmitigated forward box
+            box.set_right(z.box_id, bar_index + 10)
+            line.set_x2(z.mt_line_id, bar_index + 10)
+
+// Register new qualified OB Zone at bar [3]
+if bull_ob_qual
+    float zone_high = c3_high
+    float zone_low  = c3_low
+    float zone_mt   = (zone_high + zone_low) / 2.0
+    float eff_entry = (entry_mode == "OB Boundary (Edge Touch)") ? zone_high : zone_mt
+    
+    // Manage Zone Limit (Max 4 Active Zones)
+    if array.size(active_zones) >= max_zones
+        OBZone old_z = array.shift(active_zones)
+        box.delete(old_z.box_id)
+        line.delete(old_z.mt_line_id)
+        
+    box b = box.new(bar_index - 3, zone_high, bar_index + 10, zone_low, border_color=color.new(#00e676, 20), border_width=1, bgcolor=bull_color)
+    line l = line.new(bar_index - 3, zone_mt, bar_index + 10, zone_mt, color=color.new(#00e676, 40), style=line.style_dashed, width=1)
+    
+    OBZone new_z = OBZone.new(bar_index - 3, zone_high, zone_low, zone_mt, eff_entry, "LONG", b, l, false, false)
+    array.push(active_zones, new_z)
+
+if bear_ob_qual
+    float zone_high = c3_high
+    float zone_low  = c3_low
+    float zone_mt   = (zone_high + zone_low) / 2.0
+    float eff_entry = (entry_mode == "OB Boundary (Edge Touch)") ? zone_low : zone_mt
+    
+    if array.size(active_zones) >= max_zones
+        OBZone old_z = array.shift(active_zones)
+        box.delete(old_z.box_id)
+        line.delete(old_z.mt_line_id)
+        
+    box b = box.new(bar_index - 3, zone_high, bar_index + 10, zone_low, border_color=color.new(#ff5252, 20), border_width=1, bgcolor=bear_color)
+    line l = line.new(bar_index - 3, zone_mt, bar_index + 10, zone_mt, color=color.new(#ff5252, 40), style=line.style_dashed, width=1)
+    
+    OBZone new_z = OBZone.new(bar_index - 3, zone_high, zone_low, zone_mt, eff_entry, "SHORT", b, l, false, false)
+    array.push(active_zones, new_z)
+
+// ------------------------------------------------------------------------------
+// 6. 1ST TAP WATCHDOG & HERMES 3.5 SNIPER TRIGGER
+// ------------------------------------------------------------------------------
+bool long_trigger  = false
+bool short_trigger = false
+string trade_tier  = "TIER_1"
+float trigger_entry = 0.0
+
+if array.size(active_zones) > 0
+    for idx = 0 to array.size(active_zones) - 1
+        OBZone z = array.get(active_zones, idx)
+        int bars_alive = bar_index - z.start_bar
+        
+        // Sentry 4 Freshness Check (<= 28 bars)
+        if bars_alive <= max_bars and not z.mitigated and not z.invalidated
+            if z.side == "LONG"
+                // Tap condition: Low reaches entry level and holds above zone low
+                bool is_tap = (low <= z.entry_level) and (low >= z.ob_low * (1.0 - (sl_pct_in/100.0))) and (close >= z.ob_low)
+                if is_tap
+                    // Pillar 2: 15m Micro-Sniper Gate (Knife Rejection Check)
+                    float l_wick = math.min(open, close) - low
+                    float wick_ratio = candle_range > 0 ? (l_wick / candle_range) * 100.0 : 0.0
+                    bool is_green = close >= open
+                    bool sniper_pass = not sniper_gate or (wick_ratio >= min_wick_pct or is_green)
+                    
+                    if sniper_pass
+                        // Pillar 1: Dual-Tier Classification
+                        bool cvd_ok = (delta_ratio >= 0.49 or candle_delta > 0) and (cvd_slope > 0) and (vol_ratio >= 0.85)
+                        trade_tier := cvd_ok ? "TIER_1_INSTITUTIONAL" : "TIER_2_STRUCTURAL"
+                        trigger_entry := z.entry_level
+                        long_trigger := true
+                        z.mitigated := true
+                        break
+                        
+            else if z.side == "SHORT"
+                bool is_tap = (high >= z.entry_level) and (high <= z.ob_high * (1.0 + (sl_pct_in/100.0))) and (close <= z.ob_high)
+                if is_tap
+                    float u_wick = high - math.max(open, close)
+                    float wick_ratio = candle_range > 0 ? (u_wick / candle_range) * 100.0 : 0.0
+                    bool is_red = close <= open
+                    bool sniper_pass = not sniper_gate or (wick_ratio >= min_wick_pct or is_red)
+                    
+                    if sniper_pass
+                        bool cvd_ok = (delta_ratio <= 0.51 or candle_delta < 0) and (cvd_slope < 0) and (vol_ratio >= 0.85)
+                        trade_tier := cvd_ok ? "TIER_1_INSTITUTIONAL" : "TIER_2_STRUCTURAL"
+                        trigger_entry := z.entry_level
+                        short_trigger := true
+                        z.mitigated := true
+                        break
+
+// ------------------------------------------------------------------------------
+// 7. SIGNAL PLOTTING & TARGET PROJECTIONS
+// ------------------------------------------------------------------------------
+plotshape(long_trigger and trade_tier == "TIER_1_INSTITUTIONAL", title="Hermes 3.5 Tier 1 LONG", style=shape.triangleup, location=location.belowbar, color=#00e676, size=size.small, text="⚡ H3.5 T1 LONG")
+plotshape(long_trigger and trade_tier == "TIER_2_STRUCTURAL", title="Hermes 3.5 Tier 2 LONG", style=shape.triangleup, location=location.belowbar, color=#00b0ff, size=size.tiny, text="H3.5 T2")
+
+plotshape(short_trigger and trade_tier == "TIER_1_INSTITUTIONAL", title="Hermes 3.5 Tier 1 SHORT", style=shape.triangledown, location=location.abovebar, color=#ff1744, size=size.small, text="⚡ H3.5 T1 SHORT")
+plotshape(short_trigger and trade_tier == "TIER_2_STRUCTURAL", title="Hermes 3.5 Tier 2 SHORT", style=shape.triangledown, location=location.abovebar, color=#ff9100, size=size.tiny, text="H3.5 T2")
+
+// Draw Targets on Chart when Triggered
+if show_tp_sl and long_trigger
+    float tp_p = trigger_entry * (1.0 + (tp_pct_in / 100.0))
+    float sl_p = trigger_entry * (1.0 - (sl_pct_in / 100.0))
+    float be_p = trigger_entry * (1.0 + (be_trig_in / 100.0))
+    line.new(bar_index, tp_p, bar_index + 12, tp_p, color=color.green, width=2, style=line.style_solid)
+    line.new(bar_index, sl_p, bar_index + 12, sl_p, color=color.red, width=2, style=line.style_solid)
+    line.new(bar_index, be_p, bar_index + 12, be_p, color=color.yellow, width=1, style=line.style_dotted)
+
+if show_tp_sl and short_trigger
+    float tp_p = trigger_entry * (1.0 - (tp_pct_in / 100.0))
+    float sl_p = trigger_entry * (1.0 + (sl_pct_in / 100.0))
+    float be_p = trigger_entry * (1.0 - (be_trig_in / 100.0))
+    line.new(bar_index, tp_p, bar_index + 12, tp_p, color=color.green, width=2, style=line.style_solid)
+    line.new(bar_index, sl_p, bar_index + 12, sl_p, color=color.red, width=2, style=line.style_solid)
+    line.new(bar_index, be_p, bar_index + 12, be_p, color=color.yellow, width=1, style=line.style_dotted)
+
+// ------------------------------------------------------------------------------
+// 8. HERMES 3.5 LIVE SENTRIES DASHBOARD (ON-CHART TABLE)
+// ------------------------------------------------------------------------------
+var table dash = table.new(position.top_right, 2, 6, bgcolor=color.new(#0b0e14, 15), border_color=color.new(#374151, 50), border_width=1)
+
+if show_table and barstate.islast
+    table.cell(dash, 0, 0, "🏛️ HERMES 3.5 APEX", bgcolor=color.new(#1e293b, 10), text_color=color.white, text_size=size.small)
+    table.cell(dash, 1, 0, "LIVE SENTRIES", bgcolor=color.new(#1e293b, 10), text_color=#38bdf8, text_size=size.small)
+    
+    table.cell(dash, 0, 1, "Sentry 1 (Macro BTC)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 1, btc_status_str, text_color=btc_long_veto or btc_short_veto ? color.red : color.green, text_size=size.tiny)
+    
+    table.cell(dash, 0, 2, "Sentry 2 (Displacement)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 2, ">= " + str.tostring(min_disp, "#.#") + "% + FVG Active", text_color=#38bdf8, text_size=size.tiny)
+    
+    table.cell(dash, 0, 3, "Sentry 3 (Entry Mode)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 3, entry_mode, text_color=color.yellow, text_size=size.tiny)
+    
+    table.cell(dash, 0, 4, "Sentry 4 (Freshness)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 4, "<= " + str.tostring(max_bars) + " Bars Retest Window", text_color=color.white, text_size=size.tiny)
+    
+    table.cell(dash, 0, 5, "Active Unmitigated Zones", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 5, str.tostring(array.size(active_zones)) + " / " + str.tostring(max_zones) + " Zones Forward", text_color=color.green, text_size=size.tiny)
+
+// ------------------------------------------------------------------------------
+// 9. TRADINGVIEW REAL-TIME ALERTS
+// ------------------------------------------------------------------------------
+alertcondition(long_trigger, title="HERMES 3.5 BUY ALERT", message="🏛️ [HERMES 3.5 APEX] {{ticker}} BUY SNIPER TRIGGERED! Entry: {{close}} | Target: +12.20% ROE | Sentry 1 Clean | Tier: " + trade_tier)
+alertcondition(short_trigger, title="HERMES 3.5 SELL ALERT", message="🏛️ [HERMES 3.5 APEX] {{ticker}} SELL SNIPER TRIGGERED! Entry: {{close}} | Target: +12.20% ROE | Sentry 1 Clean | Tier: " + trade_tier)

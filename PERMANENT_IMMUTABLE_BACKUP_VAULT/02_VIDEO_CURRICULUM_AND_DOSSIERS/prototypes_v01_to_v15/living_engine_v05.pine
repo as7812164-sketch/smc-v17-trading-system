@@ -1,0 +1,208 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 05
+// Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
+// Episode 01 + 02 + 03 + 04 + 05 Cumulative Synthesis:
+// - Ep 01: Perpetual Delivery Loop & POI Hierarchy (OB > VI > FVG)
+// - Ep 02: Structure Mapping, Left-Side IDM Sweep, Strict BOS/CHoCH Body Close
+// - Ep 03: 5 Gaps (FVG, BPR, Volume Imbalance, Vacuum Imbalance, Breakaway Gap)
+// - Ep 04: Rank 1 Order Block Engine (Color Ignored, FVG Shift, 0.5 Eq Gate)
+// - Ep 05: Mitigation Block & Breaker Block Engine:
+//   * Mitigation Block: Broken swing extreme candle (Trend Continuation / TJL 1)
+//   * Breaker Block: Dual-side liquidity purge (Low swept + High broken = Trend Reversal)
+//   * Confluence Filter: 2-Brick Wall Law (Mitigation + FVG Overlap = High Probability)
+//   * Wick Refinement Mode: Shrink wide mitigation candle to wick only
+// Zero Retail Indicators (No RSI, MACD, EMA) | Multi-Timeframe Algorithmic Engine
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes 34-Pillar Master Engine (Ep 05 Living)", "⚡ Hermes 34-Pillar Engine", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📐 1. CORE TYPES & DEFINITIONS (EPISODES 01–05)
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum BlockCategory
+    CAT_ORDER_BLOCK         // Ep 04: Swing extreme limit base
+    CAT_MITIGATION_BLOCK    // Ep 05: Broken swing continuation block (TJL 1)
+    CAT_BREAKER_BLOCK       // Ep 05: Dual-liquidity trend reversal block
+
+type BlockRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    int     category
+    bool    isRefinedToWick
+    bool    isMitigated
+    box     boxId
+    label   labelId
+
+type FVGRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    bool    isMitigated
+    box     boxId
+
+var BlockRecord[] activeBlocks   = array.new<BlockRecord>(0)
+var FVGRecord[]   activeBullFVGs = array.new<FVGRecord>(0)
+var FVGRecord[]   activeBearFVGs = array.new<FVGRecord>(0)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 2. INPUT SETTINGS & TOGGLES
+// ══════════════════════════════════════════════════════════════════════════════
+grp_ep05          = "═══ Episode 05: Mitigation & Breaker Blocks ═══"
+showMitigation    = input.bool(true, "Show Mitigation Blocks (TJL 1)", group=grp_ep05)
+showBreakers      = input.bool(true, "Show Breaker Blocks (Dual Liquidity)", group=grp_ep05)
+filterStrongMit   = input.bool(true, "Strong Mitigation Only (2-Brick FVG Overlap)", group=grp_ep05, tooltip="Only show Mitigation Blocks that overlap with an active FVG.")
+refineToWick      = input.bool(true, "Enable Wick Refinement Mode", group=grp_ep05, tooltip="Shrinks mitigation block to the wick when FVG overlaps the wick.")
+
+grp_ep04          = "═══ Episode 04: Institutional Order Blocks ═══"
+showOBs           = input.bool(true, "Display Valid Order Blocks", group=grp_ep04)
+showPostIdmOB     = input.bool(true, "Highlight ⚡ Post-IDM Decisional OB", group=grp_ep04)
+filterEquilibrium = input.bool(true, "Filter by 0.5 Equilibrium (Amazon Sale)", group=grp_ep04)
+
+grp_ep03          = "═══ Episode 03: Institutional Gaps ═══"
+showFVG           = input.bool(true, "Show Fair Value Gaps (FVG)", group=grp_ep03)
+
+grp_ep02          = "═══ Episode 02: Structure Mapping ═══"
+swingLookback     = input.int(5, "Internal Swing Lookback", minval=2, maxval=20, group=grp_ep02)
+showIDMLines      = input.bool(true, "Show Inducement (IDM) Levels", group=grp_ep02)
+
+grp_vis           = "═══ Visual Styles & Colors ═══"
+colOBBull         = input.color(#00E676, "Bullish Order Block Color", group=grp_vis)
+colOBBear         = input.color(#FF1744, "Bearish Order Block Color", group=grp_vis)
+colMitBull        = input.color(#00B0FF, "Bullish Mitigation Block Color", group=grp_vis)
+colMitBear        = input.color(#FF9100, "Bearish Mitigation Block Color", group=grp_vis)
+colBreakerBull    = input.color(#D500F9, "Bullish Breaker Block Color", group=grp_vis)
+colBreakerBear    = input.color(#AA00FF, "Bearish Breaker Block Color", group=grp_vis)
+colFVG            = input.color(#FFE57F, "Fair Value Gap Color", group=grp_vis)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 3. EPISODE 02 & 03: STRUCTURE & FVG DETECTION
+// ══════════════════════════════════════════════════════════════════════════════
+pHigh = ta.pivothigh(high, swingLookback, swingLookback)
+pLow  = ta.pivotlow(low, swingLookback, swingLookback)
+
+var float activeIDMPrice    = na
+var bool  idmSwept          = false
+var float confirmedHHPrice  = na
+var float confirmedHLPrice  = na
+
+// FVG Detection (Ep 03)
+isBullFVG = (low[0] > high[2])
+isBearFVG = (high[0] < low[2])
+
+if isBullFVG and showFVG
+    bx = box.new(bar_index - 2, low[0], bar_index, high[2], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 85))
+    array.push(activeBullFVGs, FVGRecord.new(bar_index - 1, low[0], high[2], true, false, bx))
+
+if isBearFVG and showFVG
+    bx = box.new(bar_index - 2, low[2], bar_index, high[0], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 85))
+    array.push(activeBearFVGs, FVGRecord.new(bar_index - 1, low[2], high[0], false, false, bx))
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🏛️ 4. EPISODE 05: MITIGATION BLOCK & BREAKER BLOCK DETECTION ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+
+var float lastSwingHighPrice = na
+var int   lastSwingHighBar   = na
+var float lastSwingLowPrice  = na
+var int   lastSwingLowBar    = na
+var bool  lastSwingLowWasSwept = false
+var bool  lastSwingHighWasSwept = false
+
+if not na(pHigh)
+    lastSwingHighPrice := pHigh
+    lastSwingHighBar   := bar_index - swingLookback
+    lastSwingHighWasSwept := false
+
+if not na(pLow)
+    lastSwingLowPrice  := pLow
+    lastSwingLowBar    := bar_index - swingLookback
+    lastSwingLowWasSwept := false
+
+// Track sweeps of opposing liquidity prior to break
+if not na(lastSwingLowPrice) and (low < lastSwingLowPrice) and (close > lastSwingLowPrice)
+    lastSwingLowWasSwept := true
+
+if not na(lastSwingHighPrice) and (high > lastSwingHighPrice) and (close < lastSwingHighPrice)
+    lastSwingHighWasSwept := true
+
+// Bullish Break of Swing High (requires full body close)
+bullishBOS = not na(lastSwingHighPrice) and (close > lastSwingHighPrice) and (close[1] <= lastSwingHighPrice)
+
+if bullishBOS
+    // Locate extreme highest high candle of that broken swing high (Ep 04 color doesn't matter law)
+    int extBar = lastSwingHighBar
+    float extTop = high[bar_index - extBar]
+    float extBottom = low[bar_index - extBar]
+    float extUpperWickBottom = math.max(open[bar_index - extBar], close[bar_index - extBar])
+    
+    // Check FVG overlap for Strong Mitigation (2-Brick Wall Law)
+    bool fvgOverlaps = false
+    bool fvgOverlapsWick = false
+    
+    if array.size(activeBullFVGs) > 0
+        for i = 0 to array.size(activeBullFVGs) - 1
+            fvg = array.get(activeBullFVGs, i)
+            if (fvg.top >= extBottom and fvg.bottom <= extTop)
+                fvgOverlaps := true
+                if (fvg.bottom >= extUpperWickBottom)
+                    fvgOverlapsWick := true
+
+    bool isBreaker = lastSwingLowWasSwept // Low swept before High broken = BREAKER BLOCK!
+    
+    if isBreaker and showBreakers
+        bx = box.new(extBar, extTop, bar_index + 15, extBottom, border_color=colBreakerBull, bgcolor=color.new(colBreakerBull, 80))
+        lbl = label.new(extBar, extTop, "🎯 Bull Breaker", color=color.new(color.white, 100), textcolor=colBreakerBull, style=label.style_label_down)
+        array.push(activeBlocks, BlockRecord.new(extBar, extTop, extBottom, true, 2, false, false, bx, lbl))
+    else if not isBreaker and showMitigation
+        if not filterStrongMit or fvgOverlaps
+            float zoneTop = extTop
+            float zoneBottom = (refineToWick and fvgOverlapsWick) ? extUpperWickBottom : extBottom
+            string lblText = (refineToWick and fvgOverlapsWick) ? "⚡ Refined Mit Block (Wick)" : "🛡️ Mit Block (TJL 1)"
+            
+            bx = box.new(extBar, zoneTop, bar_index + 15, zoneBottom, border_color=colMitBull, bgcolor=color.new(colMitBull, 80))
+            lbl = label.new(extBar, zoneTop, lblText, color=color.new(color.white, 100), textcolor=colMitBull, style=label.style_label_down)
+            array.push(activeBlocks, BlockRecord.new(extBar, zoneTop, zoneBottom, true, 1, (refineToWick and fvgOverlapsWick), false, bx, lbl))
+            
+    lastSwingHighPrice := na // Reset after break
+
+// Bearish Break of Swing Low (requires full body close)
+bearishBOS = not na(lastSwingLowPrice) and (close < lastSwingLowPrice) and (close[1] >= lastSwingLowPrice)
+
+if bearishBOS
+    int extBar = lastSwingLowBar
+    float extTop = high[bar_index - extBar]
+    float extBottom = low[bar_index - extBar]
+    float extLowerWickTop = math.min(open[bar_index - extBar], close[bar_index - extBar])
+    
+    bool fvgOverlaps = false
+    bool fvgOverlapsWick = false
+    
+    if array.size(activeBearFVGs) > 0
+        for i = 0 to array.size(activeBearFVGs) - 1
+            fvg = array.get(activeBearFVGs, i)
+            if (fvg.top >= extBottom and fvg.bottom <= extTop)
+                fvgOverlaps := true
+                if (fvg.top <= extLowerWickTop)
+                    fvgOverlapsWick := true
+
+    bool isBreaker = lastSwingHighWasSwept // High swept before Low broken = BREAKER BLOCK!
+    
+    if isBreaker and showBreakers
+        bx = box.new(extBar, extTop, bar_index + 15, extBottom, border_color=colBreakerBear, bgcolor=color.new(colBreakerBear, 80))
+        lbl = label.new(extBar, extBottom, "🎯 Bear Breaker", color=color.new(color.white, 100), textcolor=colBreakerBear, style=label.style_label_up)
+        array.push(activeBlocks, BlockRecord.new(extBar, extTop, extBottom, false, 2, false, false, bx, lbl))
+    else if not isBreaker and showMitigation
+        if not filterStrongMit or fvgOverlaps
+            float zoneTop = (refineToWick and fvgOverlapsWick) ? extLowerWickTop : extTop
+            float zoneBottom = extBottom
+            string lblText = (refineToWick and fvgOverlapsWick) ? "⚡ Refined Mit Block (Wick)" : "🛡️ Mit Block (TJL 1)"
+            
+            bx = box.new(extBar, zoneTop, bar_index + 15, zoneBottom, border_color=colMitBear, bgcolor=color.new(colMitBear, 80))
+            lbl = label.new(extBar, zoneBottom, lblText, color=color.new(color.white, 100), textcolor=colMitBear, style=label.style_label_up)
+            array.push(activeBlocks, BlockRecord.new(extBar, zoneTop, zoneBottom, false, 1, (refineToWick and fvgOverlapsWick), false, bx, lbl))
+            
+    lastSwingLowPrice := na // Reset after break

@@ -1,0 +1,352 @@
+//@version=5
+indicator("HERMES AI - Zen Clean SMC Sniper (Ultra-Readable & Anti-Clutter)", "HERMES AI ZEN SNIPER", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ============================================================================
+// 1. ZEN CLEAN DISPLAY & ANTI-CLUTTER CONTROLS
+// ============================================================================
+grp_clean = "🧹 Clean Chart & Display Controls (Anti-Clutter)"
+compact_signals  = input.bool(true, "Compact Signals (Tiny Labels - Zero Candle Hiding)", group=grp_clean, tooltip="Uses ultra-minimalist tiny labels so candlesticks are 100% clearly visible and readable")
+max_active_zones = input.int(2, "Max Forward Unmitigated Zones", minval=1, maxval=5, group=grp_clean, tooltip="Limits how many unmitigated boxes can extend into the future. Prevents screen clutter!")
+show_past_zones  = input.bool(false, "Show Past Completed / Broken Zones", group=grp_clean, tooltip="Keep FALSE to keep chart crystal clean. Only shows currently active live zones!")
+show_ai_hud      = input.bool(false, "Show Telemetry Dashboard HUD (Top-Right)", group=grp_clean, tooltip="Turn on only if you want to see ATR/Volume metrics table")
+
+grp_ai = "🧠 Institutional AI Confluence Engine"
+ai_min_score     = input.int(70, "AI Score Threshold (0-100)", minval=50, maxval=95, step=5, group=grp_ai, tooltip="Minimum composite AI score required to qualify an OB")
+atr_len          = input.int(14, "Dynamic ATR Volatility Period", minval=5, maxval=50, group=grp_ai)
+vol_len          = input.int(20, "Volume Moving Average Period", minval=5, maxval=50, group=grp_ai)
+entry_mode       = input.string("50% Mean Threshold", "Entry Trigger Mode", options=["50% Mean Threshold", "OB Boundary (Edge Touch)"], group=grp_ai)
+
+grp_targets = "🎯 Target & Profit Armor (Pure Tier 1 Compounding)"
+leverage         = input.float(5.0, "Leverage Multiplier (x)", minval=1.0, maxval=50.0, step=1.0, group=grp_targets)
+tp_roe_pct       = input.float(12.20, "Take Profit (TP) ROE %", minval=1.0, maxval=100.0, step=0.1, group=grp_targets, tooltip="+12.20% ROE at 5x = +2.44% raw spot price move")
+sl_roe_pct       = input.float(12.00, "Hard Stop Loss (SL) ROE %", minval=1.0, maxval=100.0, step=0.1, group=grp_targets, tooltip="-12.00% ROE at 5x = -2.40% raw spot price move")
+be_armor_pct     = input.float(1.50, "Stage 1 BE Armor Trigger % (Spot Move)", minval=0.5, maxval=5.0, step=0.1, group=grp_targets, tooltip="+1.5% spot move (+7.5% ROE) locks SL at entry +0.1%")
+
+grp_visuals = "🎨 Visual Styling & High Transparency"
+col_bull_ob      = input.color(color.new(#2563eb, 85), "Bullish AI OB Box (High Transparency Blue)", group=grp_visuals)
+col_bear_ob      = input.color(color.new(#8b5cf6, 85), "Bearish AI OB Box (High Transparency Purple)", group=grp_visuals)
+col_mt_line      = input.color(color.new(#00e5ff, 30), "50% Mean Threshold Line", group=grp_visuals)
+col_tp_line      = input.color(#00e676, "Target TP Line (+12.20% ROE)", group=grp_visuals)
+col_sl_line      = input.color(#ff1744, "Hard Stop Loss Line", group=grp_visuals)
+col_be_line      = input.color(#38bdf8, "Breakeven Armor Line", group=grp_visuals)
+
+// Mathematical Conversions
+tp_price_pct     = (tp_roe_pct / 100.0) / leverage
+sl_price_pct     = (sl_roe_pct / 100.0) / leverage
+be_spot_pct      = be_armor_pct / 100.0
+
+// ============================================================================
+// 2. DYNAMIC ATR & STRICT CANDLE COLOR GATE
+// ============================================================================
+atr_val          = ta.atr(atr_len)
+avg_vol          = ta.sma(volume, vol_len)
+
+// Dynamic Impulse Peak
+impulse_high     = math.max(high[1], high[2])
+impulse_low      = math.min(low[1], low[2])
+impulse_vol      = math.max(volume[1], volume[2])
+
+// Expansion Ratios
+bull_expansion   = impulse_high - low[3]
+bear_expansion   = high[3] - impulse_low
+bull_atr_ratio   = atr_val > 0 ? (bull_expansion / atr_val) : 0.0
+bear_atr_ratio   = atr_val > 0 ? (bear_expansion / atr_val) : 0.0
+vol_ratio        = avg_vol > 0 ? (impulse_vol / avg_vol) : 1.0
+
+// Institutional Imbalance (Fair Value Gap)
+has_bull_fvg     = low[1] > high[3]
+has_bear_fvg     = high[1] < low[3]
+
+// 🛑 STRICT OPPOSITE CANDLE HARD GATE (No Green Candle Allowed as Bull OB!)
+is_strict_red    = close[3] < open[3]   // 100% STRICT RED BEARISH CANDLE ONLY!
+is_strict_green  = close[3] > open[3]   // 100% STRICT GREEN BULLISH CANDLE ONLY!
+
+// ============================================================================
+// 3. AI FUZZY CONFLUENCE SCORING ENGINE (STRICT CANDLE FILTERED)
+// ============================================================================
+
+// Bullish AI Confluence Scoring
+bull_score = 0
+if is_strict_red and has_bull_fvg
+    // Volatility Expansion (Max 40 Pts)
+    if bull_atr_ratio >= 3.0
+        bull_score += 40
+    else if bull_atr_ratio >= 2.0
+        bull_score += 35
+    else if bull_atr_ratio >= 1.5
+        bull_score += 25
+    else if bull_atr_ratio >= 1.0
+        bull_score += 15
+        
+    // FVG Imbalance Quality (30 Pts)
+    bull_score += 30
+    
+    // Volume Absorption Surge (Max 20 Pts)
+    if vol_ratio >= 1.8
+        bull_score += 20
+    else if vol_ratio >= 1.3
+        bull_score += 15
+    else if vol_ratio >= 1.0
+        bull_score += 10
+        
+    // Local Base Quality (10 Pts)
+    if low[3] <= low[4] or low[3] == ta.lowest(low, 6)
+        bull_score += 10
+
+// Bearish AI Confluence Scoring
+bear_score = 0
+if is_strict_green and has_bear_fvg
+    if bear_atr_ratio >= 3.0
+        bear_score += 40
+    else if bear_atr_ratio >= 2.0
+        bear_score += 35
+    else if bear_atr_ratio >= 1.5
+        bear_score += 25
+    else if bear_atr_ratio >= 1.0
+        bear_score += 15
+        
+    bear_score += 30
+    
+    if vol_ratio >= 1.8
+        bear_score += 20
+    else if vol_ratio >= 1.3
+        bear_score += 15
+    else if vol_ratio >= 1.0
+        bear_score += 10
+        
+    if high[3] >= high[4] or high[3] == ta.highest(high, 6)
+        bear_score += 10
+
+ai_valid_bull = is_strict_red and has_bull_fvg and (bull_score >= ai_min_score) and (bull_atr_ratio >= 1.3)
+ai_valid_bear = is_strict_green and has_bear_fvg and (bear_score >= ai_min_score) and (bear_atr_ratio >= 1.3)
+
+// ============================================================================
+// 4. DATA STRUCTURE FOR TIER-1 EXECUTION
+// ============================================================================
+type ZenTrade
+    bool is_bull
+    int start_bar
+    float ob_high
+    float ob_low
+    float mt_50
+    float entry_price
+    float tp_price
+    float sl_price
+    int ai_score
+    bool tapped
+    int tap_bar
+    bool be_armed
+    bool completed
+    box ob_box
+    line mt_line
+    line tp_line
+    line sl_line
+
+var ZenTrade[] active_trades = array.new<ZenTrade>()
+
+// ============================================================================
+// 5. DRAWING AI ORDER BLOCKS (MAX ACTIVE ZONES REGULATED)
+// ============================================================================
+if ai_valid_bull
+    float o_high    = high[3]
+    float o_low     = low[3]
+    float mt        = (o_high + o_low) / 2.0
+    float def_entry = (entry_mode == "OB Boundary (Edge Touch)") ? o_high : mt
+    float tp        = def_entry * (1.0 + tp_price_pct)
+    float sl        = def_entry * (1.0 - sl_price_pct)
+    int s_bar       = bar_index - 3
+
+    box b = box.new(s_bar, o_high, bar_index + 5, o_low, border_color=color.new(#2563eb, 20), border_width=1, bgcolor=col_bull_ob)
+    line l_mt = line.new(s_bar, mt, bar_index + 5, mt, color=col_mt_line, width=1, style=line.style_dashed)
+    
+    ZenTrade nt = ZenTrade.new(true, s_bar, o_high, o_low, mt, def_entry, tp, sl, bull_score, false, 0, false, false, b, l_mt, na, na)
+    array.push(active_trades, nt)
+
+if ai_valid_bear
+    float o_high    = high[3]
+    float o_low     = low[3]
+    float mt        = (o_high + o_low) / 2.0
+    float def_entry = (entry_mode == "OB Boundary (Edge Touch)") ? o_low : mt
+    float tp        = def_entry * (1.0 - tp_price_pct)
+    float sl        = def_entry * (1.0 + sl_price_pct)
+    int s_bar       = bar_index - 3
+
+    box b = box.new(s_bar, o_high, bar_index + 5, o_low, border_color=color.new(#8b5cf6, 20), border_width=1, bgcolor=col_bear_ob)
+    line l_mt = line.new(s_bar, mt, bar_index + 5, mt, color=col_mt_line, width=1, style=line.style_dashed)
+    
+    ZenTrade nt = ZenTrade.new(false, s_bar, o_high, o_low, mt, def_entry, tp, sl, bear_score, false, 0, false, false, b, l_mt, na, na)
+    array.push(active_trades, nt)
+
+// Count active unmitigated zones and cap them to prevent clutter
+int unmit_count = 0
+if array.size(active_trades) > 0
+    for i = array.size(active_trades) - 1 to 0
+        ZenTrade tr_check = array.get(active_trades, i)
+        if not tr_check.tapped and not tr_check.completed
+            unmit_count += 1
+            if unmit_count > max_active_zones
+                // Freeze older unmitigated boxes so they stop extending across the whole screen!
+                tr_check.completed := true
+                box.set_right(tr_check.ob_box, tr_check.start_bar + 20)
+                line.set_x2(tr_check.mt_line, tr_check.start_bar + 20)
+
+// ============================================================================
+// 6. CONTINUOUS EXTENSION & CLEAN SIGNAL EXECUTION
+// ============================================================================
+if array.size(active_trades) > 0
+    for i = array.size(active_trades) - 1 to 0
+        ZenTrade tr = array.get(active_trades, i)
+        
+        if not tr.completed
+            // Extend active unmitigated zone right edge forward
+            box.set_right(tr.ob_box, bar_index + 2)
+            line.set_x2(tr.mt_line, bar_index + 2)
+            
+            if not tr.tapped
+                // Bullish Tap & Breakdown Check
+                if tr.is_bull
+                    // Check if broken below OB Low with a body close (Invalidation)
+                    bool invalidated = close < tr.ob_low
+                    if invalidated
+                        tr.completed := true
+                        box.set_right(tr.ob_box, bar_index)
+                        line.set_x2(tr.mt_line, bar_index)
+                        if not show_past_zones
+                            box.delete(tr.ob_box)
+                            line.delete(tr.mt_line)
+                    else
+                        float target_entry = (entry_mode == "OB Boundary (Edge Touch)") ? tr.ob_high : tr.mt_50
+                        bool tapped_entry  = low <= target_entry and low > tr.sl_price
+                        bool body_holds    = (entry_mode == "OB Boundary (Edge Touch)") ? (close >= tr.ob_low) : (close >= tr.mt_50)
+                        
+                        if tapped_entry and body_holds
+                            tr.tapped      := true
+                            tr.tap_bar     := bar_index
+                            tr.entry_price := target_entry
+                            tr.tp_price    := target_entry * (1.0 + tp_price_pct)
+                            tr.sl_price    := target_entry * (1.0 - sl_price_pct)
+                            
+                            // Lock the OB box right edge at tap bar! Does NOT continue forward!
+                            box.set_right(tr.ob_box, bar_index)
+                            line.set_x2(tr.mt_line, bar_index)
+                            
+                            tr.tp_line     := line.new(bar_index, tr.tp_price, bar_index + 20, tr.tp_price, color=col_tp_line, width=1, style=line.style_solid)
+                            tr.sl_line     := line.new(bar_index, tr.sl_price, bar_index + 20, tr.sl_price, color=col_sl_line, width=1, style=line.style_dashed)
+                            
+                            // Sleek, Minimalist, Tiny Label (ZERO Candle Hiding)
+                            string lbl = compact_signals ? ("▲ BUY " + str.tostring(target_entry, "#.####")) : ("🎯 AI BUY\nScore: " + str.tostring(tr.ai_score))
+                            label.new(bar_index, low, lbl, color=#00e676, textcolor=color.black, style=label.style_label_up, size=size.tiny)
+                            alert("HERMES AI BUY @ " + str.tostring(target_entry), alert.freq_once_per_bar_close)
+
+                // Bearish Tap & Invalidation Check
+                else
+                    bool invalidated = close > tr.ob_high
+                    if invalidated
+                        tr.completed := true
+                        box.set_right(tr.ob_box, bar_index)
+                        line.set_x2(tr.mt_line, bar_index)
+                        if not show_past_zones
+                            box.delete(tr.ob_box)
+                            line.delete(tr.mt_line)
+                    else
+                        float target_entry = (entry_mode == "OB Boundary (Edge Touch)") ? tr.ob_low : tr.mt_50
+                        bool tapped_entry  = high >= target_entry and high < tr.sl_price
+                        bool body_holds    = (entry_mode == "OB Boundary (Edge Touch)") ? (close <= tr.ob_high) : (close <= tr.mt_50)
+                        
+                        if tapped_entry and body_holds
+                            tr.tapped      := true
+                            tr.tap_bar     := bar_index
+                            tr.entry_price := target_entry
+                            tr.tp_price    := target_entry * (1.0 - tp_price_pct)
+                            tr.sl_price    := target_entry * (1.0 + sl_price_pct)
+                            
+                            box.set_right(tr.ob_box, bar_index)
+                            line.set_x2(tr.mt_line, bar_index)
+                            
+                            tr.tp_line     := line.new(bar_index, tr.tp_price, bar_index + 20, tr.tp_price, color=col_tp_line, width=1, style=line.style_solid)
+                            tr.sl_line     := line.new(bar_index, tr.sl_price, bar_index + 20, tr.sl_price, color=col_sl_line, width=1, style=line.style_dashed)
+                            
+                            string lbl = compact_signals ? ("▼ SELL " + str.tostring(target_entry, "#.####")) : ("🎯 AI SELL\nScore: " + str.tostring(tr.ai_score))
+                            label.new(bar_index, high, lbl, color=#ff1744, textcolor=color.white, style=label.style_label_down, size=size.tiny)
+                            alert("HERMES AI SELL @ " + str.tostring(target_entry), alert.freq_once_per_bar_close)
+
+            // Live Trade Outcome Monitor (Clean & Silent)
+            else
+                if not na(tr.tp_line)
+                    line.set_x2(tr.tp_line, bar_index)
+                if not na(tr.sl_line)
+                    line.set_x2(tr.sl_line, bar_index)
+                    
+                // Long Trade Monitor
+                if tr.is_bull
+                    float favorable_move = (high - tr.entry_price) / tr.entry_price
+                    
+                    // BE Armor: Silent color shift (No bulky label!)
+                    if not tr.be_armed and favorable_move >= be_spot_pct
+                        tr.be_armed := true
+                        float be_price = tr.entry_price * 1.001
+                        tr.sl_price := be_price
+                        line.set_y1(tr.sl_line, be_price)
+                        line.set_y2(tr.sl_line, be_price)
+                        line.set_color(tr.sl_line, col_be_line)
+                        
+                    // Outcome
+                    if high >= tr.tp_price
+                        label.new(bar_index, high, "🏆 TP", color=#00e676, textcolor=color.black, style=label.style_label_down, size=size.tiny)
+                        tr.completed := true
+                        if not show_past_zones
+                            box.delete(tr.ob_box)
+                            line.delete(tr.mt_line)
+                            line.delete(tr.tp_line)
+                            line.delete(tr.sl_line)
+                    else if low <= tr.sl_price
+                        label.new(bar_index, low, tr.be_armed ? "🛡️ BE" : "❌ SL", color=tr.be_armed ? #38bdf8 : #ff1744, textcolor=color.white, style=label.style_label_up, size=size.tiny)
+                        tr.completed := true
+                        if not show_past_zones
+                            box.delete(tr.ob_box)
+                            line.delete(tr.mt_line)
+                            line.delete(tr.tp_line)
+                            line.delete(tr.sl_line)
+
+                // Short Trade Monitor
+                else
+                    float favorable_move = (tr.entry_price - low) / tr.entry_price
+                    
+                    if not tr.be_armed and favorable_move >= be_spot_pct
+                        tr.be_armed := true
+                        float be_price = tr.entry_price * 0.999
+                        tr.sl_price := be_price
+                        line.set_y1(tr.sl_line, be_price)
+                        line.set_y2(tr.sl_line, be_price)
+                        line.set_color(tr.sl_line, col_be_line)
+                        
+                    if low <= tr.tp_price
+                        label.new(bar_index, low, "🏆 TP", color=#00e676, textcolor=color.black, style=label.style_label_up, size=size.tiny)
+                        tr.completed := true
+                        if not show_past_zones
+                            box.delete(tr.ob_box)
+                            line.delete(tr.mt_line)
+                            line.delete(tr.tp_line)
+                            line.delete(tr.sl_line)
+                    else if high >= tr.sl_price
+                        label.new(bar_index, high, tr.be_armed ? "🛡️ BE" : "❌ SL", color=tr.be_armed ? #38bdf8 : #ff1744, textcolor=color.white, style=label.style_label_down, size=size.tiny)
+                        tr.completed := true
+                        if not show_past_zones
+                            box.delete(tr.ob_box)
+                            line.delete(tr.mt_line)
+                            line.delete(tr.tp_line)
+                            line.delete(tr.sl_line)
+
+// ============================================================================
+// 7. OPTIONAL COMPACT TELEMETRY HUD (OFF BY DEFAULT)
+// ============================================================================
+var table hud = table.new(position.top_right, 2, 4, bgcolor=color.new(#0b0e14, 30), border_color=color.new(#2563eb, 30), border_width=1)
+if barstate.islast and show_ai_hud
+    table.cell(hud, 0, 0, "HERMES AI", text_color=#38bdf8, text_size=size.tiny)
+    table.cell(hud, 1, 0, "ZEN CLEAN", text_color=#00e676, text_size=size.tiny)
+    table.cell(hud, 0, 1, "Coin", text_color=color.white, text_size=size.tiny)
+    table.cell(hud, 1, 1, syminfo.ticker, text_color=#facc15, text_size=size.tiny)
+    table.cell(hud, 0, 2, "ATR(14)", text_color=color.white, text_size=size.tiny)
+    table.cell(hud, 1, 2, str.tostring(atr_val, "#.######"), text_color=#38bdf8, text_size=size.tiny)
+    table.cell(hud, 0, 3, "AI Threshold", text_color=color.white, text_size=size.tiny)
+    table.cell(hud, 1, 3, "≥ " + str.tostring(ai_min_score) + "%", text_color=#00e676, text_size=size.tiny)

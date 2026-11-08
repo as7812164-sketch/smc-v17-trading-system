@@ -1,0 +1,442 @@
+﻿// ══════════════════════════════════════════════════════════════════════════════
+// HERMES SMC ENGINE v1.0 — Institutional Smart Money Concepts
+// Built by Hermes AI Quant Division
+// Zero Retail Indicators | Zero Repainting | 4-Rule Validated Order Blocks
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes SMC Engine v1.0", "⚡ Hermes SMC", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+grp_struct    = "═══ Market Structure ═══"
+swingLen      = input.int(5,    "Swing Lookback Period",              minval=2,   maxval=20,  group=grp_struct)
+showBOS        = input.bool(false, "Show BOS",                          group=grp_struct)
+showCHoCH      = input.bool(false, "Show CHoCH",                        group=grp_struct)
+showSweeps     = input.bool(false, "Show Liquidity Sweeps",             group=grp_struct)
+
+grp_ob        = "═══ Order Blocks ═══"
+showOB        = input.bool(true, "Show Order Blocks",                 group=grp_ob)
+obAtrPeriod   = input.int(14,   "ATR Period",                         minval=5,   maxval=50,  group=grp_ob)
+obDispMult    = input.float(1.8,"Displacement Multiplier (xATR)",     minval=1.0, maxval=5.0, step=0.1, group=grp_ob)
+obMaxCount    = input.int(10,   "Max Active OBs",                     minval=1,   maxval=50,  group=grp_ob)
+obFirstTap    = input.bool(true, "First Tap Only (Remove Mitigated)", group=grp_ob)
+obMitMethod   = input.string("Close","Mitigation Method",             options=["Close","Wick"], group=grp_ob)
+
+grp_fvg       = "═══ Fair Value Gaps ═══"
+showFVG        = input.bool(false, "Show FVGs",                         group=grp_fvg)
+fvgMinMult    = input.float(0.35,"Min FVG Size (xATR)",               minval=0.1, maxval=2.0, step=0.05, group=grp_fvg)
+fvgShowCE     = input.bool(true, "Show CE Midline",                   group=grp_fvg)
+fvgMaxCount   = input.int(10,   "Max Active FVGs",                    minval=1,   maxval=50,  group=grp_fvg)
+
+grp_liq       = "═══ Liquidity & Inducement ═══"
+showEQHL       = input.bool(false, "Show Equal Highs/Lows",             group=grp_liq)
+showIDM       = input.bool(true, "Show Inducement (IDM)",             group=grp_liq)
+eqTolerance   = input.float(0.08,"EQ H/L Tolerance (%)",              minval=0.01,maxval=0.5, step=0.01, group=grp_liq)
+
+grp_pd        = "═══ Premium / Discount ═══"
+showPD        = input.bool(true, "Show Premium/Discount Zones",       group=grp_pd)
+showOTE       = input.bool(true, "Show OTE Levels (0.618/0.705/0.786)", group=grp_pd)
+
+grp_colors    = "═══ Colors ═══"
+colBullBOS    = input.color(color.new(#2196F3,0),  "BOS Bullish",     group=grp_colors)
+colBearBOS    = input.color(color.new(#2196F3,0),  "BOS Bearish",     group=grp_colors)
+colBullCHoCH  = input.color(color.new(#FF9800,0),  "CHoCH Bullish",   group=grp_colors)
+colBearCHoCH  = input.color(color.new(#FF9800,0),  "CHoCH Bearish",   group=grp_colors)
+colBullOB     = input.color(color.new(#4CAF50,0),  "Bullish OB",      group=grp_colors)
+colBearOB     = input.color(color.new(#F44336,0),  "Bearish OB",      group=grp_colors)
+colBullFVG    = input.color(color.new(#00BCD4,0),  "Bullish FVG",     group=grp_colors)
+colBearFVG    = input.color(color.new(#E040FB,0),  "Bearish FVG",     group=grp_colors)
+colSweep      = input.color(color.new(#FF5722,0),  "Liquidity Sweep", group=grp_colors)
+colIDM        = input.color(color.new(#FFC107,0),  "Inducement",      group=grp_colors)
+colPremium    = input.color(color.new(#F44336,92), "Premium Zone",    group=grp_colors)
+colDiscount   = input.color(color.new(#4CAF50,92), "Discount Zone",   group=grp_colors)
+colEQ         = input.color(color.new(#9E9E9E,50), "Equilibrium",     group=grp_colors)
+
+confirmed   = barstate.isconfirmed
+atrVal      = ta.atr(obAtrPeriod)
+swingHigh   = ta.pivothigh(high, swingLen, swingLen)
+swingLow    = ta.pivotlow(low,   swingLen, swingLen)
+pivotOffset = swingLen
+
+var float lastSwingHigh    = na
+var float lastSwingLow     = na
+var int   lastSwingHighBar = na
+var int   lastSwingLowBar  = na
+var float prevSwingHigh    = na
+var float prevSwingLow     = na
+var int   prevSwingHighBar = na
+var int   prevSwingLowBar  = na
+var int   trendState       = 0
+var float protectedHigh    = na
+var float protectedLow     = na
+var int   protectedHighBar = na
+var int   protectedLowBar  = na
+
+if not na(swingHigh)
+    prevSwingHigh    := lastSwingHigh
+    prevSwingHighBar := lastSwingHighBar
+    lastSwingHigh    := swingHigh
+    lastSwingHighBar := bar_index - pivotOffset
+
+if not na(swingLow)
+    prevSwingLow     := lastSwingLow
+    prevSwingLowBar  := lastSwingLowBar
+    lastSwingLow     := swingLow
+    lastSwingLowBar  := bar_index - pivotOffset
+
+var bool bullBOS_signal   = false
+var bool bearBOS_signal   = false
+var bool bullCHoCH_signal = false
+var bool bearCHoCH_signal = false
+var bool bullSweep_signal = false
+var bool bearSweep_signal = false
+
+bullBOS_signal   := false
+bearBOS_signal   := false
+bullCHoCH_signal := false
+bearCHoCH_signal := false
+bullSweep_signal := false
+bearSweep_signal := false
+
+if confirmed and not na(lastSwingHigh)
+    if close > lastSwingHigh and close[1] <= lastSwingHigh
+        if trendState == 1 or trendState == 0
+            bullBOS_signal  := true
+            protectedLow    := lastSwingLow
+            protectedLowBar := lastSwingLowBar
+        else
+            bullCHoCH_signal := true
+            protectedLow     := lastSwingLow
+            protectedLowBar  := lastSwingLowBar
+        trendState := 1
+    else if high > lastSwingHigh and close <= lastSwingHigh
+        bullSweep_signal := true
+
+if confirmed and not na(lastSwingLow)
+    if close < lastSwingLow and close[1] >= lastSwingLow
+        if trendState == -1 or trendState == 0
+            bearBOS_signal   := true
+            protectedHigh    := lastSwingHigh
+            protectedHighBar := lastSwingHighBar
+        else
+            bearCHoCH_signal := true
+            protectedHigh    := lastSwingHigh
+            protectedHighBar := lastSwingHighBar
+        trendState := -1
+    else if low < lastSwingLow and close >= lastSwingLow
+        bearSweep_signal := true
+
+if bullBOS_signal and showBOS
+    line.new(lastSwingHighBar, lastSwingHigh, bar_index, lastSwingHigh, color=colBullBOS, style=line.style_dashed, width=1)
+    label.new(bar_index, lastSwingHigh, "BOS", color=color.new(color.black,100), textcolor=colBullBOS, style=label.style_label_down, size=size.tiny)
+
+if bearBOS_signal and showBOS
+    line.new(lastSwingLowBar, lastSwingLow, bar_index, lastSwingLow, color=colBearBOS, style=line.style_dashed, width=1)
+    label.new(bar_index, lastSwingLow, "BOS", color=color.new(color.black,100), textcolor=colBearBOS, style=label.style_label_up, size=size.tiny)
+
+if bullCHoCH_signal and showCHoCH
+    line.new(lastSwingHighBar, lastSwingHigh, bar_index, lastSwingHigh, color=colBullCHoCH, style=line.style_solid, width=2)
+    label.new(bar_index, lastSwingHigh, "CHoCH", color=color.new(color.black,100), textcolor=colBullCHoCH, style=label.style_label_down, size=size.small)
+
+if bearCHoCH_signal and showCHoCH
+    line.new(lastSwingLowBar, lastSwingLow, bar_index, lastSwingLow, color=colBearCHoCH, style=line.style_solid, width=2)
+    label.new(bar_index, lastSwingLow, "CHoCH", color=color.new(color.black,100), textcolor=colBearCHoCH, style=label.style_label_up, size=size.small)
+
+if bullSweep_signal and showSweeps
+    label.new(bar_index, high, "Sweep", color=color.new(color.black,100), textcolor=colSweep, style=label.style_label_down, size=size.tiny)
+
+if bearSweep_signal and showSweeps
+    label.new(bar_index, low, "Sweep", color=color.new(color.black,100), textcolor=colSweep, style=label.style_label_up, size=size.tiny)
+
+type FvgData
+    box   bx
+    line  ceLine
+    float top
+    float bot
+    float ce
+    int   dir
+    bool  mitigated
+    int   birthBar
+
+var array<FvgData> activeFVGs = array.new<FvgData>()
+var bool currentBarHasBullFVG = false
+var bool currentBarHasBearFVG = false
+currentBarHasBullFVG := false
+currentBarHasBearFVG := false
+
+if confirmed and showFVG and bar_index > 2
+    float c1High = high[2]
+    float c3Low  = low
+    float c1Low  = low[2]
+    float c3High = high
+    if c3Low > c1High
+        float fvgH = c3Low - c1High
+        if fvgH >= fvgMinMult * atrVal
+            currentBarHasBullFVG := true
+            float ceVal = (c3Low + c1High) / 2.0
+            bx = box.new(bar_index-2, c3Low, bar_index+20, c1High, border_color=colBullFVG, bgcolor=color.new(colBullFVG,88), border_width=1)
+            cl = fvgShowCE ? line.new(bar_index-2, ceVal, bar_index+20, ceVal, color=color.new(colBullFVG,60), style=line.style_dotted, width=1) : na
+            array.push(activeFVGs, FvgData.new(bx, cl, c3Low, c1High, ceVal, 1, false, bar_index))
+    if c3High < c1Low
+        float fvgH = c1Low - c3High
+        if fvgH >= fvgMinMult * atrVal
+            currentBarHasBearFVG := true
+            float ceVal = (c1Low + c3High) / 2.0
+            bx = box.new(bar_index-2, c1Low, bar_index+20, c3High, border_color=colBearFVG, bgcolor=color.new(colBearFVG,88), border_width=1)
+            cl = fvgShowCE ? line.new(bar_index-2, ceVal, bar_index+20, ceVal, color=color.new(colBearFVG,60), style=line.style_dotted, width=1) : na
+            array.push(activeFVGs, FvgData.new(bx, cl, c1Low, c3High, ceVal, -1, false, bar_index))
+
+if confirmed and array.size(activeFVGs) > 0
+    for i = array.size(activeFVGs) - 1 to 0
+        fvg = array.get(activeFVGs, i)
+        if not fvg.mitigated
+            box.set_right(fvg.bx, bar_index + 5)
+            if not na(fvg.ceLine)
+                line.set_x2(fvg.ceLine, bar_index + 5)
+            if fvg.dir == 1
+                if (obMitMethod == "Close" and close < fvg.bot) or (obMitMethod == "Wick" and low < fvg.bot)
+                    fvg.mitigated := true
+                    box.set_bgcolor(fvg.bx, color.new(colBullFVG,96))
+                    box.set_border_color(fvg.bx, color.new(colBullFVG,80))
+            else
+                if (obMitMethod == "Close" and close > fvg.top) or (obMitMethod == "Wick" and high > fvg.top)
+                    fvg.mitigated := true
+                    box.set_bgcolor(fvg.bx, color.new(colBearFVG,96))
+                    box.set_border_color(fvg.bx, color.new(colBearFVG,80))
+
+while array.size(activeFVGs) > fvgMaxCount * 2
+    old = array.get(activeFVGs, 0)
+    box.delete(old.bx)
+    if not na(old.ceLine)
+        line.delete(old.ceLine)
+    array.remove(activeFVGs, 0)
+
+type ObData
+    box   bx
+    label lbl
+    float top
+    float bot
+    int   dir
+    bool  mitigated
+    int   birthBar
+    int   score
+
+var array<ObData> activeOBs = array.new<ObData>()
+
+bool isBullDisp = confirmed and (close > open) and ((high - low) >= obDispMult * atrVal)
+bool isBearDisp = confirmed and (close < open) and ((high - low) >= obDispMult * atrVal)
+
+if confirmed and showOB
+    if isBullDisp
+        bool  foundOrig = false
+        float obTop = na
+        float obBot = na
+        int   obBar = na
+        for j = 1 to 5
+            if close[j] < open[j] and not foundOrig
+                obTop    := high[j]
+                obBot    := low[j]
+                obBar    := bar_index - j
+                foundOrig := true
+                break
+        if foundOrig
+            int sc = 1
+            if currentBarHasBullFVG
+                sc += 1
+            if bullBOS_signal or bullCHoCH_signal
+                sc += 1
+            bool hadSweep = false
+            for k = 0 to 10
+                if not na(lastSwingLow)
+                    if low[k] < lastSwingLow and close[k] >= lastSwingLow
+                        hadSweep := true
+                        break
+            if hadSweep or bearSweep_signal
+                sc += 1
+            if volume > ta.sma(volume, 20) * 1.5
+                sc += 1
+            if sc >= 2
+                string stxt = "OB [" + str.tostring(sc) + "star]"
+                color  ocol = sc >= 4 ? colBullOB : color.new(colBullOB, 30)
+                bx  = box.new(obBar, obTop, bar_index+20, obBot, border_color=ocol, bgcolor=color.new(ocol,85), border_width=sc >= 4 ? 2 : 1)
+                lbl = label.new(obBar, obBot, stxt, color=color.new(color.black,100), textcolor=ocol, style=label.style_label_up, size=size.tiny)
+                array.push(activeOBs, ObData.new(bx, lbl, obTop, obBot, 1, false, bar_index, sc))
+    if isBearDisp
+        bool  foundOrig = false
+        float obTop = na
+        float obBot = na
+        int   obBar = na
+        for j = 1 to 5
+            if close[j] > open[j] and not foundOrig
+                obTop    := high[j]
+                obBot    := low[j]
+                obBar    := bar_index - j
+                foundOrig := true
+                break
+        if foundOrig
+            int sc = 1
+            if currentBarHasBearFVG
+                sc += 1
+            if bearBOS_signal or bearCHoCH_signal
+                sc += 1
+            bool hadSweep = false
+            for k = 0 to 10
+                if not na(lastSwingHigh)
+                    if high[k] > lastSwingHigh and close[k] <= lastSwingHigh
+                        hadSweep := true
+                        break
+            if hadSweep or bullSweep_signal
+                sc += 1
+            if volume > ta.sma(volume, 20) * 1.5
+                sc += 1
+            if sc >= 2
+                string stxt = "OB [" + str.tostring(sc) + "star]"
+                color  ocol = sc >= 4 ? colBearOB : color.new(colBearOB, 30)
+                bx  = box.new(obBar, obTop, bar_index+20, obBot, border_color=ocol, bgcolor=color.new(ocol,85), border_width=sc >= 4 ? 2 : 1)
+                lbl = label.new(obBar, obTop, stxt, color=color.new(color.black,100), textcolor=ocol, style=label.style_label_down, size=size.tiny)
+                array.push(activeOBs, ObData.new(bx, lbl, obTop, obBot, -1, false, bar_index, sc))
+
+if confirmed and array.size(activeOBs) > 0
+    for i = array.size(activeOBs) - 1 to 0
+        ob = array.get(activeOBs, i)
+        if not ob.mitigated
+            box.set_right(ob.bx, bar_index + 5)
+            if ob.dir == 1
+                bool tapped = (obMitMethod == "Close" and close < ob.bot) or (obMitMethod == "Wick" and low < ob.bot)
+                if tapped
+                    ob.mitigated := true
+                    if obFirstTap
+                        box.delete(ob.bx)
+                        label.delete(ob.lbl)
+                        array.remove(activeOBs, i)
+                    else
+                        box.set_bgcolor(ob.bx, color.new(colBullOB,95))
+                        box.set_border_style(ob.bx, line.style_dotted)
+            else
+                bool tapped = (obMitMethod == "Close" and close > ob.top) or (obMitMethod == "Wick" and high > ob.top)
+                if tapped
+                    ob.mitigated := true
+                    if obFirstTap
+                        box.delete(ob.bx)
+                        label.delete(ob.lbl)
+                        array.remove(activeOBs, i)
+                    else
+                        box.set_bgcolor(ob.bx, color.new(colBearOB,95))
+                        box.set_border_style(ob.bx, line.style_dotted)
+
+while array.size(activeOBs) > obMaxCount
+    old = array.get(activeOBs, 0)
+    box.delete(old.bx)
+    label.delete(old.lbl)
+    array.remove(activeOBs, 0)
+
+if confirmed and showEQHL and not na(lastSwingHigh) and not na(prevSwingHigh)
+    float tol = lastSwingHigh * (eqTolerance / 100.0)
+    if math.abs(lastSwingHigh - prevSwingHigh) <= tol
+        float eqLvl = math.max(lastSwingHigh, prevSwingHigh)
+        line.new(prevSwingHighBar, eqLvl, bar_index+5, eqLvl, color=color.new(#FF5722,40), style=line.style_dotted, width=1)
+        label.new(bar_index, eqLvl, "EQH", color=color.new(color.black,100), textcolor=color.new(#FF5722,30), style=label.style_label_down, size=size.tiny)
+
+if confirmed and showEQHL and not na(lastSwingLow) and not na(prevSwingLow)
+    float tol = lastSwingLow * (eqTolerance / 100.0)
+    if math.abs(lastSwingLow - prevSwingLow) <= tol
+        float eqLvl = math.min(lastSwingLow, prevSwingLow)
+        line.new(prevSwingLowBar, eqLvl, bar_index+5, eqLvl, color=color.new(#FF5722,40), style=line.style_dotted, width=1)
+        label.new(bar_index, eqLvl, "EQL", color=color.new(color.black,100), textcolor=color.new(#FF5722,30), style=label.style_label_up, size=size.tiny)
+
+var float idmLevel = na
+var int   idmBar   = na
+var int   idmDir   = 0
+
+if confirmed and showIDM
+    if bullBOS_signal
+        idmLevel := lastSwingLow
+        idmBar   := lastSwingLowBar
+        idmDir   := 1
+    if bearBOS_signal
+        idmLevel := lastSwingHigh
+        idmBar   := lastSwingHighBar
+        idmDir   := -1
+    if not na(idmLevel) and not na(idmBar)
+        if idmDir == 1 and not na(swingLow) and bar_index - pivotOffset > idmBar
+            line.new(idmBar, idmLevel, bar_index+3, idmLevel, color=colIDM, style=line.style_dotted, width=1)
+            label.new(bar_index, idmLevel, "IDM", color=color.new(color.black,100), textcolor=colIDM, style=label.style_label_up, size=size.tiny)
+            idmLevel := na
+        if idmDir == -1 and not na(swingHigh) and bar_index - pivotOffset > idmBar
+            line.new(idmBar, idmLevel, bar_index+3, idmLevel, color=colIDM, style=line.style_dotted, width=1)
+            label.new(bar_index, idmLevel, "IDM", color=color.new(color.black,100), textcolor=colIDM, style=label.style_label_down, size=size.tiny)
+            idmLevel := na
+
+var float dealingHigh = na
+var float dealingLow  = na
+var box   premiumBox  = na
+var box   discountBox = na
+var line  eqLine      = na
+var line  ote618Line  = na
+var line  ote705Line  = na
+var line  ote786Line  = na
+var label eqLabel     = na
+
+if confirmed and showPD and not na(lastSwingHigh) and not na(lastSwingLow)
+    bool rangeChanged = (lastSwingHigh != dealingHigh or lastSwingLow != dealingLow)
+    if rangeChanged
+        dealingHigh := lastSwingHigh
+        dealingLow  := lastSwingLow
+        float eqMid = (dealingHigh + dealingLow) / 2.0
+        if not na(premiumBox)
+            box.delete(premiumBox)
+        if not na(discountBox)
+            box.delete(discountBox)
+        if not na(eqLine)
+            line.delete(eqLine)
+        if not na(eqLabel)
+            label.delete(eqLabel)
+        if not na(ote618Line)
+            line.delete(ote618Line)
+        if not na(ote705Line)
+            line.delete(ote705Line)
+        if not na(ote786Line)
+            line.delete(ote786Line)
+        int lBar = math.max(lastSwingHighBar, lastSwingLowBar)
+        int rBar = bar_index + 30
+        premiumBox  := box.new(lBar, dealingHigh, rBar, eqMid,      border_color=color.new(colPremium,90),  bgcolor=colPremium)
+        discountBox := box.new(lBar, eqMid,        rBar, dealingLow, border_color=color.new(colDiscount,90), bgcolor=colDiscount)
+        eqLine      := line.new(lBar, eqMid, rBar, eqMid, color=colEQ, style=line.style_solid, width=2)
+        eqLabel     := label.new(rBar, eqMid, "EQ", color=color.new(color.black,100), textcolor=colEQ, style=label.style_label_left, size=size.tiny)
+        if showOTE
+            float dealingRange = dealingHigh - dealingLow
+            float ote618 = dealingLow + dealingRange * 0.382
+            float ote705 = dealingLow + dealingRange * 0.295
+            float ote786 = dealingLow + dealingRange * 0.214
+            ote618Line := line.new(lBar, ote618, rBar, ote618, color=color.new(#FFD700,50), style=line.style_dotted, width=1)
+            ote705Line := line.new(lBar, ote705, rBar, ote705, color=color.new(#FFD700,40), style=line.style_dotted, width=1)
+            ote786Line := line.new(lBar, ote786, rBar, ote786, color=color.new(#FFD700,30), style=line.style_dotted, width=1)
+    else
+        if not na(premiumBox)
+            box.set_right(premiumBox,  bar_index + 30)
+        if not na(discountBox)
+            box.set_right(discountBox, bar_index + 30)
+        if not na(eqLine)
+            line.set_x2(eqLine,   bar_index + 30)
+        if not na(eqLabel)
+            label.set_x(eqLabel,  bar_index + 30)
+        if not na(ote618Line)
+            line.set_x2(ote618Line, bar_index + 30)
+        if not na(ote705Line)
+            line.set_x2(ote705Line, bar_index + 30)
+        if not na(ote786Line)
+            line.set_x2(ote786Line, bar_index + 30)
+
+alertcondition(bullBOS_signal,   "Bullish BOS",          "Hermes SMC: Bullish BOS confirmed!")
+alertcondition(bearBOS_signal,   "Bearish BOS",          "Hermes SMC: Bearish BOS confirmed!")
+alertcondition(bullCHoCH_signal, "Bullish CHoCH",        "Hermes SMC: Bullish CHoCH - Reversal!")
+alertcondition(bearCHoCH_signal, "Bearish CHoCH",        "Hermes SMC: Bearish CHoCH - Reversal!")
+alertcondition(bullSweep_signal, "Bullish Sweep",        "Hermes SMC: Liquidity Sweep above swing high!")
+alertcondition(bearSweep_signal, "Bearish Sweep",        "Hermes SMC: Liquidity Sweep below swing low!")
+alertcondition(isBullDisp,       "Bullish Displacement", "Hermes SMC: Bullish Displacement!")
+alertcondition(isBearDisp,       "Bearish Displacement", "Hermes SMC: Bearish Displacement!")
+
+// plotshape(not na(swingHigh), title="Swing High", style=shape.triangledown, location=location.abovebar, color=color.new(#9E9E9E,50), size=size.tiny, offset=-pivotOffset)
+// plotshape(not na(swingLow),  title="Swing Low",  style=shape.triangleup,   location=location.belowbar, color=color.new(#9E9E9E,50), size=size.tiny, offset=-pivotOffset)
+
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.islast
+    table.cell(wm, 0, 0, "Hermes SMC Engine v1.0", text_color=color.new(#FFD700,40), text_size=size.small)

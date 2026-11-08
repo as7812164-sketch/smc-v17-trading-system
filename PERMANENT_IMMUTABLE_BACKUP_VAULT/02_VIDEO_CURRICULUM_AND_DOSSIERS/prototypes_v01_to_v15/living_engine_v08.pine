@@ -1,0 +1,491 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 08
+// Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
+// Cumulative Synthesis (Episodes 01 to 08):
+// - Ep 01: Perpetual Delivery Loop & POI Hierarchy (OB > VI > FVG)
+// - Ep 02: Structure Mapping, Left-Side IDM Sweep, Strict BOS/CHoCH Body Close
+// - Ep 03: 5 Gaps (FVG, BPR, Volume Imbalance, Vacuum Imbalance, Breakaway Gap)
+// - Ep 04: Rank 1 Order Block Engine (Color Ignored, FVG Shift, 0.5 Eq Gate)
+// - Ep 05: Mitigation Block & Breaker Block Engine (TJL 1 vs Dual Sweep Reversal)
+// - Ep 06: Core Liquidity Architecture (EQH/EQL, Trendlines, HTF Pattern Bias)
+// - Ep 07: Unified 12-Liquidity Architecture & Daily Bias Predictor (LRL vs HRL, Voids, PDH/PDL Sweeps vs Runs)
+// - Ep 08: The Perfect Institutional Entry Engine:
+//   * Golden Ratio Timeframe Stacking Matrix (HTF Bias -> LTF Precision Trigger)
+//   * True Institutional Displacement Engine (Momentum + FVG + Base OB Mandatory)
+//   * Market Structure Shift (MSS) with LTF Wick Rule (Body Close NOT required)
+//   * 5 Multi-Mode Entry Execution Models:
+//       1. Standard MSS + Displacement Retest
+//       2. Aggressive Entry WITHOUT MSS (Direct POI Bounce when MSS is distant)
+//       3. Low Resistance Liquidity (LRL) Fast Execution (Nearest FVG tap)
+//       4. Safest Entry in SMC & ICT (Double Confirmation 2nd BOS Retest)
+//       5. Liquidity Sweep Reversal (Turtle Soup on PDH/PDL/Asian Range)
+//   * Dynamic Profit Armor Integration (BE at +1.0%, Trail at +1.8%, TP at +2.8%, SL max -2.8%)
+// Zero Retail Indicators (No RSI, MACD, EMA) | Institutional Order Flow Protocol
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes 34-Pillar Master Engine (Ep 08 Living)", "⚡ Hermes 34-Pillar Engine v8", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📐 1. CORE TYPES & DEFINITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum BlockCategory
+    CAT_ORDER_BLOCK         // Ep 04
+    CAT_MITIGATION_BLOCK    // Ep 05
+    CAT_BREAKER_BLOCK       // Ep 05
+
+type BlockRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    int     category
+    bool    isRefinedToWick
+    bool    isMitigated
+    box     boxId
+    label   labelId
+
+type FVGRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    bool    isLiquidityVoid // Ep 07: Intermediate FVG = LRL
+    bool    isMitigated
+    box     boxId
+
+type LiquidityPoolRecord
+    float   levelPrice
+    int     startBar
+    int     endBar
+    bool    isHighPool     // true = BSL / EQH, false = SSL / EQL
+    bool    isEqualLevel   // true = EQH/EQL, false = Single External Swing
+    bool    isSwept
+    line    lineId
+    label   labelId
+
+var BlockRecord[]         activeBlocks   = array.new<BlockRecord>(0)
+var FVGRecord[]           activeBullFVGs = array.new<FVGRecord>(0)
+var FVGRecord[]           activeBearFVGs = array.new<FVGRecord>(0)
+var LiquidityPoolRecord[] activeLiqPools = array.new<LiquidityPoolRecord>(0)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 2. INPUT SETTINGS & TOGGLES (EPISODES 01–08)
+// ══════════════════════════════════════════════════════════════════════════════
+grp_ep08          = "═══ Episode 08: Master Entry Confirmation Engine ═══"
+entryMode         = input.string("All Models (Universal)", "Active Entry Model Filter", options=["All Models (Universal)", "Model 1: Standard MSS Retest", "Model 2: Aggressive No-MSS", "Model 3: LRL Fast Execution", "Model 4: Safest 2nd BOS", "Model 5: Sweep Turtle Soup"], group=grp_ep08)
+displacementMult  = input.float(1.2, "Displacement Candle Body / ATR Multiplier", minval=0.8, maxval=3.0, step=0.1, group=grp_ep08)
+allowWickMSS      = input.bool(true, "Allow Wick-Only Break for LTF MSS (Shoaib Ep 08 Rule)", group=grp_ep08)
+enableArmorLevels = input.bool(true, "Plot Dynamic Profit Armor Lines (BE, Trail, TP, SL)", group=grp_ep08)
+
+grp_ep07          = "═══ Episode 07: Advanced Liquidity & Daily Bias ═══"
+showLRL_Voids     = input.bool(true, "Show LRL Liquidity Voids (Fast Zones)", group=grp_ep07)
+showDailyBias     = input.bool(true, "Track Daily Candle Liquidity (PDH/PDL)", group=grp_ep07)
+showAsianSession  = input.bool(true, "Track Asian Session High/Low & Sweeps", group=grp_ep07)
+
+grp_ep06          = "═══ Episode 06: Core Liquidity Architecture ═══"
+showEQH_EQL       = input.bool(true, "Show Equal Highs/Lows (EQH/EQL $$$)", group=grp_ep06)
+eqToleranceATR    = input.float(0.15, "EQH/EQL ATR Proximity Ratio", minval=0.05, maxval=0.5, step=0.05, group=grp_ep06)
+showBSL_SSL       = input.bool(true, "Show External BSL / SSL Targets", group=grp_ep06)
+showLiqSweeps     = input.bool(true, "Highlight Liquidity Sweeps / Stop Runs", group=grp_ep06)
+
+grp_ep05          = "═══ Episode 05: Mitigation & Breaker Blocks ═══"
+showMitigation    = input.bool(true, "Show Mitigation Blocks (TJL 1)", group=grp_ep05)
+showBreakers      = input.bool(true, "Show Breaker Blocks (Dual Liquidity)", group=grp_ep05)
+
+grp_ep04          = "═══ Episode 04: Institutional Order Blocks ═══"
+showOBs           = input.bool(true, "Display Valid Order Blocks", group=grp_ep04)
+
+grp_ep03          = "═══ Episode 03: Institutional Gaps ═══"
+showFVG           = input.bool(true, "Show Fair Value Gaps (FVG)", group=grp_ep03)
+
+grp_ep02          = "═══ Episode 02: Structure Mapping ═══"
+swingLookback     = input.int(5, "LTF Local Swing Lookback", minval=2, maxval=20, group=grp_ep02)
+
+grp_vis           = "═══ Visual Styles & Colors ═══"
+colBSL            = input.color(#FF1744, "Buy-Side Liquidity (BSL) Color", group=grp_vis)
+colSSL            = input.color(#00E676, "Sell-Side Liquidity (SSL) Color", group=grp_vis)
+colEQH            = input.color(#FF5252, "Equal Highs ($$$) Color", group=grp_vis)
+colEQL            = input.color(#69F0AE, "Equal Lows ($$$) Color", group=grp_vis)
+colLRLVoid        = input.color(#80D8FF, "LRL Liquidity Void Color", group=grp_vis)
+colAsian          = input.color(#FFD600, "Asian Session Range Color", group=grp_vis)
+colFVG            = input.color(#FFE57F, "Fair Value Gap Color", group=grp_vis)
+colBuySignal      = input.color(#00E676, "Hermes Institutional Long Color", group=grp_vis)
+colSellSignal     = input.color(#FF1744, "Hermes Institutional Short Color", group=grp_vis)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 3. EPISODE 07: DAILY CANDLE BIAS ENGINE (PDH / PDL SWEEPS VS RUNS)
+// ══════════════════════════════════════════════════════════════════════════════
+[pdh, pdl, pdc, pdo] = request.security(syminfo.tickerid, "D", [high[1], low[1], close[1], open[1]], lookahead=barmerge.lookahead_on)
+
+var line pdhLine = na
+var line pdlLine = na
+var string dailyBiasState = "NEUTRAL"
+
+if showDailyBias and barstate.islast
+    if not na(pdhLine)
+        line.delete(pdhLine)
+    if not na(pdlLine)
+        line.delete(pdlLine)
+    pdhLine := line.new(bar_index - 30, pdh, bar_index + 10, pdh, color=color.new(colBSL, 30), width=2, style=line.style_dashed)
+    pdlLine := line.new(bar_index - 30, pdl, bar_index + 10, pdl, color=color.new(colSSL, 30), width=2, style=line.style_dashed)
+
+bool pdhSwept = (high > pdh) and (close < pdh)
+bool pdhRun   = (close > pdh)
+bool pdlSwept = (low < pdl) and (close > pdl)
+bool pdlRun   = (close < pdl)
+
+if pdhSwept
+    dailyBiasState := "BEARISH REVERSAL (PDH Swept)"
+else if pdhRun
+    dailyBiasState := "BULLISH RUN (PDH Expansion)"
+else if pdlSwept
+    dailyBiasState := "BULLISH REVERSAL (PDL Swept)"
+else if pdlRun
+    dailyBiasState := "BEARISH RUN (PDL Expansion)"
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 4. EPISODE 07: TIME-BASED SESSION LIQUIDITY (ASIAN RANGE & SWEEP)
+// ══════════════════════════════════════════════════════════════════════════════
+inAsianSession = not na(time(timeframe.period, "0000-0800:1234567"))
+var float asianHigh = na
+var float asianLow  = na
+var bool  asianHighSwept = false
+var bool  asianLowSwept  = false
+
+if inAsianSession
+    if na(asianHigh) or high > asianHigh
+        asianHigh := high
+    if na(asianLow) or low < asianLow
+        asianLow  := low
+    asianHighSwept := false
+    asianLowSwept  := false
+else
+    if not na(asianHigh) and (high > asianHigh) and (close < asianHigh) and not asianHighSwept and showAsianSession
+        asianHighSwept := true
+        label.new(bar_index, high, "⚡ ASIAN HIGH SWEPT!\n[London Judas Swing]", color=color.red, textcolor=color.white, style=label.style_label_down, size=size.small)
+    if not na(asianLow) and (low < asianLow) and (close > asianLow) and not asianLowSwept and showAsianSession
+        asianLowSwept := true
+        label.new(bar_index, low, "⚡ ASIAN LOW SWEPT!\n[London Judas Swing]", color=color.green, textcolor=color.white, style=label.style_label_up, size=size.small)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 5. STRUCTURE, FVG & LRL ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+atrVal = ta.atr(14)
+pHigh  = ta.pivothigh(high, swingLookback, swingLookback)
+pLow   = ta.pivotlow(low, swingLookback, swingLookback)
+
+isBullFVG = (low[0] > high[2])
+isBearFVG = (high[0] < low[2])
+
+var FVGRecord latestBullFVG = na
+var FVGRecord latestBearFVG = na
+
+if isBullFVG and showFVG
+    bx = box.new(bar_index - 2, low[0], bar_index, high[2], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 85))
+    rec = FVGRecord.new(bar_index - 1, low[0], high[2], true, false, false, bx)
+    array.push(activeBullFVGs, rec)
+    latestBullFVG := rec
+
+if isBearFVG and showFVG
+    bx = box.new(bar_index - 2, low[2], bar_index, high[0], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 85))
+    rec = FVGRecord.new(bar_index - 1, low[2], high[0], false, false, false, bx)
+    array.push(activeBearFVGs, rec)
+    latestBearFVG := rec
+
+if array.size(activeBullFVGs) >= 3 and showLRL_Voids
+    for idx = 1 to array.size(activeBullFVGs) - 2
+        fvgItem = array.get(activeBullFVGs, idx)
+        if not fvgItem.isLiquidityVoid
+            fvgItem.isLiquidityVoid := true
+            box.set_bgcolor(fvgItem.boxId, color.new(colLRLVoid, 80))
+            box.set_border_color(fvgItem.boxId, colLRLVoid)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 6. EPISODE 08: INSTITUTIONAL DISPLACEMENT & MSS DETECTION ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+float candleBody = math.abs(close - open)
+bool  isBullDisplacement = (close > open) and (candleBody >= (atrVal * displacementMult)) and isBullFVG
+bool  isBearDisplacement = (close < open) and (candleBody >= (atrVal * displacementMult)) and isBearFVG
+
+// Track LTF Local Swings (No IDM Required on LTF Entry Timeframe — Ep 08 Law)
+var float lastLTFSwingHigh = na
+var float lastLTFSwingLow  = na
+var int   lastLTFHighBar   = na
+var int   lastLTFLowBar    = na
+
+if not na(pHigh)
+    lastLTFSwingHigh := pHigh
+    lastLTFHighBar   := bar_index - swingLookback
+
+if not na(pLow)
+    lastLTFSwingLow  := pLow
+    lastLTFLowBar    := bar_index - swingLookback
+
+// MSS (Market Structure Shift) Detection
+// Wick rule: High/Low piercing swing level is valid if allowWickMSS is true, else requires body close
+bool bullMSS_Trigger = false
+bool bearMSS_Trigger = false
+
+if not na(lastLTFSwingHigh)
+    bool highPierced = allowWickMSS ? (high > lastLTFSwingHigh) : (close > lastLTFSwingHigh)
+    if highPierced and isBullDisplacement
+        bullMSS_Trigger := true
+
+if not na(lastLTFSwingLow)
+    bool lowPierced = allowWickMSS ? (low < lastLTFSwingLow) : (close < lastLTFSwingLow)
+    if lowPierced and isBearDisplacement
+        bearMSS_Trigger := true
+
+var string currentMSSState = "NONE"
+var float  lastBullMSS_Level = na
+var float  lastBearMSS_Level = na
+var int    lastBullMSS_Bar   = na
+var int    lastBearMSS_Bar   = na
+
+if bullMSS_Trigger
+    currentMSSState    := "BULLISH MSS CONFIRMED"
+    lastBullMSS_Level  := lastLTFSwingHigh
+    lastBullMSS_Bar    := bar_index
+    line.new(bar_index - 5, lastLTFSwingHigh, bar_index + 5, lastLTFSwingHigh, color=colBuySignal, width=2, style=line.style_arrow_right)
+    label.new(bar_index, lastLTFSwingHigh, "⚡ BULLISH MSS\n[Displacement Pierced]", color=colBuySignal, textcolor=color.black, style=label.style_label_down, size=size.small)
+
+if bearMSS_Trigger
+    currentMSSState    := "BEARISH MSS CONFIRMED"
+    lastBearMSS_Level  := lastLTFSwingLow
+    lastBearMSS_Bar    := bar_index
+    line.new(bar_index - 5, lastLTFSwingLow, bar_index + 5, lastLTFSwingLow, color=colSellSignal, width=2, style=line.style_arrow_right)
+    label.new(bar_index, lastLTFSwingLow, "⚡ BEARISH MSS\n[Displacement Pierced]", color=colSellSignal, textcolor=color.white, style=label.style_label_up, size=size.small)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🎯 7. EPISODE 08: THE 5 MASTER ENTRY EXECUTION MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+bool sigBuyModel1 = false  // Standard MSS Retest
+bool sigBuyModel2 = false  // Aggressive No-MSS
+bool sigBuyModel3 = false  // LRL Fast Retest
+bool sigBuyModel4 = false  // Safest 2nd BOS Retest
+bool sigBuyModel5 = false  // Sweep Turtle Soup
+
+bool sigSellModel1 = false
+bool sigSellModel2 = false
+bool sigSellModel3 = false
+bool sigSellModel4 = false
+bool sigSellModel5 = false
+
+// Model 1: Standard MSS + Displacement FVG Retest
+if (currentMSSState == "BULLISH MSS CONFIRMED") and not na(latestBullFVG) and not latestBullFVG.isMitigated
+    if (low <= latestBullFVG.top) and (close >= latestBullFVG.bottom) and (bar_index - lastBullMSS_Bar <= 15)
+        sigBuyModel1 := true
+        latestBullFVG.isMitigated := true
+
+if (currentMSSState == "BEARISH MSS CONFIRMED") and not na(latestBearFVG) and not latestBearFVG.isMitigated
+    if (high >= latestBearFVG.bottom) and (close <= latestBearFVG.top) and (bar_index - lastBearMSS_Bar <= 15)
+        sigSellModel1 := true
+        latestBearFVG.isMitigated := true
+
+// Model 2: Aggressive No-MSS (Direct POI Mini-Displacement Retest when MSS is far away)
+bool mssIsFarBull = not na(lastLTFSwingHigh) and ((lastLTFSwingHigh - close) > (atrVal * 3.0))
+if mssIsFarBull and isBullDisplacement[1] and (low <= latestBullFVG.top)
+    sigBuyModel2 := true
+
+bool mssIsFarBear = not na(lastLTFSwingLow) and ((close - lastLTFSwingLow) > (atrVal * 3.0))
+if mssIsFarBear and isBearDisplacement[1] and (high >= latestBearFVG.bottom)
+    sigSellModel2 := true
+
+// Model 3: Low Resistance Liquidity (LRL) Fast Execution (Shallow 1st FVG Tap)
+if (dailyBiasState == "BULLISH RUN (PDH Expansion)") and isBullDisplacement and not na(latestBullFVG)
+    if (low <= latestBullFVG.top)
+        sigBuyModel3 := true
+
+if (dailyBiasState == "BEARISH RUN (PDL Expansion)") and isBearDisplacement and not na(latestBearFVG)
+    if (high >= latestBearFVG.bottom)
+        sigSellModel3 := true
+
+// Model 4: Safest 2nd BOS Confirmation Model
+var int bullMSS_Stage = 0
+var int bearMSS_Stage = 0
+
+if bullMSS_Trigger
+    bullMSS_Stage := 1
+
+if (bullMSS_Stage == 1) and not na(latestBullFVG) and (low <= latestBullFVG.top)
+    bullMSS_Stage := 2  // First pullback occurred; waiting for 2nd BOS!
+
+if (bullMSS_Stage == 2) and (close > lastLTFSwingHigh) and isBullDisplacement
+    bullMSS_Stage := 3  // 2nd BOS Confirmed!
+    sigBuyModel4  := true
+    bullMSS_Stage := 0  // Reset
+
+if bearMSS_Trigger
+    bearMSS_Stage := 1
+
+if (bearMSS_Stage == 1) and not na(latestBearFVG) and (high >= latestBearFVG.bottom)
+    bearMSS_Stage := 2
+
+if (bearMSS_Stage == 2) and (close < lastLTFSwingLow) and isBearDisplacement
+    bearMSS_Stage := 3
+    sigSellModel4 := true
+    bearMSS_Stage := 0
+
+// Model 5: Liquidity Sweep Reversal (Turtle Soup on PDH/PDL or Asian Extremes)
+// Ep 08 Special: Breaker Block Confluence & Dual Targets (Target 1: Macro OB, Target 2: Volume Imbalance)
+bool hasBreakerConfluenceBull = false
+bool hasBreakerConfluenceBear = false
+
+if pdlSwept or asianLowSwept
+    if isBullDisplacement
+        sigBuyModel5 := true
+        // Check if displacement pierced through an opposing bearish Order Block (creating a Breaker Block)
+        if not na(latestBearFVG) and (close > latestBearFVG.top)
+            hasBreakerConfluenceBull := true
+
+if pdhSwept or asianHighSwept
+    if isBearDisplacement
+        sigSellModel5 := true
+        if not na(latestBullFVG) and (close < latestBullFVG.bottom)
+            hasBreakerConfluenceBear := true
+
+// 2-Candle Swing Acceleration Detection (Ep 08 Phase 7)
+bool isTwoCandleCollapseBull = isBullDisplacement[1] and not na(latestBullFVG) and (low <= latestBullFVG.top) and (close > open)
+bool isTwoCandleCollapseBear = isBearDisplacement[1] and not na(latestBearFVG) and (high >= latestBearFVG.bottom) and (close < open)
+
+// Model Filter Selection
+bool finalBuySignal = false
+bool finalSellSignal = false
+string activeSignalModel = ""
+
+if entryMode == "Model 1: Standard MSS Retest"
+    finalBuySignal  := sigBuyModel1
+    finalSellSignal := sigSellModel1
+    activeSignalModel := "MODEL 1 (Standard MSS)"
+else if entryMode == "Model 2: Aggressive No-MSS"
+    finalBuySignal  := sigBuyModel2
+    finalSellSignal := sigSellModel2
+    activeSignalModel := "MODEL 2 (Aggressive No-MSS)"
+else if entryMode == "Model 3: LRL Fast Execution"
+    finalBuySignal  := sigBuyModel3
+    finalSellSignal := sigSellModel3
+    activeSignalModel := "MODEL 3 (LRL Fast Run)"
+else if entryMode == "Model 4: Safest 2nd BOS"
+    finalBuySignal  := sigBuyModel4
+    finalSellSignal := sigSellModel4
+    activeSignalModel := "MODEL 4 (Safest 2nd BOS)"
+else if entryMode == "Model 5: Sweep Turtle Soup"
+    finalBuySignal  := sigBuyModel5
+    finalSellSignal := sigSellModel5
+    activeSignalModel := "MODEL 5 (Turtle Soup Sweep)"
+else // All Models (Universal)
+    if sigBuyModel4
+        finalBuySignal := true
+        activeSignalModel := "MODEL 4 (Safest 2nd BOS)"
+    else if sigBuyModel1
+        finalBuySignal := true
+        activeSignalModel := "MODEL 1 (Standard MSS)"
+    else if sigBuyModel5
+        finalBuySignal := true
+        activeSignalModel := "MODEL 5 (Turtle Soup)"
+    else if sigBuyModel3
+        finalBuySignal := true
+        activeSignalModel := "MODEL 3 (LRL Fast)"
+    else if sigBuyModel2
+        finalBuySignal := true
+        activeSignalModel := "MODEL 2 (Aggressive No-MSS)"
+        
+    if sigSellModel4
+        finalSellSignal := true
+        activeSignalModel := "MODEL 4 (Safest 2nd BOS)"
+    else if sigSellModel1
+        finalSellSignal := true
+        activeSignalModel := "MODEL 1 (Standard MSS)"
+    else if sigSellModel5
+        finalSellSignal := true
+        activeSignalModel := "MODEL 5 (Turtle Soup)"
+    else if sigSellModel3
+        finalSellSignal := true
+        activeSignalModel := "MODEL 3 (LRL Fast)"
+    else if sigSellModel2
+        finalSellSignal := true
+        activeSignalModel := "MODEL 2 (Aggressive No-MSS)"
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🛡️ 8. DYNAMIC PROFIT ARMOR & EXECUTION SIGNALS
+// ══════════════════════════════════════════════════════════════════════════════
+
+var float activeEntryPrice = na
+var float activeSLPrice    = na
+var float activeBEPrice    = na
+var float activeTrailPrice = na
+var float activeTPPrice    = na
+
+if finalBuySignal and na(activeEntryPrice)
+    activeEntryPrice := close
+    activeSLPrice    := close * (1.0 - 0.028)  // Max risk: -2.8%
+    activeBEPrice    := close * (1.0 + 0.010)  // Fast BE at +1.0%
+    activeTrailPrice := close * (1.0 + 0.018)  // Trailing SL at +1.8%
+    activeTPPrice    := close * (1.0 + 0.028)  // Institutional TP at +2.8%
+    
+    string buyDetails = "🟢 HERMES LONG ENTRY\n" + activeSignalModel
+    if hasBreakerConfluenceBull
+        buyDetails := buyDetails + "\n[+ BREAKER BLOCK CONFLUENCE]"
+    buyDetails := buyDetails + "\nEntry: " + str.tostring(close, "#.##") + "\nTP1 (OB): +2.8% | TP2 (Vol Imb): +4.5% | SL: -2.8%"
+    
+    label.new(bar_index, low - (atrVal * 0.5), buyDetails, color=colBuySignal, textcolor=color.black, style=label.style_label_up, size=size.normal)
+
+if finalSellSignal and na(activeEntryPrice)
+    activeEntryPrice := close
+    activeSLPrice    := close * (1.0 + 0.028)
+    activeBEPrice    := close * (1.0 - 0.010)
+    activeTrailPrice := close * (1.0 - 0.018)
+    activeTPPrice    := close * (1.0 - 0.028)
+    
+    string sellDetails = "🔴 HERMES SHORT ENTRY\n" + activeSignalModel
+    if hasBreakerConfluenceBear
+        sellDetails := sellDetails + "\n[+ BREAKER BLOCK CONFLUENCE]"
+    sellDetails := sellDetails + "\nEntry: " + str.tostring(close, "#.##") + "\nTP1 (OB): +2.8% | TP2 (Vol Imb): +4.5% | SL: -2.8%"
+    
+    label.new(bar_index, high + (atrVal * 0.5), sellDetails, color=colSellSignal, textcolor=color.white, style=label.style_label_down, size=size.normal)
+
+// 2-Candle Swing Acceleration Labeling
+if isTwoCandleCollapseBull
+    label.new(bar_index, low, "⚡ 2-CANDLE SWING ACCELERATION\n[Retest + Expansion]", color=color.new(color.blue, 20), textcolor=color.white, style=label.style_label_up, size=size.small)
+
+if isTwoCandleCollapseBear
+    label.new(bar_index, high, "⚡ 2-CANDLE SWING ACCELERATION\n[Retest + Expansion]", color=color.new(color.blue, 20), textcolor=color.white, style=label.style_label_down, size=size.small)
+
+// Dynamic Armor Level Reset when Hit
+if not na(activeEntryPrice)
+    if (high >= activeTPPrice and low <= activeTPPrice) or (low <= activeSLPrice and high >= activeSLPrice)
+        activeEntryPrice := na
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 9. INSTITUTIONAL MASTER HUD & REAL-TIME AUDIT
+// ══════════════════════════════════════════════════════════════════════════════
+var table hud = table.new(position.top_right, 2, 9, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
+if barstate.islast
+    table.cell(hud, 0, 0, "🏛️ HERMES SMC ENGINE", bgcolor=#1E88E5, text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 0, "EP 08 ACTIVE (ENTRIES)", bgcolor=#00C853, text_color=color.black, text_size=size.small)
+    
+    table.cell(hud, 0, 1, "Active Entry Filter:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 1, entryMode, text_color=#FFD600, text_size=size.small)
+    
+    table.cell(hud, 0, 2, "Current MSS State:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 2, currentMSSState, text_color=(currentMSSState == "BULLISH MSS CONFIRMED" ? colBuySignal : (currentMSSState == "BEARISH MSS CONFIRMED" ? colSellSignal : color.gray)), text_size=size.small)
+    
+    table.cell(hud, 0, 3, "LTF MSS Wick Break:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 3, allowWickMSS ? "VALID (Shoaib Rule)" : "BODY CLOSE ONLY", text_color=#00E5FF, text_size=size.small)
+    
+    table.cell(hud, 0, 4, "Displacement Engine:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 4, isBullDisplacement ? "BULLISH DISPLACEMENT ⚡" : (isBearDisplacement ? "BEARISH DISPLACEMENT ⚡" : "CALM / ABSORPTION"), text_color=#FFE57F, text_size=size.small)
+    
+    table.cell(hud, 0, 5, "Daily Bias Status:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 5, dailyBiasState, text_color=#FFD600, text_size=size.small)
+    
+    table.cell(hud, 0, 6, "Asian Session Range:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 6, na(asianHigh) ? "Awaiting..." : (str.tostring(asianLow, "#.##") + " - " + str.tostring(asianHigh, "#.##")), text_color=color.yellow, text_size=size.small)
+    
+    table.cell(hud, 0, 7, "Dynamic Profit Armor:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 7, "BE: +1.0% | Trail: +1.8%", text_color=#00E676, text_size=size.small)
+    
+    table.cell(hud, 0, 8, "Target Matrix:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 8, "TP: +2.8% | SL: -2.8% (5x)", text_color=#FF5252, text_size=size.small)

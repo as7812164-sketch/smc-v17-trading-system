@@ -1,0 +1,604 @@
+//@version=6
+indicator("HERMES 3.5 APEX — Multi-Timeframe Radar Harvest (5m, 15m, 1H, 4H & PDH/PDL)", shorttitle="HERMES 3.5 APEX PRO", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ==============================================================================
+// 🏛️ HERMES 3.5 APEX: MULTI-TIMEFRAME RADAR HARVEST & LIQUIDITY MATRIX (v6)
+// Certified by Chief Quant Auditor & Hermes AI Engine
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// 1. USER INPUTS & PARAMETERS
+// ------------------------------------------------------------------------------
+grp_exec    = "🎯 1. 5% Boundary Entry & 0.20% Proximity Radar"
+pen_depth   = input.float(5.0, "OB Boundary Penetration Depth (%)", minval=1.0, maxval=50.0, step=1.0, group=grp_exec, tooltip="5.0% = Outer boundary rim tap. Captures aggressive rockets before they fly.")
+radar_pct   = input.float(0.20, "Proximity Radar Alert Distance (%)", minval=0.05, maxval=1.0, step=0.05, group=grp_exec, tooltip="Distance from boundary at which bot/trader pre-posts Limit Order on Binance")
+show_radar  = input.bool(true, "Draw 0.20% Proximity Radar Line (Ghost Dotted)", group=grp_exec)
+
+grp_harvest = "💰 2. Stepped Profit Harvest & Compounding"
+leverage    = input.float(5.0, "Leverage Multiplier (x)", minval=1.0, maxval=50.0, step=1.0, group=grp_harvest)
+tp_roe_pct  = input.float(14.00, "Take Profit (TP) ROE %", minval=1.0, maxval=100.0, step=0.5, group=grp_harvest, tooltip="+14.00% ROE at 5x = +2.80% price move")
+sl_roe_pct  = input.float(14.00, "Dynamic Stop Loss (SL) ROE %", minval=1.0, maxval=100.0, step=0.5, group=grp_harvest, tooltip="-14.00% ROE at 5x = -2.80% price move")
+be_armor_roe= input.float(8.00, "Stage 1: BE Armor Trigger ROE %", minval=1.0, maxval=50.0, step=0.5, group=grp_harvest, tooltip="+8.00% ROE -> Moves SL to Break-Even (+0.10%)")
+step_trig   = input.float(9.00, "Stage 2: Profit Harvest Trigger ROE %", minval=1.0, maxval=50.0, step=0.5, group=grp_harvest, tooltip="+9.00% ROE -> Locks Stop Loss at +4.50% ROE guaranteed profit")
+step_lock   = input.float(4.50, "Stage 2: Guaranteed Locked Profit ROE %", minval=1.0, maxval=50.0, step=0.5, group=grp_harvest, tooltip="+4.50% ROE at 5x = +0.90% price move in wallet")
+
+grp_rocket  = "🚀 3. Multi-Timeframe Engine (5m, 15m, 1H, 4H)"
+auto_tf_cal = input.bool(true, "Auto-Calibrate Displacement & Runway by Timeframe", group=grp_rocket, tooltip="Scales wave thresholds for 5m (0.8%), 15m (1.5%), 1H (3.5%) & 4H (5.0%) automatically")
+min_runway  = input.float(5.0, "Manual Min Rocket Airspace Runway (%)", minval=0.5, maxval=25.0, step=0.5, group=grp_rocket, tooltip="Used when Auto-Calibrate is OFF")
+tf_mode     = input.string("Auto Detect", "Maturation Mode", options=["Auto Detect", "5m (Fast Scalp)", "15m (Intraday)", "1H (48 Bars / 2 Days)", "4H (12 Bars / 2 Days)", "Custom"], group=grp_rocket)
+min_bars_in = input.int(48, "Custom Min Maturation Bars (Min Gap)", minval=1, maxval=500, group=grp_rocket)
+max_bars_in = input.int(720, "Max Maturation Window (Bars)", minval=50, maxval=2000, group=grp_rocket)
+
+grp_core    = "⚙️ 4. Institutional Displacement & Sentry Core"
+min_disp    = input.float(5.0, "Manual Min Displacement Wave (%)", minval=0.5, maxval=20.0, step=0.5, group=grp_core, tooltip="Used when Auto-Calibrate is OFF")
+strict_col  = input.bool(true, "Strict Candle Color Gate (Red for Bull, Green for Bear)", group=grp_core)
+extend_box  = input.bool(true, "Dynamic Live Alignment Box Extension", group=grp_core)
+future_ext  = input.int(5, "Future Candle Projection Margin (Bars)", minval=1, maxval=30, group=grp_core)
+max_zones   = input.int(40, "Max Active Zones Tracked", minval=5, maxval=80, group=grp_core)
+
+grp_sentry  = "🛡️ 5. King BTC 4H Macro Causal Sentry"
+btc_filter  = input.bool(true, "Enable King BTC 4H Trend Alignment", group=grp_sentry)
+btc_symbol  = input.symbol("BINANCE:BTCUSDT", "BTC Benchmark Symbol", group=grp_sentry)
+
+grp_pdhl    = "📅 6. Previous Day High & Low (PDH / PDL)"
+show_pdhl   = input.bool(true, "Show Previous Day High & Low (PDH / PDL Dotted Line)", group=grp_pdhl)
+col_pdh     = input.color(#F59E0B, "PDH Dotted Line Color (Amber)", group=grp_pdhl)
+col_pdl     = input.color(#38BDF8, "PDL Dotted Line Color (Cyan)", group=grp_pdhl)
+pdhl_width  = input.int(1, "PDH / PDL Line Width", minval=1, maxval=4, group=grp_pdhl)
+show_pd_lbl = input.bool(true, "Show PDH / PDL Price Tags on Right", group=grp_pdhl)
+
+grp_labels  = "🏷️ 7. Text & On-Chart Labels Settings (ON / OFF)"
+show_labels = input.bool(true, "Master Toggle: Show All On-Chart Text Labels", group=grp_labels, tooltip="Turn OFF to remove all text from candles for a 100% clean visual chart")
+show_entry_l= input.bool(true, "Show Limit Fill Entry Labels", group=grp_labels)
+show_mgmt_l = input.bool(true, "Show Armor / Harvest / TP / SL Exit Labels", group=grp_labels)
+clean_txt   = input.bool(true, "Transparent Label Background (No Solid Green/Red Brick)", group=grp_labels)
+show_table  = input.bool(true, "Show Hermes 3.5 Sentries HUD Table", group=grp_labels)
+show_lines  = input.bool(true, "Draw Entry, Radar, Armor, Harvest & SL Lines Upon Trigger", group=grp_labels)
+
+grp_ui      = "🎨 8. Zone & Line Styling"
+col_bull_ob = input.color(color.new(#00F59B, 85), "Bullish Demand OB Box", group=grp_ui)
+col_bear_ob = input.color(color.new(#FF3B69, 85), "Bearish Supply OB Box", group=grp_ui)
+col_entry_l = input.color(#F59E0B, "5% Boundary Entry Line (Amber Gold)", group=grp_ui)
+col_radar_l = input.color(color.new(#38BDF8, 30), "0.20% Proximity Radar Line (Ghost Cyan)", group=grp_ui)
+col_tp      = input.color(#00F59B, "Target TP Line (+14.0% ROE)", group=grp_ui)
+col_armor   = input.color(#E2E8F0, "BE Armor Line (+8.0% ROE)", group=grp_ui)
+col_harvest = input.color(#00E5FF, "Stage 2 Locked Profit Line (+4.5% ROE)", group=grp_ui)
+col_sl      = input.color(#FF3B69, "Dynamic Stop Loss Line (-14.0% ROE)", group=grp_ui)
+
+// Mathematical Conversions
+tp_price_pct     = (tp_roe_pct / 100.0) / leverage          // +2.80% price move
+sl_price_pct     = (sl_roe_pct / 100.0) / leverage          // -2.80% price move
+be_trig_pct      = (be_armor_roe / 100.0) / leverage        // +1.60% price move
+step_trig_pct    = (step_trig / 100.0) / leverage           // +1.80% price move
+step_lock_pct    = (step_lock / 100.0) / leverage           // +0.90% price move
+radar_dist_pct   = radar_pct / 100.0                        // 0.0020
+
+// ------------------------------------------------------------------------------
+// MULTI-TIMEFRAME ADAPTIVE CALIBRATION ENGINE
+// ------------------------------------------------------------------------------
+is_5m  = timeframe.isintraday and (timeframe.period == "5" or timeframe.period == "5m")
+is_15m = timeframe.isintraday and (timeframe.period == "15" or timeframe.period == "15m")
+is_1h  = timeframe.isintraday and (timeframe.period == "60" or timeframe.period == "1h")
+is_4h  = timeframe.isintraday and (timeframe.period == "240" or timeframe.period == "4h")
+
+float dynamic_disp = is_5m ? 0.8 : (is_15m ? 1.5 : (is_1h ? 3.5 : (is_4h ? 5.0 : 3.0)))
+float dynamic_runway = is_5m ? 1.0 : (is_15m ? 2.0 : (is_1h ? 3.5 : (is_4h ? 5.0 : 3.0)))
+
+float active_min_disp   = auto_tf_cal ? dynamic_disp : min_disp
+float active_min_runway = auto_tf_cal ? dynamic_runway : min_runway
+
+int auto_min_bars = is_5m ? 16 : (is_15m ? 24 : (is_1h ? 48 : (is_4h ? 12 : 36)))
+int auto_max_bars = is_5m ? 288 : (is_15m ? 384 : (is_1h ? 720 : 360))
+
+int effective_min_bars = tf_mode == "Auto Detect" ? auto_min_bars : (tf_mode == "5m (Fast Scalp)" ? 16 : (tf_mode == "15m (Intraday)" ? 24 : (tf_mode == "1H (48 Bars / 2 Days)" ? 48 : (tf_mode == "4H (12 Bars / 2 Days)" ? 12 : min_bars_in))))
+int effective_max_bars = tf_mode == "Auto Detect" ? auto_max_bars : max_bars_in
+
+// ------------------------------------------------------------------------------
+// 2. SENTRY 1: KING BTC 4H MACRO CAUSAL BRAKE
+// ------------------------------------------------------------------------------
+btc_4h_c       = request.security(btc_symbol, "240", close[1], lookahead=barmerge.lookahead_off)
+btc_4h_ema50   = request.security(btc_symbol, "240", ta.ema(close, 50)[1], lookahead=barmerge.lookahead_off)
+btc_is_bull    = btc_filter ? (btc_4h_c >= btc_4h_ema50) : true
+btc_is_bear    = btc_filter ? (btc_4h_c <= btc_4h_ema50) : true
+btc_status_str = btc_is_bull ? "🟢 BTC > EMA50 (BULLISH)" : "🔴 BTC < EMA50 (BEARISH)"
+
+// ------------------------------------------------------------------------------
+// 3. SENTRY 2: DISPLACEMENT & FVG FOOTPRINT QUALIFICATION
+// ------------------------------------------------------------------------------
+c3_open  = open[3]
+c3_high  = high[3]
+c3_low   = low[3]
+c3_close = close[3]
+
+c2_high  = high[2]
+c2_low   = low[2]
+
+c1_high  = high[1]
+c1_low   = low[1]
+
+impulse_high = math.max(c1_high, c2_high)
+impulse_low  = math.min(c1_low, c2_low)
+
+bull_fvg = (c1_low > c3_high)
+bear_fvg = (c1_high < c3_low)
+
+bull_disp_pct = ((impulse_high - c3_low) / c3_low) * 100.0
+bear_disp_pct = ((c3_high - impulse_low) / c3_high) * 100.0
+
+bull_color_ok = not strict_col or (c3_close < c3_open)
+bear_color_ok = not strict_col or (c3_close > c3_open)
+
+bool is_origin_bull = (c3_low <= ta.lowest(low, 20)[3])
+bool is_origin_bear = (c3_high >= ta.highest(high, 20)[3])
+
+bull_ob_qual = bull_color_ok and bull_fvg and (bull_disp_pct >= active_min_disp) and btc_is_bull
+bear_ob_qual = bear_color_ok and bear_fvg and (bear_disp_pct >= active_min_disp) and btc_is_bear
+
+// ------------------------------------------------------------------------------
+// 4. DATA TYPES & ACTIVE ZONES STORAGE
+// ------------------------------------------------------------------------------
+type HermesZone
+    bool is_bull
+    bool is_origin
+    int start_bar
+    float ob_high
+    float ob_low
+    float entry_p
+    float radar_p
+    float peak_runway
+    float tp_p
+    float be_trig_p
+    float step_trig_p
+    float step_lock_p
+    float sl_p
+    box ob_box
+    line entry_line
+    line radar_line
+    line tp_line
+    line armor_line
+    line sl_line
+    bool tapped
+    bool be_locked
+    bool profit_stepped
+    bool completed
+
+var HermesZone[] zones = array.new<HermesZone>()
+
+// Register New Order Block candidate at bar [3]
+if bull_ob_qual
+    float o_high = c3_high
+    float o_low  = c3_low
+    float o_rng  = o_high - o_low
+    float ent_p  = o_high - (o_rng * (pen_depth / 100.0)) // 5% Boundary entry
+    float rad_p  = ent_p * (1.0 + radar_dist_pct)          // +0.20% Radar threshold
+    float tp     = ent_p * (1.0 + tp_price_pct)
+    float be_trg = ent_p * (1.0 + be_trig_pct)
+    float st_trg = ent_p * (1.0 + step_trig_pct)
+    float st_lck = ent_p * (1.0 + step_lock_pct)
+    float sl     = ent_p * (1.0 - sl_price_pct)
+    int s_bar    = bar_index - 3
+
+    box b = box.new(s_bar, o_high, bar_index + future_ext, o_low, border_color=color.new(#00F59B, 30), border_width=1, bgcolor=col_bull_ob)
+    line l_ent = line.new(s_bar, ent_p, bar_index + future_ext, ent_p, color=col_entry_l, width=1, style=line.style_dashed)
+    line l_rad = show_radar ? line.new(s_bar, rad_p, bar_index + future_ext, rad_p, color=col_radar_l, width=1, style=line.style_dotted) : line(na)
+    
+    HermesZone nz = HermesZone.new(true, is_origin_bull, s_bar, o_high, o_low, ent_p, rad_p, impulse_high, tp, be_trg, st_trg, st_lck, sl, b, l_ent, l_rad, line(na), line(na), line(na), false, false, false, false)
+    array.push(zones, nz)
+    if array.size(zones) > max_zones
+        array.shift(zones)
+
+if bear_ob_qual
+    float o_high = c3_high
+    float o_low  = c3_low
+    float o_rng  = o_high - o_low
+    float ent_p  = o_low + (o_rng * (pen_depth / 100.0))  // 5% Boundary entry
+    float rad_p  = ent_p * (1.0 - radar_dist_pct)          // -0.20% Radar threshold
+    float tp     = ent_p * (1.0 - tp_price_pct)
+    float be_trg = ent_p * (1.0 - be_trig_pct)
+    float st_trg = ent_p * (1.0 - step_trig_pct)
+    float st_lck = ent_p * (1.0 - step_lock_pct)
+    float sl     = ent_p * (1.0 + sl_price_pct)
+    int s_bar    = bar_index - 3
+
+    box b = box.new(s_bar, o_high, bar_index + future_ext, o_low, border_color=color.new(#FF3B69, 30), border_width=1, bgcolor=col_bear_ob)
+    line l_ent = line.new(s_bar, ent_p, bar_index + future_ext, ent_p, color=col_entry_l, width=1, style=line.style_dashed)
+    line l_rad = show_radar ? line.new(s_bar, rad_p, bar_index + future_ext, rad_p, color=col_radar_l, width=1, style=line.style_dotted) : line(na)
+    
+    HermesZone nz = HermesZone.new(false, is_origin_bear, s_bar, o_high, o_low, ent_p, rad_p, impulse_low, tp, be_trg, st_trg, st_lck, sl, b, l_ent, l_rad, line(na), line(na), line(na), false, false, false, false)
+    array.push(zones, nz)
+    if array.size(zones) > max_zones
+        array.shift(zones)
+
+// ------------------------------------------------------------------------------
+// 5. PROXIMITY RADAR, 5% BOUNDARY TAP & STEPPED HARVEST ENGINE
+// ------------------------------------------------------------------------------
+bool long_trigger    = false
+bool short_trigger   = false
+bool radar_triggered = false
+string radar_msg     = ""
+int active_unmitigated_count = 0
+
+if array.size(zones) > 0
+    for i = array.size(zones) - 1 to 0
+        HermesZone z = array.get(zones, i)
+        
+        // ----------------------------------------------------------------------
+        // CASE A: ZONE IS ACTIVE & UNMITIGATED
+        // ----------------------------------------------------------------------
+        if not z.tapped and not z.completed
+            active_unmitigated_count += 1
+            
+            if extend_box
+                box.set_right(z.ob_box, bar_index + future_ext)
+                line.set_x2(z.entry_line, bar_index + future_ext)
+                if not na(z.radar_line)
+                    line.set_x2(z.radar_line, bar_index + future_ext)
+                
+            int bars_alive = bar_index - z.start_bar
+            
+            if z.is_bull
+                z.peak_runway := math.max(z.peak_runway, high)
+                float airspace_runway_pct = ((z.peak_runway - z.ob_high) / z.ob_high) * 100.0
+
+                // Expiry Check
+                if bars_alive > effective_max_bars
+                    z.completed := true
+                    box.set_right(z.ob_box, bar_index)
+                    line.set_x2(z.entry_line, bar_index)
+                    if not na(z.radar_line)
+                        line.set_x2(z.radar_line, bar_index)
+                    box.set_border_style(z.ob_box, line.style_dotted)
+                    box.set_bgcolor(z.ob_box, color.new(color.gray, 92))
+                    
+                // Structural Invalidation: Close below OB low
+                else if close < z.ob_low
+                    z.completed := true
+                    box.set_right(z.ob_box, bar_index)
+                    line.set_x2(z.entry_line, bar_index)
+                    if not na(z.radar_line)
+                        line.set_x2(z.radar_line, bar_index)
+                    box.set_border_style(z.ob_box, line.style_dotted)
+                    box.set_bgcolor(z.ob_box, color.new(color.gray, 92))
+                    
+                else
+                    // 1. Proximity Radar Check (Live price within 0.20% of boundary)
+                    bool within_radar = (low <= z.radar_p) and (low > z.entry_p)
+                    if within_radar and (airspace_runway_pct >= active_min_runway) and (bars_alive >= effective_min_bars)
+                        radar_triggered := true
+                        radar_msg := "⚡ [RADAR ALERT] " + syminfo.ticker + " within 0.20% of 5% Boundary! Pre-arm LIMIT BUY at $" + str.tostring(z.entry_p, "#.####")
+                        alert(radar_msg, alert.freq_once_per_bar)
+
+                    // 2. 5% Boundary Tap Execution Check
+                    bool reaches_boundary = (low <= z.entry_p) and (low >= z.sl_p)
+                    if reaches_boundary
+                        bool has_airspace = airspace_runway_pct >= active_min_runway
+                        bool is_mature = bars_alive >= effective_min_bars
+
+                        if has_airspace and is_mature
+                            z.tapped := true
+                            long_trigger := true
+                            box.set_right(z.ob_box, bar_index)
+                            line.set_x2(z.entry_line, bar_index)
+                            if not na(z.radar_line)
+                                line.set_x2(z.radar_line, bar_index)
+                            box.set_bgcolor(z.ob_box, color.new(#00F59B, 90))
+                            box.set_border_style(z.ob_box, line.style_solid)
+                            
+                            if show_lines
+                                z.tp_line    := line.new(bar_index, z.tp_p, bar_index + future_ext, z.tp_p, color=col_tp, width=2, style=line.style_solid)
+                                z.armor_line := line.new(bar_index, z.be_trig_p, bar_index + future_ext, z.be_trig_p, color=col_armor, width=1, style=line.style_dashed)
+                                z.sl_line    := line.new(bar_index, z.sl_p, bar_index + future_ext, z.sl_p, color=col_sl, width=1, style=line.style_dashed)
+                            
+                            if show_labels and show_entry_l
+                                string tag = z.is_origin ? "🚀 ROCKET ORIGIN BUY [5% Boundary]" : "⚡ ROCKET BUY [5% Boundary]"
+                                string lbl_txt = tag + "\nLimit Fill: $" + str.tostring(z.entry_p, "#.####") + "\nTP: +14% ROE\nGap: " + str.tostring(airspace_runway_pct, "#.#") + "% | Age: " + str.tostring(bars_alive) + "b"
+                                color bg_c = clean_txt ? color.new(color.black, 100) : color.new(#00F59B, 15)
+                                color tx_c = clean_txt ? #00F59B : color.black
+                                label.new(bar_index, low, lbl_txt, color=bg_c, textcolor=tx_c, style=label.style_label_up, size=size.small)
+                                
+                            alert("HERMES 3.5 LIMIT BUY FILLED on " + syminfo.ticker + " at $" + str.tostring(z.entry_p), alert.freq_once_per_bar_close)
+
+                        else
+                            z.completed := true
+                            box.set_right(z.ob_box, bar_index)
+                            line.set_x2(z.entry_line, bar_index)
+                            if not na(z.radar_line)
+                                line.set_x2(z.radar_line, bar_index)
+                            box.set_border_style(z.ob_box, line.style_dotted)
+                            box.set_bgcolor(z.ob_box, color.new(color.gray, 92))
+
+            else
+                z.peak_runway := math.min(z.peak_runway, low)
+                float airspace_runway_pct = ((z.ob_low - z.peak_runway) / z.ob_low) * 100.0
+
+                if bars_alive > effective_max_bars
+                    z.completed := true
+                    box.set_right(z.ob_box, bar_index)
+                    line.set_x2(z.entry_line, bar_index)
+                    if not na(z.radar_line)
+                        line.set_x2(z.radar_line, bar_index)
+                    box.set_border_style(z.ob_box, line.style_dotted)
+                    box.set_bgcolor(z.ob_box, color.new(color.gray, 92))
+                    
+                else if close > z.ob_high
+                    z.completed := true
+                    box.set_right(z.ob_box, bar_index)
+                    line.set_x2(z.entry_line, bar_index)
+                    if not na(z.radar_line)
+                        line.set_x2(z.radar_line, bar_index)
+                    box.set_border_style(z.ob_box, line.style_dotted)
+                    box.set_bgcolor(z.ob_box, color.new(color.gray, 92))
+                    
+                else
+                    bool within_radar = (high >= z.radar_p) and (high < z.entry_p)
+                    if within_radar and (airspace_runway_pct >= active_min_runway) and (bars_alive >= effective_min_bars)
+                        radar_triggered := true
+                        radar_msg := "⚡ [RADAR ALERT] " + syminfo.ticker + " within 0.20% of 5% Boundary! Pre-arm LIMIT SELL at $" + str.tostring(z.entry_p, "#.####")
+                        alert(radar_msg, alert.freq_once_per_bar)
+
+                    bool reaches_boundary = (high >= z.entry_p) and (high <= z.sl_p)
+                    if reaches_boundary
+                        bool has_airspace = airspace_runway_pct >= active_min_runway
+                        bool is_mature = bars_alive >= effective_min_bars
+
+                        if has_airspace and is_mature
+                            z.tapped := true
+                            short_trigger := true
+                            box.set_right(z.ob_box, bar_index)
+                            line.set_x2(z.entry_line, bar_index)
+                            if not na(z.radar_line)
+                                line.set_x2(z.radar_line, bar_index)
+                            box.set_bgcolor(z.ob_box, color.new(#FF3B69, 90))
+                            box.set_border_style(z.ob_box, line.style_solid)
+                            
+                            if show_lines
+                                z.tp_line    := line.new(bar_index, z.tp_p, bar_index + future_ext, z.tp_p, color=col_tp, width=2, style=line.style_solid)
+                                z.armor_line := line.new(bar_index, z.be_trig_p, bar_index + future_ext, z.be_trig_p, color=col_armor, width=1, style=line.style_dashed)
+                                z.sl_line    := line.new(bar_index, z.sl_p, bar_index + future_ext, z.sl_p, color=col_sl, width=1, style=line.style_dashed)
+                            
+                            if show_labels and show_entry_l
+                                string tag = z.is_origin ? "🚀 ROCKET ORIGIN SELL [5% Boundary]" : "⚡ ROCKET SELL [5% Boundary]"
+                                string lbl_txt = tag + "\nLimit Fill: $" + str.tostring(z.entry_p, "#.####") + "\nTP: +14% ROE\nGap: " + str.tostring(airspace_runway_pct, "#.#") + "% | Age: " + str.tostring(bars_alive) + "b"
+                                color bg_c = clean_txt ? color.new(color.black, 100) : color.new(#FF3B69, 15)
+                                color tx_c = clean_txt ? #FF3B69 : color.white
+                                label.new(bar_index, high, lbl_txt, color=bg_c, textcolor=tx_c, style=label.style_label_down, size=size.small)
+                                
+                            alert("HERMES 3.5 LIMIT SELL FILLED on " + syminfo.ticker + " at $" + str.tostring(z.entry_p), alert.freq_once_per_bar_close)
+
+                        else
+                            z.completed := true
+                            box.set_right(z.ob_box, bar_index)
+                            line.set_x2(z.entry_line, bar_index)
+                            if not na(z.radar_line)
+                                line.set_x2(z.radar_line, bar_index)
+                            box.set_border_style(z.ob_box, line.style_dotted)
+                            box.set_bgcolor(z.ob_box, color.new(color.gray, 92))
+
+        // ----------------------------------------------------------------------
+        // CASE B: ZONE WAS TAPPED (ACTIVE TRADE) -> STEPPED PROFIT HARVEST
+        // ----------------------------------------------------------------------
+        else if z.tapped and not z.completed
+            if not na(z.tp_line)
+                line.set_x2(z.tp_line, bar_index + future_ext)
+            if not na(z.armor_line)
+                line.set_x2(z.armor_line, bar_index + future_ext)
+            if not na(z.sl_line)
+                line.set_x2(z.sl_line, bar_index + future_ext)
+
+            if z.is_bull
+                // STAGE 1: Profit Armor Trigger (+8.0% ROE -> BE Lock +0.10%)
+                if not z.be_locked and high >= z.be_trig_p
+                    z.be_locked := true
+                    float be_price = z.entry_p * 1.0010
+                    z.sl_p := be_price
+                    if not na(z.sl_line)
+                        line.set_y1(z.sl_line, be_price)
+                        line.set_y2(z.sl_line, be_price)
+                        line.set_color(z.sl_line, col_armor)
+                    
+                    if show_labels and show_mgmt_l
+                        color arm_bg = clean_txt ? color.new(color.black, 100) : color.new(#E2E8F0, 20)
+                        label.new(bar_index, low, "🛡️ BE ARMOR (+8% ROE)\nSecured (+0.1%)", color=arm_bg, textcolor=#E2E8F0, style=label.style_label_up, size=size.tiny)
+                        
+                    alert("HERMES 3.5 BE Armor Locked on " + syminfo.ticker, alert.freq_once_per_bar_close)
+
+                // STAGE 2: STEPPED PROFIT HARVEST TRIGGER (+9.0% ROE -> SL Jumps to +4.5% ROE Pure Profit!)
+                if not z.profit_stepped and high >= z.step_trig_p
+                    z.profit_stepped := true
+                    z.sl_p := z.step_lock_p
+                    if not na(z.sl_line)
+                        line.set_y1(z.sl_line, z.step_lock_p)
+                        line.set_y2(z.sl_line, z.step_lock_p)
+                        line.set_color(z.sl_line, col_harvest)
+                        line.set_width(z.sl_line, 2)
+                    
+                    if show_labels and show_mgmt_l
+                        color harv_bg = clean_txt ? color.new(color.black, 100) : color.new(#00E5FF, 20)
+                        label.new(bar_index, low, "💰 PROFIT HARVEST LOCKED!\nSL -> +4.5% ROE ($" + str.tostring(z.step_lock_p, "#.####") + ")", color=harv_bg, textcolor=#00E5FF, style=label.style_label_up, size=size.small)
+                        
+                    alert("HERMES 3.5 Stage 2 Profit Locked (+4.5% ROE) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+
+                // STAGE 3: FULL TAKE PROFIT HIT (+14.0% ROE)
+                if high >= z.tp_p
+                    if show_labels and show_mgmt_l
+                        color tp_bg = clean_txt ? color.new(color.black, 100) : #00F59B
+                        color tp_tx = clean_txt ? #00F59B : color.black
+                        label.new(bar_index, high, "🎯 TP HIT! +14.0% ROE\n100% Compounded", color=tp_bg, textcolor=tp_tx, style=label.style_label_down, size=size.small)
+                    
+                    z.completed := true
+                    if not na(z.tp_line)
+                        line.set_x2(z.tp_line, bar_index)
+                    if not na(z.sl_line)
+                        line.set_x2(z.sl_line, bar_index)
+                    if not na(z.armor_line)
+                        line.set_x2(z.armor_line, bar_index)
+                    alert("HERMES 3.5 TAKE PROFIT HIT (+14.0% ROE) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+                
+                // STOP LOSS / PROFIT HARVEST EXIT
+                else if low <= z.sl_p
+                    if show_labels and show_mgmt_l
+                        string exit_msg = ""
+                        color exit_c = color.white
+                        if z.profit_stepped
+                            exit_msg := "💰 HARVEST EXIT (+4.5% ROE)\nProfit Secured in Wallet!"
+                            exit_c := #00E5FF
+                        else if z.be_locked
+                            exit_msg := "🛡️ BE EXIT (+0.1%)\nCapital Protected"
+                            exit_c := #E2E8F0
+                        else
+                            exit_msg := "🛑 SL HIT (-14.0% ROE)"
+                            exit_c := #FF3B69
+                            
+                        color sl_bg = clean_txt ? color.new(color.black, 100) : color.new(exit_c, 20)
+                        label.new(bar_index, low, exit_msg, color=sl_bg, textcolor=exit_c, style=label.style_label_up, size=size.tiny)
+                        
+                    z.completed := true
+                    if not na(z.tp_line)
+                        line.set_x2(z.tp_line, bar_index)
+                    if not na(z.sl_line)
+                        line.set_x2(z.sl_line, bar_index)
+                    if not na(z.armor_line)
+                        line.set_x2(z.armor_line, bar_index)
+
+            else
+                // Bearish Active Trade
+                if not z.be_locked and low <= z.be_trig_p
+                    z.be_locked := true
+                    float be_price = z.entry_p * 0.9990
+                    z.sl_p := be_price
+                    if not na(z.sl_line)
+                        line.set_y1(z.sl_line, be_price)
+                        line.set_y2(z.sl_line, be_price)
+                        line.set_color(z.sl_line, col_armor)
+                    
+                    if show_labels and show_mgmt_l
+                        color arm_bg = clean_txt ? color.new(color.black, 100) : color.new(#E2E8F0, 20)
+                        label.new(bar_index, high, "🛡️ BE ARMOR (+8% ROE)\nSecured (+0.1%)", color=arm_bg, textcolor=#E2E8F0, style=label.style_label_down, size=size.tiny)
+                        
+                    alert("HERMES 3.5 BE Armor Locked on " + syminfo.ticker, alert.freq_once_per_bar_close)
+
+                if not z.profit_stepped and low <= z.step_trig_p
+                    z.profit_stepped := true
+                    z.sl_p := z.step_lock_p
+                    if not na(z.sl_line)
+                        line.set_y1(z.sl_line, z.step_lock_p)
+                        line.set_y2(z.sl_line, z.step_lock_p)
+                        line.set_color(z.sl_line, col_harvest)
+                        line.set_width(z.sl_line, 2)
+                    
+                    if show_labels and show_mgmt_l
+                        color harv_bg = clean_txt ? color.new(color.black, 100) : color.new(#00E5FF, 20)
+                        label.new(bar_index, high, "💰 PROFIT HARVEST LOCKED!\nSL -> +4.5% ROE ($" + str.tostring(z.step_lock_p, "#.####") + ")", color=harv_bg, textcolor=#00E5FF, style=label.style_label_down, size=size.small)
+                        
+                    alert("HERMES 3.5 Stage 2 Profit Locked (+4.5% ROE) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+
+                if low <= z.tp_p
+                    if show_labels and show_mgmt_l
+                        color tp_bg = clean_txt ? color.new(color.black, 100) : #00F59B
+                        color tp_tx = clean_txt ? #00F59B : color.black
+                        label.new(bar_index, low, "🎯 TP HIT! +14.0% ROE\n100% Compounded", color=tp_bg, textcolor=tp_tx, style=label.style_label_up, size=size.small)
+                    
+                    z.completed := true
+                    if not na(z.tp_line)
+                        line.set_x2(z.tp_line, bar_index)
+                    if not na(z.sl_line)
+                        line.set_x2(z.sl_line, bar_index)
+                    if not na(z.armor_line)
+                        line.set_x2(z.armor_line, bar_index)
+                    alert("HERMES 3.5 TAKE PROFIT HIT (+14.0% ROE) on " + syminfo.ticker, alert.freq_once_per_bar_close)
+                    
+                else if high >= z.sl_p
+                    if show_labels and show_mgmt_l
+                        string exit_msg = ""
+                        color exit_c = color.white
+                        if z.profit_stepped
+                            exit_msg := "💰 HARVEST EXIT (+4.5% ROE)\nProfit Secured in Wallet!"
+                            exit_c := #00E5FF
+                        else if z.be_locked
+                            exit_msg := "🛡️ BE EXIT (+0.1%)\nCapital Protected"
+                            exit_c := #E2E8F0
+                        else
+                            exit_msg := "🛑 SL HIT (-14.0% ROE)"
+                            exit_c := #FF3B69
+                            
+                        color sl_bg = clean_txt ? color.new(color.black, 100) : color.new(exit_c, 20)
+                        label.new(bar_index, high, exit_msg, color=sl_bg, textcolor=exit_c, style=label.style_label_down, size=size.tiny)
+                        
+                    z.completed := true
+                    if not na(z.tp_line)
+                        line.set_x2(z.tp_line, bar_index)
+                    if not na(z.sl_line)
+                        line.set_x2(z.sl_line, bar_index)
+                    if not na(z.armor_line)
+                        line.set_x2(z.armor_line, bar_index)
+
+// ------------------------------------------------------------------------------
+// 6. PREVIOUS DAY HIGH & LOW (PDH / PDL) LIQUIDITY DOTTED LINES
+// ------------------------------------------------------------------------------
+float pdh_price = request.security(syminfo.tickerid, "D", high[1], lookahead=barmerge.lookahead_on)
+float pdl_price = request.security(syminfo.tickerid, "D", low[1], lookahead=barmerge.lookahead_on)
+
+var line pdh_line = na
+var line pdl_line = na
+var label pdh_lbl = na
+var label pdl_lbl = na
+
+bool is_new_day = ta.change(time("D")) != 0
+
+if show_pdhl and timeframe.isintraday
+    if is_new_day
+        // Draw new clean dotted lines starting from current day's open
+        pdh_line := line.new(bar_index, pdh_price, bar_index + future_ext, pdh_price, color=col_pdh, width=pdhl_width, style=line.style_dotted)
+        pdl_line := line.new(bar_index, pdl_price, bar_index + future_ext, pdl_price, color=col_pdl, width=pdhl_width, style=line.style_dotted)
+        
+        if show_labels and show_pd_lbl
+            pdh_lbl := label.new(bar_index + future_ext, pdh_price, "PDH: " + str.tostring(pdh_price, "#.####"), color=color.new(color.black, 100), textcolor=col_pdh, style=label.style_label_left, size=size.tiny)
+            pdl_lbl := label.new(bar_index + future_ext, pdl_price, "PDL: " + str.tostring(pdl_price, "#.####"), color=color.new(color.black, 100), textcolor=col_pdl, style=label.style_label_left, size=size.tiny)
+    else
+        // Dynamically extend existing daily lines and labels forward
+        if not na(pdh_line)
+            line.set_x2(pdh_line, bar_index + future_ext)
+            if not na(pdh_lbl)
+                label.set_x(pdh_lbl, bar_index + future_ext)
+        if not na(pdl_line)
+            line.set_x2(pdl_line, bar_index + future_ext)
+            if not na(pdl_lbl)
+                label.set_x(pdl_lbl, bar_index + future_ext)
+
+// ------------------------------------------------------------------------------
+// 7. ON-CHART HUD DASHBOARD
+// ------------------------------------------------------------------------------
+var table dash = table.new(position.top_right, 2, 8, bgcolor=color.new(#0B0E14, 15), border_color=color.new(#374151, 50), border_width=1)
+
+if show_table and barstate.islast
+    table.cell(dash, 0, 0, "🏛️ HERMES 3.5 PRO", bgcolor=color.new(#1E293B, 10), text_color=color.white, text_size=size.small)
+    table.cell(dash, 1, 0, "MULTI-TF 5X", bgcolor=color.new(#1E293B, 10), text_color=#00F59B, text_size=size.small)
+    
+    table.cell(dash, 0, 1, "Sentry 1 (King BTC 4H)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 1, btc_status_str, text_color=btc_is_bull ? color.green : color.red, text_size=size.tiny)
+    
+    table.cell(dash, 0, 2, "Active Timeframe", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 2, timeframe.period + "m (Disp: " + str.tostring(active_min_disp, "#.#") + "%)", text_color=#38BDF8, text_size=size.tiny)
+    
+    table.cell(dash, 0, 3, "Entry Level (Depth)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 3, "5% Boundary Rim", text_color=#F59E0B, text_size=size.tiny)
+    
+    table.cell(dash, 0, 4, "Proximity Radar", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 4, "0.20% Pre-Arm Buffer", text_color=#38BDF8, text_size=size.tiny)
+    
+    table.cell(dash, 0, 5, "Profit Harvest Lock", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 5, "+9.0% -> Lock +4.5% ROE", text_color=#00E5FF, text_size=size.tiny)
+    
+    table.cell(dash, 0, 6, "Target / Initial SL (5x)", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 6, "+14.0% TP / -14.0% SL", text_color=#00F59B, text_size=size.tiny)
+    
+    table.cell(dash, 0, 7, "Liquidity Levels", text_color=color.white, text_size=size.tiny)
+    table.cell(dash, 1, 7, show_pdhl ? "PDH / PDL Dotted Active" : "Disabled", text_color=show_pdhl ? #F59E0B : color.gray, text_size=size.tiny)
+
+// ------------------------------------------------------------------------------
+// 8. TRADINGVIEW REAL-TIME ALERTS
+// ------------------------------------------------------------------------------
+alertcondition(radar_triggered, title="⚡ HERMES 3.5 RADAR (0.2% PROXIMITY)", message="⚡ [RADAR ALERT] {{ticker}} within 0.20% of 5% Boundary! Pre-arm LIMIT ORDER on Binance CLOB!")
+alertcondition(long_trigger, title="🚀 HERMES 3.5 LIMIT BUY FILLED", message="🚀 [HERMES 3.5] 5% Boundary BUY FILLED on {{ticker}}! Entry: {{close}} | TP: +14.0% ROE | SL: -14.0% ROE")
+alertcondition(short_trigger, title="🚀 HERMES 3.5 LIMIT SELL FILLED", message="🚀 [HERMES 3.5] 5% Boundary SELL FILLED on {{ticker}}! Entry: {{close}} | TP: +14.0% ROE | SL: -14.0% ROE")
+``

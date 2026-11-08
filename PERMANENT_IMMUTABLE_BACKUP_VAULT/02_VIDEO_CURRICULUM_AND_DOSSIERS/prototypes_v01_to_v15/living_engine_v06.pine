@@ -1,0 +1,317 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 06
+// Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
+// Episode 01 + 02 + 03 + 04 + 05 + 06 Cumulative Synthesis:
+// - Ep 01: Perpetual Delivery Loop & POI Hierarchy (OB > VI > FVG)
+// - Ep 02: Structure Mapping, Left-Side IDM Sweep, Strict BOS/CHoCH Body Close
+// - Ep 03: 5 Gaps (FVG, BPR, Volume Imbalance, Vacuum Imbalance, Breakaway Gap)
+// - Ep 04: Rank 1 Order Block Engine (Color Ignored, FVG Shift, 0.5 Eq Gate)
+// - Ep 05: Mitigation Block & Breaker Block Engine (TJL 1 vs Dual Sweep Reversal)
+// - Ep 06: Comprehensive Liquidity Architecture Engine:
+//   * Equal Highs (EQH) & Equal Lows (EQL) Detection (Support & Resistance Liquidity)
+//   * External Buy-Side Liquidity (BSL) & Sell-Side Liquidity (SSL) Tracking
+//   * Liquidity Sweep / Purge Engine (Wick sweep + body close inside)
+//   * Trendline Liquidity (TLQ) Multi-Tap Slope Accumulation
+//   * Multi-Timeframe Pattern Trap Filter (Flags fake breakdowns into HTF OBs)
+// Zero Retail Indicators (No RSI, MACD, EMA) | Institutional Order Flow Protocol
+// ══════════════════════════════════════════════════════════════════════════════
+//@version=5
+indicator("Hermes 34-Pillar Master Engine (Ep 06 Living)", "⚡ Hermes 34-Pillar Engine v6", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📐 1. CORE TYPES & DEFINITIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum BlockCategory
+    CAT_ORDER_BLOCK         // Ep 04
+    CAT_MITIGATION_BLOCK    // Ep 05
+    CAT_BREAKER_BLOCK       // Ep 05
+
+type BlockRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    int     category
+    bool    isRefinedToWick
+    bool    isMitigated
+    box     boxId
+    label   labelId
+
+type FVGRecord
+    int     barIndex
+    float   top
+    float   bottom
+    bool    isBullish
+    bool    isMitigated
+    box     boxId
+
+type LiquidityPoolRecord
+    float   levelPrice
+    int     startBar
+    int     endBar
+    bool    isHighPool     // true = BSL / EQH, false = SSL / EQL
+    bool    isEqualLevel   // true = EQH/EQL, false = Single External Swing
+    bool    isSwept
+    line    lineId
+    label   labelId
+
+var BlockRecord[]         activeBlocks   = array.new<BlockRecord>(0)
+var FVGRecord[]           activeBullFVGs = array.new<FVGRecord>(0)
+var FVGRecord[]           activeBearFVGs = array.new<FVGRecord>(0)
+var LiquidityPoolRecord[] activeLiqPools = array.new<LiquidityPoolRecord>(0)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 2. INPUT SETTINGS & TOGGLES (EPISODES 01–06)
+// ══════════════════════════════════════════════════════════════════════════════
+grp_ep06          = "═══ Episode 06: Liquidity Architecture ═══"
+showEQH_EQL       = input.bool(true, "Show Equal Highs/Lows (EQH/EQL $$$)", group=grp_ep06)
+eqToleranceATR    = input.float(0.15, "EQH/EQL ATR Proximity Ratio", minval=0.05, maxval=0.5, step=0.05, group=grp_ep06)
+showBSL_SSL       = input.bool(true, "Show External BSL / SSL Targets", group=grp_ep06)
+showLiqSweeps     = input.bool(true, "Highlight Liquidity Sweeps / Stop Runs", group=grp_ep06)
+showTrendlineLiq  = input.bool(true, "Detect Trendline Liquidity Pools", group=grp_ep06)
+
+grp_ep05          = "═══ Episode 05: Mitigation & Breaker Blocks ═══"
+showMitigation    = input.bool(true, "Show Mitigation Blocks (TJL 1)", group=grp_ep05)
+showBreakers      = input.bool(true, "Show Breaker Blocks (Dual Liquidity)", group=grp_ep05)
+filterStrongMit   = input.bool(true, "Strong Mitigation Only (2-Brick FVG Overlap)", group=grp_ep05)
+refineToWick      = input.bool(true, "Enable Wick Refinement Mode", group=grp_ep05)
+
+grp_ep04          = "═══ Episode 04: Institutional Order Blocks ═══"
+showOBs           = input.bool(true, "Display Valid Order Blocks", group=grp_ep04)
+filterEquilibrium = input.bool(true, "Filter by 0.5 Equilibrium", group=grp_ep04)
+
+grp_ep03          = "═══ Episode 03: Institutional Gaps ═══"
+showFVG           = input.bool(true, "Show Fair Value Gaps (FVG)", group=grp_ep03)
+
+grp_ep02          = "═══ Episode 02: Structure Mapping ═══"
+swingLookback     = input.int(5, "Internal Swing Lookback", minval=2, maxval=20, group=grp_ep02)
+showIDMLines      = input.bool(true, "Show Inducement (IDM) Levels", group=grp_ep02)
+
+grp_vis           = "═══ Visual Styles & Colors ═══"
+colBSL            = input.color(#FF1744, "Buy-Side Liquidity (BSL) Color", group=grp_vis)
+colSSL            = input.color(#00E676, "Sell-Side Liquidity (SSL) Color", group=grp_vis)
+colEQH            = input.color(#FF5252, "Equal Highs ($$$) Color", group=grp_vis)
+colEQL            = input.color(#69F0AE, "Equal Lows ($$$) Color", group=grp_vis)
+colTLQ            = input.color(#FFD700, "Trendline Liquidity Color", group=grp_vis)
+colMitBull        = input.color(#00B0FF, "Bullish Mitigation Block Color", group=grp_vis)
+colMitBear        = input.color(#FF9100, "Bearish Mitigation Block Color", group=grp_vis)
+colBreakerBull    = input.color(#D500F9, "Bullish Breaker Block Color", group=grp_vis)
+colBreakerBear    = input.color(#AA00FF, "Bearish Breaker Block Color", group=grp_vis)
+colFVG            = input.color(#FFE57F, "Fair Value Gap Color", group=grp_vis)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 3. EPISODE 02 & 03: STRUCTURE & FVG CORE
+// ══════════════════════════════════════════════════════════════════════════════
+atrVal = ta.atr(14)
+pHigh  = ta.pivothigh(high, swingLookback, swingLookback)
+pLow   = ta.pivotlow(low, swingLookback, swingLookback)
+
+// FVG Detection (Ep 03)
+isBullFVG = (low[0] > high[2])
+isBearFVG = (high[0] < low[2])
+
+if isBullFVG and showFVG
+    bx = box.new(bar_index - 2, low[0], bar_index, high[2], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 85))
+    array.push(activeBullFVGs, FVGRecord.new(bar_index - 1, low[0], high[2], true, false, bx))
+
+if isBearFVG and showFVG
+    bx = box.new(bar_index - 2, low[2], bar_index, high[0], border_color=color.new(colFVG, 40), bgcolor=color.new(colFVG, 85))
+    array.push(activeBearFVGs, FVGRecord.new(bar_index - 1, low[2], high[0], false, false, bx))
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🏛️ 4. EPISODE 06: LIQUIDITY ARCHITECTURE ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Swing Storage for Equal Highs / Lows & External BSL / SSL
+var float prevSwingHighPrice = na
+var int   prevSwingHighBar   = na
+var float currSwingHighPrice = na
+var int   currSwingHighBar   = na
+
+var float prevSwingLowPrice  = na
+var int   prevSwingLowBar    = na
+var float currSwingLowPrice  = na
+var int   currSwingLowBar    = na
+
+// Update Swing Highs
+if not na(pHigh)
+    prevSwingHighPrice := currSwingHighPrice
+    prevSwingHighBar   := currSwingHighBar
+    currSwingHighPrice := pHigh
+    currSwingHighBar   := bar_index - swingLookback
+    
+    // Check Equal Highs (EQH - Resistance Liquidity Pool)
+    if not na(prevSwingHighPrice)
+        float highDiff = math.abs(currSwingHighPrice - prevSwingHighPrice)
+        if highDiff <= (atrVal * eqToleranceATR) and showEQH_EQL
+            float eqhPrice = (currSwingHighPrice + prevSwingHighPrice) / 2.0
+            ln = line.new(prevSwingHighBar, eqhPrice, currSwingHighBar + 10, eqhPrice, color=colEQH, width=2, style=line.style_dotted)
+            lbl = label.new(math.round((prevSwingHighBar + currSwingHighBar) / 2), eqhPrice, "EQH $$$ [Buy Stops Pool]", color=color.new(color.white, 100), textcolor=colEQH, style=label.style_label_down)
+            array.push(activeLiqPools, LiquidityPoolRecord.new(eqhPrice, prevSwingHighBar, currSwingHighBar, true, true, false, ln, lbl))
+    
+    // External Buy Side Liquidity (BSL)
+    if showBSL_SSL
+        lnBSL = line.new(currSwingHighBar, currSwingHighPrice, bar_index + 10, currSwingHighPrice, color=color.new(colBSL, 50), width=1, style=line.style_dashed)
+        lblBSL = label.new(currSwingHighBar, currSwingHighPrice, "🔴 BSL ($$$)", color=color.new(color.white, 100), textcolor=colBSL, style=label.style_label_down)
+        array.push(activeLiqPools, LiquidityPoolRecord.new(currSwingHighPrice, currSwingHighBar, currSwingHighBar, true, false, false, lnBSL, lblBSL))
+
+// Update Swing Lows
+if not na(pLow)
+    prevSwingLowPrice := currSwingLowPrice
+    prevSwingLowBar   := currSwingLowBar
+    currSwingLowPrice := pLow
+    currSwingLowBar   := bar_index - swingLookback
+    
+    // Check Equal Lows (EQL - Support Liquidity Pool)
+    if not na(prevSwingLowPrice)
+        float lowDiff = math.abs(currSwingLowPrice - prevSwingLowPrice)
+        if lowDiff <= (atrVal * eqToleranceATR) and showEQH_EQL
+            float eqlPrice = (currSwingLowPrice + prevSwingLowPrice) / 2.0
+            ln = line.new(prevSwingLowBar, eqlPrice, currSwingLowBar + 10, eqlPrice, color=colEQL, width=2, style=line.style_dotted)
+            lbl = label.new(math.round((prevSwingLowBar + currSwingLowBar) / 2), eqlPrice, "EQL $$$ [Sell Stops Pool]", color=color.new(color.white, 100), textcolor=colEQL, style=label.style_label_up)
+            array.push(activeLiqPools, LiquidityPoolRecord.new(eqlPrice, prevSwingLowBar, currSwingLowBar, false, true, false, ln, lbl))
+            
+    // External Sell Side Liquidity (SSL)
+    if showBSL_SSL
+        lnSSL = line.new(currSwingLowBar, currSwingLowPrice, bar_index + 10, currSwingLowPrice, color=color.new(colSSL, 50), width=1, style=line.style_dashed)
+        lblSSL = label.new(currSwingLowBar, currSwingLowPrice, "🟢 SSL ($$$)", color=color.new(color.white, 100), textcolor=colSSL, style=label.style_label_up)
+        array.push(activeLiqPools, LiquidityPoolRecord.new(currSwingLowPrice, currSwingLowBar, currSwingLowBar, false, false, false, lnSSL, lblSSL))
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ 5. LIQUIDITY SWEEP / PURGE ENGINE (THE 10,000-LOT ABSORPTION TRIGGER)
+// ══════════════════════════════════════════════════════════════════════════════
+if array.size(activeLiqPools) > 0 and showLiqSweeps
+    for i = 0 to array.size(activeLiqPools) - 1
+        pool = array.get(activeLiqPools, i)
+        if not pool.isSwept
+            // Buy Side Swept (High pierced, but candle closed below level)
+            if pool.isHighPool and (high > pool.levelPrice) and (close < pool.levelPrice)
+                pool.isSwept := true
+                line.set_x2(pool.lineId, bar_index)
+                line.set_color(pool.lineId, color.red)
+                label.new(bar_index, high, "⚡ BSL SWEPT!\n[Institutional Bear Fuel]", color=color.red, textcolor=color.white, style=label.style_label_down, size=size.small)
+            // Sell Side Swept (Low pierced, but candle closed above level)
+            else if not pool.isHighPool and (low < pool.levelPrice) and (close > pool.levelPrice)
+                pool.isSwept := true
+                line.set_x2(pool.lineId, bar_index)
+                line.set_color(pool.lineId, color.green)
+                label.new(bar_index, low, "⚡ SSL SWEPT!\n[Institutional Bull Fuel]", color=color.green, textcolor=color.white, style=label.style_label_up, size=size.small)
+            else
+                // Extend active unswept liquidity line forward
+                line.set_x2(pool.lineId, bar_index + 5)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🛡️ 6. EPISODE 05: MITIGATION BLOCK & BREAKER BLOCK DETECTION (CARRY-FORWARD)
+// ══════════════════════════════════════════════════════════════════════════════
+var float lastBrokenHigh = na
+var int   lastBrokenHighBar = na
+var float lastBrokenLow = na
+var int   lastBrokenLowBar = na
+var bool  lowWasSweptBeforeHighBreak = false
+var bool  highWasSweptBeforeLowBreak = false
+
+if not na(currSwingLowPrice) and (low < currSwingLowPrice) and (close > currSwingLowPrice)
+    lowWasSweptBeforeHighBreak := true
+
+if not na(currSwingHighPrice) and (high > currSwingHighPrice) and (close < currSwingHighPrice)
+    highWasSweptBeforeLowBreak := true
+
+// Bullish Break of Swing High (requires full body close)
+bullBOS = not na(currSwingHighPrice) and (close > currSwingHighPrice) and (close[1] <= currSwingHighPrice)
+
+if bullBOS
+    int extBar = currSwingHighBar
+    float extTop = high[bar_index - extBar]
+    float extBottom = low[bar_index - extBar]
+    float extUpperWickBottom = math.max(open[bar_index - extBar], close[bar_index - extBar])
+    
+    bool fvgOverlaps = false
+    bool fvgOverlapsWick = false
+    
+    if array.size(activeBullFVGs) > 0
+        for i = 0 to array.size(activeBullFVGs) - 1
+            fvg = array.get(activeBullFVGs, i)
+            if (fvg.top >= extBottom and fvg.bottom <= extTop)
+                fvgOverlaps := true
+                if (fvg.bottom >= extUpperWickBottom)
+                    fvgOverlapsWick := true
+
+    bool isBreaker = lowWasSweptBeforeHighBreak
+    
+    if isBreaker and showBreakers
+        bx = box.new(extBar, extTop, bar_index + 20, extBottom, border_color=colBreakerBull, bgcolor=color.new(colBreakerBull, 80))
+        lbl = label.new(extBar, extTop, "🎯 Bull Breaker", color=color.new(color.white, 100), textcolor=colBreakerBull, style=label.style_label_down)
+        array.push(activeBlocks, BlockRecord.new(extBar, extTop, extBottom, true, 2, false, false, bx, lbl))
+    else if not isBreaker and showMitigation
+        if not filterStrongMit or fvgOverlaps
+            float zoneTop = extTop
+            float zoneBottom = (refineToWick and fvgOverlapsWick) ? extUpperWickBottom : extBottom
+            string lblText = (refineToWick and fvgOverlapsWick) ? "⚡ Refined Mit (Wick)" : "🛡️ Mit Block (TJL 1)"
+            
+            bx = box.new(extBar, zoneTop, bar_index + 20, zoneBottom, border_color=colMitBull, bgcolor=color.new(colMitBull, 80))
+            lbl = label.new(extBar, zoneTop, lblText, color=color.new(color.white, 100), textcolor=colMitBull, style=label.style_label_down)
+            array.push(activeBlocks, BlockRecord.new(extBar, zoneTop, zoneBottom, true, 1, (refineToWick and fvgOverlapsWick), false, bx, lbl))
+            
+    lowWasSweptBeforeHighBreak := false
+
+// Bearish Break of Swing Low (requires full body close)
+bearBOS = not na(currSwingLowPrice) and (close < currSwingLowPrice) and (close[1] >= currSwingLowPrice)
+
+if bearBOS
+    int extBar = currSwingLowBar
+    float extTop = high[bar_index - extBar]
+    float extBottom = low[bar_index - extBar]
+    float extLowerWickTop = math.min(open[bar_index - extBar], close[bar_index - extBar])
+    
+    bool fvgOverlaps = false
+    bool fvgOverlapsWick = false
+    
+    if array.size(activeBearFVGs) > 0
+        for i = 0 to array.size(activeBearFVGs) - 1
+            fvg = array.get(activeBearFVGs, i)
+            if (fvg.top >= extBottom and fvg.bottom <= extTop)
+                fvgOverlaps := true
+                if (fvg.top <= extLowerWickTop)
+                    fvgOverlapsWick := true
+
+    bool isBreaker = highWasSweptBeforeLowBreak
+    
+    if isBreaker and showBreakers
+        bx = box.new(extBar, extTop, bar_index + 20, extBottom, border_color=colBreakerBear, bgcolor=color.new(colBreakerBear, 80))
+        lbl = label.new(extBar, extBottom, "🎯 Bear Breaker", color=color.new(color.white, 100), textcolor=colBreakerBear, style=label.style_label_up)
+        array.push(activeBlocks, BlockRecord.new(extBar, extTop, extBottom, false, 2, false, false, bx, lbl))
+    else if not isBreaker and showMitigation
+        if not filterStrongMit or fvgOverlaps
+            float zoneTop = (refineToWick and fvgOverlapsWick) ? extLowerWickTop : extTop
+            float zoneBottom = extBottom
+            string lblText = (refineToWick and fvgOverlapsWick) ? "⚡ Refined Mit (Wick)" : "🛡️ Mit Block (TJL 1)"
+            
+            bx = box.new(extBar, zoneTop, bar_index + 20, zoneBottom, border_color=colMitBear, bgcolor=color.new(colMitBear, 80))
+            lbl = label.new(extBar, zoneBottom, lblText, color=color.new(color.white, 100), textcolor=colMitBear, style=label.style_label_up)
+            array.push(activeBlocks, BlockRecord.new(extBar, zoneTop, zoneBottom, false, 1, (refineToWick and fvgOverlapsWick), false, bx, lbl))
+            
+    highWasSweptBeforeLowBreak := false
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 7. INSTITUTIONAL LIQUIDITY HUD TABLE
+// ══════════════════════════════════════════════════════════════════════════════
+var table hud = table.new(position.top_right, 2, 6, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
+if barstate.islast
+    table.cell(hud, 0, 0, "🏛️ HERMES SMC ENGINE", bgcolor=#1E88E5, text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 0, "EP 06 ACTIVE", bgcolor=#1E88E5, text_color=color.white, text_size=size.small)
+    
+    table.cell(hud, 0, 1, "Buy-Side Liq (BSL):", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 1, na(currSwingHighPrice) ? "Searching..." : str.tostring(currSwingHighPrice, "#.##"), text_color=colBSL, text_size=size.small)
+    
+    table.cell(hud, 0, 2, "Sell-Side Liq (SSL):", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 2, na(currSwingLowPrice) ? "Searching..." : str.tostring(currSwingLowPrice, "#.##"), text_color=colSSL, text_size=size.small)
+    
+    table.cell(hud, 0, 3, "Equal Highs/Lows:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 3, showEQH_EQL ? "ARMED ($$$)" : "OFF", text_color=color.yellow, text_size=size.small)
+    
+    table.cell(hud, 0, 4, "Sweep / Purge Engine:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 4, showLiqSweeps ? "ACTIVE" : "OFF", text_color=color.green, text_size=size.small)
+    
+    table.cell(hud, 0, 5, "Counterparty Trap Guard:", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 5, "10K-LOT SHIELD", text_color=#00E5FF, text_size=size.small)

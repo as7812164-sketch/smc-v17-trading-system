@@ -1,0 +1,323 @@
+//@version=5
+indicator("HERMES PDH/PDL 1M Liquidity Sweep Sniper — Blue Dot Edition", shorttitle="HERMES 1M Sniper", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// ==============================================================================
+// 🏛️ HERMES PDH/PDL 1M LIQUIDITY SWEEP SNIPER — BLUE DOT EDITION (v5)
+// Designed for Akash Bhai | Institutional Order Flow & Turtle Soup Matrix
+//
+// New Updates & Visual Architecture:
+// 1. 🔵 BLUE DOT ENTRY MARKER: Luminous Electric Blue Dot (●) marks the exact entry candle.
+// 2. 💎 SWEEP IDENTIFIER: Cyan diamond marks the exact liquidity raid candle below PDL / above PDH.
+// 3. 🎯 EXACT EXIT TRACKING:
+//    - TP Hit: Target line turns bright neon green with a clean Target Diamond (◆).
+//    - SL Hit: Stop line turns red with a clean Cross (✖).
+// 4. 📏 ORIGINAL LONG/SHORT LINES: Clean Dotted Entry, Solid TP & Dashed SL lines that
+//    dynamically project forward and lock permanently onto the exit candle.
+// 5. 🚫 ZERO LOGO CLUTTER: Single-trade state machine strictly bans overlapping/stacked signals.
+// 6. 🛡️ 2-BULLET PROTOCOL: Max 2 attempts per day per institutional rules.
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// 1. INPUTS & CONFIGURATION
+// ------------------------------------------------------------------------------
+grp_exec      = "🎯 1. Target & Risk Parameters"
+rrr_mode      = input.string("1:2 RRR", "Take Profit Mode", options=["1:2 RRR", "1:3 RRR", "Target Opposite Daily Level", "Custom"], group=grp_exec)
+custom_rrr    = input.float(2.0, "Custom R:R Ratio (if Custom chosen)", minval=1.0, maxval=10.0, step=0.5, group=grp_exec)
+max_bullets   = input.int(2, "Max Bullets (SL Attempts) Per Day", minval=1, maxval=3, group=grp_exec, tooltip="Maximum 2 stop losses allowed per day to avoid catching falling knives.")
+sl_buffer_pct = input.float(0.02, "SL Buffer Beyond Sweep Wick (%)", minval=0.00, maxval=0.20, step=0.01, group=grp_exec)
+
+grp_visual    = "🎨 2. Visual Zen Styling"
+show_sweep_dot= input.bool(true, "Mark Sweep Candle (Cyan Diamond at Wick)", group=grp_visual)
+show_lines    = input.bool(true, "Draw Clean Entry, TP & SL Price Lines", group=grp_visual)
+show_exit_tags= input.bool(true, "Show Compact Exit Tags (🎯 TP / ✖ SL)", group=grp_visual)
+show_hud      = input.bool(true, "Show Minimalist Telemetry Table", group=grp_visual)
+
+grp_levels    = "📅 3. Daily Levels (PDH / PDL)"
+show_daily    = input.bool(true, "Display Previous Day High / Low Lines", group=grp_levels)
+col_pdh       = input.color(#F59E0B, "PDH Line Color (Amber)", group=grp_levels)
+col_pdl       = input.color(#38BDF8, "PDL Line Color (Cyan)", group=grp_levels)
+
+// ------------------------------------------------------------------------------
+// 2. FETCH PREVIOUS DAY HIGH & LOW (PDH / PDL)
+// ------------------------------------------------------------------------------
+pdh = request.security(syminfo.tickerid, "1D", high[1], lookahead=barmerge.lookahead_off)
+pdl = request.security(syminfo.tickerid, "1D", low[1], lookahead=barmerge.lookahead_off)
+is_new_day = ta.change(time("1D")) != 0
+
+// Determine Effective RRR
+float active_rrr = rrr_mode == "1:2 RRR" ? 2.0 : (rrr_mode == "1:3 RRR" ? 3.0 : (rrr_mode == "Custom" ? custom_rrr : 2.5))
+
+// ------------------------------------------------------------------------------
+// 3. PERSISTENT STATE MACHINE (ZERO SPAM, DYNAMIC LINES & EXITS)
+// ------------------------------------------------------------------------------
+// Trade State: 0 = IDLE, 1 = IN_LONG, -1 = IN_SHORT
+var int trade_state = 0
+var float cur_entry = na
+var float cur_sl    = na
+var float cur_tp    = na
+var int cur_entry_bar = na
+
+// Lines
+var line l_entry = na
+var line l_tp    = na
+var line l_sl    = na
+
+// Daily Tracking Counters
+var int long_bullets_used = 0
+var int short_bullets_used = 0
+var bool pdl_swept = false
+var bool pdh_swept = false
+
+var bool waiting_long_break = false
+var float green_h = na
+var float green_l = na
+
+var bool waiting_short_break = false
+var float red_h = na
+var float red_l = na
+
+// Sweep Candle Detection Flags (for Cyan Diamonds)
+bool sweep_low_candle  = false
+bool sweep_high_candle = false
+
+// Today's Performance Stats
+var int today_wins = 0
+var int today_losses = 0
+
+// Reset on each New Day
+if is_new_day
+    trade_state := 0
+    cur_entry := na
+    cur_sl := na
+    cur_tp := na
+    cur_entry_bar := na
+    long_bullets_used := 0
+    short_bullets_used := 0
+    pdl_swept := false
+    pdh_swept := false
+    waiting_long_break := false
+    waiting_short_break := false
+    today_wins := 0
+    today_losses := 0
+
+// Signals for on-chart plotting
+bool long_entry_signal  = false
+bool short_entry_signal = false
+bool tp_hit_signal      = false
+bool sl_hit_signal      = false
+float tp_hit_price      = na
+float sl_hit_price      = na
+
+// ------------------------------------------------------------------------------
+// 4. ACTIVE TRADE MANAGEMENT (TRACK EXIT & LOCK LINES)
+// ------------------------------------------------------------------------------
+if trade_state == 1
+    // Long Trade in progress
+    // Check Take Profit Hit
+    if high >= cur_tp
+        tp_hit_signal := true
+        tp_hit_price := cur_tp
+        today_wins += 1
+        trade_state := 0 // Closed with WIN
+        
+        if show_lines and not na(l_entry)
+            line.set_x2(l_entry, bar_index)
+            line.set_x2(l_tp, bar_index)
+            line.set_x2(l_sl, bar_index)
+            line.set_color(l_tp, #00F59B)
+            line.set_width(l_tp, 3)
+            
+        if show_exit_tags
+            label.new(bar_index, cur_tp, text="🎯 TP HIT (+R)", color=color.new(#00F59B, 20), textcolor=color.white, style=label.style_label_down, size=size.tiny)
+            
+    // Check Stop Loss Hit
+    else if low <= cur_sl
+        sl_hit_signal := true
+        sl_hit_price := cur_sl
+        today_losses += 1
+        trade_state := 0 // Closed with LOSS (Bullet consumed)
+        
+        if show_lines and not na(l_entry)
+            line.set_x2(l_entry, bar_index)
+            line.set_x2(l_tp, bar_index)
+            line.set_x2(l_sl, bar_index)
+            line.set_color(l_sl, #FF3B69)
+            line.set_width(l_sl, 2)
+            
+        if show_exit_tags
+            label.new(bar_index, cur_sl, text="✖ SL HIT (-1R)", color=color.new(#FF3B69, 20), textcolor=color.white, style=label.style_label_up, size=size.tiny)
+            
+    else
+        // Trade still active -> extend lines forward with candles
+        if show_lines and not na(l_entry)
+            line.set_x2(l_entry, bar_index + 1)
+            line.set_x2(l_tp, bar_index + 1)
+            line.set_x2(l_sl, bar_index + 1)
+
+else if trade_state == -1
+    // Short Trade in progress
+    // Check Take Profit Hit
+    if low <= cur_tp
+        tp_hit_signal := true
+        tp_hit_price := cur_tp
+        today_wins += 1
+        trade_state := 0 // Closed with WIN
+        
+        if show_lines and not na(l_entry)
+            line.set_x2(l_entry, bar_index)
+            line.set_x2(l_tp, bar_index)
+            line.set_x2(l_sl, bar_index)
+            line.set_color(l_tp, #00F59B)
+            line.set_width(l_tp, 3)
+            
+        if show_exit_tags
+            label.new(bar_index, cur_tp, text="🎯 TP HIT (+R)", color=color.new(#00F59B, 20), textcolor=color.white, style=label.style_label_up, size=size.tiny)
+            
+    // Check Stop Loss Hit
+    else if high >= cur_sl
+        sl_hit_signal := true
+        sl_hit_price := cur_sl
+        today_losses += 1
+        trade_state := 0 // Closed with LOSS
+        
+        if show_lines and not na(l_entry)
+            line.set_x2(l_entry, bar_index)
+            line.set_x2(l_tp, bar_index)
+            line.set_x2(l_sl, bar_index)
+            line.set_color(l_sl, #FF3B69)
+            line.set_width(l_sl, 2)
+            
+        if show_exit_tags
+            label.new(bar_index, cur_sl, text="✖ SL HIT (-1R)", color=color.new(#FF3B69, 20), textcolor=color.white, style=label.style_label_down, size=size.tiny)
+            
+    else
+        if show_lines and not na(l_entry)
+            line.set_x2(l_entry, bar_index + 1)
+            line.set_x2(l_tp, bar_index + 1)
+            line.set_x2(l_sl, bar_index + 1)
+
+// ------------------------------------------------------------------------------
+// 5. SEARCHING FOR NEW ENTRIES (ONLY WHEN IDLE — ZERO OVERLAPPING)
+// ------------------------------------------------------------------------------
+if trade_state == 0
+    // Detect Liquidity Sweep Candle
+    if low < pdl
+        sweep_low_candle := not pdl_swept // First bar that breaks
+        pdl_swept := true
+        
+    if high > pdh
+        sweep_high_candle := not pdh_swept
+        pdh_swept := true
+        
+    // --- LONG SETUP (PDL SWEEP REVERSAL) ---
+    if pdl_swept and (long_bullets_used < max_bullets)
+        if not waiting_long_break
+            // 1m Green confirmation candle closing after sweep
+            bool is_green = close > open
+            bool near_sweep = (low <= pdl or low[1] <= pdl)
+            if is_green and near_sweep
+                green_h := high
+                green_l := low
+                waiting_long_break := true
+        else
+            // Confirmation Trigger: Price breaks the high of the green candle
+            if ta.crossover(high, green_h) and (close >= pdl * 0.995)
+                long_entry_signal := true
+                cur_entry := green_h
+                cur_sl := green_l * (1.0 - (sl_buffer_pct / 100.0))
+                float risk = cur_entry - cur_sl
+                cur_tp := rrr_mode == "Target Opposite Daily Level" and pdh > cur_entry ? pdh : (cur_entry + (risk * active_rrr))
+                cur_entry_bar := bar_index
+                
+                trade_state := 1
+                long_bullets_used += 1
+                waiting_long_break := false
+                
+                // Initialize Clean Long/Short Lines (Pehle Wala Style)
+                if show_lines
+                    l_entry := line.new(bar_index, cur_entry, bar_index + 2, cur_entry, color=#F59E0B, style=line.style_dotted, width=1)
+                    l_tp    := line.new(bar_index, cur_tp, bar_index + 2, cur_tp, color=#00F59B, style=line.style_solid, width=2)
+                    l_sl    := line.new(bar_index, cur_sl, bar_index + 2, cur_sl, color=#FF3B69, style=line.style_dashed, width=1)
+                    
+            // Invalidate pending break if price dumps deeply below the green candle low
+            else if close < green_l * 0.997
+                waiting_long_break := false
+
+    // --- SHORT SETUP (PDH SWEEP REVERSAL) ---
+    if pdh_swept and (short_bullets_used < max_bullets)
+        if not waiting_short_break
+            bool is_red = close < open
+            bool near_sweep = (high >= pdh or high[1] >= pdh)
+            if is_red and near_sweep
+                red_h := high
+                red_l := low
+                waiting_short_break := true
+        else
+            if ta.crossunder(low, red_l) and (close <= pdh * 1.005)
+                short_entry_signal := true
+                cur_entry := red_l
+                cur_sl := red_h * (1.0 + (sl_buffer_pct / 100.0))
+                float risk = cur_sl - cur_entry
+                cur_tp := rrr_mode == "Target Opposite Daily Level" and pdl < cur_entry ? pdl : (cur_entry - (risk * active_rrr))
+                cur_entry_bar := bar_index
+                
+                trade_state := -1
+                short_bullets_used += 1
+                waiting_short_break := false
+                
+                if show_lines
+                    l_entry := line.new(bar_index, cur_entry, bar_index + 2, cur_entry, color=#F59E0B, style=line.style_dotted, width=1)
+                    l_tp    := line.new(bar_index, cur_tp, bar_index + 2, cur_tp, color=#00F59B, style=line.style_solid, width=2)
+                    l_sl    := line.new(bar_index, cur_sl, bar_index + 2, cur_sl, color=#FF3B69, style=line.style_dashed, width=1)
+                    
+            else if close > red_h * 1.003
+                waiting_short_break := false
+
+// ------------------------------------------------------------------------------
+// 6. ON-CHART PLOTTING: 🔵 BLUE DOT ENTRY & CLEAN EXITS (ZERO BULKY CLUTTER)
+// ------------------------------------------------------------------------------
+// A. Optional Sweep Marker: Cyan Diamond at the exact sweep wick
+plotshape(show_sweep_dot and sweep_low_candle, title="PDL Sweep Candle", style=shape.diamond, location=location.belowbar, color=color.new(#38BDF8, 0), size=size.tiny)
+plotshape(show_sweep_dot and sweep_high_candle, title="PDH Sweep Candle", style=shape.diamond, location=location.abovebar, color=color.new(#F59E0B, 0), size=size.tiny)
+
+// B. 🔵 THE BLUE DOT ENTRY MARKER: Luminous Electric Blue Dot on the entry candle!
+plotshape(long_entry_signal, title="Long Entry (Electric Blue Dot)", style=shape.circle, location=location.belowbar, color=#00E5FF, size=size.small)
+plotshape(short_entry_signal, title="Short Entry (Electric Blue Dot)", style=shape.circle, location=location.abovebar, color=#00E5FF, size=size.small)
+
+// C. Take Profit (TP) Hit Mark: Pure Green Diamond on the exit price
+plotshape(tp_hit_signal ? tp_hit_price : na, title="Take Profit Hit Mark", style=shape.diamond, location=location.absolute, color=#00F59B, size=size.small)
+
+// D. Stop Loss (SL) Hit Mark: Pure Red Cross on the exit price
+plotshape(sl_hit_signal ? sl_hit_price : na, title="Stop Loss Hit Mark", style=shape.xcross, location=location.absolute, color=#FF3B69, size=size.small)
+
+// E. Daily Range Levels (PDH & PDL)
+plot(show_daily ? pdh : na, "Previous Day High (PDH)", color=col_pdh, linewidth=1, style=plot.style_circles)
+plot(show_daily ? pdl : na, "Previous Day Low (PDL)", color=col_pdl, linewidth=1, style=plot.style_circles)
+
+// ------------------------------------------------------------------------------
+// 7. MINIMALIST HUD TABLE (ZEN TELEMETRY)
+// ------------------------------------------------------------------------------
+var table hud = table.new(position.top_right, 2, 4, bgcolor=color.new(#0b0e14, 20), border_color=color.new(#2A2E39, 40), border_width=1)
+if barstate.islast and show_hud
+    string status_str = trade_state == 1 ? "🔵 LONG ACTIVE" : (trade_state == -1 ? "🔵 SHORT ACTIVE" : "⚪ SCANNING")
+    color status_col  = trade_state == 1 ? #00E5FF : (trade_state == -1 ? #00E5FF : #787B86)
+    
+    table.cell(hud, 0, 0, "HERMES SNIPER", bgcolor=#121722, text_color=#00E5FF, text_size=size.small)
+    table.cell(hud, 1, 0, "BLUE DOT EDITION", bgcolor=#121722, text_color=color.white, text_size=size.small)
+    
+    table.cell(hud, 0, 1, "Status", bgcolor=#121722, text_color=#787B86, text_size=size.tiny)
+    table.cell(hud, 1, 1, status_str, bgcolor=#121722, text_color=status_col, text_size=size.tiny)
+    
+    table.cell(hud, 0, 2, "Bullets", bgcolor=#121722, text_color=#787B86, text_size=size.tiny)
+    table.cell(hud, 1, 2, "L: " + str.tostring(long_bullets_used) + "/" + str.tostring(max_bullets) + " | S: " + str.tostring(short_bullets_used) + "/" + str.tostring(max_bullets), bgcolor=#121722, text_color=color.white, text_size=size.tiny)
+    
+    table.cell(hud, 0, 3, "Score", bgcolor=#121722, text_color=#787B86, text_size=size.tiny)
+    table.cell(hud, 1, 3, "W: " + str.tostring(today_wins) + " | L: " + str.tostring(today_losses), bgcolor=#121722, text_color=#00F59B, text_size=size.tiny)
+
+// ------------------------------------------------------------------------------
+// 8. ALERTS
+// ------------------------------------------------------------------------------
+alertcondition(long_entry_signal, title="🔵 Blue Dot BUY Triggered", message="HERMES 1M: PDL Sweep Blue Dot BUY filled at {{close}}")
+alertcondition(short_entry_signal, title="🔵 Blue Dot SELL Triggered", message="HERMES 1M: PDH Sweep Blue Dot SELL filled at {{close}}")
+alertcondition(tp_hit_signal, title="🎯 Take Profit Hit", message="HERMES 1M: Take Profit Target HIT! (+R Locked)")
+alertcondition(sl_hit_signal, title="✖ Stop Loss Hit", message="HERMES 1M: Stop Loss Hit. Bullet Consumed.")
