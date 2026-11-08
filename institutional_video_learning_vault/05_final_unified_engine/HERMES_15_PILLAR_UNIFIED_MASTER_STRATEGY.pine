@@ -76,6 +76,13 @@ var FVGRecord[]           activeBearFVGs = array.new<FVGRecord>(0)
 var LiquidityPoolRecord[] activeLiqPools = array.new<LiquidityPoolRecord>(0)
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 1. MASTER HUD & DISPLAY SETTINGS
+// ══════════════════════════════════════════════════════════════════════════════
+grp_hud           = "═══ 0. Master Institutional HUD Dashboard ═══"
+showHUD           = input.bool(true, "Display Institutional Real-Time HUD Table", group=grp_hud)
+hudTextSize       = input.string("Small", "HUD Text Size", options=["Tiny", "Small", "Normal"], group=grp_hud)
+
 // ⚙️ 2. INPUT SETTINGS & TOGGLES (EPISODES 01–09)
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -1166,7 +1173,7 @@ if isTwoCandleCollapseBear
 // 📊 10. INSTITUTIONAL MASTER HUD & REAL-TIME VALUATION AUDIT
 // ══════════════════════════════════════════════════════════════════════════════
 var table hud = table.new(position.top_right, 2, 25, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
-if barstate.islast
+if showHUD and barstate.islast
     table.cell(hud, 0, 0, "🏛️ HERMES SMC ENGINE", bgcolor=#1E88E5, text_color=color.white, text_size=size.small)
     table.cell(hud, 1, 0, "EP 15 ACTIVE (STRONG/WEAK/COND OBs)", bgcolor=#1E88E5, text_color=color.black, text_size=size.small)
     

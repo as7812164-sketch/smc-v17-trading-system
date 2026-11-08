@@ -1,76 +1,36 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// HERMES 34-PILLAR LIVING INSTITUTIONAL ENGINE — EPISODE 13
-// Architecture: Shoaib Khan / MS Trading 34-Video Masterclass Series
-// Cumulative Synthesis (Episodes 01 to 12):
-// - Ep 01: Perpetual Delivery Loop & POI Hierarchy (OB > VI > FVG)
-// - Ep 02: Structure Mapping, Left-Side IDM Sweep, Strict BOS/CHoCH Body Close
-// - Ep 03: 5 Gaps (FVG, BPR, Volume Imbalance, Vacuum Imbalance, Breakaway Gap)
-// - Ep 04: Rank 1 Order Block Engine (Color Ignored, FVG Shift, 0.5 Eq Gate)
-// - Ep 05: Mitigation Block & Breaker Block Engine (TJL 1 vs Dual Sweep Reversal)
-// - Ep 06: Core Liquidity Architecture (EQH/EQL, Trendlines, HTF Pattern Bias)
-// - Ep 07: Unified 12-Liquidity Architecture & Daily Bias Predictor (LRL vs HRL, Voids, PDH/PDL Sweeps vs Runs)
-// - Ep 08: The Perfect Institutional Entry Engine (5 Entry Models, Displacement FVG+OB, LTF Wick Rule)
-// - Ep 09: Premium & Discount Valuation Engine & Institutional Psychology:
-//   * Stripped 3-Level Fibonacci Engine (0.0 Origin, 0.5 Equilibrium, 1.0 Extreme)
-//   * Strict Valuation Filter: BUY ONLY in Discount (<0.5) | SELL ONLY in Premium (>0.5)
-//   * Institutional 1:3 Risk-to-Reward Execution Protocol with Fast Breakeven at 1:1.2R
-//   * Mathematical 50% Win Rate Edge (10-trade doubling math)
-//   * Dynamic Lot Sizing Engine ($100 Account Case Study, 2%-4% risk)
-// - Ep 10: Optimal Trade Entry (OTE) & Inside Bar Institutional Framework:
-//   * ICT Golden Zone Fibonacci Engine (0.618 - 0.790 Pocket)
-//   * Trend Continuation vs Reversal (Mandatory MSS Sentry for Reversals)
-//   * Multi-Timeframe Execution Matrix (1H Setup -> 5m MSS Sniper Refinement)
-//   * Fractal OTE Engine (HTF OTE -> LTF OTE inside MSS to shrink Stop Loss, 1:7 BTC setup)
-//   * The 3 Superchargers of OTE: Confluence Triad (OTE + OB / FVG / Mitigation)
-//   * Inside Bar Institutional Doctrine (Debunking retail dogma, empirical 100-sample law)
-//   * Inside Bar Order Block Selection (Sniper SL vs clumsy mother candle OB)
-//   * Three Candidate POI Architecture (Mitigation, OTE, Extreme OB - No Guesswork Rule)
-// - Ep 11: ICT Killzones & Pre-Asian Funded Strategy:
-//   * The 4 Institutional Sessions (UTC-4 NY: Asian 20-00, London 02-05, NY 07-10, London Close 10-12)
-//   * Pre-Asian Surveillance Window (3:30 PM - 8:00 PM NY) & 3 Asian Execution Models
-// - Ep 15: The Truth About Order Blocks | Strong, Weak & Conditional Order Blocks Explained:
-//   * The 3 Institutional Order Block Categories: Strong OB (80%+ Prob), Weak OB (Retail Trap), Conditional OB (Context-Gated)
-//   * The 5 Structural Parameters: Candle Color Alignment, Mandatory FVG Creation, Prior Liquidity Sweep, Swing Extreme Alignment, HTF POI Nesting
-//   * The Weak OB Liquidity Trap: Weak internal OBs act as Inducement fuel for deeper Strong OBs (Strictly Avoid / Target as Liquidity)
-//   * The Conditional OB Protocol: Blind limit orders banned; executed ONLY upon Lower Timeframe (5m) Market Structure Shift (MSS) displacement retest
-//   * Multi-Timeframe Alignment: 4H HTF POI -> 1H / 15m Refinement -> 5m Execution Sentry Gate with 0.5 ATR buffer
-// - Ep 14: CBDR Explained | Predict Day High & Day Low | SMC and ICT Trading Strategy:
-//   * Central Bank Dealers Range (CBDR) Window: 02:00 PM to 08:00 PM NY (14:00 - 20:00 UTC-4)
-//   * 15-Minute Body-to-Body Measurement Law: Wicks strictly excluded (Highest/Lowest Body close/open)
-//   * Standard Deviation Projections: Lower SD -1.0 to -4.0 | Upper SD +1.0 to +4.0
-//   * Day Low / Day High Institutional Prediction Matrix:
-//     - Bullish Daily Bias -> Absolute Day Low forms at SD -1.0 or SD -2.0
-//     - Bearish Daily Bias -> Absolute Day High forms at SD +1.0 or SD +2.0
-//   * Mandatory 5m MSS Confirmation Sentry: Blind limit orders banned; confirmation locks Day Extreme
-//   * CBDR Pip Range Filter: Ideal Gold range = 100 to 150 pips
-//   * Blown Out Range Elimination: If CBDR > 200-250 pips (e.g. 380 pips), ABORT CBDR and trade Session Models!
-//   * News Impact Absorption Engine: News as institutional catalyst to deliver price into SD 1 or 2
-// - Ep 13: How to Find Bias in Trading - Part 3 | ICT MSS, IDM, Killzones & Session Strategies:
-//   * Perpetual Institutional Delivery Loop: POI <---> Liquidity Pool
-//   * Multi-Timeframe Alignment Matrix: Weekly->4H | Daily->1H | 4H->15m | 1H->5m
-//   * 4 POI Entry Conditions: Displacement FVG Entry when MSS is far away (Displacement = clean FVG)
-//   * POI Touch != Blind Entry: Mandatory LTF MSS Confirmation
-//   * Heavy Truck vs Maruti Alto Analogy: HTF Force Vector strictly dominates LTF POIs
-//   * Football Match Analogy: Goalposts = Liquidity Pools | Ball = Price | Players = POIs
-//   * All-Time High (ATH) Bias Finding: Psychological Round Numbers + 3-Candle Exhaustion Top
-//   * IDM vs MSS Definitive Separation: IDM = Trend Continuation | MSS = Trend Reversal
-//   * MS Dhoni Helicopter Shot Law: Skill acquisition curve from 30% to 80% through deliberate practice
-//   * Indian Market Context: Nifty/Bank Nifty (15m/30m HTF -> 5m/1m LTF) | UTC-4 New York Time Standardization
-//   * 3 Trade Management Protections: System Lockdown (Set & Forget), Fast Breakeven at 1:1.2R, 50% Partial Booking
-//   * 5-Day Gold Performance Audit: 4 Trades, 3 Wins, 1 Loss, 75% Win Rate, +10.7R Net Gain
-// - Ep 12: London & New York Session High-Accuracy Execution Engine:
-//   * Rule 1: Strict Directional Bias Mandate (Bullish -> Sweep SSL only | Bearish -> Sweep BSL only)
-//   * Rule 2: Strict Dead-Zone Trading Ban (00:00-02:00 & 12:00-20:00 absolute trade block)
-//   * Counter-Bias Filter (Strict ban on taking counter-bias trades even if profitable)
-//   * Model 1: London Asian-Liquidity Purge (02:00 - 05:00 NY -> Sweeps Asian Low -> Target Asian High)
-//   * Model 2: New York Session Continuation (07:00 - 10:00 NY -> Taps London POI -> Expansion)
-//   * Model 3: New York Judas Reversal (07:00 - 10:00 NY -> Purges London Low -> Target Day's High -> 1:5 to 1:7.5)
-//   * High-Velocity Target Selector: Target = max(AsianHigh, LondonHigh)
-//   * 10-Day Gold Performance Audit: 8 Trades, 7 Wins, 1 Loss, 87.5% Win Rate, +30.5R Net Alpha
-// Zero Retail Indicators (No RSI, MACD, EMA) | Institutional Order Flow Protocol
+// HERMES 15-PILLAR UNIFIED INSTITUTIONAL MASTER STRATEGY — DEFINITIVE SYNTHESIS
+// Complete Quantitative Integration of Episodes 01 through 15 (MS Trading / Shoaib Khan)
+//
+// 🏛️ THE 15 FOUNDATION PILLARS INTEGRATED:
+// - Pillar 01: Valid Pullback Engine (Inside Bar Filtration, Candle Extreme Sweep)
+// - Pillar 02: Structural Mapping & Break of Structure (BOS vs CHoCH Body Close Law)
+// - Pillar 03: True Inducement (IDM) & Trap Architecture (First Valid Pullback Sweep)
+// - Pillar 04: Institutional Order Blocks (Color-Neutral, FVG Creation, 0.5 Equilibrium)
+// - Pillar 05: Fair Value Gap (FVG) / Imbalance Engine (3-Candle, C.E. 50%, Inversion I-FVG)
+// - Pillar 06: Support/Resistance & Trendline Liquidity Traps (EQH/EQL Engineered Pools)
+// - Pillar 07: Internal vs External Liquidity & Low/High Resistance Liquidity (LRLR / HRLR)
+// - Pillar 08: The Perfect Institutional Entry Protocol (HTF POI -> 5m MSS -> IDM Sweep -> Sniper)
+// - Pillar 09: Premium & Discount Valuation Engine (0.5 Equilibrium Gate, 1:3 RR Rule)
+// - Pillar 10: Optimal Trade Entry (OTE 0.618-0.786 Pocket) & Inside Bar Optimization
+// - Pillar 11: Asian Range Judas Swing & Pre-Asian Funded Strategy (19:00 - 03:00 NY)
+// - Pillar 12: London & New York Killzones & Silver Bullet Cycles (02-05 NY, 07-10 NY, 10-11 NY)
+// - Pillar 13: Finding Bias in Trading (Top-Down Weekly/Daily Narrative Alignment)
+// - Pillar 14: Central Bank Dealers Range (CBDR) Day High/Low Predictor Engine (SD 1 to 4)
+// - Pillar 15: The 7-Condition Order Block Taxonomy & Weak OB == IDM Engine:
+//   * 5 Structural Anatomy Types (Type 1 Same Color, Type 2 Opp Color, Type 3 Breached, Type 4 Extreme, Type 5 Mid-Leg)
+//   * 2 Conditional Formations (Post-Swing Sweep & Post-IDM Sweep = STRONGEST OBs)
+//   * Weak OB == IDM Revelation (Retail trap fuel for Smart Money)
+//   * Same-Timeframe Body Close Invalidation Rule (Wick = Liquidity Sweep)
+//
+// 🛡️ DYNAMIC PROFIT ARMOR (Hermes Quantitative Covenant):
+// - Breakeven: Shift SL to Entry + Fee Shield at exactly +1.0% Profit ($0.00 Risk)
+// - Trailing SL: Dynamic profit lock at +1.8% Profit
+// - Take Profit (TP): Target +2.8%
+// - Max Stop Loss (SL): Strict max risk -2.8% on 5x Isolated Margin
 // ══════════════════════════════════════════════════════════════════════════════
 //@version=5
-indicator("Hermes 34-Pillar Master Engine (Ep 15 Living)", "⚡ Hermes 34-Pillar Engine v15", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+indicator("HERMES 15-PILLAR UNIFIED MASTER STRATEGY", "🏛️ HERMES 15-PILLAR MASTER", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
 // ══════════════════════════════════════════════════════════════════════════════
 // 📐 1. CORE TYPES & DEFINITIONS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -116,6 +76,13 @@ var FVGRecord[]           activeBearFVGs = array.new<FVGRecord>(0)
 var LiquidityPoolRecord[] activeLiqPools = array.new<LiquidityPoolRecord>(0)
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚙️ 1. MASTER HUD & DISPLAY SETTINGS
+// ══════════════════════════════════════════════════════════════════════════════
+grp_hud           = "═══ 0. Master Institutional HUD Dashboard ═══"
+showHUD           = input.bool(true, "Display Institutional Real-Time HUD Table", group=grp_hud)
+hudTextSize       = input.string("Small", "HUD Text Size", options=["Tiny", "Small", "Normal"], group=grp_hud)
+
 // ⚙️ 2. INPUT SETTINGS & TOGGLES (EPISODES 01–09)
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -1206,7 +1173,7 @@ if isTwoCandleCollapseBear
 // 📊 10. INSTITUTIONAL MASTER HUD & REAL-TIME VALUATION AUDIT
 // ══════════════════════════════════════════════════════════════════════════════
 var table hud = table.new(position.top_right, 2, 25, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
-if barstate.islast
+if showHUD and barstate.islast
     table.cell(hud, 0, 0, "🏛️ HERMES SMC ENGINE", bgcolor=#1E88E5, text_color=color.white, text_size=size.small)
     table.cell(hud, 1, 0, "EP 15 ACTIVE (STRONG/WEAK/COND OBs)", bgcolor=#1E88E5, text_color=color.black, text_size=size.small)
     
