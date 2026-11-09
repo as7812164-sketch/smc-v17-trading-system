@@ -287,7 +287,7 @@ def init_db():
     # Cloud Vault Persistence (Guarantees zero data loss across Render restarts)
     try:
         from database.cloud_vault import pull_and_restore_vault_state
-        pull_and_restore_vault_state()
+        # pull_and_restore_vault_state() # Disabled on Oracle VPS
     except Exception:
         pass
 
@@ -1435,50 +1435,54 @@ def open_paper_trade_hermes4(zone: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 def update_paper_trade_mark_price(trade_id: int, mark_price: float):
-    """Updates highest_price, lowest_price, live ROI%, MAE% and MFE% seen during trade lifetime."""
+    """Updates highest_price, lowest_price, live ROI%, MAE% and MFE% seen during trade lifetime with Monotonic Ratchet Lock."""
     if not mark_price or mark_price <= 0:
         return
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT entry_price, highest_price, lowest_price, side, position_size_usdt, sl_price FROM paper_trades WHERE id = ? AND status = 'OPEN'",
+            "SELECT entry_price, highest_price, lowest_price, side, position_size_usdt, sl_price, mfe_pct, mae_pct FROM paper_trades WHERE id = ? AND status = 'OPEN'",
             (trade_id,)
         ).fetchone()
         if not row:
             return
         entry_price = float(row["entry_price"])
-        highest = max(float(row["highest_price"] or entry_price), mark_price)
-        lowest = min(float(row["lowest_price"] or entry_price), mark_price)
+        if entry_price <= 0:
+            return
+
+        # Monotonic high and low watermarks
+        prev_highest = float(row["highest_price"]) if row["highest_price"] is not None and float(row["highest_price"]) > 0 else entry_price
+        prev_lowest = float(row["lowest_price"]) if row["lowest_price"] is not None and float(row["lowest_price"]) > 0 else entry_price
+
+        highest = max(prev_highest, mark_price)
+        lowest = min(prev_lowest, mark_price)
         side = (row["side"] or "BUY").upper()
         leverage = 5.0
 
+        prev_mfe = float(row["mfe_pct"]) if row["mfe_pct"] is not None else 0.0
+        prev_mae = float(row["mae_pct"]) if row["mae_pct"] is not None else 0.0
+
         if side in ("BUY", "LONG"):
-            roi_pct = round(((mark_price - entry_price) / entry_price * 100.0) * leverage, 2) if entry_price > 0 else 0.0
-            mfe_pct = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
-            mae_pct = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
-            conn.execute("""
-            UPDATE paper_trades SET
-                highest_price = ?,
-                lowest_price = ?,
-                roi_pct = ?,
-                mfe_pct = ?,
-                mae_pct = ?
-            WHERE id = ?
-            """, (highest, lowest, roi_pct, mfe_pct, mae_pct, trade_id))
+            roi_pct = round(((mark_price - entry_price) / entry_price * 100.0) * leverage, 2)
+            calc_mfe = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
+            calc_mae = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
         else:
-            roi_pct = round(((entry_price - mark_price) / entry_price * 100.0) * leverage, 2) if entry_price > 0 else 0.0
-            mfe_pct = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
-            mae_pct = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2) if entry_price > 0 else 0.0
+            roi_pct = round(((entry_price - mark_price) / entry_price * 100.0) * leverage, 2)
+            calc_mfe = round(max(0.0, (entry_price - lowest) / entry_price * 100.0 * leverage), 2)
+            calc_mae = round(max(0.0, (highest - entry_price) / entry_price * 100.0 * leverage), 2)
 
-            conn.execute("""
-            UPDATE paper_trades SET
-                highest_price = ?,
-                lowest_price = ?,
-                roi_pct = ?,
-                mfe_pct = ?,
-                mae_pct = ?
-            WHERE id = ?
-            """, (highest, lowest, roi_pct, mfe_pct, mae_pct, trade_id))
+        # Monotonic High-Watermark Ratchet: MFE and MAE can NEVER decrease during trade lifetime
+        final_mfe = max(prev_mfe, calc_mfe, round(roi_pct, 2) if roi_pct > 0 else 0.0)
+        final_mae = max(prev_mae, calc_mae, round(abs(roi_pct), 2) if roi_pct < 0 else 0.0)
 
+        conn.execute("""
+        UPDATE paper_trades SET
+            highest_price = ?,
+            lowest_price = ?,
+            roi_pct = ?,
+            mfe_pct = ?,
+            mae_pct = ?
+        WHERE id = ?
+        """, (highest, lowest, roi_pct, final_mfe, final_mae, trade_id))
         conn.commit()
 
 def sync_paper_trade_exchange_fill(trade_id: int, entry_price: float, position_size_usdt: Optional[float] = None, sl_price: Optional[float] = None, tp_price: Optional[float] = None):
@@ -1781,7 +1785,7 @@ def get_paper_trades_history(limit: int = 50, timeframe: Optional[str] = None, m
             params.append(mode)
         else:
             # Default to Hermes 3.5 history (Sections 1-10)
-            query = "SELECT * FROM paper_trades WHERE status != 'OPEN' AND (mode = 'HERMES_3.5_RADAR_HARVEST' OR mode = 'HERMES_3.0_MODEL_2A' OR mode IS NULL OR mode = '') AND (account_id IS NULL OR account_id <= 10)"
+            query = "SELECT * FROM paper_trades WHERE status != 'OPEN' AND (mode = 'HERMES_SMC_V1' OR mode = 'HERMES_SMC_ENGINE_V1_0' OR mode IS NULL OR mode = '')"
 
         if timeframe:
             query += " AND LOWER(timeframe) = ?"
@@ -1843,7 +1847,7 @@ def get_open_paper_trades(timeframe: Optional[str] = None, mode: Optional[str] =
         params.append(mode)
     else:
         # Default: Hermes 3.5 positions (Sections 1-10)
-        query = "SELECT * FROM paper_trades WHERE status = 'OPEN' AND (mode = 'HERMES_3.5_RADAR_HARVEST' OR mode = 'HERMES_3.0_MODEL_2A' OR mode IS NULL OR mode = '') AND (account_id IS NULL OR account_id <= 10)"
+        query = "SELECT * FROM paper_trades WHERE status = 'OPEN' AND (mode = 'HERMES_SMC_V1' OR mode = 'HERMES_SMC_ENGINE_V1_0' OR mode IS NULL OR mode = '')"
 
     if timeframe:
         query += " AND LOWER(timeframe) = ?"

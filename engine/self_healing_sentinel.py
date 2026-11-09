@@ -682,10 +682,8 @@ class HermesSelfHealingSentinel:
             tf = str(trade.get("timeframe") or "4h").lower()
             mode = str(trade.get("mode") or "").upper()
 
-            # CRITICAL: Hermes 3.0 Model 2A trades are autonomously managed by hermes30_live_engine!
-            # Never interfere or prematurely close them via sentinel doctor.
-            if "HERMES_3" in mode or "MODEL_2A" in mode:
-                continue
+            # Single Active Strategy Architecture: HERMES_SMC_ENGINE_V1_0
+            # Ensure Sentinel AI Doctor monitors all active trades and never skips them due to legacy modes.
 
             entry_p = float(trade.get("entry_price") or 0.0)
             tp_p = float(trade.get("tp_price") or 0.0)
@@ -748,19 +746,7 @@ class HermesSelfHealingSentinel:
         it automatically revives the engine and executes a fresh scan!
         """
         fixes = []
-        try:
-            from engine.hermes30_apex_live import hermes30_live_engine
-            now = time.time()
-            if not hermes30_live_engine.is_running:
-                logger.warning("🚨 [SENTINEL REPAIR] hermes30_live_engine was NOT running! Reviving engine now...")
-                asyncio.create_task(hermes30_live_engine.start())
-                fixes.append("Auto-restarted halted Hermes 3.0 Live Engine")
-            elif hermes30_live_engine.last_scan_time > 0 and (now - hermes30_live_engine.last_scan_time) > 420:
-                logger.warning(f"⚠️ [SENTINEL REPAIR] Scanner stale ({int(now - hermes30_live_engine.last_scan_time)}s ago). Triggering forced scan...")
-                asyncio.create_task(hermes30_live_engine.run_full_champion_scan())
-                fixes.append("Triggered auto-revival scan for Hermes 3.0 Engine")
-        except Exception as e:
-            logger.error(f"Error checking engine liveness: {e}")
+        # Strategy engine paused per user request - do not revive old engine
         return fixes
 
 

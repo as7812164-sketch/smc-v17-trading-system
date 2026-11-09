@@ -13,18 +13,18 @@ def get_ist_now() -> datetime:
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-# --- HERMES STRATEGY OPTIONS (LOCKED TO PURE HERMES 3.0 MODEL 2A) ---
-STRATEGY_OPTIONS = ["HERMES_3.0_MODEL_2A"]
-STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_3.0_MODEL_2A")  # Pure Hermes 3.0 Model 2A Dual-Threshold
-HERMES_3_MEAN_THRESHOLD_ENTRY = True  # Strictly 50% Mean Threshold (MT) Entry
-HERMES_3_5_BOUNDARY_ENTRY = False     # Outer 5% Boundary entry strictly removed
-HERMES_3_CANDLE_BODY_CLOSE_SL = True  # Soft SL invalidation strictly on Candle Body Close
-HERMES_3_SOFT_SL_PCT = 0.015          # 1.50% Soft SL on Candle Close (-7.5% ROE @ 5x)
-HERMES_3_HARD_CIRCUIT_SL_PCT = 0.030  # 3.00% Emergency Hard Circuit Breaker on Exchange (-15.0% ROE @ 5x)
-HERMES_3_TP_PCT = 0.030               # +3.00% Take Profit baseline reference
-HERMES_3_BE_TRIGGER_PCT = 0.010       # Replaced by Stepped Trailing SL
-HERMES_3_REJECTION_WICK_MIN = 0.18    # >= 18% Rejection Wick required on tap candle
-HERMES_3_MAX_TAP_BARS = 28            # Retest tap strictly <= 28 bars
+# --- HERMES STRATEGY OPTIONS (LOCKED TO HERMES 3.5 APEX RADAR HARVEST V6) ---
+STRATEGY_OPTIONS = ["HERMES_SMC_ENGINE_V1_0"]
+STRATEGY_VERSION = os.getenv("STRATEGY_VERSION", "HERMES_SMC_ENGINE_V1_0")  # Active Flagship v6
+HERMES_3_MEAN_THRESHOLD_ENTRY = False     # Strictly replaced by 5% Boundary Entry
+HERMES_3_5_BOUNDARY_ENTRY = True          # 5.0% Outer OB Boundary Rim Tap (Pine Script v6)
+HERMES_3_CANDLE_BODY_CLOSE_SL = True      # Invalidation on body close
+HERMES_3_SOFT_SL_PCT = 0.028              # -2.80% SL (-14.0% ROE @ 5x leverage)
+HERMES_3_HARD_CIRCUIT_SL_PCT = 0.028      # -2.80% Hard Circuit Breaker (-14.0% ROE @ 5x)
+HERMES_3_TP_PCT = 0.028                   # +2.80% Take Profit (+14.0% ROE @ 5x leverage)
+HERMES_3_BE_TRIGGER_PCT = 0.016           # +1.60% move (+8.0% ROE) -> moves SL to Entry + 0.10% fee shield
+HERMES_3_REJECTION_WICK_MIN = 0.18        # >= 18% Rejection Wick required on tap candle
+HERMES_3_MAX_TAP_BARS = 360               # Active zone maturation window
 HERMES_3_MULTI_STAGE_ARMOR = True
 HERMES_3_BTC_EMERGENCY_SHIELD = True
 HERMES_3_DYNAMIC_ATR_BUFFER = True
@@ -32,20 +32,17 @@ HERMES_3_DYNAMIC_ATR_BUFFER = True
 # --- HERMES 3.5 RADAR HARVEST PARAMETERS ---
 HERMES_3_5_MIN_MATURATION_1H = 18          # 18 bars (Next-Day) maturation horizon
 HERMES_3_5_MIN_MATURATION_4H = 8           # 8 bars macro maturation horizon
-HERMES_3_5_BTC_TREND_FILTER = False        # Independent Asset SMC mode
+HERMES_3_5_BTC_TREND_FILTER = True         # King BTC 4H Macro Sentry enabled
 
 # --- STEPPED TRAILING SL & PROXIMITY LIMIT ORDER ARCHITECTURE ---
 HERMES_3_LIMIT_PROXIMITY_PCT = 0.0020     # 0.20% proximity triggers Limit Order pre-placement
-HERMES_3_ENABLE_STEPPED_TRAILING = True   # Replaces static break-even with Stepped Trailing SL
-HERMES_3_INFINITE_TRAILING_RIDER = False  # Fixed TP target enabled alongside Stepped Trailing SL
+HERMES_3_ENABLE_STEPPED_TRAILING = True   # Stepped Trailing SL
+HERMES_3_INFINITE_TRAILING_RIDER = False  # Fixed +14% TP target alongside Stepped Trailing SL
 HERMES_3_STEPPED_TRAILING_LADDER = [
     # (Trigger ROI %, Locked SL ROI %)
-    (5.0, 1.0),    # Touch +5% ROI -> Shift SL to +1% ROI (+0.2% spot move fee-saver)
-    (10.0, 5.0),   # Touch +10% ROI -> Shift SL to +5% ROI (+1.0% spot move)
-    (15.0, 10.0),  # Touch +15% ROI -> Shift SL to +10% ROI (+2.0% spot move)
-    (20.0, 15.0),  # Touch +20% ROI -> Shift SL to +15% ROI (+3.0% spot move)
-    (25.0, 20.0),  # Touch +25% ROI -> Shift SL to +20% ROI (+4.0% spot move)
-    (30.0, 25.0),  # Touch +30% ROI -> Shift SL to +25% ROI (+5.0% spot move)
+    (8.0, 0.5),    # +8% ROE (+1.6% price) -> Shift SL to Break-Even (+0.10% fee-saver)
+    (9.0, 4.5),    # +9% ROE (+1.8% price) -> Shift SL to +4.5% ROE (+0.90% locked in wallet)
+    (14.0, 14.0),  # +14% ROE (+2.8% price) -> Full TP Target reached
 ]
 TIMEFRAME = "4h"
 KLINES_LIMIT = 200
