@@ -1,0 +1,29 @@
+# Visual Atlas: Video 17 (Visual & Forensic Frame Audit)
+## How To Find Bias In Trading - Part 2 | SMC + ICT Bias Strategy | Gold Weekly Analysis
+
+---
+
+### Executive Visual Forensic Summary
+Direct visual inspection of 10 extracted frames from Episode 17 (`https://youtu.be/3PrIrbZottw`, `XAUUSD` Monthly / Weekly / Daily / 4H / 1H) locks down the exact visual structures taught in Part 2 of the Bias Trilogy:
+- **The 4 Market Movement Regimes (Frame 01):** `POI to Liquidity` (Main Trend Bias), `Liquidity to POI` (Counter/Reversal Bias), `POI to POI` (Large Range Consolidation), and `Liquidity to Liquidity` (Tight Consolidation Trap — Avoid).
+- **The Maze Zoom-Out Principle (Frame 03):** Top-down aerial perspective (1M → 1W → 1D) turns confusing 5m/15m chop into an obvious directional path.
+- **Mirror Concept & Defensive POI Stack (Frames 02, 06, 07):** Unmitigated bullish POIs sitting below price act like optical mirrors reflecting pullbacks upward toward the HTF liquidity pool.
+- **Weekly Liquidity Grab + Close Below (Frame 04):** Gold Weekly sweep of `3,437.83` closing back below, signaling pullback into Daily POI (`3,368–3,316`) before resuming up.
+- **OTE `-1` Extension Precision (Frame 10):** `1H` NY Killzone Fib (`1 = 3,421.85` down to `0 = 3,382.92`) pulling back into `0.5–0.618` (`3,402.88–3,407.59`) and hitting `-1` (`3,342.99`) to the exact pip (~600 pips).
+
+---
+
+### Real Video Frames Extracted & Inspected
+
+| Frame # | Timestamp | Visual Content & Institutional Insight | Real Image File |
+|:---:|:---:|:---|:---|
+| **01** | `00:05:48` | **4 Market Movement Regimes Whiteboard:** Explicit labels `poi to poi` vs `liquidity to liquidity` explaining large-range vs tight stop-hunt consolidation. | [`frame_01_four_market_regimes_matrix.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_01_four_market_regimes_matrix.jpg) |
+| **02** | `00:09:10` | **Stacked POIs Inside Trend Expansion (`XAUUSD 1h`):** Visualizing multiple bullish defensive POIs created during an expansion leg toward `3,403+` liquidity. | [`frame_02_lion_cave_deer_analogy.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_02_lion_cave_deer_analogy.jpg) |
+| **03** | `00:10:42` | **Maze / Labyrinth Zoom-Out Analogy:** Overhead maze diagram proving why Monthly/Weekly/Daily HTF context solves 5m directional confusion. | [`frame_03_maze_zoom_out_htf_analogy.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_03_maze_zoom_out_htf_analogy.jpg) |
+| **04** | `00:14:00` | **Gold Weekly Liquidity Grab & Close Below:** Weekly candle sweeping `3,437.83` and closing below (`3,368.52`), signaling pullback into Daily POI. | [`frame_04_gold_weekly_liq_grab_close.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_04_gold_weekly_liq_grab_close.jpg) |
+| **05** | `00:16:40` | **Daily FVG vs OB 4-Candle Filter (`XAUUSD 1D`):** Purple FVG ignored (`no displacement`), whereas Blue OB below (`~3,316–3,361`) produces valid upward displacement. | [`frame_05_gold_daily_ob_vs_fvg_4candle.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_05_gold_daily_ob_vs_fvg_4candle.jpg) |
+| **06** | `00:23:10` | **Mirror Concept Schematic (`XAUUSD 1D`):** Drawing structural path showing how defensive POIs act as optical mirrors reflecting pullbacks back with HTF trend. | [`frame_06_mirror_concept_physics.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_06_mirror_concept_physics.jpg) |
+| **07** | `00:25:00` | **Mirror Defense Holding Multi-Day Long (`XAUUSD 1D`):** Bullish FVG/OB zones below acting as defensive floor during pullback, maintaining `3,436.27` target confidence. | [`frame_07_mirror_defense_trend_hold.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_07_mirror_defense_trend_hold.jpg) |
+| **08** | `00:29:58` | **TradingView Drawing Template Presets (`FVG`, `Imbalance`, `OB Bearish`, `OB Bullish`):** Mapping exact Daily OB box (`3,316.05 – 3,361.86`) beneath `3,499.92` target. | [`frame_08_nearest_key_level_gravity.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_08_nearest_key_level_gravity.jpg) |
+| **09** | `00:32:05` | **Gold 1H Execution Plan (Wait for MSS Close):** Marking `3,379` MSS hurdle + purple `1H` POIs; instructing to avoid risky 1st swing and enter retest after `1H` close above MSS toward `3,394.43+`. | [`frame_09_gold_1h_mss_entry_plan.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_09_gold_1h_mss_entry_plan.jpg) |
+| **10** | `00:36:35` | **OTE `0.5–0.618` → `-1` Extension 600-Pip Sniper (`XAUUSD 1h`):** Exact NY Killzone Short from `0.5–0.618` (`3,402.88–3,407.59`) hitting `-1` (`3,342.99`) cleanly to the pip! | [`frame_10_ote_minus_1_target_600pips.jpg`](file:///C:/Users/power/.gemini/antigravity/scratch/smc_v17_trading_system/institutional_video_learning_vault/02_visual_diagrams_and_frames/Video_17_Real_Frames/frame_10_ote_minus_1_target_600pips.jpg) |

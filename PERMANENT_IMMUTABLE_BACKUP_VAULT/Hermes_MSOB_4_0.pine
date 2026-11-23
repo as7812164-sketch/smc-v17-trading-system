@@ -1,0 +1,979 @@
+//@version=5
+// ============================================================================
+// HERMES MSOB 4.0 MASTER INSTITUTIONAL SMC & ORDER FLOW SUITE
+// ============================================================================
+// Author: Hermes AI Institutional Quant Partner
+// Architecture: Shoaib Khan (MS Trading) Institutional SMC Framework + Ep 01-17
+// Master Specification: Hermes MSOB 4.0 Ground-Up Institutional Suite
+// Compatibility: 100% Free TradingView Tier Compatible (No Paid Subscriptions Needed)
+//
+// 17-VIDEO SYNTHESIZED ARCHITECTURAL FOUNDATION:
+//   1. Ep 01 & 04 & 15: 7-Model Order Blocks (Displacement >= 0.85 ATR + Mandatory FVG Shift)
+//   2. Ep 02: Market Structure (Strict Body-Close BOS / CHoCH & Inducement IDM Sweeps)
+//   3. Ep 03: 5 Gaps Suite (FVG, Imbalance, BPR, Volume Imbalance, Dynamic Trimming)
+//   4. Ep 05: Breaker Blocks (+BB / -BB) Flip Mechanics on Candle Violation
+//   5. Ep 06 & 07: 12-Liquidity Architecture (Mother-Candle Inside Bar Aware PDH/PDL/PWH/PWL + EQH/EQL)
+//   6. Ep 08 & 16: 4-Step Car U-Turn Engine (1H/4H POI Tap -> LTF MSS -> Golden Last POI Retest)
+//   7. Ep 09 & 10: 50% Dealing Range Equilibrium & OTE Golden Pocket (0.618 - 0.790 Fib)
+//   8. Ep 11 & 12: ICT Session Killzones (Asian Range Liquidity Purge -> London Open Judas Swing)
+//   9. Ep 13 & 17: Top-Down Macro Bias & Lion-Cave-Deer Perpetual Loop (POI <-> Liquidity)
+//  10. Ep 07 & 15: Shoaib Khan Dominant Flow Gate (Strictly Trade WITH Institutional Buyers/Sellers)
+//
+// CORE 4.0 VISUAL & EXECUTION REVOLUTIONS:
+//   • OB Freeze on Tap: Mitigated zones FREEZE immediately at tap bar and NEVER extend forward.
+//   • Zero Chart Clutter: All bulky shaded boxes removed; minimal discrete markers only.
+//   • Shoaib Khan Flow Gate: Hard-blocks counter-trend signals when Buyers or Sellers dominate.
+//   • 4 Selectable Master Entry Modules: Replicating manual institutional execution.
+// ============================================================================
+indicator("Hermes MSOB 4.0 Master Institutional Suite", shorttitle="Hermes MSOB 4.0", overlay=true, max_boxes_count=500, max_lines_count=500, max_labels_count=500, max_bars_back=500)
+
+// ============================================================================
+// 1. MODULAR USER SETTINGS
+// ============================================================================
+
+// --- [GROUP 1: HUD DASHBOARD & MACRO BIAS ENGINE] ---
+grpHud          = "1. Dashboard HUD & Top-Down Macro Bias (Ep 13, 16, 17)"
+showHUD         = input.bool(true, "Show Institutional HUD Dashboard", group=grpHud)
+hudPosStr       = input.string("Top Right", "HUD Screen Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=grpHud)
+reqBiasSync     = input.bool(false, "Enforce Strict Macro Bias Alignment (Default: OFF for Pure SMC)", group=grpHud)
+biasStrict      = input.string("Moderate (4H + Current TF)", "Bias Strictness Mode", options=["Moderate (4H + Current TF)", "Strict (1D + 4H + Current TF)", "Ultra (1M + 1W + 1D + 4H + Current TF)"], group=grpHud)
+
+// --- [GROUP 2: 50% EQUILIBRIUM & DEALING RANGE OTE] ---
+grpEq           = "2. Dealing Range Equilibrium & OTE (Ep 04, 09, 10)"
+showEqLine      = input.bool(true, "Show 50% Equilibrium Center Line", group=grpEq)
+showEqFill      = input.bool(false, "Shade Discount (Green) & Premium (Red) Zones", group=grpEq)
+eqLookback      = input.int(30, "Dealing Range Lookback (Bars)", minval=10, maxval=100, group=grpEq)
+colEqLine       = input.color(#FFB74D, "Equilibrium 50% Line Color", group=grpEq)
+colDiscBg       = input.color(color.new(#089981, 93), "Discount Zone Fill Color", group=grpEq)
+colPremBg       = input.color(color.new(#F23645, 93), "Premium Zone Fill Color", group=grpEq)
+
+// --- [GROUP 3: MARKET STRUCTURE & INDUCEMENT] ---
+grpStruct       = "3. Market Structure & Inducement IDM (Ep 02, 13)"
+showStruct      = input.bool(true, "Show External Major Structure (BOS / CHoCH)", group=grpStruct)
+showIntStr      = input.bool(false, "Show Internal Sub-Structure (iBOS / iCHoCH)", group=grpStruct)
+showIDM         = input.bool(false, "Show Inducement (IDM) Levels & Sweeps", group=grpStruct)
+strictClose     = input.bool(true, "Strict Body-Close Break (Wick = Sweep Only)", group=grpStruct)
+extLen          = input.int(6, "External Swing Pivot Length", minval=3, maxval=25, group=grpStruct)
+intLen          = input.int(3, "Internal Minor Pullback / IDM Length", minval=2, maxval=12, group=grpStruct)
+maxStructLn     = input.int(10, "Max Structure Lines Rendered", minval=3, maxval=50, group=grpStruct)
+colBullStr      = input.color(#00E676, "Bullish BOS / CHoCH Color", group=grpStruct)
+colBearStr      = input.color(#FF4081, "Bearish BOS / CHoCH Color", group=grpStruct)
+colIDM          = input.color(#FFD600, "IDM Level Color", group=grpStruct)
+
+// --- [GROUP 4: 7-MODEL ORDER BLOCKS & BREAKER BLOCKS] ---
+grpOB           = "4. Order Blocks & Breakers (Freeze on Tap) (Ep 01, 04, 05, 15)"
+showOB          = input.bool(true, "Show Active & Historical Order Blocks", group=grpOB)
+showHtfOB       = input.bool(true, "Show Higher-Timeframe (HTF) POI Overlay", group=grpOB)
+autoHtfPair     = input.bool(true, "Auto-Pair HTF to Chart (5m->1H / 15m->4H / 1H->4H / 4H->1D)", group=grpOB)
+htfManualTf     = input.timeframe("240", "Manual HTF POI Timeframe (If Auto OFF)", group=grpOB)
+showBreaker     = input.bool(true, "Show Breaker Blocks (+BB / -BB Flip)", group=grpOB)
+keepHistOBs     = input.bool(true, "Keep Mitigated OBs Visible (Frozen at Tap Bar)", group=grpOB)
+showOB_MT       = input.bool(false, "Show 50% Mean Threshold (MT) Inside OB", group=grpOB)
+showOBLabels    = input.bool(true, "Show Text Labels on OB Boxes", group=grpOB)
+obBoundaryMode  = input.string("Full Candle (High to Low - Includes Wicks)", "OB Boundary Mode", options=["Full Candle (High to Low - Includes Wicks)", "Body Only (Open to Close)"], group=grpOB)
+obAtrMult       = input.float(0.85, "OB Impulse Displacement (x ATR)", minval=0.4, step=0.05, group=grpOB)
+maxOBs          = input.int(16, "Max Order Blocks Rendered", minval=2, maxval=50, group=grpOB)
+maxBreakers     = input.int(6, "Max Breaker Blocks Rendered", minval=1, maxval=20, group=grpOB)
+colBullOB       = input.color(color.new(#2962FF, 75), "Bullish OB Fill Color", group=grpOB)
+colBullOBBr     = input.color(#2962FF, "Bullish OB Border Color", group=grpOB)
+colBearOB       = input.color(color.new(#E040FB, 75), "Bearish OB Fill Color", group=grpOB)
+colBearOBBr     = input.color(#E040FB, "Bearish OB Border Color", group=grpOB)
+colBullBB       = input.color(color.new(#00BCD4, 80), "Bullish Breaker (+BB) Color", group=grpOB)
+colBullBBBr     = input.color(#00BCD4, "Bullish Breaker Border Color", group=grpOB)
+colBearBB       = input.color(color.new(#FF6D00, 80), "Bearish Breaker (-BB) Color", group=grpOB)
+colBearBBBr     = input.color(#FF6D00, "Bearish Breaker Border Color", group=grpOB)
+
+// --- [GROUP 5: FAIR VALUE GAPS & GOLDEN LAST POI] ---
+grpPOI          = "5. Fair Value Gaps (FVG) & Golden Last POI (Ep 03, 08)"
+showPOI         = input.bool(true, "Show Dynamic Last POI Box on MSS", group=grpPOI)
+showFVG         = input.bool(true, "Show Fair Value Gaps (3-Bar Imbalance)", group=grpPOI)
+fvgShrink       = input.bool(true, "Dynamically Trim Partially Filled Gaps", group=grpPOI)
+fvgMinAtr       = input.float(0.15, "Minimum Gap Size (x ATR)", minval=0.0, step=0.05, group=grpPOI)
+maxFVGs         = input.int(8, "Max Active FVGs Shown", minval=2, maxval=20, group=grpPOI)
+colBullFVG      = input.color(color.new(#089981, 84), "Bullish FVG Color", group=grpPOI)
+colBearFVG      = input.color(color.new(#F23645, 84), "Bearish FVG Color", group=grpPOI)
+colPOI          = input.color(color.new(#FFD600, 75), "Last POI Box Fill Color", group=grpPOI)
+colPOIBr        = input.color(#FFD600, "Last POI Box Border Color", group=grpPOI)
+
+// --- [GROUP 6: 12-LIQUIDITY ARCHITECTURE & SWEEPS] ---
+grpLiq          = "6. Completed Liquidity Architecture (Ep 06, 07)"
+showLiq         = input.bool(true, "Master ON/OFF: Liquidity Engine", group=grpLiq)
+showPMHL        = input.bool(false, "Show 1M PMH / PML (Monthly High/Low)", group=grpLiq)
+showPWHL        = input.bool(true, "Show 1W PWH / PWL (Mother Candle Aware)", group=grpLiq)
+showPDHL        = input.bool(true, "Show 1D PDH / PDL (Mother Candle Aware)", group=grpLiq)
+showEQHL        = input.bool(true, "Show Equal Highs (BSL) / Equal Lows (SSL)", group=grpLiq)
+showSweeps      = input.bool(true, "Show Liquidity Sweep Markers (BSL/SSL Swept)", group=grpLiq)
+eqhTolAtr       = input.float(0.15, "EQH/EQL Tolerance (x ATR)", minval=0.05, step=0.05, group=grpLiq)
+colPMHL         = input.color(#FFA000, "1M PMH / PML Color", group=grpLiq)
+colPWHL         = input.color(#CE93D8, "1W PWH / PWL Color", group=grpLiq)
+colPDHL         = input.color(#00E5FF, "1D PDH / PDL Color", group=grpLiq)
+colBSL          = input.color(#FF5252, "BSL / EQH Pool Color", group=grpLiq)
+colSSL          = input.color(#00E676, "SSL / EQL Pool Color", group=grpLiq)
+
+// --- [GROUP 7: DOMINANT FLOW GATE (SHOAIB KHAN RULE)] ---
+grpFlow         = "7. Dominant Flow Gate (Shoaib Khan Rule: Ep 07, 15)"
+showBuySell     = input.bool(false, "Show Buyers / Sellers Absorption Badges", group=grpFlow)
+colorDelta      = input.bool(false, "Color Candles by Order Flow Delta", group=grpFlow)
+minWickPct      = input.float(22.0, "Minimum Institutional Rejection Wick (%)", minval=10.0, maxval=60.0, step=1.0, group=grpFlow)
+minVolMult      = input.float(1.30, "Minimum Volume Surge (x 20-bar Avg)", minval=0.8, step=0.05, group=grpFlow)
+enforceFlowGate = input.bool(true, "Trade Strictly in Direction of Dominant Flow", group=grpFlow)
+flowExpiryBars  = input.int(35, "Dominant Flow Memory Window (Bars)", minval=5, maxval=100, group=grpFlow)
+colBuyers       = input.color(#00E676, "Buyers Flow Color", group=grpFlow)
+colSellers      = input.color(#FF5252, "Sellers Flow Color", group=grpFlow)
+
+// --- [GROUP 8: ICT KILLZONES & SESSION TIMING] ---
+grpKill         = "8. ICT Session Killzones (Ep 11, 12, 14)"
+showKillzones   = input.bool(false, "Shade Killzone Session Windows on Chart", group=grpKill)
+useKillzoneGate = input.bool(false, "Require Entry Trigger Inside Killzones", group=grpKill)
+asianSessStr    = input.session("0000-0600", "Asian Session (UTC)", group=grpKill)
+londonSessStr   = input.session("0700-1000", "London Killzone (UTC)", group=grpKill)
+nySessStr       = input.session("1300-1600", "New York Killzone (UTC)", group=grpKill)
+colLondonZone   = input.color(color.new(#2962FF, 92), "London Session Color", group=grpKill)
+colNyZone       = input.color(color.new(#FF6D00, 92), "NY Session Color", group=grpKill)
+
+// --- [GROUP 9: STRATEGY SIGNALS & 4 MASTER MODULES] ---
+grpSig          = "9. 4-Master Entry Modules & Outcome Badges (Ep 08)"
+showSignals     = input.bool(true, "Show Strategy Entry Arrows (Green/Red)", group=grpSig)
+masterModule    = input.string("All 4 Master Modules (Combined)", "Active Execution Engine", options=["All 4 Master Modules (Combined)", "Module 1: Ep 08 LTF MSS + Last POI (Sniper)", "Module 2: Killzone Liquidity Sweep & Reversal", "Module 3: Breaker Block Flip Reversal", "Module 4: Dominant Flow Continuation"], group=grpSig)
+mssMaxWaitDays  = input.float(2.0, "Max Wait After POI Tap (Days for MSS)", minval=0.5, maxval=10.0, step=0.5, group=grpSig)
+showOutcomes    = input.bool(false, "Show Target Profit (🎯 TP) Badges", group=grpSig)
+tpPctInp        = input.float(3.0, "Take Profit % (Price | 3% = +15% ROI @ 5x)", minval=0.5, step=0.1, group=grpSig)
+maxHistBadges   = input.int(25, "Max Historical Trade Badges Kept", minval=5, maxval=60, group=grpSig)
+
+// ============================================================================
+// 2. ZERO-LOOKAHEAD MULTI-TIMEFRAME ENGINE
+// ============================================================================
+f_lastSwHi(_len) =>
+    ph = ta.pivothigh(high, _len, _len)
+    ta.valuewhen(not na(ph), ph, 0)[1]
+
+f_lastSwLo(_len) =>
+    pl = ta.pivotlow(low, _len, _len)
+    ta.valuewhen(not na(pl), pl, 0)[1]
+
+f_htfBiasCtx(_lb) =>
+    [open[1], high[1], low[1], close[1], ta.highest(high, _lb)[1], ta.lowest(low, _lb)[1], f_lastSwHi(4), f_lastSwLo(4)]
+
+f_htfOb(_mult) =>
+    atrH  = ta.atr(14)
+    bullD = close[1] > open[1] and (close[1] - open[1]) >= _mult * atrH[1] and low > high[2]
+    bearD = close[1] < open[1] and (open[1] - close[1]) >= _mult * atrH[1] and high < low[2]
+    [bullD, bearD, high[2], low[2], time[1]]
+
+atr14 = ta.atr(14)
+
+[mOpen, mHigh, mLow, mClose]                                           = request.security(syminfo.tickerid, "M", [open[1], high[1], low[1], close[1]], barmerge.gaps_off, barmerge.lookahead_off)
+[wOpen, wHigh, wLow, wClose]                                           = request.security(syminfo.tickerid, "W", [open[1], high[1], low[1], close[1]], barmerge.gaps_off, barmerge.lookahead_off)
+[dOpen, dHigh, dLow, dClose]                                           = request.security(syminfo.tickerid, "D", [open[1], high[1], low[1], close[1]], barmerge.gaps_off, barmerge.lookahead_off)
+[h4Open, h4High, h4Low, h4Close, h4RangeHi, h4RangeLo, h4SwHi, h4SwLo] = request.security(syminfo.tickerid, "240", f_htfBiasCtx(eqLookback), barmerge.gaps_off, barmerge.lookahead_off)
+[h1dClose, h1dSwHi, h1dSwLo]                                          = request.security(syminfo.tickerid, "D", [close[1], f_lastSwHi(3), f_lastSwLo(3)], barmerge.gaps_off, barmerge.lookahead_off)
+
+// Auto-pairing: 5m->1H (60); 15m/30m/1H->4H (240); 2H/4H->1D ("D"); 1D->1W ("W")
+string effHtfTf       = autoHtfPair ? (timeframe.isintraday and timeframe.multiplier <= 5 ? "60" : (timeframe.isintraday and timeframe.multiplier <= 60 ? "240" : (timeframe.isintraday and timeframe.multiplier <= 240 ? "D" : "W"))) : htfManualTf
+string htfLabelPrefix = effHtfTf == "240" ? "4H" : effHtfTf == "60" ? "1H" : effHtfTf == "D" ? "1D" : effHtfTf == "W" ? "1W" : effHtfTf
+
+[htfBullSig, htfBearSig, htfObH, htfObL, htfBarTime]                   = request.security(syminfo.tickerid, effHtfTf, f_htfOb(obAtrMult), barmerge.gaps_off, barmerge.lookahead_off)
+
+// --- HIGHER-TIMEFRAME POI TRACKER (EP 08 ANCHOR: 4H->15m / 1H->5m) ---
+var float htfBullTop       = na
+var float htfBullBot       = na
+var bool  htfBullActive    = false
+var int   lastHtfBullTime  = 0
+var box   htfBullBx        = na
+
+var float htfBearTop       = na
+var float htfBearBot       = na
+var bool  htfBearActive    = false
+var int   lastHtfBearTime  = 0
+var box   htfBearBx        = na
+
+if htfBullSig and htfBarTime != lastHtfBullTime
+    lastHtfBullTime := htfBarTime
+    htfBullTop      := htfObH
+    htfBullBot      := htfObL
+    htfBullActive   := true
+    if showHtfOB
+        box.delete(htfBullBx)
+        htfBullBx := box.new(bar_index, htfBullTop, bar_index + 24, htfBullBot, bgcolor=color.new(#2962FF, 85), border_color=#2962FF, border_style=line.style_dashed, text=htfLabelPrefix + " Bull POI", text_color=#2962FF, text_size=size.tiny)
+
+if htfBearSig and htfBarTime != lastHtfBearTime
+    lastHtfBearTime := htfBarTime
+    htfBearTop      := htfObH
+    htfBearBot      := htfObL
+    htfBearActive   := true
+    if showHtfOB
+        box.delete(htfBearBx)
+        htfBearBx := box.new(bar_index, htfBearTop, bar_index + 24, htfBearBot, bgcolor=color.new(#E040FB, 85), border_color=#E040FB, border_style=line.style_dashed, text=htfLabelPrefix + " Bear POI", text_color=#E040FB, text_size=size.tiny)
+
+if showHtfOB and htfBullActive and not na(htfBullBx)
+    box.set_right(htfBullBx, bar_index + 4)
+
+if showHtfOB and htfBearActive and not na(htfBearBx)
+    box.set_right(htfBearBx, bar_index + 4)
+
+// HTF POI Boundary Touch Detection
+bool tapHtfBull = htfBullActive and not na(htfBullTop) and low <= htfBullTop and high >= htfBullBot
+bool tapHtfBear = htfBearActive and not na(htfBearBot) and high >= htfBearBot and low <= htfBearTop
+
+// Invalidation if price completely violates HTF POI
+if htfBullActive and close < htfBullBot
+    htfBullActive := false
+    if not na(htfBullBx)
+        box.set_right(htfBullBx, bar_index)
+        box.set_bgcolor(htfBullBx, color.new(#2962FF, 95))
+
+if htfBearActive and close > htfBearTop
+    htfBearActive := false
+    if not na(htfBearBx)
+        box.set_right(htfBearBx, bar_index)
+        box.set_bgcolor(htfBearBx, color.new(#E040FB, 95))
+
+// Freeze HTF POI Box on Tap!
+if tapHtfBull
+    htfBullActive := false
+    if not na(htfBullBx)
+        box.set_right(htfBullBx, bar_index)
+        box.set_bgcolor(htfBullBx, color.new(#2962FF, 90))
+
+if tapHtfBear
+    htfBearActive := false
+    if not na(htfBearBx)
+        box.set_right(htfBearBx, bar_index)
+        box.set_bgcolor(htfBearBx, color.new(#E040FB, 90))
+
+int mDir = 0
+if not na(mClose) and not na(mOpen)
+    mDir := mClose > mOpen ? 1 : mClose < mOpen ? -1 : 0
+
+int wDir = 0
+if not na(wClose) and not na(wOpen)
+    wDir := wClose > wOpen ? 1 : wClose < wOpen ? -1 : 0
+
+var int htf1dDir = 0
+if not na(h1dClose) and not na(h1dSwHi) and h1dClose > h1dSwHi
+    htf1dDir := 1
+else if not na(h1dClose) and not na(h1dSwLo) and h1dClose < h1dSwLo
+    htf1dDir := -1
+
+var int htf4Dir = 0
+if not na(h4Close) and not na(h4SwHi) and h4Close > h4SwHi
+    htf4Dir := 1
+else if not na(h4Close) and not na(h4SwLo) and h4Close < h4SwLo
+    htf4Dir := -1
+
+// 50% Dealing Range Equilibrium & OTE Golden Pocket
+float eqMid     = (not na(h4RangeHi) and not na(h4RangeLo)) ? (0.5 * (h4RangeHi + h4RangeLo)) : hl2
+float eqSpan    = math.max(nz(h4RangeHi - h4RangeLo, syminfo.mintick), syminfo.mintick)
+float valPos    = (not na(h4RangeHi) and not na(h4RangeLo)) ? math.max(0.0, math.min(1.0, (close - h4RangeLo) / eqSpan)) : 0.5
+bool isDiscount = valPos <= 0.52
+bool isPremium  = valPos >= 0.48
+
+var line eqLineObj = na
+var label eqLblObj = na
+if showEqLine and barstate.islast and not na(eqMid)
+    line.delete(eqLineObj)
+    label.delete(eqLblObj)
+    eqLineObj := line.new(math.max(0, bar_index - 80), eqMid, bar_index + 12, eqMid, xloc=xloc.bar_index, color=colEqLine, style=line.style_dashed, width=1)
+    eqLblObj  := label.new(bar_index + 12, eqMid, "50% Eq: " + str.tostring(eqMid, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=color.new(colEqLine, 85), textcolor=colEqLine, size=size.small)
+
+plotUpper = plot(showEqFill and not na(h4RangeHi) ? h4RangeHi : na, display=display.none)
+plotEqP   = plot(showEqFill and not na(eqMid) ? eqMid : na, display=display.none)
+plotLower = plot(showEqFill and not na(h4RangeLo) ? h4RangeLo : na, display=display.none)
+fill(plotUpper, plotEqP, color=showEqFill ? colPremBg : na, title="Premium Zone Fill")
+fill(plotEqP, plotLower, color=showEqFill ? colDiscBg : na, title="Discount Zone Fill")
+
+// ============================================================================
+// 3. 12-LIQUIDITY ARCHITECTURE (INSIDE-BAR MOTHER CANDLE AWARE)
+// ============================================================================
+var float mMotherH  = na
+var float mMotherL  = na
+var float pmh       = na
+var float pml       = na
+
+if timeframe.change("M") and not na(mHigh) and not na(mLow)
+    if na(mMotherH) or na(mMotherL) or not (mHigh <= mMotherH and mLow >= mMotherL)
+        mMotherH := mHigh
+        mMotherL := mLow
+    pmh := mMotherH
+    pml := mMotherL
+
+var float wMotherH  = na
+var float wMotherL  = na
+var float pwh       = na
+var float pwl       = na
+var bool  wBslSwept = false
+var bool  wSslSwept = false
+
+if timeframe.change("W") and not na(wHigh) and not na(wLow)
+    float prevPWH = pwh
+    float prevPWL = pwl
+    wBslSwept := not na(prevPWH) and wHigh > prevPWH and wClose < prevPWH
+    wSslSwept := not na(prevPWL) and wLow < prevPWL and wClose > prevPWL
+    if na(wMotherH) or na(wMotherL) or not (wHigh <= wMotherH and wLow >= wMotherL)
+        wMotherH := wHigh
+        wMotherL := wLow
+    pwh := wMotherH
+    pwl := wMotherL
+
+var float dMotherH  = na
+var float dMotherL  = na
+var float pdh       = na
+var float pdl       = na
+var bool  dBslSwept = false
+var bool  dSslSwept = false
+
+if timeframe.change("D") and not na(dHigh) and not na(dLow)
+    float prevPDH = pdh
+    float prevPDL = pdl
+    dBslSwept := not na(prevPDH) and dHigh > prevPDH and dClose < prevPDH
+    dSslSwept := not na(prevPDL) and dLow < prevPDL and dClose > prevPDL
+    if na(dMotherH) or na(dMotherL) or not (dHigh <= dMotherH and dLow >= dMotherL)
+        dMotherH := dHigh
+        dMotherL := dLow
+    pdh := dMotherH
+    pdl := dMotherL
+
+var line lPDH = na
+var line lPDL = na
+var label tPDH = na
+var label tPDL = na
+var line lPWH = na
+var line lPWL = na
+var label tPWH = na
+var label tPWL = na
+
+if showLiq and showPDHL and barstate.islast and not na(pdh) and not na(pdl)
+    line.delete(lPDH)
+    line.delete(lPDL)
+    label.delete(tPDH)
+    label.delete(tPDL)
+    lPDH := line.new(math.max(0, bar_index - 80), pdh, bar_index + 12, pdh, color=colPDHL, style=line.style_dotted, width=1)
+    lPDL := line.new(math.max(0, bar_index - 80), pdl, bar_index + 12, pdl, color=colPDHL, style=line.style_dotted, width=1)
+    tPDH := label.new(bar_index + 12, pdh, "1D PDH: " + str.tostring(pdh, format.mintick), style=label.style_label_left, color=color.new(colPDHL, 88), textcolor=colPDHL, size=size.small)
+    tPDL := label.new(bar_index + 12, pdl, "1D PDL: " + str.tostring(pdl, format.mintick), style=label.style_label_left, color=color.new(colPDHL, 88), textcolor=colPDHL, size=size.small)
+
+if showLiq and showPWHL and barstate.islast and not na(pwh) and not na(pwl)
+    line.delete(lPWH)
+    line.delete(lPWL)
+    label.delete(tPWH)
+    label.delete(tPWL)
+    lPWH := line.new(math.max(0, bar_index - 80), pwh, bar_index + 12, pwh, color=colPWHL, style=line.style_dotted, width=1)
+    lPWL := line.new(math.max(0, bar_index - 80), pwl, bar_index + 12, pwl, color=colPWHL, style=line.style_dotted, width=1)
+    tPWH := label.new(bar_index + 12, pwh, "1W PWH: " + str.tostring(pwh, format.mintick), style=label.style_label_left, color=color.new(colPWHL, 88), textcolor=colPWHL, size=size.small)
+    tPWL := label.new(bar_index + 12, pwl, "1W PWL: " + str.tostring(pwl, format.mintick), style=label.style_label_left, color=color.new(colPWHL, 88), textcolor=colPWHL, size=size.small)
+
+// ============================================================================
+// 4. MARKET STRUCTURE (BOS / CHOCH / IDM)
+// ============================================================================
+type StructDraw
+    line  ln
+    label lb
+
+var array<StructDraw> structDraws = array.new<StructDraw>()
+var array<StructDraw> idmDraws    = array.new<StructDraw>()
+var array<StructDraw> eqhlDraws   = array.new<StructDraw>()
+var array<StructDraw> sweepDraws  = array.new<StructDraw>()
+
+float extPH = ta.pivothigh(high, extLen, extLen)
+float extPL = ta.pivotlow(low, extLen, extLen)
+float intPH = ta.pivothigh(high, intLen, intLen)
+float intPL = ta.pivotlow(low, intLen, intLen)
+
+var float swHi        = na
+var int   swHiIdx     = na
+var bool  swHiActive  = false
+var float swLo        = na
+var int   swLoIdx     = na
+var bool  swLoActive  = false
+var int   chartTrend  = 0
+
+var float intHi       = na
+var int   intHiIdx    = na
+var bool  intHiActive = false
+var float intLo       = na
+var int   intLoIdx    = na
+var bool  intLoActive = false
+
+var float activeIdmLvl   = na
+var int   activeIdmIdx   = na
+var bool  activeIdmSwept = true
+
+if not na(extPH)
+    if showLiq and showEQHL and not na(swHi) and math.abs(extPH - swHi) <= atr14 * eqhTolAtr
+        line  eqLn = line.new(swHiIdx, swHi, bar_index - extLen, extPH, color=colBSL, style=line.style_dashed, width=1)
+        label eqLb = label.new(int(math.avg(swHiIdx, bar_index - extLen)), math.max(swHi, extPH), "BSL / EQH", style=label.style_label_down, color=color.new(colBSL, 100), textcolor=colBSL, size=size.tiny)
+        array.push(eqhlDraws, StructDraw.new(eqLn, eqLb))
+    swHi       := extPH
+    swHiIdx    := bar_index - extLen
+    swHiActive := true
+    if chartTrend == -1 and not na(intHi)
+        activeIdmLvl   := intHi
+        activeIdmIdx   := intHiIdx
+        activeIdmSwept := false
+
+if not na(extPL)
+    if showLiq and showEQHL and not na(swLo) and math.abs(extPL - swLo) <= atr14 * eqhTolAtr
+        line  eqLn = line.new(swLoIdx, swLo, bar_index - extLen, extPL, color=colSSL, style=line.style_dashed, width=1)
+        label eqLb = label.new(int(math.avg(swLoIdx, bar_index - extLen)), math.min(swLo, extPL), "SSL / EQL", style=label.style_label_up, color=color.new(colSSL, 100), textcolor=colSSL, size=size.tiny)
+        array.push(eqhlDraws, StructDraw.new(eqLn, eqLb))
+    swLo       := extPL
+    swLoIdx    := bar_index - extLen
+    swLoActive := true
+    if chartTrend == 1 and not na(intLo)
+        activeIdmLvl   := intLo
+        activeIdmIdx   := intLoIdx
+        activeIdmSwept := false
+
+if not na(intPH)
+    intHi       := intPH
+    intHiIdx    := bar_index - intLen
+    intHiActive := true
+
+if not na(intPL)
+    intLo       := intPL
+    intLoIdx    := bar_index - intLen
+    intLoActive := true
+
+if not activeIdmSwept and not na(activeIdmLvl)
+    if (chartTrend == 1 and low < activeIdmLvl) or (chartTrend == -1 and high > activeIdmLvl)
+        activeIdmSwept := true
+        if showIDM
+            line  idmLn = line.new(activeIdmIdx, activeIdmLvl, bar_index, activeIdmLvl, color=colIDM, style=line.style_dotted, width=1)
+            label idmLb = label.new(bar_index, activeIdmLvl, "IDM x", style=label.style_none, textcolor=colIDM, size=size.tiny)
+            array.push(idmDraws, StructDraw.new(idmLn, idmLb))
+
+bool bullBreakCond = strictClose ? (swHiActive and close > swHi) : (swHiActive and high > swHi)
+bool bearBreakCond = strictClose ? (swLoActive and close < swLo) : (swLoActive and low < swLo)
+
+bool upWickSweep   = strictClose and swHiActive and high > swHi and close <= swHi
+bool downWickSweep = strictClose and swLoActive and low < swLo and close >= swLo
+
+if showLiq and showSweeps
+    if upWickSweep
+        label swLb = label.new(bar_index, high, "BSL Sweep", style=label.style_label_down, color=color.new(colBSL, 78), textcolor=colBSL, size=size.tiny)
+        array.push(sweepDraws, StructDraw.new(na, swLb))
+    if downWickSweep
+        label swLb = label.new(bar_index, low, "SSL Sweep", style=label.style_label_up, color=color.new(colSSL, 78), textcolor=colSSL, size=size.tiny)
+        array.push(sweepDraws, StructDraw.new(na, swLb))
+
+if bullBreakCond
+    bool isCHoCH = chartTrend == -1
+    string txt   = isCHoCH ? "CHoCH" : "BOS"
+    chartTrend  := 1
+    swHiActive  := false
+    if showStruct
+        line  ln = line.new(swHiIdx, swHi, bar_index, swHi, color=colBullStr, style=isCHoCH ? line.style_solid : line.style_dashed, width=isCHoCH ? 2 : 1)
+        label lb = label.new(bar_index, swHi, txt, style=label.style_label_down, color=color.new(colBullStr, 80), textcolor=colBullStr, size=size.tiny)
+        array.push(structDraws, StructDraw.new(ln, lb))
+
+if bearBreakCond
+    bool isCHoCH = chartTrend == 1
+    string txt   = isCHoCH ? "CHoCH" : "BOS"
+    chartTrend  := -1
+    swLoActive  := false
+    if showStruct
+        line  ln = line.new(swLoIdx, swLo, bar_index, swLo, color=colBearStr, style=isCHoCH ? line.style_solid : line.style_dashed, width=isCHoCH ? 2 : 1)
+        label lb = label.new(bar_index, swLo, txt, style=label.style_label_up, color=color.new(colBearStr, 80), textcolor=colBearStr, size=size.tiny)
+        array.push(structDraws, StructDraw.new(ln, lb))
+
+while array.size(structDraws) > maxStructLn
+    StructDraw oldM = array.shift(structDraws)
+    line.delete(oldM.ln)
+    label.delete(oldM.lb)
+
+while array.size(idmDraws) > 6
+    StructDraw oldIDM = array.shift(idmDraws)
+    line.delete(oldIDM.ln)
+    label.delete(oldIDM.lb)
+
+while array.size(eqhlDraws) > 6
+    StructDraw oldEQ = array.shift(eqhlDraws)
+    line.delete(oldEQ.ln)
+    label.delete(oldEQ.lb)
+
+while array.size(sweepDraws) > 6
+    StructDraw oldSw = array.shift(sweepDraws)
+    label.delete(oldSw.lb)
+
+// ============================================================================
+// 5. FAIR VALUE GAPS (FVG)
+// ============================================================================
+type FVGRecord
+    box   bx
+    float top
+    float bot
+    bool  isBull
+
+var array<FVGRecord> fvgs = array.new<FVGRecord>()
+
+bool chartBullFVG = low > high[2] and (low - high[2]) >= atr14 * fvgMinAtr and close[1] > open[1]
+bool chartBearFVG = high < low[2] and (low[2] - high) >= atr14 * fvgMinAtr and close[1] < open[1]
+
+if showFVG and chartBullFVG
+    box fvgBx = box.new(bar_index - 2, low, bar_index + 12, high[2], bgcolor=colBullFVG, border_color=color.new(colBullFVG, 40), text="FVG", text_color=color.white, text_size=size.tiny)
+    array.push(fvgs, FVGRecord.new(fvgBx, low, high[2], true))
+
+if showFVG and chartBearFVG
+    box fvgBx = box.new(bar_index - 2, low[2], bar_index + 12, high, bgcolor=colBearFVG, border_color=color.new(colBearFVG, 40), text="FVG", text_color=color.white, text_size=size.tiny)
+    array.push(fvgs, FVGRecord.new(fvgBx, low[2], high, false))
+
+// Dynamic Gap Trimming
+if fvgShrink and array.size(fvgs) > 0
+    for i = array.size(fvgs) - 1 to 0
+        FVGRecord fg = array.get(fvgs, i)
+        if fg.isBull
+            if low <= fg.bot
+                box.delete(fg.bx)
+                array.remove(fvgs, i)
+            else if low < fg.top
+                fg.top := low
+                box.set_top(fg.bx, low)
+        else
+            if high >= fg.top
+                box.delete(fg.bx)
+                array.remove(fvgs, i)
+            else if high > fg.bot
+                fg.bot := high
+                box.set_bottom(fg.bx, high)
+
+while array.size(fvgs) > maxFVGs
+    FVGRecord oldF = array.shift(fvgs)
+    box.delete(oldF.bx)
+
+// ============================================================================
+// 6. 7-MODEL ORDER BLOCKS & BREAKER BLOCKS (FREEZE ON TAP!)
+// ============================================================================
+type OBRecord
+    box   bx
+    line  mtLn
+    float top
+    float bot
+    bool  isBull
+    int   startIdx
+    bool  mitigated
+
+var array<OBRecord> bullOBs = array.new<OBRecord>()
+var array<OBRecord> bearOBs = array.new<OBRecord>()
+
+type BBRecord
+    box   bx
+    float top
+    float bot
+    bool  isBull
+    bool  mitigated
+
+var array<BBRecord> breakers = array.new<BBRecord>()
+
+bool bullDisplacement = close[1] > open[1] and (close[1] - open[1]) >= obAtrMult * atr14[1]
+bool newBullOB        = bullDisplacement and chartBullFVG
+
+bool bearDisplacement = close[1] < open[1] and (open[1] - close[1]) >= obAtrMult * atr14[1]
+bool newBearOB        = bearDisplacement and chartBearFVG
+
+bool useFullCandle    = obBoundaryMode == "Full Candle (High to Low - Includes Wicks)"
+
+if showOB and newBullOB
+    float obT = useFullCandle ? high[2] : math.max(open[2], close[2])
+    float obB = useFullCandle ? low[2]  : math.min(open[2], close[2])
+    float obM = 0.5 * (obT + obB)
+    box   obBx = box.new(bar_index - 2, obT, bar_index, obB, bgcolor=colBullOB, border_color=colBullOBBr, border_width=1, text=showOBLabels ? "Bull OB" : "", text_color=color.white, text_size=size.tiny)
+    line  mtLn = showOB_MT ? line.new(bar_index - 2, obM, bar_index, obM, color=color.new(colBullOBBr, 50), style=line.style_dashed, width=1) : na
+    array.push(bullOBs, OBRecord.new(obBx, mtLn, obT, obB, true, bar_index - 2, false))
+
+if showOB and newBearOB
+    float obT = useFullCandle ? high[2] : math.max(open[2], close[2])
+    float obB = useFullCandle ? low[2]  : math.min(open[2], close[2])
+    float obM = 0.5 * (obT + obB)
+    box   obBx = box.new(bar_index - 2, obT, bar_index, obB, bgcolor=colBearOB, border_color=colBearOBBr, border_width=1, text=showOBLabels ? "Bear OB" : "", text_color=color.white, text_size=size.tiny)
+    line  mtLn = showOB_MT ? line.new(bar_index - 2, obM, bar_index, obM, color=color.new(colBearOBBr, 50), style=line.style_dashed, width=1) : na
+    array.push(bearOBs, OBRecord.new(obBx, mtLn, obT, obB, false, bar_index - 2, false))
+
+// >>> FREEZE ON TAP LOGIC: FREEZES AT EXACT BAR INDEX WHERE PRICE TAPS IT! <<<
+bool sweptBullOB = false
+bool sweptBearOB = false
+
+if array.size(bullOBs) > 0
+    for i = array.size(bullOBs) - 1 to 0
+        OBRecord ob = array.get(bullOBs, i)
+        if not ob.mitigated
+            bool violated = close < ob.bot
+            bool tapped   = low <= ob.top and close >= ob.bot
+            if violated
+                ob.mitigated := true
+                box.set_right(ob.bx, bar_index)
+                if not na(ob.mtLn)
+                    line.set_x2(ob.mtLn, bar_index)
+                if showBreaker
+                    box bb = box.new(ob.startIdx, ob.top, bar_index, ob.bot, bgcolor=colBearBB, border_color=colBearBBBr, text=showOBLabels ? "-BB" : "", text_color=color.white, text_size=size.tiny)
+                    array.push(breakers, BBRecord.new(bb, ob.top, ob.bot, false, false))
+                if keepHistOBs
+                    box.set_bgcolor(ob.bx, color.new(colBullOB, 95))
+                    box.set_border_style(ob.bx, line.style_dotted)
+                    if showOBLabels
+                        box.set_text(ob.bx, "Bull OB [Violated]")
+                else
+                    box.delete(ob.bx)
+                    if not na(ob.mtLn)
+                        line.delete(ob.mtLn)
+                    array.remove(bullOBs, i)
+            else if tapped
+                sweptBullOB  := true
+                ob.mitigated := true
+                box.set_right(ob.bx, bar_index)
+                if not na(ob.mtLn)
+                    line.set_x2(ob.mtLn, bar_index)
+                box.set_bgcolor(ob.bx, color.new(colBullOB, 90))
+                box.set_border_style(ob.bx, line.style_dashed)
+                if showOBLabels
+                    box.set_text(ob.bx, "Bull OB [Mitigated]")
+            else
+                box.set_right(ob.bx, bar_index + 2)
+                if not na(ob.mtLn)
+                    line.set_x2(ob.mtLn, bar_index + 2)
+
+if array.size(bearOBs) > 0
+    for i = array.size(bearOBs) - 1 to 0
+        OBRecord ob = array.get(bearOBs, i)
+        if not ob.mitigated
+            bool violated = close > ob.top
+            bool tapped   = high >= ob.bot and close <= ob.top
+            if violated
+                ob.mitigated := true
+                box.set_right(ob.bx, bar_index)
+                if not na(ob.mtLn)
+                    line.set_x2(ob.mtLn, bar_index)
+                if showBreaker
+                    box bb = box.new(ob.startIdx, ob.top, bar_index, ob.bot, bgcolor=colBullBB, border_color=colBullBBBr, text=showOBLabels ? "+BB" : "", text_color=color.white, text_size=size.tiny)
+                    array.push(breakers, BBRecord.new(bb, ob.top, ob.bot, true, false))
+                if keepHistOBs
+                    box.set_bgcolor(ob.bx, color.new(colBearOB, 95))
+                    box.set_border_style(ob.bx, line.style_dotted)
+                    if showOBLabels
+                        box.set_text(ob.bx, "Bear OB [Violated]")
+                else
+                    box.delete(ob.bx)
+                    if not na(ob.mtLn)
+                        line.delete(ob.mtLn)
+                    array.remove(bearOBs, i)
+            else if tapped
+                sweptBearOB  := true
+                ob.mitigated := true
+                box.set_right(ob.bx, bar_index)
+                if not na(ob.mtLn)
+                    line.set_x2(ob.mtLn, bar_index)
+                box.set_bgcolor(ob.bx, color.new(colBearOB, 90))
+                box.set_border_style(ob.bx, line.style_dashed)
+                if showOBLabels
+                    box.set_text(ob.bx, "Bear OB [Mitigated]")
+            else
+                box.set_right(ob.bx, bar_index + 2)
+                if not na(ob.mtLn)
+                    line.set_x2(ob.mtLn, bar_index + 2)
+
+// Breaker Blocks Freeze on Tap
+bool tappedBullBB = false
+bool tappedBearBB = false
+
+if array.size(breakers) > 0
+    for i = array.size(breakers) - 1 to 0
+        BBRecord bb = array.get(breakers, i)
+        if not bb.mitigated
+            bool bbTapped = bb.isBull ? (low <= bb.top and close >= bb.bot) : (high >= bb.bot and close <= bb.top)
+            bool bbBroken = bb.isBull ? (close < bb.bot) : (close > bb.top)
+            if bbTapped
+                bb.mitigated := true
+                if bb.isBull
+                    tappedBullBB := true
+                else
+                    tappedBearBB := true
+                box.set_right(bb.bx, bar_index)
+                box.set_bgcolor(bb.bx, color.new(bb.isBull ? colBullBB : colBearBB, 90))
+                box.set_border_style(bb.bx, line.style_dashed)
+            else if bbBroken
+                bb.mitigated := true
+                box.set_right(bb.bx, bar_index)
+                box.set_bgcolor(bb.bx, color.new(bb.isBull ? colBullBB : colBearBB, 95))
+                box.set_border_style(bb.bx, line.style_dotted)
+            else
+                box.set_right(bb.bx, bar_index + 2)
+
+while array.size(bullOBs) > maxOBs
+    OBRecord oldOB = array.shift(bullOBs)
+    box.delete(oldOB.bx)
+    line.delete(oldOB.mtLn)
+
+while array.size(bearOBs) > maxOBs
+    OBRecord oldOB = array.shift(bearOBs)
+    box.delete(oldOB.bx)
+    line.delete(oldOB.mtLn)
+
+while array.size(breakers) > maxBreakers
+    BBRecord oldB = array.shift(breakers)
+    box.delete(oldB.bx)
+
+// ============================================================================
+// 7. INSTITUTIONAL ORDER FLOW & SHOAIB KHAN DOMINANT FLOW GATE
+// ============================================================================
+float candleSpan = math.max(high - low, syminfo.mintick)
+float lowerWick  = ((math.min(open, close) - low) / candleSpan) * 100.0
+float upperWick  = ((high - math.max(open, close)) / candleSpan) * 100.0
+float volAvg20   = ta.sma(volume, 20)
+float volRatio   = volAvg20 > 0 ? (volume / volAvg20) : 1.0
+
+float estDelta   = (close >= open) ? (volume * (1.0 - (upperWick / 100.0))) : (-volume * (1.0 - (lowerWick / 100.0)))
+bool  isBuyerAbs = close > open and lowerWick >= minWickPct and volRatio >= minVolMult
+bool  isSellerAbs= close < open and upperWick >= minWickPct and volRatio >= minVolMult
+
+if showBuySell
+    if isBuyerAbs
+        label.new(bar_index, low, "▲ Buyers", style=label.style_label_up, color=colBuyers, textcolor=color.black, size=size.tiny)
+    if isSellerAbs
+        label.new(bar_index, high, "▼ Sellers", style=label.style_label_down, color=colSellers, textcolor=color.white, size=size.tiny)
+
+barcolor(colorDelta ? (estDelta > 0 ? color.new(colBuyers, 20) : color.new(colSellers, 20)) : na)
+
+// --- DOMINANT INSTITUTIONAL FLOW REGIME ---
+var int dominantFlow = 0
+var int lastFlowBar  = 0
+
+if isBuyerAbs or newBullOB
+    dominantFlow := 1   // BUYERS DOMINANT (UPSIDE ONLY)
+    lastFlowBar  := bar_index
+else if isSellerAbs or newBearOB
+    dominantFlow := -1  // SELLERS DOMINANT (DOWNSIDE ONLY)
+    lastFlowBar  := bar_index
+
+if dominantFlow != 0 and (bar_index - lastFlowBar > flowExpiryBars)
+    dominantFlow := 0
+
+bool flowAllowsLong  = not enforceFlowGate or (dominantFlow >= 0)
+bool flowAllowsShort = not enforceFlowGate or (dominantFlow <= 0)
+
+// ============================================================================
+// 8. ICT KILLZONES & SESSION TIMING
+// ============================================================================
+bool inAsianSess  = not na(time(timeframe.period, asianSessStr, "UTC"))
+bool inLondonSess = not na(time(timeframe.period, londonSessStr, "UTC"))
+bool inNySess     = not na(time(timeframe.period, nySessStr, "UTC"))
+
+bgcolor(showKillzones and inLondonSess ? colLondonZone : na, title="London Killzone Shading")
+bgcolor(showKillzones and inNySess ? colNyZone : na, title="NY Killzone Shading")
+
+bool killzoneAllowsEntry = not useKillzoneGate or (inLondonSess or inNySess)
+
+// ============================================================================
+// 9. THE 4 MASTER ENTRY MODULES (SHOAIB KHAN EP 01-17 SYNTHESIZED)
+// ============================================================================
+// State Variables for POI Retest & MSS Engine
+var int   aSide   = 0
+var float aMssLvl = na
+var bool  aMssHit = false
+var float aPoiTop = na
+var float aPoiBot = na
+var int   aExpire = 0
+var box   lastPoiBx = na
+
+bool htfMacroLong  = biasStrict == "Ultra (1M + 1W + 1D + 4H + Current TF)" ? (mDir >= 0 and wDir >= 0 and htf1dDir >= 0 and htf4Dir >= 0) : biasStrict == "Strict (1D + 4H + Current TF)" ? (htf1dDir >= 0 and htf4Dir >= 0) : (htf4Dir >= 0)
+bool htfMacroShort = biasStrict == "Ultra (1M + 1W + 1D + 4H + Current TF)" ? (mDir <= 0 and wDir <= 0 and htf1dDir <= 0 and htf4Dir <= 0) : biasStrict == "Strict (1D + 4H + Current TF)" ? (htf1dDir <= 0 and htf4Dir <= 0) : (htf4Dir <= 0)
+
+bool allowLongBias  = (not reqBiasSync or htfMacroLong) and flowAllowsLong
+bool allowShortBias = (not reqBiasSync or htfMacroShort) and flowAllowsShort
+
+int tfMins       = timeframe.isintraday ? math.max(1, timeframe.multiplier) : timeframe.isdaily ? 1440 : 240
+int maxWaitBars  = math.max(30, math.round((mssMaxWaitDays * 1440.0) / tfMins))
+int retestWaitBars = math.max(15, math.round(maxWaitBars / 2))
+
+// --- MODULE 1: EP 08 LTF MSS + GOLDEN LAST POI RETEST SNIPER ---
+bool armLongTrigger  = tapHtfBull
+bool armShortTrigger = tapHtfBear
+
+if armLongTrigger and aSide != 1
+    aSide   := 1
+    aMssLvl := intHi
+    aMssHit := false
+    aPoiTop := na
+    aPoiBot := na
+    aExpire := bar_index + maxWaitBars
+else if armShortTrigger and aSide != -1
+    aSide   := -1
+    aMssLvl := intLo
+    aMssHit := false
+    aPoiTop := na
+    aPoiBot := na
+    aExpire := bar_index + maxWaitBars
+
+// Dynamic MSS Refinement
+if aSide == 1 and not aMssHit and not na(intHi)
+    if na(aMssLvl) or intHi < aMssLvl
+        aMssLvl := intHi
+
+if aSide == -1 and not aMssHit and not na(intLo)
+    if na(aMssLvl) or intLo > aMssLvl
+        aMssLvl := intLo
+
+if aSide != 0 and bar_index > aExpire
+    aSide := 0
+
+bool hasBullFVG = chartBullFVG or chartBullFVG[1] or chartBullFVG[2]
+bool hasBearFVG = chartBearFVG or chartBearFVG[1] or chartBearFVG[2]
+
+bool mssBreakLong  = (high > aMssLvl or close > aMssLvl) or (high[1] > aMssLvl or close[1] > aMssLvl)
+bool mssBreakShort = (low < aMssLvl or close < aMssLvl) or (low[1] < aMssLvl or close[1] < aMssLvl)
+
+if aSide == 1 and not aMssHit and not na(aMssLvl) and mssBreakLong and hasBullFVG
+    aMssHit := true
+    aPoiTop := math.max(low, low[1])
+    aPoiBot := math.min(high[2], high[3])
+    aExpire := bar_index + retestWaitBars
+    if showStruct and showSignals
+        label.new(bar_index, high, "MSS+ (Wick/Body)", style=label.style_label_down, color=color.new(colBullStr, 70), textcolor=colBullStr, size=size.tiny)
+    if showPOI
+        box.delete(lastPoiBx)
+        lastPoiBx := box.new(bar_index - 1, aPoiTop, bar_index + 2, aPoiBot, bgcolor=colPOI, border_color=colPOIBr, text="Last POI", text_color=color.black, text_size=size.tiny)
+
+if aSide == -1 and not aMssHit and not na(aMssLvl) and mssBreakShort and hasBearFVG
+    aMssHit := true
+    aPoiTop := math.max(low[2], low[3])
+    aPoiBot := math.min(high, high[1])
+    aExpire := bar_index + retestWaitBars
+    if showStruct and showSignals
+        label.new(bar_index, low, "MSS- (Wick/Body)", style=label.style_label_up, color=color.new(colBearStr, 70), textcolor=colBearStr, size=size.tiny)
+    if showPOI
+        box.delete(lastPoiBx)
+        lastPoiBx := box.new(bar_index - 1, aPoiTop, bar_index + 2, aPoiBot, bgcolor=colPOI, border_color=colPOIBr, text="Last POI", text_color=color.black, text_size=size.tiny)
+
+if aSide != 0 and aMssHit and not na(lastPoiBx)
+    box.set_right(lastPoiBx, bar_index + 2)
+
+bool mod1Long  = aSide == 1 and aMssHit and not na(aPoiTop) and low <= aPoiTop and high >= aPoiBot and (close > open or lowerWick >= minWickPct or isBuyerAbs) and allowLongBias
+bool mod1Short = aSide == -1 and aMssHit and not na(aPoiBot) and high >= aPoiBot and low <= aPoiTop and (close < open or upperWick >= minWickPct or isSellerAbs) and allowShortBias
+
+if mod1Long or mod1Short
+    aSide := 0
+    if not na(lastPoiBx)
+        box.set_right(lastPoiBx, bar_index)
+
+// --- MODULE 2: KILLZONE LIQUIDITY SWEEP & REVERSAL (EP 11, 12) ---
+bool mod2Long  = (inLondonSess or inNySess) and (downWickSweep or dSslSwept or wSslSwept) and (close > open or lowerWick >= minWickPct or isBuyerAbs) and allowLongBias
+bool mod2Short = (inLondonSess or inNySess) and (upWickSweep or dBslSwept or wBslSwept) and (close < open or upperWick >= minWickPct or isSellerAbs) and allowShortBias
+
+// --- MODULE 3: BREAKER BLOCK FLIP REVERSAL (EP 05, 10) ---
+bool mod3Long  = tappedBullBB and (close > open or lowerWick >= minWickPct or isBuyerAbs) and allowLongBias
+bool mod3Short = tappedBearBB and (close < open or upperWick >= minWickPct or isSellerAbs) and allowShortBias
+
+// --- MODULE 4: HIGH-MOMENTUM DOMINANT FLOW CONTINUATION (EP 04, 09, 15) ---
+bool mod4Long  = sweptBullOB and isDiscount and (close > open or lowerWick >= minWickPct or isBuyerAbs) and allowLongBias
+bool mod4Short = sweptBearOB and isPremium and (close < open or upperWick >= minWickPct or isSellerAbs) and allowShortBias
+
+// Engine Selector
+bool activeMod1 = masterModule == "All 4 Master Modules (Combined)" or masterModule == "Module 1: Ep 08 LTF MSS + Last POI (Sniper)"
+bool activeMod2 = masterModule == "All 4 Master Modules (Combined)" or masterModule == "Module 2: Killzone Liquidity Sweep & Reversal"
+bool activeMod3 = masterModule == "All 4 Master Modules (Combined)" or masterModule == "Module 3: Breaker Block Flip Reversal"
+bool activeMod4 = masterModule == "All 4 Master Modules (Combined)" or masterModule == "Module 4: Dominant Flow Continuation"
+
+bool finalLong  = showSignals and killzoneAllowsEntry and ((activeMod1 and mod1Long) or (activeMod2 and mod2Long) or (activeMod3 and mod3Long) or (activeMod4 and mod4Long))
+bool finalShort = showSignals and killzoneAllowsEntry and ((activeMod1 and mod1Short) or (activeMod2 and mod2Short) or (activeMod3 and mod3Short) or (activeMod4 and mod4Short))
+
+// Clean Minimal Entry Arrows
+plotshape(finalLong,  title="Hermes 4.0 BUY",  style=shape.triangleup,   location=location.belowbar, color=#00E676, textcolor=#00E676, text="BUY",  size=size.small)
+plotshape(finalShort, title="Hermes 4.0 SELL", style=shape.triangledown, location=location.abovebar, color=#FF5252, textcolor=#FF5252, text="SELL", size=size.small)
+
+// Discrete Target Profit Badges (🎯 TP)
+type TradeTracker
+    float ep
+    float tp
+    bool  isLong
+    int   startBar
+    bool  resolved
+
+var array<TradeTracker> liveTrades = array.new<TradeTracker>()
+
+if finalLong and showOutcomes
+    float ep  = close
+    float tpP = ep * (1.0 + tpPctInp / 100.0)
+    array.push(liveTrades, TradeTracker.new(ep, tpP, true, bar_index, false))
+
+if finalShort and showOutcomes
+    float ep  = close
+    float tpP = ep * (1.0 - tpPctInp / 100.0)
+    array.push(liveTrades, TradeTracker.new(ep, tpP, false, bar_index, false))
+
+if showOutcomes and array.size(liveTrades) > 0
+    for i = 0 to array.size(liveTrades) - 1
+        TradeTracker tr = array.get(liveTrades, i)
+        if not tr.resolved
+            if tr.isLong
+                if high >= tr.tp
+                    tr.resolved := true
+                    label.new(bar_index, high, "🎯 TP", style=label.style_label_down, color=color.new(#00E676, 20), textcolor=color.white, size=size.tiny)
+            else
+                if low <= tr.tp
+                    tr.resolved := true
+                    label.new(bar_index, low, "🎯 TP", style=label.style_label_up, color=color.new(#00E676, 20), textcolor=color.white, size=size.tiny)
+
+while array.size(liveTrades) > maxHistBadges
+    array.shift(liveTrades)
+
+// Alerts
+alertcondition(finalLong,  title="Hermes MSOB 4.0 LONG",  message="Hermes MSOB 4.0: LONG Confirmed on {{ticker}} @ {{close}}")
+alertcondition(finalShort, title="Hermes MSOB 4.0 SHORT", message="Hermes MSOB 4.0: SHORT Confirmed on {{ticker}} @ {{close}}")
+alertcondition(tapHtfBull, title="Hermes HTF Bull POI Tapped", message="Hermes MSOB 4.0: HTF Bullish POI Tapped on {{ticker}}. Watch 5m MSS!")
+alertcondition(tapHtfBear, title="Hermes HTF Bear POI Tapped", message="Hermes MSOB 4.0: HTF Bearish POI Tapped on {{ticker}}. Watch 5m MSS!")
+alertcondition(dominantFlow == 1 and dominantFlow[1] != 1, title="Institutional BUYERS Control", message="Hermes MSOB 4.0: Institutional BUYERS Control {{ticker}}! UPSIDE ONLY.")
+alertcondition(dominantFlow == -1 and dominantFlow[1] != -1, title="Institutional SELLERS Control", message="Hermes MSOB 4.0: Institutional SELLERS Control {{ticker}}! DOWNSIDE ONLY.")
+
+// ============================================================================
+// 10. LIVE INSTITUTIONAL HUD DASHBOARD TABLE
+// ============================================================================
+posEnum = hudPosStr == "Top Right" ? position.top_right : hudPosStr == "Top Left" ? position.top_left : hudPosStr == "Bottom Right" ? position.bottom_right : position.bottom_left
+var table hudTbl = table.new(posEnum, 2, 10, bgcolor=color.new(#131722, 10), border_color=#2962FF, border_width=1)
+
+if showHUD and barstate.islast
+    table.cell(hudTbl, 0, 0, "HERMES MSOB 4.0", text_color=color.white, bgcolor=#1E2329, text_size=size.small)
+    table.cell(hudTbl, 1, 0, "INSTITUTIONAL", text_color=#FFD600, bgcolor=#1E2329, text_size=size.small)
+
+    string s1m = mDir > 0 ? "BULLISH" : mDir < 0 ? "BEARISH" : "NEUTRAL"
+    color  c1m = mDir > 0 ? #00E676 : mDir < 0 ? #FF5252 : color.gray
+    table.cell(hudTbl, 0, 1, "1M Macro Bias", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 1, s1m, text_color=c1m, text_size=size.tiny)
+
+    string s1w = (wBslSwept and wSslSwept) ? "CHOP (DBL SWEEP)" : wBslSwept ? "BSL SWEPT" : wSslSwept ? "SSL SWEPT" : wDir > 0 ? "BULLISH" : wDir < 0 ? "BEARISH" : "CLEAN"
+    color  c1w = (wBslSwept and wSslSwept) ? color.orange : wDir > 0 ? #00E676 : wDir < 0 ? #FF5252 : #00E5FF
+    table.cell(hudTbl, 0, 2, "1W Trend & Liq", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 2, s1w, text_color=c1w, text_size=size.tiny)
+
+    string s1d = htf1dDir > 0 ? "BULLISH" : htf1dDir < 0 ? "BEARISH" : "NEUTRAL"
+    color  c1d = htf1dDir > 0 ? #00E676 : htf1dDir < 0 ? #FF5252 : color.gray
+    table.cell(hudTbl, 0, 3, "1D Structure", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 3, s1d, text_color=c1d, text_size=size.tiny)
+
+    string s4h = htf4Dir > 0 ? "BULLISH" : htf4Dir < 0 ? "BEARISH" : "NEUTRAL"
+    color  c4h = htf4Dir > 0 ? #00E676 : htf4Dir < 0 ? #FF5252 : color.gray
+    table.cell(hudTbl, 0, 4, htfLabelPrefix + " Structure", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 4, s4h, text_color=c4h, text_size=size.tiny)
+
+    string sCh = chartTrend > 0 ? "BULLISH" : chartTrend < 0 ? "BEARISH" : "NEUTRAL"
+    color  cCh = chartTrend > 0 ? #00E676 : chartTrend < 0 ? #FF5252 : color.gray
+    table.cell(hudTbl, 0, 5, "Chart TF (" + timeframe.period + ")", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 5, sCh, text_color=cCh, text_size=size.tiny)
+
+    string zoneTxt = isDiscount ? "DISCOUNT (" + str.tostring(valPos, "#.##") + ")" : "PREMIUM (" + str.tostring(valPos, "#.##") + ")"
+    table.cell(hudTbl, 0, 6, "Valuation (50% Eq)", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 6, zoneTxt, text_color=isDiscount ? #00E676 : #FF5252, text_size=size.tiny)
+
+    string flowTxt = dominantFlow > 0 ? "BUYERS (UPSIDE ONLY)" : dominantFlow < 0 ? "SELLERS (DOWNSIDE ONLY)" : "NEUTRAL (BALANCED)"
+    color  flowCol = dominantFlow > 0 ? #00E676 : dominantFlow < 0 ? #FF5252 : #B0BEC5
+    table.cell(hudTbl, 0, 7, "Shoaib Khan Flow Gate", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 7, flowTxt, text_color=flowCol, text_size=size.tiny)
+
+    string wdTxt = aSide == 1 ? (aMssHit ? "WAITING RETEST (LONG)" : "ARMED (WATCH 5M MSS)") : aSide == -1 ? (aMssHit ? "WAITING RETEST (SHORT)" : "ARMED (WATCH 5M MSS)") : "IDLE (SCANNING POI)"
+    color  wdCol = aSide != 0 ? (aMssHit ? #FFD600 : #00E5FF) : color.gray
+    table.cell(hudTbl, 0, 8, "5m Watchdog State", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 8, wdTxt, text_color=wdCol, text_size=size.tiny)
+
+    string recTxt = allowLongBias ? "LONG ONLY" : allowShortBias ? "SHORT ONLY" : "STANDBY (WAIT)"
+    color  recCol = allowLongBias ? #00E676 : allowShortBias ? #FF5252 : #FFD600
+    table.cell(hudTbl, 0, 9, "Institutional Gate", text_color=#B0BEC5, text_size=size.tiny)
+    table.cell(hudTbl, 1, 9, recTxt, text_color=recCol, text_size=size.tiny)
+else if not showHUD and barstate.islast
+    table.clear(hudTbl, 0, 0, 1, 9)

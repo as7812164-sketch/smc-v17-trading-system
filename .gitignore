@@ -29,3 +29,18 @@ test_*.png
  
 *.tar.gz
 hermes35_live_release.tar.gz
+
+# Media, Tools & Binary build artifacts
+*.mp4
+tools/
+hermes35_apk_src/
+nexuspro_apk_src/build/
+hermes35_dist/
+hermes25_src/
+MASTER_BACKUP_ARCHIVE_*/
+*.db
+!database/smc_v17.db
+*.apk
+!NexusPro_unsigned.apk
+
+

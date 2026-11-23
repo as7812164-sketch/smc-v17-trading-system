@@ -1,0 +1,71 @@
+{
+  "indicator_name": "Hermes MSOB 3.0 Institutional SMC Suite",
+  "short_name": "Hermes MSOB 3.0",
+  "version": "3.0.0",
+  "updated_at": "2026-11-14T19:06:23.752831",
+  "source_file": "C:\\Users\\power\\.gemini\\antigravity\\scratch\\smc_v17_trading_system\\indicators\\Hermes_MSOB_3_0.pine",
+  "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+  "features_enforced": [
+    "Full Candle Span Order Blocks (High to Low with Wick inclusion)",
+    "Freeze on Tap geometry (never repaints or extends into future bars)",
+    "Clean Minimal Arrow Signals (Green BUY / Red SELL) with zero bulky boxes",
+    "4H/1H POI Tap to 15m/5m MSS to Last POI Retest Engine (Shoaib Khan Ep 08)",
+    "2-Bar Rejection Watchdog for instant reversal captures"
+  ],
+  "backup_locations": [
+    {
+      "path": "C:\\Users\\power\\AppData\\Local\\hermes\\backups\\Hermes_MSOB_3_0\\Hermes_MSOB_3_0.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.395919"
+    },
+    {
+      "path": "C:\\Users\\power\\AppData\\Local\\hermes\\backups\\Hermes_MSOB_3_0\\Hermes_MSOB_3_0_Golden_Master.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.442796"
+    },
+    {
+      "path": "C:\\Users\\power\\.gemini\\antigravity\\scratch\\smc_v17_trading_system\\PERMANENT_IMMUTABLE_BACKUP_VAULT\\Hermes_MSOB_3_0\\Hermes_MSOB_3_0.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.487219"
+    },
+    {
+      "path": "C:\\Users\\power\\.gemini\\antigravity\\scratch\\smc_v17_trading_system\\PERMANENT_IMMUTABLE_BACKUP_VAULT\\Hermes_MSOB_3_0\\Hermes_MSOB_3_0_Golden_Master.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.526775"
+    },
+    {
+      "path": "C:\\Users\\power\\.gemini\\antigravity\\scratch\\smc_v17_trading_system\\pine_script_vault\\Hermes_MSOB_3_0\\Hermes_MSOB_3_0.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.564367"
+    },
+    {
+      "path": "C:\\Users\\power\\AppData\\Local\\hermes\\backups\\indicators\\Hermes_MSOB_3_0_BACKUP.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.604886"
+    },
+    {
+      "path": "C:\\Users\\power\\AppData\\Local\\hermes\\backups\\indicators\\Hermes_Combined_Institutional_SMC_v6_Golden_Pro_BACKUP.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.666414"
+    },
+    {
+      "path": "C:\\Users\\power\\.gemini\\antigravity\\scratch\\smc_v17_trading_system\\indicators\\Hermes_Combined_Institutional_SMC_v6_Golden_Pro.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.710928"
+    },
+    {
+      "path": "C:\\Users\\power\\.gemini\\antigravity\\scratch\\smc_v17_trading_system\\indicators\\Hermes_Combined_Institutional_SMC_v6_2_Clean.pine",
+      "sha256": "188FC43D34CD1CE71D9E8C2737AE61DF107416AD6AF95D97D4390D5347FF6B2A",
+      "verified": true,
+      "timestamp": "2026-11-14T19:06:23.752831"
+    }
+  ]
+}
